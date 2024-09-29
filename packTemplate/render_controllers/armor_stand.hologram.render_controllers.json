@@ -1,0 +1,32 @@
+{
+	"format_version": "1.8.0", // both 1.8.0 and 1.10.0 are used internally
+	"render_controllers": {
+		"controller.render.armor_stand.hologram": {
+			"arrays": {
+				"textures": {
+					"Array.textures": []
+				}
+			},
+			"materials": [
+				{
+					"*": "Material.hologram"
+				}
+			],
+			"geometry": "Geometry.hologram",
+			"textures": [],
+			"is_hurt_color": {
+				"r": 0,
+				"g": 0,
+				"b": 0,
+				"a": 0
+			},
+			"on_fire_color": {
+				"r": 0,
+				"g": 0,
+				"b": 0,
+				"a": 0
+			},
+			"ignore_lighting": true
+		}
+	}
+}

@@ -1,0 +1,44 @@
+<!--
+	Find empty spots in translation mappings that will have to be added to TranslationFileParser.TRANSLATION_KEY_REMAPPINGS sometime or later.
+	Currently (1.21.31.22) it seems to be mostly all wood types and slabs (all the variant stuff that also causes pain in other places)
+-->
+
+<style>
+	#log {
+		max-height: 90vh;
+	}
+</style>
+<div id="log"></div>
+<script type="module">
+	import ResourcePackStack from "./ResourcePackStack.js";
+	import SimpleLogger from "./SimpleLogger.js";
+	import TranslationFileParser from "./TranslationFileParser.js";
+	
+	let logger = new SimpleLogger(document.querySelector("#log"));
+	logger.patchConsoleMethods();
+	
+	let rps = new ResourcePackStack();
+	let translationFile = await rps.fetchResource("texts/en_US.lang").then(res => res.text());
+	let [blockMetadata, itemData] = await Promise.all([
+		rps.fetchData("metadata/vanilladata_modules/mojang-blocks.json").then(res => res.json()),
+		rps.fetchData("metadata/vanilladata_modules/mojang-items.json").then(res => res.json())
+	]);
+	let blockNames = [];
+	blockMetadata["data_items"].forEach(block => {
+		let blockName = block["name"].replace(/^minecraft:/, "");
+		if(["hard_", "element_", "colored_torch_"].some(prefix => blockName.startsWith(prefix))) { // chemistry features
+			return;
+		}
+		blockNames.push(blockName);
+	});
+	let tfp = await new TranslationFileParser(rps, translationFile);
+	
+	let missingTranslations = 0;
+	blockNames.forEach(blockName => {
+		let translation = tfp.getBlockName(blockName);
+		if(translation == blockName) {
+			missingTranslations++;
+		}
+	});
+	console.log(`Finished checking with ${missingTranslations} missing translations`);
+</script>

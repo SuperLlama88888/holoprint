@@ -1,0 +1,174 @@
+// Contains definitions for block states that control texture variants and rotations.
+// Note: Block states that control geometry are used in blockShapeGeos.json
+{
+	"$schema": "schemas/blockStateDefinitions.schema.json",
+	
+	"texture_variants": {
+		"*": {
+			// When a block has a block state in here, it will check the value and look at the corresponding texture variant in terrain_texture.json
+			// E.g. When cake's bite_counter is 0, it will look at the 0th texture variant in terrain_texture.json, and when it's 1-6, it will look at the 1st texture variant. This makes it show the inner texture when necessary.
+			"structure_block_type": {
+				"data": 0, // All the textures are actually incorrect: https://bugs.mojang.com/browse/MCPE-48224
+				"save": 1,
+				"load": 2,
+				"corner": 3,
+				"invalid": 4,
+				"export": 5
+			},
+			"powered_bit": [0, 1], // observers
+			"output_subtract_bit": [0, 1], // comparators; this is only used by the front torch as the back two torches use the eigenvariant to make them powered.
+			"lit": [0, 1], // candles
+			"cracked_state": { // turtle eggs, sniffer egg
+				"no_cracks": 0,
+				"cracked": 1,
+				"max_cracked": 2
+			},
+			"growth": [0, 0, 1, 1, 2, 2, 2, 3],
+			"composter_fill_level": [42, 1, 1, 1, 1, 1, 1, 1, 2], // first is never used
+			"honey_level": [0, 0, 0, 0, 0, 1]
+		},
+		"cake": {
+			"bite_counter": [0, 1, 1, 1, 1, 1, 1]
+		},
+		"/copper_bulb/": { // test regular expression on block names
+			"#exclusive_add": true,
+			"lit": [0, 1],
+			"powered_bit": [0, 2]
+		}
+	},
+	"rotations": { // by block shape
+		"*": {
+			"pillar_axis": {
+				"x": [0, 0, 90],
+				"y": [0, 0, 0],
+				"z": [90, 0, 0]
+			},
+			"facing_direction": { // this is a mess
+				"0": [0, 0, 180], // down
+				"1": [0, 0, 0], // up
+				"2": [90, 180, 0], // south
+				"3": [90, 0, 0], // north
+				"4": [90, 90, 0], // east
+				"5": [90, -90, 0] // west
+			},
+			"minecraft:facing_direction": { // used by observers
+				"down": [90, 0, 0],
+				"up": [-90, 0, 0],
+				"south": [0, 180, 0],
+				"north": [0, 0, 0],
+				"east": [0, 90, 0],
+				"west": [0, -90, 0]
+			},
+			"torch_facing_direction": {
+				"west": [0, 180, 0],
+				"east": [0, 0, 0],
+				"north": [0, -90, 0],
+				"south": [0, 90, 0],
+				"top": [0, 0, 0]
+			},
+			"weirdo_direction": { // stairs
+				"0": [0, 180, 0], // east
+				"1": [0, 0, 0], // west
+				"2": [0, -90, 0], // south
+				"3": [0, 90, 0] // north
+			},
+			"lever_direction": {
+				"up_north_south": [0, 0, 0],
+				"up_east_west": [0, -90, 0],
+				"down_north_south": [0, 0, 180],
+				"down_east_west": [0, 90, 180],
+				"east": [90, 90, 0],
+				"west": [90, -90, 0],
+				"south": [90, 180, 0],
+				"north": [90, 0, 0]
+			},
+			"direction": { // fence gates and doors
+				"0": [0, 0, 0], // south
+				"1": [0, 90, 0], // west
+				"2": [0, 180, 0], // north
+				"3": [0, -90, 0] // east
+			},
+			"minecraft:cardinal_direction": { // repeaters, comparators
+				"north": [0, 0, 0],
+				"south": [0, 180, 0],
+				"east": [0, 90, 0],
+				"west": [0, -90, 0]
+			},
+			"ground_sign_direction": { // https://minecraft.wiki/w/Sign#Block_states
+				"0": [0, 0, 0],
+				"1": [0, 22.5, 0],
+				"2": [0, 45, 0],
+				"3": [0, 67.5, 0],
+				"4": [0, 90, 0],
+				"5": [0, 112.5, 0],
+				"6": [0, 135, 0],
+				"7": [0, 157.5, 0],
+				"8": [0, 180, 0],
+				"9": [0, 202.5, 0],
+				"10": [0, 225, 0],
+				"11": [0, 247.5, 0],
+				"12": [0, 270, 0],
+				"13": [0, 292.5, 0],
+				"14": [0, 315, 0],
+				"15": [0, 337.5, 0]
+			},
+			"rail_direction": {
+				"0": [0, 0, 0],
+				"1": [0, 90, 0],
+				"2": [0, -90, 0],
+				"3": [0, 90, 0],
+				"4": [0, 180, 0],
+				"5": [0, 0, 0],
+				"6": [0, -90, 0],
+				"7": [0, 0, 0],
+				"8": [0, 90, 0],
+				"9": [0, 180, 0]
+			}
+		},
+		"button": {
+			"facing_direction": { // button orientation for north/south/east/west is mirrored to that of pistons, which also use facing_direction
+				"0": [180, 0, 0], // down
+				"1": [0, 0, 0], // up
+				"2": [90, 0, 0], // north
+				"3": [90, 180, 0], // south
+				"4": [90, -90, 0], // west
+				"5": [90, 90, 0] // east
+			}
+		},
+		"hopper": {
+			"facing_direction": { // really wish they split these generic states up, into seperate ones - like already done with lever_direction, torch_facing_direction, etc.
+				"0": [0, 0, 0], // down
+				"2": [0, 0, 0], // north
+				"3": [0, 180, 0], // south
+				"4": [0, -90, 0], // west
+				"5": [0, 90, 0] // east
+			}
+		},
+		"trapdoor": { // TODO: fix hinge position being wrong - look at birch trapdoors with trapdoors.mcstructure
+			"direction": {
+				"0": [0, 0, 0], // west
+				"1": [0, 180, 0], // east
+				"2": [0, 90, 0], // north
+				"3": [0, -90, 0] // south
+			}
+		},
+		"wall_sign": { // todo: merge with hopper defs maybe
+			"facing_direction": {
+				"2": [0, 0, 0], // north
+				"3": [0, 180, 0], // south
+				"4": [0, -90, 0], // west
+				"5": [0, 90, 0] // east
+			}
+		},
+		"grindstone": {
+			"attachment": {
+				"standing": [0, 0, 0],
+				"side": [-90, 0, 0],
+				"hanging": [-180, 0, 0]
+			}
+		},
+		"dispenser": {
+			"facing_direction": [[0, 0, 0], [180, 0, 0], [0, 0, 0], [0, 180, 0], [0, -90, 0], [0, 90, 0]]
+		}
+	}
+}

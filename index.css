@@ -1,0 +1,178 @@
+body {
+	background-image: linear-gradient(#FFFB, #FFFB), url("assets/logo_background.png");
+	background-size: 100px;
+	/* animation: move-background 10s linear infinite; */
+	font-family: "Catamaran", "Trebuchet MS", sans-serif;
+	line-height: 1.2;
+}
+@keyframes move-background {
+	from {
+		background-position: 0 0;
+	}
+	to {
+		background-position: 100px 60px;
+	}
+}
+main {
+	margin: auto;
+	padding: 20px;
+	position: absolute;
+	left: 0;
+	right: 0;
+	top: 0;
+	bottom: 0;
+	width: 90vw;
+	height: 90vh;
+	background: #FFF8;
+	/* backdrop-filter: blur(1.5px); */
+	border: 5px solid #D7B3D7;
+	border-radius: 25px;
+	box-sizing: border-box;
+	text-align: center;
+	overflow: auto;
+}
+h1 {
+	margin: 6px 0;
+}
+@media (min-width: 1301px) {
+	body {
+		font-size: 1.125em;
+	}
+}
+form {
+	margin: auto;
+	text-align: left;
+	width: 60%;
+}
+@media (max-width: 1300px) {
+	form {
+		width: 70%;
+	}
+}
+@media (max-width: 768px) {
+	body {
+		font-size: 0.875em;
+	}
+	form {
+		width: 95%;
+	}
+}
+@media (max-width: 450px) {
+	body {
+		font-size: 0.8em;
+	}
+	main {
+		padding: 2px;
+	}
+	fieldset {
+		padding: 5px
+	}
+}
+#structureFilesInput:invalid {
+	display: none; /* The label will make the button work */
+}
+#structureFilesInput ~ div {
+	margin: 4px auto;
+	padding: 10px;
+	box-sizing: border-box;
+	width: 70%;
+	font-weight: 500;
+	text-align: center;
+	background: #EEDEEE;
+	border: 3px solid #D899D8;
+	border-radius: 25px;
+	cursor: pointer;
+}
+#structureFilesInput ~ div p {
+	margin: 0;
+}
+#structureFilesInput ~ div p:first-child {
+	font-size: 1.4em;
+}
+#structureFilesInput ~ div p:last-child {
+	font-size: 0.7em;
+}
+#structureFilesInput:valid ~ div {
+	display: none;
+}
+fieldset:has(#structureFilesInput:invalid) ~ * {
+	display: none;
+}
+input, select {
+	font-family: monospace;
+}
+details {
+	padding: 3px;
+	width: fit-content;
+	border: 1px solid #AAA;
+	border-radius: 5px;
+	font-size: 0.825em;
+}
+summary {
+	padding: 0 3px;
+	font-weight: 500;
+	font-size: 1rem;
+}
+button, input[type="file"]::file-selector-button, select {
+	padding: 1px 4px;
+	border: 2px solid #D899D8;
+	border-radius: 7px;
+	background: #EEDEEE;
+	font-family: inherit;
+	cursor: pointer;
+}
+button:hover, input[type="file"]:hover::file-selector-button, select:hover {
+	background: #E8C8E8;
+}
+
+#fileInputLabel {
+	font-size: 1.75em;
+}
+#dropFileNotice {
+	padding: 10px;
+	position: fixed;
+	top: 0;
+	left: 0;
+	width: 100vw;
+	height: 100vh;
+	background: #0002;
+	font-size: 1.75em;
+	text-align: center;
+	display: flex;
+	justify-content: center;
+	align-items: center;
+}
+.importantButton {
+	padding: 1px 5px;
+	font-size: 1.3em;
+}
+#previewCont {
+	contain: layout;
+	display: inline-block;
+	/* width: 512px;
+	height: 512px; */
+}
+.lil-gui {
+	position: absolute;
+	top: 0;
+	right: 0;
+}
+img, canvas {
+	display: inline-block;
+	image-rendering: pixelated;
+	width: 400px;
+	border: 1px solid black;
+	background: url("assets/noise.svg");
+}
+canvas {
+	width: 500px;
+	/* color: #4C33CC;
+	color: #2C33B3;
+	color: #4CF0A0 */
+	color: hsl(300, 24%, 53%);
+	color: #D899D8;
+	color: #D7B3D7;
+}
+.hidden {
+	display: none !important;
+}

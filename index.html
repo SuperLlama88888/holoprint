@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<title>HoloPrint</title>
+		<meta charset="UTF-8">
+		<meta name="viewport" content="width=device-width, initial-scale=1">
+		
+		<link rel="manifest" href="manifest.webmanifest"/>
+		<link rel="icon" sizes="48x48" href="favicon.ico"/>
+		<link rel="icon" sizes="192x192" href="assets/logo_192.png"/>
+		<!-- todo: add apple web application metadata things: https://developer.apple.com/library/archive/documentation/AppleApplications/Reference/SafariWebContent/ConfiguringWebApplications/ConfiguringWebApplications.html -->
+		<!-- todo: add metadata: https://developer.mozilla.org/en-US/docs/Web/HTML/Element/meta/name-->
+		
+		<link rel="stylesheet" href="https://fonts.bunny.net/css?family=catamaran:400,500,700&display=swap"/>
+		
+		<link rel="stylesheet" href="index.css"/>
+		<script src="index.js" type="module"></script>
+	</head>
+	<body>
+		<main>
+			<h1>HoloPrint</h1>
+			<form action="javascript:" id="generatePackForm">
+				<fieldset>
+					<legend>Generate HoloPrint resource pack (<code>*.mcpack</code>)</legend>
+					<fieldset>
+						<legend>Upload structure files (<code>*.mcstructure</code>)</legend>
+						<label>
+							<input type="file" accept=".mcstructure" name="structureFiles" required id="structureFilesInput"/>
+							<div><p>Upload a file</p><p>Or drop files here</p></div> <!-- Defaults to a submit button -->
+						</label>
+					</fieldset>
+					<fieldset>
+						<legend>Settings</legend>
+						<label>Language (material list): <select name="materialListLanguage" id="materialListLanguageSelector">
+							<option value="en_US" selected>English (United States)</option>
+						</select></label>
+						<br/>
+						<label>Hologram scale: <input type="number" min="70" max="100" step="1" value="95" name="scale"/>%</label>
+						<fieldset>
+							<legend>Textures</legend>
+							<label>Texture outline width: <select name="textureOutlineWidth">
+								<option value="0">None</option>
+								<option value="0.125">0.125px</option>
+								<option value="0.25" selected>0.25px</option>
+								<option value="0.5">0.5px</option>
+								<option value="1">1px</option>
+							</select></label>
+							<br/>
+							<label>Texture outline color: <input type="text" value="#00FA" name="textureOutlineColor"/></label>
+							<details>
+								<summary>Advanced</summary>
+								<label>Texture outline alpha threshold: <input type="number" min="0" max="255" value="0" name="textureOutlineAlphaThreshold"></label>
+								<br/>
+								<label>Texture outline alpha comparison mode: <select name="textureOutlineAlphaDifferenceMode">
+									<option value="threshold" selected>Threshold</option>
+									<option value="difference">Difference</option>
+								</select></label>
+							</details>
+						</fieldset>
+						<br/>
+						<details>
+							<summary>Advanced</summary>
+							<label>Layer mode: <select name="layerMode">
+								<option value="single" selected>Single layer</option>
+								<option value="all_below">All layers below</option>
+							</select></label>
+							<br/>
+							<label>Opacity mode: <select name="opacityMode">
+								<option value="multiple" selected>In-game controls</option>
+								<option value="single">Single option</option>
+							</select></label>
+							<br/>
+							<label class="hidden">Hologram opacity: <input type="number" min="10" max="100" step="5" value="90" name="opacity"/>%</label>
+						</details>
+					</fieldset>
+					<fieldset>
+						<legend>Resource packs</legend>
+						<label>Upload a local resource pack:<br/><input type="file" webkitdirectory name="localResourcePack"/></label>
+					</fieldset>
+					<br/>
+					<button name="submit" class="importantButton">Generate pack</button>
+				</fieldset>
+				<div id="log"></div>
+			</form>
+		</main>
+		<div id="dropFileNotice" class="hidden">
+			<h1>Drop your structure file here</h1>
+		</div>
+	</body>
+</html>

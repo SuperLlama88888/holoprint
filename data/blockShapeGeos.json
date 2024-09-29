@@ -1,0 +1,1789 @@
+{
+	"$schema": "schemas/blockShapeGeos.schema.json",
+	
+	"block": [
+		{
+			"pos": [0, 0, 0],
+			"size": [16, 16, 16]
+		}
+	],
+	"cross_texture": [
+		{
+			"pos": [0, 0, 8],
+			"size": [16, 16, 0],
+			"rot": [0, 45, 0]
+		},
+		{
+			"pos": [0, 0, 8],
+			"size": [16, 16, 0],
+			"rot": [0, -45, 0]
+		}
+	],
+	"slab": [
+		{
+			"if": "minecraft:vertical_half == bottom",
+			"pos": [0, 0, 0],
+			"size": [16, 8, 16]
+		},
+		{
+			"if": "minecraft:vertical_half == top",
+			"pos": [0, 8, 0],
+			"size": [16, 8, 16]
+		}
+	],
+	"double_slab": [ // with outlines it will be very apparent that these are double slabs
+		{
+			"pos": [0, 0, 0],
+			"size": [16, 8, 16]
+		},
+		{
+			"pos": [0, 8, 0],
+			"size": [16, 8, 16]
+		}
+	],
+	"stairs": [
+		{
+			"if": "upside_down_bit == 0",
+			"pos": [0, 0, 0],
+			"size": [16, 8, 16]
+		},
+		{
+			"if": "upside_down_bit == 0",
+			"pos": [8, 8, 0],
+			"size": [8, 8, 16]
+		},
+		{
+			"if": "upside_down_bit == 1",
+			"pos": [0, 8, 0],
+			"size": [16, 8, 16]
+		},
+		{
+			"if": "upside_down_bit == 1",
+			"pos": [8, 0, 0],
+			"size": [8, 8, 16]
+		}
+	],
+	"slime_block": [
+		{
+			"pos": [0, 0, 0],
+			"size": [16, 16, 16]
+		},
+		{
+			"pos": [3, 3, 3],
+			"size": [10, 10, 10]
+		}
+	],
+	"chest": [ // the side textures are split up so we have to have 2 cubes :(
+		{
+			"pos": [1, 0, 1],
+			"size": [14, 10, 14],
+			"textures": {
+				"*": "textures/entity/chest/normal", // TODO URGENT: look at different textures for other chest types (trapped, ender)
+				"up": "none"
+			},
+			"texture_size": [64, 64],
+			"uv": {
+				"side": [0, 33],
+				"north": [14, 33],
+				"down": [28, 19]
+			}
+		},
+		{
+			"pos": [1, 10, 1],
+			"size": [14, 4, 14],
+			"textures": {
+				"*": "textures/entity/chest/normal"
+			},
+			"texture_size": [64, 64],
+			"uv": {
+				"side": [0, 14],
+				"north": [14, 14],
+				"down": [28, 0],
+				"up": [14, 0]
+			}
+		},
+		{
+			"pos": [7, 7, 0],
+			"size": [2, 4, 1],
+			"textures": {
+				"*": "textures/entity/chest/normal"
+			},
+			"texture_size": [64, 64],
+			"uv": {
+				"*": [0, 1]
+			}
+		}
+	],
+	"honey_block": [ // this is unofficial (i.e. not in https://wiki.bedrock.dev/blocks/block-shapes.html)
+		{
+			"pos": [0, 0, 0],
+			"size": [16, 16, 16]
+		},
+		{
+			"pos": [1, 1, 1],
+			"size": [14, 14, 14]
+		}
+	],
+	"farmland": [ // another "unofficial" block shape
+		{
+			"pos": [0, 0, 0],
+			"size": [16, 15, 16]
+		}
+	],
+	"torch": [
+		{
+			"if": "torch_facing_direction == top",
+			"pos": [7, 0, 7],
+			"size": [2, 10, 2],
+			"uv": {
+				"up": [7, 6],
+				"down": [7, 14]
+			}
+		},
+		{
+			"if": "torch_facing_direction != top", // the rest of the rotations are handled in blockStateDefinitions.json
+			"pos": [-1, 3.5, 7],
+			"size": [2, 10, 2],
+			"uv": {
+				"up": [7, 6],
+				"down": [7, 14],
+				"side": [7, 6]
+			},
+			"rot": [0, 0, 22.5],
+			"pivot": [0, 3.5, 8]
+		}
+	],
+	"fence": [ // fences don't have block states, we'll have to read blocks next to each other :((
+		{
+			"pos": [6, 0, 6],
+			"size": [4, 16, 4]
+		}
+	],
+	"fence_gate": [ // TODO: lower by 3 pixels with the in_wall_bit block state
+		{
+			"pos": [0, 5, 7],
+			"size": [2, 11, 2]
+		},
+		{
+			"pos": [14, 5, 7],
+			"size": [2, 11, 2]
+		},
+		{
+			"if": "open_bit == 0",
+			"pos": [2, 6, 7],
+			"size": [12, 3, 2]
+		},
+		{
+			"if": "open_bit == 0",
+			"pos": [2, 12, 7],
+			"size": [12, 3, 2]
+		},
+		{
+			"if": "open_bit == 0",
+			"pos": [6, 9, 7],
+			"size": [4, 3, 2]
+		},
+		{
+			"if": "open_bit == 1",
+			"pos": [0, 6, 9],
+			"size": [2, 3, 6]
+		},
+		{
+			"if": "open_bit == 1",
+			"pos": [0, 12, 9],
+			"size": [2, 3, 6]
+		},
+		{
+			"if": "open_bit == 1",
+			"pos": [0, 9, 13],
+			"size": [2, 3, 2]
+		},
+		{
+			"if": "open_bit == 1",
+			"pos": [14, 6, 9],
+			"size": [2, 3, 6]
+		},
+		{
+			"if": "open_bit == 1",
+			"pos": [14, 12, 9],
+			"size": [2, 3, 6]
+		},
+		{
+			"if": "open_bit == 1",
+			"pos": [14, 9, 13],
+			"size": [2, 3, 2]
+		}
+	],
+	"door": [ // upper door blocks don't contain all the block states, and I think that MCBE relies on the lower door to do everything. e.g. look at the nbt of a structure with door tops only, and you'll see why we need to do it this way.
+		{
+			"if": "upper_block_bit == 0",
+			"pos": [13, 0, 0],
+			"size": [3, 16, 16],
+			"textures": {
+				"*": "down"
+			}
+		},
+		{
+			"if": "upper_block_bit == 0",
+			"pos": [13, 16, 0], // upper half
+			"size": [3, 16, 16],
+			"textures": {
+				"*": "side"
+			},
+			"uv": {
+				"*": [0, 0]
+			}
+		}
+	],
+	"trapdoor": [ // direction 1 = east hinge, 2 = north hinge, 0 = west hinge, 3 = south hinge [west, east, north, south]
+		{
+			"if": "open_bit == 0 && upside_down_bit == 0",
+			"pos": [0, 0, 0],
+			"size": [16, 3, 16]
+		},
+		{
+			"if": "open_bit == 0 && upside_down_bit == 1",
+			"pos": [0, 13, 0],
+			"size": [16, 3, 16]
+		},
+		{
+			"if": "open_bit == 1",
+			"pos": [13, 0, 0],
+			"size": [3, 16, 16]
+		}
+	],
+	"enchanting_table": [
+		{
+			"pos": [0, 0, 0],
+			"size": [16, 12, 16] // TODO: add book. look at these sources from Java: net/minecraft/client/renderer/blockentity/EnchantTableRenderer.java, net/minecraft/world/level/block/entity/EnchantmentTableBlockEntity.java, net/minecraft/client/model/BookModel.java
+		}
+	],
+	"carpet": [
+		{
+			"pos": [0, 0, 0],
+			"size": [16, 1, 16]
+		}
+	],
+	"fire": [ // very wacky
+		{
+			"pos": [0, 0, 0],
+			"size": [16, 16, 0],
+			"rot": [-3.5, 0, 0],
+			"pivot": [8, 0, 0]
+		},
+		{
+			"pos": [0, 0, 0],
+			"size": [0, 16, 16],
+			"rot": [0, 0, 3.5],
+			"pivot": [0, 0, 8]
+		},
+		{
+			"pos": [0, 0, 16],
+			"size": [16, 16, 0],
+			"rot": [3.5, 0, 0],
+			"pivot": [8, 0, 16]
+		},
+		{
+			"pos": [16, 0, 0],
+			"size": [0, 16, 16],
+			"rot": [0, 0, -3.5],
+			"pivot": [16, 0, 8]
+		},
+		{
+			"pos": [0, 0, 5],
+			"size": [16, 16, 0],
+			"rot": [-22.5, 0, 0],
+			"pivot": [8, 0, 5]
+		},
+		{
+			"pos": [5, 0, 0],
+			"size": [0, 16, 16],
+			"rot": [0, 0, 22.5],
+			"pivot": [5, 0, 8]
+		},
+		{
+			"pos": [0, 0, 11],
+			"size": [16, 16, 0],
+			"rot": [22.5, 0, 0],
+			"pivot": [8, 0, 11]
+		},
+		{
+			"pos": [11, 0, 0],
+			"size": [0, 16, 16],
+			"rot": [0, 0, -22.5],
+			"pivot": [11, 0, 8]
+		}
+	],
+	"redstone_dust": [ // again, the shape isn't in block states. because we'll have to change the texture as well I'll put an entire cube here and make TextureAtlas.js deal with it...
+		{
+			// "pos": [0.125, 0.125, 0.125],
+			// "size": [15.75, 15.75, 15.75]
+			"pos": [0, 0.125, 0],
+			"size": [16, 0, 16]
+		}
+	],
+	"rail": [
+		{
+			"if": "rail_direction < 2 && rail_data_bit ?? 0 == 0", // flat on floor and unpowered
+			"pos": [0, 1, 0],
+			"size": [16, 0, 16]
+		},
+		{
+			"if": "rail_direction > 5 || rail_direction < 2 && rail_data_bit ?? 0 == 1", // curved on floor (regular rails) or powered
+			"pos": [0, 1, 0],
+			"size": [16, 0, 16],
+			"textures": {
+				"*": "up"
+			}
+		},
+		{
+			"if": "rail_direction >= 2 && rail_direction <= 5 && rail_data_bit ?? 0 == 0", // sloped and unpowered
+			"pos": [0, 1, 0],
+			"size": [16, 0, 22.6274], // 16√2 ≈ 22.6274
+			"rot": [45, 0, 0],
+			"pivot": [8, 1, 0],
+			"uv_sizes": {
+				"*": [16, 16]
+			}
+		},
+		{
+			"if": "rail_direction >= 2 && rail_direction <= 5 && rail_data_bit ?? 0 == 1", // sloped and powered
+			"pos": [0, 1, 0],
+			"size": [16, 0, 22.6274], // 16√2 ≈ 22.6274
+			"rot": [45, 0, 0],
+			"pivot": [8, 1, 0],
+			"textures": {
+				"*": "up"
+			},
+			"uv_sizes": {
+				"*": [16, 16]
+			}
+		}
+	],
+	"petals": [ // todo: add stems. the actual model has each petal at a different height but that's too much :(
+		{
+			"pos": [0, 3, 0],
+			"size": [16, 0, 16]
+		}
+	],
+	"pressure_plate": [
+		{
+			"if": "redstone_signal == 0",
+			"pos": [1, 0, 1],
+			"size": [14, 1, 14]
+		},
+		{
+			"if": "redstone_signal > 0",
+			"pos": [1, 0, 1],
+			"size": [14, 0.5, 14]
+		}
+	],
+	"rows": [
+		{
+			"pos": [0, -1, 4],
+			"size": [16, 16, 0],
+			"uv": {
+				"north": [0, 0]
+			}
+		},
+		{
+			"pos": [0, -1, 12],
+			"size": [16, 16, 0],
+			"uv": {
+				"north": [0, 0]
+			}
+		},
+		{
+			"pos": [4, -1, 0],
+			"size": [0, 16, 16],
+			"uv": {
+				"west": [0, 0]
+			}
+		},
+		{
+			"pos": [12, -1, 0],
+			"size": [0, 16, 16],
+			"uv": {
+				"west": [0, 0]
+			}
+		}
+	],
+	"cake": [
+		{
+			"if": "bite_counter == 0",
+			"pos": [1, 0, 1],
+			"size": [14, 8, 14]
+		},
+		{
+			"if": "bite_counter == 1",
+			"pos": [1, 0, 1],
+			"size": [12, 8, 14]
+		},
+		{
+			"if": "bite_counter == 2",
+			"pos": [1, 0, 1],
+			"size": [10, 8, 14]
+		},
+		{
+			"if": "bite_counter == 3",
+			"pos": [1, 0, 1],
+			"size": [8, 8, 14]
+		},
+		{
+			"if": "bite_counter == 4",
+			"pos": [1, 0, 1],
+			"size": [6, 8, 14]
+		},
+		{
+			"if": "bite_counter == 5",
+			"pos": [1, 0, 1],
+			"size": [4, 8, 14]
+		},
+		{
+			"if": "bite_counter == 6",
+			"pos": [1, 0, 1],
+			"size": [2, 8, 14]
+		}
+	],
+	"multi_face": [
+		{
+			"if": "multi_face_direction_bits & 1 > 0",
+			"pos": [0, 0.0625, 0],
+			"size": [16, 0, 16]
+		},
+		{
+			"if": "multi_face_direction_bits & 2 > 0",
+			"pos": [0, 15.9375, 0],
+			"size": [16, 0, 16]
+		},
+		{
+			"if": "multi_face_direction_bits & 4 > 0",
+			"pos": [0, 0, 15.9375],
+			"size": [16, 16, 0]
+		},
+		{
+			"if": "multi_face_direction_bits & 8 > 0",
+			"pos": [15.9375, 0, 0],
+			"size": [0, 16, 16]
+		},
+		{
+			"if": "multi_face_direction_bits & 16 > 0",
+			"pos": [0, 0, 0.0625],
+			"size": [16, 16, 0]
+		},
+		{
+			"if": "multi_face_direction_bits & 32 > 0",
+			"pos": [0.0625, 0, 0],
+			"size": [0, 16, 16]
+		}
+	],
+	"vine": [
+		{
+			"if": "vine_direction_bits & 1 > 0",
+			"pos": [0, 0, 15.25],
+			"size": [16, 16, 0]
+		},
+		{
+			"if": "vine_direction_bits & 2 > 0",
+			"pos": [15.25, 0, 0],
+			"size": [0, 16, 16]
+		},
+		{
+			"if": "vine_direction_bits & 4 > 0",
+			"pos": [0, 0, 0.75],
+			"size": [16, 16, 0]
+		},
+		{
+			"if": "vine_direction_bits & 8 > 0",
+			"pos": [0.75, 0, 0],
+			"size": [0, 16, 16]
+		}
+		// TODO: add ceiling vines by checking blocks above
+		// {
+		// 	"if": "$structure_shapes[0][1][0] == cube",
+		// 	"pos": [0, 15.25, 0],
+		// 	"size": [16, 0, 16]
+		// }
+	],
+	"daylight_detector": [ // the variant isn't in the block state since the inverted block is technically different...
+		{
+			"pos": [0, 0, 0],
+			"size": [16, 6, 16]
+		}
+	],
+	"wall": [
+		{
+			"if": "wall_post_bit == 1",
+			"pos": [4, 0, 4],
+			"size": [8, 16, 8]
+		},
+		{
+			"if": "wall_connection_type_east == short",
+			"pos": [0, 0, 5],
+			"size": [8, 13, 6]
+		},
+		{
+			"if": "wall_connection_type_east == tall",
+			"pos": [0, 0, 5],
+			"size": [8, 16, 6]
+		},
+		{
+			"if": "wall_connection_type_north == short",
+			"pos": [5, 0, 0],
+			"size": [6, 13, 8]
+		},
+		{
+			"if": "wall_connection_type_north == tall",
+			"pos": [5, 0, 0],
+			"size": [6, 16, 8]
+		},
+		{
+			"if": "wall_connection_type_south == short",
+			"pos": [5, 0, 8],
+			"size": [6, 13, 8]
+		},
+		{
+			"if": "wall_connection_type_south == tall",
+			"pos": [5, 0, 8],
+			"size": [6, 16, 8]
+		},
+		{
+			"if": "wall_connection_type_west == short",
+			"pos": [8, 0, 5],
+			"size": [8, 13, 6]
+		},
+		{
+			"if": "wall_connection_type_west == tall",
+			"pos": [8, 0, 5],
+			"size": [8, 16, 6]
+		}
+	],
+	"nether_portal": [
+		{
+			"if": "portal_axis == x", // could do this with rotations as well. idk, i like this.
+			"pos": [0, 0, 6],
+			"size": [16, 16, 4]
+		},
+		{
+			"if": "portal_axis == z",
+			"pos": [6, 0, 0],
+			"size": [4, 16, 16]
+		}
+	],
+	"button": [
+		{
+			"if": "button_pressed_bit == 0",
+			"pos": [5, 0, 6],
+			"size": [6, 2, 4]
+		},
+		{
+			"if": "button_pressed_bit == 1",
+			"pos": [5, 0, 6],
+			"size": [6, 1, 4]
+		}
+	],
+	"chain": [
+		{
+			"pos": [6.5, 0, 8],
+			"size": [3, 16, 0],
+			"rot": [0, 45, 0],
+			"uv": {
+				"north": [0, 0] // north on zero-depth faces
+			}
+		},
+		{
+			"pos": [6.5, 0, 8],
+			"size": [3, 16, 0],
+			"rot": [0, -45, 0],
+			"uv": {
+				"north": [0, 0]
+			},
+			"textures": {
+				"north": "down" // on chains, the first texture is side (which will be done above), and the second is down/up which we use here
+			}
+		}
+	],
+	"lever": [
+		{ // default orientation is on the floor, facing north/south
+			"pos": [5, 0, 4],
+			"size": [6, 3, 8],
+			"textures": {
+				"*": "east" // this maps to lever_particle which is the cobblestone texture
+			}
+		},
+		{
+			"if": "open_bit == 0",
+			"pos": [7, 1, 7],
+			"size": [2, 10, 2],
+			"uv": {
+				"side": [7, 6],
+				"down": [7, 8],
+				"up": [7, 6]
+			},
+			"textures": {
+				"east": "west" // without this, the east side of levers would be fully cobblestone
+			},
+			"rot": [-40, 0, 0],
+			"pivot": [8, 0, 8]
+		},
+		{
+			"if": "open_bit == 1",
+			"pos": [7, 1, 7],
+			"size": [2, 10, 2],
+			"uv": {
+				"side": [7, 6],
+				"down": [7, 8],
+				"up": [7, 6]
+			},
+			"textures": {
+				"east": "west" // without this, the east side of levers would be fully cobblestone
+			},
+			"rot": [40, 0, 0],
+			"pivot": [8, 0, 8]
+		}
+	],
+	"ladder": [ // don't think about this, it needs to be like this to work with existing facing_direction rotation definitions
+		{
+			"pos": [0, 15.25, 0],
+			"size": [16, 0, 16]
+		}
+	],
+	"conduit": [
+		{
+			"pos": [5, 0, 5],
+			"size": [6, 6, 6],
+			"uv": {
+				"west": [12, 6],
+				"east": [0, 6],
+				"down": [12, 0],
+				"up": [6, 0],
+				"north": [6, 6],
+				"south": [18, 6]
+			},
+			"texture_size": [24, 12]
+		}
+	],
+	"heavy_core": [
+		{
+			"pos": [4, 0, 4],
+			"size": [8, 8, 8],
+			"uv": {
+				"side": [0, 8],
+				"up": [0, 0],
+				"down": [8, 0]
+			}
+		}
+	],
+	"template_small_redstone_torch": [ // only used in repeaters and comparators
+		{
+			"pos": [0, 0, 0],
+			"size": [2, 5, 2],
+			"uv": {
+				"up": [7, 6],
+				"down": [7, 14],
+				"side": [7, 6]
+			}
+		}
+	],
+	"repeater": [
+		{
+			"pos": [0, 0, 0],
+			"size": [16, 2, 16]
+		},
+		{
+			"copy": "template_small_redstone_torch", // TODO: improve JSON schema when copy is present
+			"pos": [7, 2, 12],
+			"terrain_texture": "repeater_torch"
+		},
+		{
+			"if": "repeater_delay == 0",
+			"copy": "template_small_redstone_torch",
+			"pos": [7, 2, 8],
+			"terrain_texture": "repeater_torch"
+		},
+		{
+			"if": "repeater_delay == 1",
+			"copy": "template_small_redstone_torch",
+			"pos": [7, 2, 6],
+			"terrain_texture": "repeater_torch"
+		},
+		{
+			"if": "repeater_delay == 2",
+			"copy": "template_small_redstone_torch",
+			"pos": [7, 2, 4],
+			"terrain_texture": "repeater_torch"
+		},
+		{
+			"if": "repeater_delay == 3",
+			"copy": "template_small_redstone_torch",
+			"pos": [7, 2, 2],
+			"terrain_texture": "repeater_torch"
+		}
+	],
+	"comparator": [
+		{
+			"pos": [0, 0, 0],
+			"size": [16, 2, 16]
+		},
+		{
+			"copy": "template_small_redstone_torch",
+			"pos": [4, 2, 3],
+			"terrain_texture": "comparator_torch"
+		},
+		{
+			"copy": "template_small_redstone_torch",
+			"pos": [10, 2, 3],
+			"terrain_texture": "comparator_torch"
+		},
+		{
+			"if": "output_subtract_bit == 0",
+			"pos": [7, 2, 12],
+			"size": [2, 2, 2],
+			"terrain_texture": "comparator_torch",
+			"ignore_eigenvariant": true,
+			"uv": {
+				"*": [7, 6]
+			}
+		},
+		{
+			"if": "output_subtract_bit == 1",
+			"pos": [7, 2, 12],
+			"size": [2, 3, 2],
+			"terrain_texture": "comparator_torch",
+			"ignore_eigenvariant": true,
+			"uv": {
+				"*": [7, 6]
+			}
+		}
+	],
+	"liquid": [
+		{
+			"pos": [0, 0, 0],
+			"size": [16, 14, 16]
+		}
+	],
+	"scaffolding": [ // todo: fix top bit
+		{
+			"pos": [0, 14, 0],
+			"size": [16, 2, 16],
+			"textures": {
+				"down": "none"
+			}
+		},
+		{
+			"pos": [0, 0, 0],
+			"size": [2, 14, 2]
+		},
+		{
+			"pos": [14, 0, 0],
+			"size": [2, 14, 2]
+		},
+		{
+			"pos": [0, 0, 14],
+			"size": [2, 14, 2]
+		},
+		{
+			"pos": [14, 0, 14],
+			"size": [2, 14, 2]
+		},
+		{
+			"if": "stability > 0",
+			"pos": [2, 0, 0],
+			"size": [12, 2, 2],
+			"textures": {
+				"*": "down"
+			}
+		},
+		{
+			"if": "stability > 0",
+			"pos": [2, 0, 14],
+			"size": [12, 2, 2],
+			"textures": {
+				"*": "down"
+			}
+		},
+		{
+			"if": "stability > 0",
+			"pos": [0, 0, 2],
+			"size": [2, 2, 12],
+			"textures": {
+				"*": "down"
+			}
+		},
+		{
+			"if": "stability > 0",
+			"pos": [14, 0, 2],
+			"size": [2, 2, 12],
+			"textures": {
+				"*": "down"
+			}
+		}
+	],
+	"hopper": [
+		{ // hoppers in bedrock actually have an extra pixel inset on the top texture but it's hardly noticeable.
+			"pos": [2, 10, 2],
+			"size": [12, 1, 12],
+			"textures": {
+				"up": "down"
+			}
+		},
+		{
+			"pos": [0, 10, 0],
+			"size": [16, 6, 2]
+		},
+		{
+			"pos": [0, 10, 14],
+			"size": [16, 6, 2]
+		},
+		{
+			"pos": [0, 10, 2],
+			"size": [2, 6, 12]
+		},
+		{
+			"pos": [14, 10, 2],
+			"size": [2, 6, 12]
+		},
+		{
+			"pos": [4, 4, 4],
+			"size": [8, 6, 8],
+			"textures": {
+				"*": "west"
+			}
+		},
+		{
+			"if": "facing_direction == 0", // facing down
+			"pos": [6, 0, 6],
+			"size": [4, 4, 4],
+			"textures": {
+				"*": "west"
+			}
+		},
+		{
+			"if": "facing_direction > 0", // facing other directions. this is north; other directions are just rotations.
+			"pos": [6, 4, 0],
+			"size": [4, 4, 4],
+			"textures": {
+				"*": "west"
+			}
+		}
+	],
+	"wall_sign": [ // todo: make signs more accurate, use proper texture
+		{
+			"pos": [0, 4, 14],
+			"size": [16, 8, 2]
+		}
+	],
+	"standing_sign": [ // todo: fix scaling since sign pixels are smaller than regular pixels
+		{
+			"pos": [7, 0, 7],
+			"size": [2, 8, 2]
+		},
+		{
+			"pos": [0, 8, 7],
+			"size": [16, 8, 2]
+		}
+	],
+	"top_snow": [
+		{
+			"if": "height == 0",
+			"pos": [0, 0, 0],
+			"size": [16, 2, 16]
+		},
+		{
+			"if": "height == 1",
+			"pos": [0, 0, 0],
+			"size": [16, 4, 16]
+		},
+		{
+			"if": "height == 2",
+			"pos": [0, 0, 0],
+			"size": [16, 6, 16]
+		},
+		{
+			"if": "height == 3",
+			"pos": [0, 0, 0],
+			"size": [16, 8, 16]
+		},
+		{
+			"if": "height == 4",
+			"pos": [0, 0, 0],
+			"size": [16, 10, 16]
+		},
+		{
+			"if": "height == 5",
+			"pos": [0, 0, 0],
+			"size": [16, 12, 16]
+		},
+		{
+			"if": "height == 6",
+			"pos": [0, 0, 0],
+			"size": [16, 14, 16]
+		},
+		{
+			"if": "height == 7",
+			"pos": [0, 0, 0],
+			"size": [16, 16, 16]
+		}
+	],
+	"anvil": [
+		{
+			"pos": [2, 0, 2],
+			"size": [12, 4, 12],
+			"textures": {
+				"*": "side"
+			}
+		},
+		{
+			"pos": [4, 4, 3],
+			"size": [8, 1, 10],
+			"textures": {
+				"*": "side" // this is the small, thin plate above the base; interestingly, the cracked texture is on this bit as well. however, on Java it has the "correct texture", so I'm going with that.
+			}
+		},
+		{
+			"pos": [6, 5, 4],
+			"size": [4, 5, 8]
+		},
+		{
+			"pos": [3, 10, 0],
+			"size": [10, 6, 16]
+		}
+	],
+	"template_candle_tall": [ // at origin
+		{
+			"pos": [0, 0, 0],
+			"size": [2, 6, 2],
+			"uv": {
+				"side": [0, 8],
+				"up": [0, 6],
+				"down": [0, 14]
+			}
+		},
+		{
+			"pos": [0.5, 6, 1],
+			"size": [1, 1, 0],
+			"rot": [0, 45, 0],
+			"pivot": [1, 0, 1],
+			"uv": {
+				"*": [0, 5]
+			}
+		},
+		{
+			"pos": [0.5, 6, 1],
+			"size": [1, 1, 0],
+			"rot": [0, -45, 0],
+			"pivot": [1, 0, 1],
+			"uv": {
+				"*": [0, 5]
+			}
+		}
+	],
+	"template_candle_medium": [
+		{
+			"pos": [0, 0, 0],
+			"size": [2, 5, 2],
+			"uv": {
+				"side": [0, 8],
+				"up": [0, 6],
+				"down": [0, 14]
+			}
+		},
+		{
+			"pos": [0.5, 5, 1],
+			"size": [1, 1, 0],
+			"rot": [0, 45, 0],
+			"pivot": [1, 0, 1],
+			"uv": {
+				"*": [0, 5]
+			}
+		},
+		{
+			"pos": [0.5, 5, 1],
+			"size": [1, 1, 0],
+			"rot": [0, -45, 0],
+			"pivot": [1, 0, 1],
+			"uv": {
+				"*": [0, 5]
+			}
+		}
+	],
+	"template_candle_short": [
+		{
+			"pos": [0, 0, 0],
+			"size": [2, 3, 2],
+			"uv": {
+				"side": [0, 8],
+				"up": [0, 6],
+				"down": [0, 14]
+			}
+		},
+		{
+			"pos": [0.5, 3, 1],
+			"size": [1, 1, 0],
+			"rot": [0, 45, 0],
+			"pivot": [1, 0, 1],
+			"uv": {
+				"*": [0, 5]
+			}
+		},
+		{
+			"pos": [0.5, 3, 1],
+			"size": [1, 1, 0],
+			"rot": [0, -45, 0],
+			"pivot": [1, 0, 1],
+			"uv": {
+				"*": [0, 5]
+			}
+		}
+	],
+	"candles": [
+		{
+			"if": "candles == 0",
+			"copy": "template_candle_tall",
+			"pos": [7, 0, 7]
+		},
+		{
+			"if": "candles == 1",
+			"copy": "template_candle_tall",
+			"pos": [5, 0, 7]
+		},
+		{
+			"if": "candles == 1",
+			"copy": "template_candle_medium",
+			"pos": [9, 0, 8]
+		},
+		{
+			"if": "candles == 2",
+			"copy": "template_candle_tall",
+			"pos": [6, 0, 6]
+		},
+		{
+			"if": "candles == 2",
+			"copy": "template_candle_medium",
+			"pos": [9, 0, 7]
+		},
+		{
+			"if": "candles == 2",
+			"copy": "template_candle_short",
+			"pos": [7, 0, 9]
+		},
+		{
+			"if": "candles == 3",
+			"copy": "template_candle_tall",
+			"pos": [6, 0, 5]
+		},
+		{
+			"if": "candles == 3",
+			"copy": "template_candle_medium",
+			"pos": [9, 0, 5]
+		},
+		{
+			"if": "candles == 3",
+			"copy": "template_candle_medium",
+			"pos": [5, 0, 8]
+		},
+		{
+			"if": "candles == 3",
+			"copy": "template_candle_short",
+			"pos": [8, 0, 8]
+		}
+	],
+	"candle_cake": [
+		{
+			"copy": "cake",
+			"pos": [0, 0, 0],
+			"block_states": {
+				"bite_counter": 0 // avoid the warnings
+			}
+		},
+		{
+			"copy": "template_candle_tall",
+			"pos": [7, 8, 7],
+			"terrain_texture": "#block_name[:-5]" // block name is blue_candle_cake, we need to remove _cake
+		}
+	],
+	"stonecutter": [
+		{
+			"pos": [0, 0, 0],
+			"size": [16, 9, 16],
+			"textures": {
+				"side": "north"
+			}
+		},
+		{
+			"pos": [1, 9, 8],
+			"size": [14, 7, 0],
+			"textures": {
+				"*": "west"
+			},
+			"uv": {
+				"*": [1, 9]
+			}
+		}
+	],
+	"grindstone": [ // standing; will be rotated later
+		{
+			"pos": [2, 0, 6],
+			"size": [2, 7, 4],
+			"textures": {
+				"*": "down"
+			}
+		},
+		{
+			"pos": [12, 0, 6],
+			"size": [2, 7, 4],
+			"textures": {
+				"*": "down"
+			}
+		},
+		{
+			"pos": [2, 7, 5],
+			"size": [2, 6, 6],
+			"textures": {
+				"*": "north"
+			},
+			"uv": {
+				"*": [0, 0]
+			}
+		},
+		{
+			"pos": [12, 7, 5],
+			"size": [2, 6, 6],
+			"textures": {
+				"*": "north"
+			},
+			"uv": {
+				"*": [0, 0]
+			}
+		},
+		{
+			"pos": [4, 4, 2],
+			"size": [8, 12, 12],
+			"textures": {
+				"north": "up",
+				"south": "up",
+				"down": "up"
+			},
+			"uv": {
+				"*": [0, 0]
+			}
+		}
+	],
+	"template_bell_main": [
+		{
+			"pos": [0, 0, 0],
+			"size": [8, 2, 8],
+			"textures": {
+				"up": "down",
+				"side": "north"
+			},
+			"uv": {
+				"side": [0, 7],
+				"down": [0, 0],
+				"up": [0, 0]
+			}
+		},
+		{
+			"pos": [1, 2, 1],
+			"size": [6, 7, 6],
+			"textures": {
+				"side": "north",
+				"down": "up"
+			},
+			"uv": {
+				"side": [1, 0],
+				"down": [1, 1],
+				"up": [1, 1]
+			}
+		}
+	],
+	"bell": [
+		{
+			"if": "attachment == standing",
+			"copy": "template_bell_main",
+			"pos": [4, 1, 4]
+		},
+		{
+			"if": "attachment == standing",
+			"pos": [2, 10, 7],
+			"size": [12, 2, 2],
+			"textures": {
+				"*": "east" // wooden beam
+			}
+		},
+		{
+			"if": "attachment == standing",
+			"pos": [0, 0, 6],
+			"size": [2, 13, 4],
+			"textures": {
+				"*": "west" // stone
+			}
+		},
+		{
+			"if": "attachment == standing",
+			"pos": [14, 0, 6],
+			"size": [2, 13, 4],
+			"textures": {
+				"*": "west" // stone
+			}
+		},
+		{
+			"if": "attachment != standing",
+			"copy": "template_bell_main",
+			"pos": [4, 4, 4]
+		},
+		{
+			"if": "attachment == hanging",
+			"pos": [7, 13, 7],
+			"size": [2, 3, 2],
+			"textures": {
+				"*": "east"
+			}
+		},
+		{
+			"if": "attachment == side",
+			"pos": [7, 13, 0],
+			"size": [2, 2, 13],
+			"textures": {
+				"*": "east"
+			}
+		},
+		{
+			"if": "attachment == multiple",
+			"pos": [7, 13, 0],
+			"size": [2, 2, 16],
+			"textures": {
+				"*": "east"
+			}
+		}
+	],
+	"template_lantern": [
+		{
+			"pos": [0, 0, 0],
+			"size": [6, 7, 6],
+			"uv": {
+				"side": [0, 2],
+				"down": [0, 9],
+				"up": [0, 9]
+			}
+		},
+		{
+			"pos": [1, 7, 1],
+			"size": [4, 2, 4],
+			"uv": {
+				"side": [1, 0],
+				"up": [1, 10],
+				"down": [1, 10]
+			}
+		}
+	],
+	"lantern": [
+		{
+			"if": "hanging == 0",
+			"copy": "template_lantern",
+			"pos": [5, 0, 5]
+		},
+		{
+			"if": "hanging == 0",
+			"pos": [6.5, 9, 8],
+			"size": [3, 2, 0],
+			"rot": [0, 45, 0],
+			"uv": {
+				"*": [11, 10]
+			}
+		},
+		{
+			"if": "hanging == 0",
+			"pos": [6.5, 9, 8],
+			"size": [3, 2, 0],
+			"rot": [0, -45, 0],
+			"uv": {
+				"*": [11, 10]
+			}
+		},
+		{
+			"if": "hanging == 1",
+			"copy": "template_lantern",
+			"pos": [5, 2, 5]
+		},
+		{
+			"if": "hanging == 1",
+			"pos": [6.5, 11, 8],
+			"size": [3, 5, 0],
+			"rot": [0, 45, 0],
+			"uv": {
+				"*": [11, 0]
+			},
+			"uv_sizes": {
+				"*": [3, 6]
+			}
+		},
+		{
+			"if": "hanging == 1",
+			"pos": [6.5, 11, 8],
+			"size": [3, 5, 0],
+			"rot": [0, -45, 0],
+			"uv": {
+				"*": [11, 6]
+			},
+			"uv_sizes": {
+				"*": [3, 6]
+			}
+		}
+	],
+	"template_campfire_log_x": [
+		{
+			"pos": [0, 0, 0],
+			"size": [16, 4, 4],
+			"textures": {
+				"*": "down"
+			},
+			"uv": {
+				"*": [0, 0],
+				"west": [0, 4],
+				"east": [0, 4]
+			}
+		}
+	],
+	"template_campfire_log_z": [
+		{
+			"pos": [0, 0, 0],
+			"size": [16, 4, 4],
+			"rot": [0, -90, 0],
+			"pivot": [2, 0, 2],
+			"textures": {
+				"*": "down"
+			},
+			"uv": {
+				"*": [0, 0],
+				"west": [0, 4],
+				"east": [0, 4]
+			}
+		}
+	],
+	"campfire": [ // facing west
+		{
+			"copy": "template_campfire_log_z",
+			"pos": [1, 0, 0]
+		},
+		{
+			"copy": "template_campfire_log_z",
+			"pos": [11, 0, 0]
+		},
+		{
+			"copy": "template_campfire_log_x",
+			"pos": [0, 3, 1]
+		},
+		{
+			"copy": "template_campfire_log_x",
+			"pos": [0, 3, 11]
+		},
+		{
+			"if": "extinguished == 0",
+			"pos": [0, 0, 5],
+			"size": [16, 1, 6],
+			"rot": [0, 90, 0],
+			"textures": {
+				"*": "side"
+			},
+			"uv": {
+				"*": [0, 14],
+				"down": [0, 8],
+				"up": [0, 8]
+			}
+		},
+		{
+			"if": "extinguished == 1",
+			"pos": [0, 0, 5],
+			"size": [16, 1, 6],
+			"rot": [0, 90, 0],
+			"textures": {
+				"*": "down"
+			},
+			"uv": {
+				"*": [0, 14],
+				"down": [0, 8],
+				"up": [0, 8]
+			}
+		},
+		{
+			"if": "extinguished == 0",
+			"pos": [-2, 1, 8],
+			"size": [20, 15, 0],
+			"rot": [0, 45, 0],
+			"textures": {
+				"*": "up"
+			},
+			"uv": {
+				"*": [0, 0]
+			},
+			"uv_sizes": {
+				"*": [16, 16]
+			}
+		},
+		{
+			"if": "extinguished == 0",
+			"pos": [-2, 1, 8],
+			"size": [20, 15, 0],
+			"rot": [0, -45, 0],
+			"textures": {
+				"*": "up"
+			},
+			"uv": {
+				"*": [0, 0]
+			},
+			"uv_sizes": {
+				"*": [16, 16]
+			}
+		}
+	],
+	"dragon_egg": [
+		{
+			"pos": [6, 15, 6],
+			"size": [4, 1, 4]
+		},
+		{
+			"pos": [5, 13, 5],
+			"size": [6, 2, 6]
+		},
+		{
+			"pos": [3, 11, 3],
+			"size": [10, 2, 10]
+		},
+		{
+			"pos": [2, 8, 2],
+			"size": [12, 3, 12]
+		},
+		{
+			"pos": [1, 3, 1],
+			"size": [14, 5, 14]
+		},
+		{
+			"pos": [2, 1, 2],
+			"size": [12, 2, 12]
+		},
+		{
+			"pos": [3, 0, 3],
+			"size": [10, 1, 10]
+		}
+	],
+	"sniffer_egg": [
+		{
+			"pos": [1, 0, 2],
+			"size": [14, 16, 12],
+			"uv": {
+				"*": [0, 0]
+			}
+		}
+	],
+	"turtle_eggs": [
+		{
+			"pos": [6, 0, 4],
+			"size": [5, 7, 5],
+			"uv": {
+				"side": [1, 4],
+				"down": [0, 0],
+				"up": [0, 0]
+			},
+			"uv_sizes": {
+				"side": [4, 7],
+				"down": [4, 4],
+				"up": [4, 4]
+			}
+		},
+		{
+			"if": "turtle_egg_count == two_egg || turtle_egg_count == three_egg || turtle_egg_count == four_egg",
+			"pos": [11, 0, 7],
+			"size": [4, 5, 4],
+			"uv": {
+				"side": [10, 10],
+				"down": [6, 7],
+				"up": [6, 7]
+			}
+		},
+		{
+			"if": "turtle_egg_count == three_egg || turtle_egg_count == four_egg",
+			"pos": [2, 0, 7],
+			"size": [3, 4, 3],
+			"uv": {
+				"side": [8, 3],
+				"down": [5, 0],
+				"up": [5, 0]
+			}
+		},
+		{
+			"if": "turtle_egg_count == four_egg",
+			"pos": [6, 0, 10],
+			"size": [3, 3, 3],
+			"uv": {
+				"side": [4, 11],
+				"down": [0, 11],
+				"up": [0, 11]
+			},
+			"uv_sizes": {
+				"*": [4, 4]
+			}
+		}
+	],
+	"end_rod": [
+		{
+			"pos": [6, 0, 6],
+			"size": [4, 1, 4],
+			"uv": {
+				"*": [2, 2]
+			}
+		},
+		{
+			"pos": [7, 1, 7],
+			"size": [2, 15, 2],
+			"uv": {
+				"side": [0, 0],
+				"down": [2, 0],
+				"up": [2, 0]
+			}
+		}
+	],
+	"end_portal_frame": [
+		{
+			"pos": [0, 0, 0],
+			"size": [16, 13, 16]
+		},
+		{
+			"if": "end_portal_eye_bit == 1",
+			"pos": [4, 13, 4],
+			"size": [8, 3, 8],
+			"textures": {
+				"*": "carried"
+			},
+			"uv": {
+				"side": [4, 0],
+				"down": [4, 4],
+				"up": [4, 4]
+			}
+		}
+	],
+	"end_portal": [
+		{
+			"pos": [0, 12, 0],
+			"size": [16, 0, 16],
+			"textures": {
+				"*": "textures/entity/end_portal"
+			},
+			"texture_size": [256, 256],
+			"uv_sizes": {
+				"*": [64, 64] // this just scales it up so the little blue specs are more visible
+			},
+			"tint": "#56A5AA" // average colour of textures/environment/end_portal_colors.png
+		}
+	],
+	"observer": [ // the bottom face is messed up...
+		{
+			"pos": [0, 0, 0],
+			"size": [16, 16, 16],
+			"textures": {
+				"down": "none"
+			}
+		},
+		{
+			"pos": [0, 0, 0],
+			"size": [16, 0, 16],
+			"rot": [0, 180, 0]
+		}
+	],
+	"composter": [
+		{
+			"pos": [0, 0, 0],
+			"size": [16, 2, 16],
+			"textures": {
+				"up": "down"
+			},
+			"variant": 0
+		},
+		{
+			"pos": [0, 0, 0],
+			"size": [2, 16, 16],
+			"textures": {
+				"up": "down"
+			},
+			"variant": 0
+		},
+		{
+			"pos": [14, 0, 0],
+			"size": [2, 16, 16],
+			"textures": {
+				"up": "down"
+			},
+			"variant": 0
+		},
+		{
+			"pos": [2, 0, 0],
+			"size": [12, 16, 2],
+			"textures": {
+				"up": "down"
+			},
+			"variant": 0
+		},
+		{
+			"pos": [2, 0, 14],
+			"size": [12, 16, 2],
+			"textures": {
+				"up": "down"
+			},
+			"variant": 0
+		},
+		{
+			"if": "composter_fill_level == 1",
+			"pos": [2, 2, 2],
+			"size": [12, 1, 12]
+		},
+		{
+			"if": "composter_fill_level == 2",
+			"pos": [2, 2, 2],
+			"size": [12, 3, 12]
+		},
+		{
+			"if": "composter_fill_level == 3",
+			"pos": [2, 2, 2],
+			"size": [12, 5, 12]
+		},
+		{
+			"if": "composter_fill_level == 4",
+			"pos": [2, 2, 2],
+			"size": [12, 7, 12]
+		},
+		{
+			"if": "composter_fill_level == 5",
+			"pos": [2, 2, 2],
+			"size": [12, 9, 12]
+		},
+		{
+			"if": "composter_fill_level == 6",
+			"pos": [2, 2, 2],
+			"size": [12, 11, 12]
+		},
+		{
+			"if": "composter_fill_level >= 7",
+			"pos": [2, 2, 2],
+			"size": [12, 13, 12]
+		}
+	],
+	"piston": [
+		{
+			"if": "entity.State == 0 || entity.State == 3", // unextended or pulling
+			"pos": [0, 0, 0],
+			"size": [16, 16, 16],
+			"textures": {
+				"up": "carried.up"
+			}
+		},
+		{
+			"if": "entity.State == 1 || entity.State == 2", // pushing or extended
+			"pos": [0, 0, 0],
+			"size": [16, 12, 16]
+		},
+		{
+			"if": "entity.State == 1 || entity.State == 2", // pushing or extended
+			"pos": [5, 12, 5],
+			"size": [6, 8, 6],
+			"textures": {
+				"*": "textures/entity/pistonarm/pistonArm"
+			},
+			"texture_size": [128, 32],
+			"uv": {
+				"side": [64, 24],
+				"up": [70, 18],
+				"down": [70, 18] // todo: cull this face
+			}
+		},
+		{
+			"if": "entity.State == 1 || entity.State == 2", // pushing or extended
+			"pos": [6, 20, 6],
+			"size": [4, 8, 4],
+			"textures": {
+				"*": "textures/entity/pistonarm/pistonArm"
+			},
+			"texture_size": [128, 32],
+			"uv": {
+				"side": [64, 4]
+			}
+		},
+		{
+			"if": "entity.Sticky == 0 && entity.State == 1 || entity.Sticky == 0 && entity.State == 2", // pushing or extended
+			"pos": [0, 28, 0],
+			"size": [16, 4, 16],
+			"textures": {
+				"*": "textures/entity/pistonarm/pistonArm"
+			},
+			"texture_size": [128, 32],
+			"uv": {
+				"side": [0, 16],
+				"down": [32, 0],
+				"up": [16, 0]
+			}
+		},
+		{
+			"if": "entity.Sticky == 1 && entity.State == 1 || entity.Sticky == 1 && entity.State == 2", // pushing or extended
+			"pos": [0, 28, 0],
+			"size": [16, 4, 16],
+			"textures": {
+				"*": "textures/entity/pistonarm/pistonArmSticky"
+			},
+			"texture_size": [128, 32],
+			"uv": {
+				"side": [0, 16],
+				"down": [32, 0],
+				"up": [16, 0]
+			}
+		}
+	],
+	"dispenser": [
+		{
+			"if": "facing_direction >= 2", // sideways
+			"pos": [0, 0, 0],
+			"size": [16, 16, 16],
+			"textures": {
+				"side": "north",
+				"north": "south"
+			}
+		},
+		{
+			"if": "facing_direction < 2", // up or down
+			"pos": [0, 0, 0],
+			"size": [16, 16, 16],
+			"textures": {
+				"side": "up",
+				"down": "east"
+			}
+		}
+	],
+	"furnace": [ // facing south by default
+		{
+			"pos": [0, 0, 0],
+			"size": [16, 16, 16],
+			"textures": {
+				"south": "north",
+				"north": "south"
+			}
+		}
+	],
+	"lit_furnace": [ // facing east by default
+		{
+			"pos": [0, 0, 0],
+			"size": [16, 16, 16],
+			"textures": {
+				"east": "north",
+				"north": "east"
+			}
+		}
+	],
+	"glass_pane": [
+		{
+			"pos": [7, 0, 0],
+			"size": [2, 16, 16],
+			"textures": {
+				"east": "up",
+				"up": "east"
+			}
+		}
+	]
+}

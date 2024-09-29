@@ -1,0 +1,42 @@
+name: Automated Testing
+on:
+  pull_request:
+    branches:
+      - main
+  workflow_dispatch:
+permissions: read-all
+jobs:
+  validate-json-data:
+    name: Validate JSON Data
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4.1.1
+      - name: Validate JSON Data
+        run: |
+          npm install @actions/core ajv strip-json-comments@3.1.1
+          node tests/validateJsonData.js
+  test-sample-structures:
+    name: Test Sample Structures
+    needs: validate-json-data
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        browser: [Chrome, Firefox]
+      fail-fast: false
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4.1.1
+      - name: Test Sample Structures on ${{ matrix.browser }}
+        run: |
+          npm install @actions/core puppeteer mime-types
+          if [[ "${{ matrix.browser }}" == "Firefox" ]]; then
+            npx puppeteer browsers install firefox
+          fi
+          node tests/testSampleStructures.js ${{ matrix.browser }}
+      - name: Upload completed packs as artifacts
+        if: always()
+        uses: actions/upload-artifact@v4.4.0
+        with:
+          name: completed_packs_${{ matrix.browser }}
+          path: tests/completedPacks

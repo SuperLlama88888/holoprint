@@ -1,0 +1,18 @@
+{
+	"format_version": 2,
+	"header": {
+		"version": [1, 0, 0],
+		"min_engine_version": [1, 16, 0]
+	},
+	"modules": [
+		{
+			"type": "resources",
+			"version": [1, 0, 0]
+		}
+	],
+	"metadata": {
+		"authors": ["HoloPrint", "SuperLlama88888"],
+		"license": "CC BY-NC-SA 4.0",
+		"url": "https://github.com/SuperLlama88888/HoloPrint"
+	}
+}

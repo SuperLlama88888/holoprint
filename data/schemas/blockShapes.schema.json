@@ -1,0 +1,36 @@
+{
+	"$schema": "http://json-schema.org/draft-07/schema#",
+	"title": "Block Shapes",
+	"description": "Mappings from block names to block shapes.",
+	"type": "object",
+	"properties": {
+		"$schema": {
+			"type": "string"
+		},
+		"patterns": {
+			"description": "Regular expression patterns that will be tested if no individual block key is found.",
+			"type": "object",
+			"patternProperties": {
+				"^.*$": {
+					"type": "string",
+					"description": "The block shape for blocks that match this regular expression.",
+					"pattern": "^\\w+$"
+				}
+			},
+			"additionalProperties": false
+		},
+		"individual_blocks": {
+			"description": "Block shape mappings for individual blocks.",
+			"type": "object",
+			"patternProperties": {
+				"^\\w+$": {
+					"type": "string",
+					"description": "The block shape for this block.",
+					"pattern": "^\\w+$"
+				}
+			},
+			"additionalProperties": false
+		}
+	},
+	"additionalProperties": false
+}

@@ -1,0 +1,200 @@
+{
+	"$schema": "http://json-schema.org/draft-07/schema#",
+	"title": "Block Shape Geos",
+	"description": "Geometry definitions for block shapes.",
+	"type": "object",
+	"properties": {
+		"$schema": {
+			"type": "string"
+		}
+	},
+	"patternProperties": {
+		"^\\w+$": {
+			"type": "array",
+			"items": {
+				"type": "object",
+				"properties": {
+					"if": {
+						"description": "An expression to control conditional rendering of the cube in C-style syntax. Block states can be referenced with their names.",
+						"type": "string"
+					},
+					"pos": {
+						"description": "The coordinates of the bottom-left-back corner of the cube.",
+						"type": "array",
+						"items": {
+							"type": "number"
+						},
+						"minItems": 3,
+						"maxItems": 3
+					},
+					"size": {
+						"description": "The size of the cube in each axis.",
+						"type": "array",
+						"items": {
+							"type": "number",
+							"minimum": 0
+						},
+						"minItems": 3,
+						"maxItems": 3
+					},
+					"rot": {
+						"description": "The XYZ rotation of the cube (in degrees; applied in the order X-Y-Z) around its pivot.",
+						"type": "array",
+						"items": {
+							"type": "number",
+							"exclusiveMinimum": -180,
+							"maximum": 180
+						},
+						"minItems": 3,
+						"maxItems": 3
+					},
+					"pivot": {
+						"description": "The center of rotation of the cube. Defaults to [8, 8, 8].",
+						"type": "array",
+						"items": {
+							"type": "number"
+						},
+						"minItems": 3,
+						"maxItems": 3
+					},
+					"uv": {
+						"description": "UV coordinate overrides for each face.",
+						"type": "object",
+						"propertyNames": {
+							"enum": ["west", "east", "down", "up", "north", "south", "side", "*"]
+						},
+						"patternProperties": {
+							".": {
+								"description": "The UV coordinates to use for this face, with (0, 0) being the top-left corner of the texture.",
+								"type": "array",
+								"items": {
+									"type": "number",
+									"minimum": 0
+								},
+								"minItems": 2,
+								"maxItems": 2
+							}
+						},
+						"additionalProperties": false
+					},
+					"uv_sizes": {
+						"description": "UV size overrides for each face.",
+						"type": "object",
+						"propertyNames": {
+							"enum": ["west", "east", "down", "up", "north", "south", "side", "*"]
+						},
+						"patternProperties": {
+							".": {
+								"description": "The UV size to use for this face, measured in pixels.",
+								"type": "array",
+								"items": {
+									"type": "number",
+									"minimum": 0
+								},
+								"minItems": 2,
+								"maxItems": 2
+							}
+						},
+						"additionalProperties": false
+					},
+					"textures": {
+						"description": "Forces a face to use the texture of another face, or a texture located at a given file path.",
+						"type": "object",
+						"propertyNames": {
+							"enum": ["west", "east", "down", "up", "north", "south", "side", "*"]
+						},
+						"patternProperties": {
+							".": {
+								"oneOf": [
+									{
+										"description": "Another face's texture to use.",
+										"enum": ["west", "east", "down", "up", "north", "south", "side", "carried", "carried.west", "carried.east", "carried.down", "carried.up", "carried.north", "carried.south", "carried.side", "none"]
+									},
+									{
+										"description": "A file path to a texture file, without the file extension.",
+										"type": "string",
+										"pattern": "^textures/[\\w/]+$"
+									}
+								]
+							}
+						},
+						"additionalProperties": false
+					},
+					"texture_size": {
+						"description": "Defines the expected size of the texture, for use in UV. Defaults to [16, 16].",
+						"type": "array",
+						"items": {
+							"type": "integer",
+							"exclusiveMinimum": 0
+						},
+						"minItems": 2,
+						"maxItems": 2
+					},
+					"copy": {
+						"description": "Copies another block shape to use in this block shape. Translation can be achieved with the \"pos\" property, and block states can be set in the \"block_states\" property.",
+						"type": "string",
+						"pattern": "^\\w+$"
+					},
+					"block_states": {
+						"description": "Block states to be passed to the block shape copy specified in the \"copy\" property.",
+						"type": "object",
+						"patternProperties": {
+							"^[\\w:]+$": {
+								"description": "The block state to be passed to the block shape copy.",
+								"oneOf": [
+									{
+										"type": "number"
+									},
+									{
+										"type": "string"
+									}
+								]
+							}
+						}
+					},
+					"terrain_texture": {
+						"description": "Forces this cube to use a specific terrain_texture.json key.",
+						"type": "string",
+						"oneOf": [
+							{
+								"pattern": "^\\w+$"
+							},
+							{
+								"pattern": "^#block_name(\\[-?\\d+:-?\\d*\\]|\\[:-?\\d+\\])?$"
+							}
+						]
+					},
+					"variant": {
+						"description": "Forces this cube to use a specific variant instead of looking at block states (or the eigenvariant).",
+						"type": "integer",
+						"minimum": 0
+					},
+					"ignore_eigenvariant": {
+						"description": "Makes a cube ignore the eigenvariant associated with this block, and instead rely on block states for variants.",
+						"type": "boolean"
+					},
+					"tint": {
+						"description": "A tinting colour in 6-digit hex to apply to this cube (overrides TextureAtlas.#terrainTextureTints).",
+						"type": "string",
+						"pattern": "^#[0-9a-fA-F]{6}$"
+					}
+				},
+				"oneOf": [
+					{
+						"required": ["pos", "size"]
+					},
+					{
+						"required": ["copy", "pos"]
+					}
+				],
+				"default": {
+					"pos": [],
+					"size": []
+				},
+				"additionalProperties": false
+			},
+			"minItems": 1
+		}
+	},
+	"additionalProperties": false
+}

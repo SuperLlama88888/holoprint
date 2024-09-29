@@ -1,0 +1,9 @@
+<svg viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg">
+	<filter id="noiseFilter">
+		<feTurbulence type="fractalNoise" baseFrequency="1" numOctaves="5" stitchTiles="stitch"/>
+		<feColorMatrix type="saturate" values="0"/>
+	</filter>
+	<rect width="100%" height="100%" filter="url(#noiseFilter)"/>
+</svg>
+
+<!-- data:image/svg+xml,%3Csvg viewBox%3D"0 0 32 32" xmlns%3D"http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg"%3E%3Cfilter id%3D"noiseFilter"%3E%3CfeTurbulence type%3D"fractalNoise" baseFrequency%3D"1" numOctaves%3D"5" stitchTiles%3D"stitch"%2F%3E%3CfeColorMatrix type%3D"saturate" values%3D"0"%2F%3E%3C%2Ffilter%3E%3Crect width%3D"100%25" height%3D"100%25" filter%3D"url(%23noiseFilter)"%2F%3E%3C%2Fsvg%3E -->

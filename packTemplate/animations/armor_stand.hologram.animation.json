@@ -1,0 +1,50 @@
+/*
+I would love to make the ghost blocks snap to the nearest block; however, armor stand rotations complicate this.
+Doing it with the y-level is the easiest and works well since you can now place your armor stands on slabs, trapdoors etc. and it will snap down.
+The x and z axis are wonky...
+45 degree rotations can also be snapped to a cardinal direction; however, the ghost blocks are offset slightly then so it wouldn't be useful.
+
+I also wonder if we could have a "rotation lock" option which makes the hologram render in one direction always regardless of armour stand orientation.
+*/
+
+{
+	"format_version": "1.8.0",
+	"animations": {
+		"animation.armor_stand.hologram.align": {
+			"loop": "hold_on_last_frame",
+			"bones": {
+				"hologram_root": {
+					"position": [
+						// Snap to nearest block. Unfortunately looks glitchy when moving since it takes a tick for the position to update.
+						// x and z of armor stands is +0.5
+						0, //"-16 * (q.position(0) - 0.5 - math.floor(q.position(0) - 0.5))",
+						"-16 * (q.position(1) - math.floor(q.position(1)))",
+						0 //"-16 * (q.position(2) - math.floor(q.position(2)))"
+					]/*,
+					"rotation": [
+						0,
+						"-(q.body_y_rotation - 90 * math.floor(q.body_y_rotation / 90))", // Snap to 90-deg directions
+						0
+					]*/
+				}
+			}
+		},
+		"animation.armor_stand.hologram.offset": {
+			"loop": "hold_on_last_frame",
+			"bones": {
+				"hologram_root": {
+					"position": [
+						"t.hologram_offset_x * 16",
+						"t.hologram_offset_y * 16",
+						"t.hologram_offset_z * 16"
+					]
+				}
+			}
+		},
+		"animation.armor_stand.hologram.spawn": {
+			// A fun spawning animation
+			"loop": "hold_on_last_frame",
+			"bones": {}
+		}
+	}
+}

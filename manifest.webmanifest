@@ -1,0 +1,31 @@
+{
+	"name": "HoloPrint",
+	"description": "Minecraft Bedrock build tool - generate holograms of your builds!",
+	"icons": [
+		{
+			"src": "/assets/logo_192.png",
+			"sizes": "192x192"
+		},
+		{
+			"src": "/assets/logo_288.png",
+			"sizes": "288x288"
+		},
+		{
+			"src": "/assets/logo_512.png",
+			"sizes": "512x512"
+		}
+	],
+	"start_url": "./",
+	"display": "minimal-ui",
+	"background_color": "#D7B3D7",
+	"theme_color": "#D899D8",
+	"file_handlers": [
+		{
+			"accept": {
+				"application/mcstructure": [".mcstructure"],
+				"application/mcpack": [".mcpack"]
+			},
+			"action": "./?loadFile"
+		}
+	]
+}

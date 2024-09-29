@@ -1,0 +1,17 @@
+{
+	"format_version": "1.16.0",
+	"minecraft:geometry": [
+		{
+			"description": {
+				"identifier": "geometry.armor_stand.hologram",
+				"visible_bounds_offset": [0, 1.5, 0]
+			},
+			"bones": [
+				{
+					"name": "hologram_root",
+					"pivot": [8, 0, -8]
+				}
+			]
+		}
+	]
+}

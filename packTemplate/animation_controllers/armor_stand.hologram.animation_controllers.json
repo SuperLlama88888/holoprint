@@ -1,0 +1,35 @@
+{
+	"format_version": "1.10.0",
+	"animation_controllers": {
+		"controller.animation.armor_stand.hologram.layers": {
+			"initial_state": "default",
+			"states": {
+				"default": {
+					"blend_transition": 0.1,
+					"blend_via_shortest_path": true,
+					"transitions": []
+				}
+			}
+		},
+		"controller.animation.armor_stand.hologram.particles": {
+			"initial_state": "default",
+			"states": {
+				"default": {
+					"particle_effects": [],
+					"transitions": [
+						{
+							"hidden": "!t.render_hologram"
+						}
+					]
+				},
+				"hidden": {
+					"transitions": [
+						{
+							"default": "t.render_hologram"
+						}
+					]
+				}
+			}
+		}
+	}
+}
