@@ -78,7 +78,7 @@
 			"pos": [1, 0, 1],
 			"size": [14, 10, 14],
 			"textures": {
-				"*": "textures/entity/chest/normal", // TODO URGENT: look at different textures for other chest types (trapped, ender)
+				"*": "#tex",
 				"up": "none"
 			},
 			"texture_size": [64, 64],
@@ -92,7 +92,7 @@
 			"pos": [1, 10, 1],
 			"size": [14, 4, 14],
 			"textures": {
-				"*": "textures/entity/chest/normal"
+				"*": "#tex"
 			},
 			"texture_size": [64, 64],
 			"uv": {
@@ -106,7 +106,7 @@
 			"pos": [7, 7, 0],
 			"size": [2, 4, 1],
 			"textures": {
-				"*": "textures/entity/chest/normal"
+				"*": "#tex"
 			},
 			"texture_size": [64, 64],
 			"uv": {
@@ -1686,7 +1686,7 @@
 			"pos": [5, 12, 5],
 			"size": [6, 8, 6],
 			"textures": {
-				"*": "textures/entity/pistonarm/pistonArm"
+				"*": "#tex"
 			},
 			"texture_size": [128, 32],
 			"uv": {
@@ -1700,7 +1700,7 @@
 			"pos": [6, 20, 6],
 			"size": [4, 8, 4],
 			"textures": {
-				"*": "textures/entity/pistonarm/pistonArm"
+				"*": "#tex"
 			},
 			"texture_size": [128, 32],
 			"uv": {
@@ -1712,7 +1712,7 @@
 			"pos": [0, 28, 0],
 			"size": [16, 4, 16],
 			"textures": {
-				"*": "textures/entity/pistonarm/pistonArm"
+				"*": "#tex"
 			},
 			"texture_size": [128, 32],
 			"uv": {
@@ -1726,7 +1726,7 @@
 			"pos": [0, 28, 0],
 			"size": [16, 4, 16],
 			"textures": {
-				"*": "textures/entity/pistonarm/pistonArmSticky"
+				"*": "#tex"
 			},
 			"texture_size": [128, 32],
 			"uv": {

@@ -108,7 +108,7 @@
 								"oneOf": [
 									{
 										"description": "Another face's texture to use.",
-										"enum": ["west", "east", "down", "up", "north", "south", "side", "carried", "carried.west", "carried.east", "carried.down", "carried.up", "carried.north", "carried.south", "carried.side", "none"]
+										"enum": ["west", "east", "down", "up", "north", "south", "side", "carried", "carried.west", "carried.east", "carried.down", "carried.up", "carried.north", "carried.south", "carried.side", "#tex", "none"]
 									},
 									{
 										"description": "A file path to a texture file, without the file extension.",

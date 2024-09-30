@@ -50,6 +50,7 @@ export default class SimpleLogger {
 	}
 	warn(text) {
 		this.#genericLogWithClass(text, "warning");
+		this.#warningCountNode.innerText = `\u26A0\uFE0F${++this.#warningCount}`;
 	}
 	error(text) {
 		this.#genericLogWithClass(text, "error");
@@ -57,7 +58,6 @@ export default class SimpleLogger {
 	}
 	info(text) {
 		this.#genericLogWithClass(text, "info");
-		this.#warningCountNode.innerText = `\u26A0\uFE0F${++this.#warningCount}`;
 	}
 	setOriginTime(originTime) {
 		this.#originTime = originTime;

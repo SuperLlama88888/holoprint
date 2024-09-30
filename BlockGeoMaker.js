@@ -35,7 +35,7 @@ import { awaitAllEntries, clamp, hexColourToClampedTriplet, JSONSet } from "./es
 
 export default class BlockGeoMaker {
 	static #eigenvariants = { // variant numbers tied to specific blocks. they will always have these variant indices.
-		"grass": 0, // for the tints; this makes it look like the forest or flower forest biomes
+		"grass_block": 0, // for the tints; this makes it look like the forest or flower forest biomes
 		"unpowered_repeater": 0,
 		"powered_repeater": 1,
 		"unpowered_comparator": 0,
@@ -183,7 +183,19 @@ export default class BlockGeoMaker {
 		this.#cachedBlockShapes.set(blockName, blockShape);
 		return blockShape;
 	}
+	/**
+	 * Makes the cubes in a bone from a block.
+	 * @param {Block} block
+	 * @param {String} blockShape
+	 * @param {String} [blockShapeTerrainTextureOverride]
+	 * @returns {Array}
+	 */
 	#makeBoneCubes(block, blockShape, blockShapeTerrainTextureOverride) {
+		let specialTexture;
+		if(blockShape.includes("{")) {
+			[, blockShape, specialTexture] = blockShape.match(/^(\w+)\{(textures\/[\w\/]+)\}$/);
+		}
+		
 		let cubes = this.#blockShapeGeos[blockShape];
 		if(!cubes) {
 			console.error(`Could not find geometry for block shape ${blockShape}; defaulting to "block"`);
@@ -295,11 +307,11 @@ export default class BlockGeoMaker {
 			// add generic keys to all faces, and convert texture references into indices
 			for(let faceName in boneCube["uv"]) {
 				let face = boneCube["uv"][faceName];
-				if(cube["textures"]?.[faceName] == "none") {
+				let textureFace = cube["textures"]?.[faceName] ?? (["west", "east", "north", "south"].includes(faceName)? cube["textures"]?.["side"] : undefined) ?? cube["textures"]?.["*"] ?? faceName;
+				if(textureFace == "none") {
 					delete boneCube["uv"][faceName];
 					continue;
 				}
-				let textureFace = cube["textures"]?.[faceName] ?? (["west", "east", "north", "south"].includes(faceName)? cube["textures"]?.["side"] : undefined) ?? cube["textures"]?.["*"] ?? faceName;
 				let textureRef = {
 					"uv": face["uv"].map((x, i) => x / textureSize[i]),
 					"uv_size": face["uv_size"].map((x, i) => x / textureSize[i]),
@@ -308,10 +320,13 @@ export default class BlockGeoMaker {
 					"variant": cubeVariant,
 					"croppable": croppable
 				};
-				if(/^textures\/[\w\/]+$/.test(textureFace)) { // file path
-					delete textureRef["block_name"];
-					delete textureRef["texture_face"];
-					delete textureRef["variant"];
+				if(textureFace == "#tex") {
+					if(specialTexture) {
+						textureRef["texture_path_override"] = specialTexture;
+					} else {
+						console.error(`No #tex for block ${blockName} and blockshape ${blockShape}!`);
+					}
+				} else if(/^textures\/[\w\/]+$/.test(textureFace)) { // file path
 					textureRef["texture_path_override"] = textureFace;
 				} else {
 					let terrainTextureOverride = cube["terrain_texture"] ?? blockShapeTerrainTextureOverride;
@@ -325,6 +340,11 @@ export default class BlockGeoMaker {
 						delete textureRef["texture_face"];
 						textureRef["terrain_texture_override"] = terrainTextureOverride;
 					}
+				}
+				if("texture_path_override" in textureRef) {
+					delete textureRef["block_name"];
+					delete textureRef["texture_face"];
+					delete textureRef["variant"];
 				}
 				if("tint" in cube) {
 					textureRef["tint"] = hexColourToClampedTriplet(cube["tint"]);
@@ -415,13 +435,13 @@ export default class BlockGeoMaker {
 		let trimmedConditional = conditional.replaceAll(/\s/g, "");
 		let booleanOperations = trimmedConditional.match(/&&|\|\|/g) ?? []; // can have multiple separated by ?? or ||
 		let booleanValues = trimmedConditional.split(/&&|\|\|/).map(booleanExpression => {
-			let match = booleanExpression.match(/^((?:entity\.)?[\w:&?]+)(==|>|<|>=|<=|!=)(\w+)$/); // Despite the Minecraft Wiki and Microsoft creator documentation saying there can be boolean block states, they're stored as bytes in NBT
+			let match = booleanExpression.match(/^((?:entity\.)?[\w:&-?]+)(==|>|<|>=|<=|!=)(-?\w+)$/); // Despite the Minecraft Wiki and Microsoft creator documentation saying there can be boolean block states, they're stored as bytes in NBT
 			if(!match) {
 				console.error(`Incorrectly formatted block state expression "${booleanExpression}" from conditional "${conditional}"\n(Match: ${JSON.stringify(match)})`);
 				return true; // If we miss the error message more geometry will draw more attention to it :D
 			}
 			let [, blockStateTerm, comparisonOperator, expectedBlockState] = match;
-			let blockStateOperation = blockStateTerm.match(/^(entity\.)?([\w:]+)(?:(\?\?|&)(\d+))?$/);
+			let blockStateOperation = blockStateTerm.match(/^(entity\.)?([\w:]+)(?:(\?\?|&)(-?\d+))?$/);
 			if(!blockStateOperation) {
 				console.error(`Incorrectly formed block state term: ${blockStateTerm}`);
 				return true;

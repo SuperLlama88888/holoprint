@@ -26,8 +26,7 @@
 		"candle$": "candles",
 		"candle_cake$": "candle_cake",
 		"_tulip$": "cross_texture",
-		"anvil$": "anvil",
-		"chest$": "chest"
+		"anvil$": "anvil"
 	},
 	"individual_blocks": {
 		"bamboo": "bamboo",
@@ -46,14 +45,18 @@
 		"chorus_plant": "chorus_plant",
 		"cocoa": "cocoa",
 		
+		"chest": "chest{textures/entity/chest/normal}",
+		"trapped_chest": "chest{textures/entity/chest/trapped}",
+		"ender_chest": "chest{textures/entity/chest/ender}",
+		
 		"redstone_wire": "redstone_dust",
 		"powered_repeater": "repeater",
 		"unpowered_repeater": "repeater",
 		"powered_comparator": "comparator",
 		"unpowered_comparator": "comparator",
-		"observer": "observer", // observer is messed up
-		"piston": "piston",
-		"sticky_piston": "piston",
+		"observer": "observer", // bottom face is rotated
+		"piston": "piston{textures/entity/pistonarm/pistonArm}",
+		"sticky_piston": "piston{textures/entity/pistonarm/pistonArmSticky}",
 		"dispenser": "dispenser",
 		"dropper": "dispenser",
 		
