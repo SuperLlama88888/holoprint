@@ -11,7 +11,7 @@
 				}
 			}
 		},
-		"controller.animation.armor_stand.hologram.particles": {
+		"controller.animation.armor_stand.hologram.bounding_box": {
 			"initial_state": "default",
 			"states": {
 				"default": {
@@ -26,6 +26,26 @@
 					"transitions": [
 						{
 							"default": "t.render_hologram"
+						}
+					]
+				}
+			}
+		},
+		"controller.animation.armor_stand.hologram.block_validation": {
+			"initial_state": "default",
+			"states": {
+				"default": {
+					"transitions": [
+						{
+							"validate": "t.validate_hologram"
+						}
+					]
+				},
+				"validate": {
+					"particle_effects": [],
+					"transitions": [
+						{
+							"default": "!t.validate_hologram"
 						}
 					]
 				}

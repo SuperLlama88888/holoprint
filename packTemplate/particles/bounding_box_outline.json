@@ -20,7 +20,7 @@
 				"rotation": true
 			},
 			"minecraft:particle_lifetime_expression": {
-				"expiration_expression": "!temp.render_hologram"
+				"expiration_expression": "!t.render_hologram"
 			},
 			"minecraft:particle_motion_parametric": {
 				"relative_position": ["(v.x ?? (v.dir == 0? v.size : 0)) - 0.5 - t.hologram_offset_x", "(v.y ?? v.dir == 1? v.size : 0) + math.floor(q.position(1)) - q.position(1) + t.hologram_offset_y", "(v.z ?? (v.dir == 2? v.size : 0)) - 0.5 + t.hologram_offset_z"] // we need to apply the y-snapping and offset here as well.

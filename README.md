@@ -19,6 +19,7 @@ HoloPrint is a web app that converts MCBE structure files into resource packs sh
 - Change transparency: Glass (sneak to decrease, stand to increase)
 - Change layer: Planks (sneak to decrease, stand to increase), or changing the pose on the armor stand
 - Move hologram (third person only): Stick (only works when armor stand is facing south)
+- Block validation: Iron ingot (assumes structure is built facing south)
 
 ---
 
@@ -79,7 +80,6 @@ id1(Block palette)
 - `for(... of ...)` loops should be used only for iterables that don't have the `.forEach()` method, or in async functions when everything must happen in order. Use `.forEach()` instead.
 
 ### To-Do, planned features
-- Block validation/checking
 - 45 degree angle snapping to cardinal directions
 - Putting the pack creator inside an addon and creating it inside the addon? But saving the file won't work... unless we use @minecraft/server-net to upload it to a server but that's only BDS (I think)
   - Since HoloPrint is made in JavaScript it'd mostly be portable inside an addon, but web APIs would need replacements with other libraries. I also hope we can access vanilla textures in addons.

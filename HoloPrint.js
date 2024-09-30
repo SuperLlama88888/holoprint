@@ -78,7 +78,7 @@ export default class HoloPrint {
 		let structureSize = nbt["size"].map(x => +x); // Stored as Number instances: https://github.com/Offroaders123/NBTify/issues/50
 		
 		// Make the pack
-		let { manifest, packIcon, entityFile, hologramRenderControllers, defaultPlayerRenderControllers, armorStandGeo, hologramMaterial, hologramAnimationControllers, boundingBoxOutlineParticle, boundingBoxOutlineTexture, translationFile } = await awaitAllEntries({
+		let { manifest, packIcon, entityFile, hologramRenderControllers, defaultPlayerRenderControllers, armorStandGeo, hologramMaterial, hologramAnimationControllers, boundingBoxOutlineParticle, boundingBoxOutlineTexture, blockValidationParticle, translationFile } = await awaitAllEntries({
 			manifest: fetch("packTemplate/manifest.json").then(res => res.json()),
 			packIcon: this.#makePackIcon(structureFile),
 			entityFile: this.resourcePackStack.fetchResource("entity/armor_stand.entity.json").then(res => res.jsonc()),
@@ -89,6 +89,7 @@ export default class HoloPrint {
 			hologramAnimationControllers: fetch("packTemplate/animation_controllers/armor_stand.hologram.animation_controllers.json").then(res => res.jsonc()),
 			boundingBoxOutlineParticle: fetch("packTemplate/particles/bounding_box_outline.json").then(res => res.jsonc()),
 			boundingBoxOutlineTexture: fetch("packTemplate/textures/particle/single_white_pixel.png").then(res => res.blob()),
+			blockValidationParticle: fetch("packTemplate/particles/block_validation.json").then(res => res.jsonc()),
 			translationFile: this.resourcePackStack.fetchResource(`texts/${this.config.MATERIAL_LIST_LANGUAGE}.lang`).then(res => res.text())
 		});
 		let structure = nbt["structure"];
@@ -148,15 +149,17 @@ export default class HoloPrint {
 		entityDescription["animations"]["hologram.align"] = "animation.armor_stand.hologram.align";
 		entityDescription["animations"]["hologram.offset"] = "animation.armor_stand.hologram.offset";
 		entityDescription["animations"]["hologram.spawn"] = "animation.armor_stand.hologram.spawn";
-		entityDescription["animations"]["controller.hologram.particles"] = "controller.animation.armor_stand.hologram.particles";
 		entityDescription["animations"]["controller.hologram.layers"] = "controller.animation.armor_stand.hologram.layers";
-		entityDescription["scripts"]["animate"].push("hologram.align", "hologram.offset", "hologram.spawn", "controller.hologram.particles", "controller.hologram.layers");
+		entityDescription["animations"]["controller.hologram.bounding_box"] = "controller.animation.armor_stand.hologram.bounding_box";
+		entityDescription["animations"]["controller.hologram.block_validation"] = "controller.animation.armor_stand.hologram.block_validation";
+		entityDescription["scripts"]["animate"].push("hologram.align", "hologram.offset", "hologram.spawn", "controller.hologram.layers", "controller.hologram.bounding_box", "controller.hologram.block_validation");
 		entityDescription["scripts"]["initialize"].push(`
 			t.hologram_offset_x = t.hologram_offset_x ?? 0;
 			t.hologram_offset_y = t.hologram_offset_y ?? 0;
 			t.hologram_offset_z = t.hologram_offset_z ?? 0;
 			t.render_hologram = true;
 			t.hologram_layer = -1;
+			t.validate_hologram = false;
 			t.structure_w = ${structureSize[0]};
 			t.structure_h = ${structureSize[1]};
 			t.structure_d = ${structureSize[2]};
@@ -190,9 +193,10 @@ export default class HoloPrint {
 		];
 		entityDescription["particle_effects"] ??= {};
 		outlineParticleSettings.forEach((particleMolang, i) => {
-			entityDescription["particle_effects"][`bounding_box_outline_${i}`] = `holoprint:bounding_box_outline_${i}`;
-			hologramAnimationControllers["animation_controllers"]["controller.animation.armor_stand.hologram.particles"]["states"]["default"]["particle_effects"].push({
-				"effect": `bounding_box_outline_${i}`
+			let particleName = `bounding_box_outline_${i}`;
+			entityDescription["particle_effects"][particleName] = `holoprint:${particleName}`;
+			hologramAnimationControllers["animation_controllers"]["controller.animation.armor_stand.hologram.bounding_box"]["states"]["default"]["particle_effects"].push({
+				"effect": particleName
 			});
 		});
 		
@@ -233,6 +237,8 @@ export default class HoloPrint {
 				[`l_${structureSize[1] - 1}`]: `t.hologram_layer == ${topLayer}`
 			}
 		);
+		
+		let blocksToValidate = [];
 		
 		let blockCountsMap = new Map();
 		for(let y = 0; y < structureSize[1]; y++) {
@@ -302,9 +308,24 @@ export default class HoloPrint {
 					
 					let blockName = blockPalette[paletteI]["name"];
 					blockCountsMap.set(blockName, (blockCountsMap.get(blockName) ?? 0) + 1);
+					
+					blocksToValidate.push({
+						"pos": [x, y + 0.5, z],
+						"bone_name": boneName,
+						"block": `minecraft:${blockPalette[paletteI]["name"]}`
+					});
 				}
 			}
 		}
+		
+		console.log(blocksToValidate)
+		blocksToValidate.forEach(blockToValidate => {
+			let particleName = `validate_${blockToValidate["bone_name"]}`;
+			entityDescription["particle_effects"][particleName] = `holoprint:${particleName}`;
+			hologramAnimationControllers["animation_controllers"]["controller.animation.armor_stand.hologram.block_validation"]["states"]["validate"]["particle_effects"].push({
+				"effect": particleName
+			});
+		});
 		
 		let textureBlobs = textureAtlas.imageBlobs;
 		
@@ -332,7 +353,7 @@ export default class HoloPrint {
 			entityDescription["textures"][textureName] = `textures/entity/${textureName}`;
 			hologramRenderControllers["render_controllers"]["controller.render.armor_stand.hologram"]["arrays"]["textures"]["Array.textures"].push(`Texture.${textureName}`);
 		});
-		hologramRenderControllers["render_controllers"]["controller.render.armor_stand.hologram"]["textures"][0] = `Array.textures[temp.hologram_texture_index ?? ${defaultTextureIndex}]`
+		hologramRenderControllers["render_controllers"]["controller.render.armor_stand.hologram"]["textures"][0] = `Array.textures[t.hologram_texture_index ?? ${defaultTextureIndex}]`
 		
 		if(this.config.TINT != null) {
 			// By putting the overlay in the render controller instead of modifying the texture, the overlay isn't applied on transparent pixels. It also saves us the work of having to manipulate the image data directly :)
@@ -351,6 +372,7 @@ export default class HoloPrint {
 			t.hologram_offset_y = t.hologram_offset_y ?? 0;
 			t.hologram_offset_z = t.hologram_offset_z ?? 0;
 			t.hologram_texture_index = t.hologram_texture_index ?? ${defaultTextureIndex};
+			t.validate_hologram = t.validate_hologram ?? false;
 			t.hologram_layer = t.hologram_layer ?? -1;
 			t.armor_stand_interaction = t.armor_stand_interaction ?? false;
 			
@@ -363,8 +385,13 @@ export default class HoloPrint {
 				q.is_item_name_any('slot.weapon.mainhand', 'minecraft:stone')? {
 					t.render_hologram = !t.render_hologram;
 				};
-				q.is_item_name_any('slot.weapon.mainhand', 'minecraft:glass')? {
-					t.hologram_texture_index = math.clamp(t.hologram_texture_index + (q.is_sneaking? -1 : 1), 0, ${textureBlobs.length - 1});
+				t.render_hologram? {
+					q.is_item_name_any('slot.weapon.mainhand', 'minecraft:glass')? {
+						t.hologram_texture_index = math.clamp(t.hologram_texture_index + (q.is_sneaking? -1 : 1), 0, ${textureBlobs.length - 1});
+					};
+					q.is_item_name_any('slot.weapon.mainhand', 'minecraft:iron_ingot')? {
+						t.validate_hologram = !t.validate_hologram;
+					};
 				};
 			};
 			t.render_hologram && ((v.attack && q.equipped_item_any_tag('slot.weapon.mainhand', 'minecraft:planks')) || t.armor_stand_interaction)? {
@@ -450,6 +477,13 @@ export default class HoloPrint {
 			particle["particle_effect"]["description"]["identifier"] = `holoprint:bounding_box_outline_${i}`;
 			particle["particle_effect"]["components"]["minecraft:emitter_initialization"]["creation_expression"] = particleMolang.replaceAll(/\s/g, "");
 			pack.file(`particles/bounding_box_outline_${i}.json`, JSON.stringify(particle));
+		});
+		blocksToValidate.forEach(blockToValidate => {
+			let particle = structuredClone(blockValidationParticle);
+			particle["particle_effect"]["description"]["identifier"] = `holoprint:validate_${blockToValidate["bone_name"]}`;
+			particle["particle_effect"]["components"]["minecraft:particle_expire_if_in_blocks"] = [blockToValidate["block"]];
+			particle["particle_effect"]["components"]["minecraft:particle_motion_parametric"]["relative_position"] = blockToValidate["pos"].map((x, i) => `q.position(${i}) + ${x}`);
+			pack.file(`particles/block_validation_${blockToValidate["bone_name"]}.json`, JSON.stringify(particle));
 		});
 		pack.file("textures/particle/single_white_pixel.png", boundingBoxOutlineTexture);
 		pack.file("animations/armor_stand.hologram.animation.json", JSON.stringify(hologramAnimations));
