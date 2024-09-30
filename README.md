@@ -19,7 +19,7 @@ HoloPrint is a web app that converts MCBE structure files into resource packs sh
 - Change transparency: Glass (sneak to decrease, stand to increase)
 - Change layer: Planks (sneak to decrease, stand to increase), or changing the pose on the armor stand
 - Move hologram (third person only): Stick (only works when armor stand is facing south)
-- Block validation: Iron ingot (assumes structure is built facing south)
+- Block validation: Iron ingot
 
 ---
 

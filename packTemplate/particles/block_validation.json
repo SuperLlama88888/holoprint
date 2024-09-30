@@ -17,9 +17,8 @@
 			"minecraft:particle_lifetime_expression": {
 				"expiration_expression": "!t.validate_hologram"
 			},
-			"minecraft:particle_motion_parametric": {},
 			"minecraft:particle_appearance_billboard": {
-				"size": [10, 0.25],
+				"size": [10, "0.125 * math.max(q.distance_from_camera * 0.02 + 0.6, 1)"],
 				"facing_camera_mode": "lookat_direction",
 				"direction": {
 					"mode": "custom",
@@ -31,7 +30,7 @@
 				}
 			},
 			"minecraft:particle_appearance_tinting": {
-				"color": [1, 0, 0]
+				"color": [0.8, 0, 0]
 			}
 		}
 	}
