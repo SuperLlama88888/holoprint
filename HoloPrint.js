@@ -239,6 +239,7 @@ export default class HoloPrint {
 		);
 		
 		let blocksToValidate = [];
+		let uniqueBlocks = new Set();
 		
 		let blockCountsMap = new Map();
 		for(let y = 0; y < structureSize[1]; y++) {
@@ -314,18 +315,21 @@ export default class HoloPrint {
 					
 					blocksToValidate.push({
 						"bone_name": boneName,
-						"block": `minecraft:${blockPalette[paletteI]["name"]}`
+						"block": blockPalette[paletteI]["name"]
 					});
+					uniqueBlocks.add(blockPalette[paletteI]["name"]);
 				}
 			}
 		}
 		
-		console.log(blocksToValidate)
-		blocksToValidate.forEach(blockToValidate => {
-			let particleName = `validate_${blockToValidate["bone_name"]}`;
+		// add the particles' short names, and then reference them in the animation controller
+		uniqueBlocks.forEach(blockName => {
+			let particleName = `validate_${blockName}`;
 			entityDescription["particle_effects"][particleName] = `holoprint:${particleName}`;
+		});
+		blocksToValidate.forEach(blockToValidate => {
 			hologramAnimationControllers["animation_controllers"]["controller.animation.armor_stand.hologram.block_validation"]["states"]["validate"]["particle_effects"].push({
-				"effect": particleName,
+				"effect": `validate_${blockToValidate["block"]}`,
 				"locator": blockToValidate["bone_name"]
 			});
 		});
@@ -481,11 +485,12 @@ export default class HoloPrint {
 			particle["particle_effect"]["components"]["minecraft:emitter_initialization"]["creation_expression"] = particleMolang.replaceAll(/\s/g, "");
 			pack.file(`particles/bounding_box_outline_${i}.json`, JSON.stringify(particle));
 		});
-		blocksToValidate.forEach(blockToValidate => {
+		uniqueBlocks.forEach(blockName => {
+			let particleName = `validate_${blockName}`;
 			let particle = structuredClone(blockValidationParticle);
-			particle["particle_effect"]["description"]["identifier"] = `holoprint:validate_${blockToValidate["bone_name"]}`;
-			particle["particle_effect"]["components"]["minecraft:particle_expire_if_in_blocks"] = [blockToValidate["block"]];
-			pack.file(`particles/block_validation_${blockToValidate["bone_name"]}.json`, JSON.stringify(particle));
+			particle["particle_effect"]["description"]["identifier"] = `holoprint:${particleName}`;
+			particle["particle_effect"]["components"]["minecraft:particle_expire_if_in_blocks"] = [`minecraft:${blockName}`];
+			pack.file(`particles/${particleName}.json`, JSON.stringify(particle));
 		});
 		pack.file("textures/particle/single_white_pixel.png", singleWhitePixelTexture);
 		pack.file("animations/armor_stand.hologram.animation.json", JSON.stringify(hologramAnimations));
