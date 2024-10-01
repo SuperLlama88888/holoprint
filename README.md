@@ -14,12 +14,20 @@ HoloPrint is a web app that converts MCBE structure files into resource packs sh
 3. Generate and download your resource pack (`.mcpack`).
 4. Apply your resource pack and place an armour stand in your world.
 
+![Placing armour stand](https://github.com/user-attachments/assets/facfde59-7ff9-4381-8f35-0815cf3072a9)
+
 #### Player controls
-- Toggle rendering: Stone
-- Change transparency: Glass (sneak to decrease, stand to increase)
-- Change layer: Planks (sneak to decrease, stand to increase), or changing the pose on the armor stand
-- Move hologram (third person only): Stick (only works when armor stand is facing south)
+- Toggle rendering: Stone  
+![Toggling rendering](https://github.com/user-attachments/assets/b48a931b-1d36-4b3d-8719-5ccf47411b79)
+- Change transparency: Glass (sneak to decrease, stand to increase)  
+![Changing transparency](https://github.com/user-attachments/assets/edee3e05-f2d9-4085-8fdf-f6f435d0f0e6)
+- Change layer: Planks (sneak to decrease, stand to increase), or changing the pose on the armor stand  
+![Changing layer](https://github.com/user-attachments/assets/ee6b848d-e25a-4fbf-b2ab-91867460fdd6)
+- Move hologram (third person only): Stick (only works when armor stand is facing south)  
+![Moving hologram](https://github.com/user-attachments/assets/9c986653-a128-45d4-830b-4397ba783800)
 - Block validation: Iron ingot
+
+https://github.com/user-attachments/assets/8c6a25db-9637-454f-97d7-f324e78580e8
 
 ---
 
