@@ -15,7 +15,7 @@
 				"active_time": 0
 			},
 			"minecraft:particle_lifetime_expression": {
-				"expiration_expression": "!t.validate_hologram"
+				"expiration_expression": "!t.show_wrong_block_overlay? { t.show_wrong_block_overlay = true; t.wrong_block_x = v.x; t.wrong_block_y = v.y; t.wrong_block_z = v.z; }; return !t.validate_hologram;"
 			},
 			"minecraft:particle_appearance_billboard": {
 				"size": [10, "0.125 * math.max(q.distance_from_camera * 0.02 + 0.6, 1)"],
@@ -31,6 +31,20 @@
 			},
 			"minecraft:particle_appearance_tinting": {
 				"color": [0.8, 0, 0]
+			},
+			"minecraft:particle_lifetime_events": {
+				"timeline": {
+					"0.05": "set_wrong_block_overlay_position"
+				},
+				"expiration_event": "clear_wrong_block_overlay"
+			}
+		},
+		"events": {
+			"set_wrong_block_overlay_position": {
+				"expression": "t.show_wrong_block_overlay = true; t.wrong_block_x = v.x; t.wrong_block_y = v.y; t.wrong_block_z = v.z;"
+			},
+			"clear_wrong_block_overlay": {
+				"expression": "v.x == t.wrong_block_x && v.y == t.wrong_block_y && v.z == t.wrong_block_z? { t.show_wrong_block_overlay = false; };"
 			}
 		}
 	}

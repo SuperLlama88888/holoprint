@@ -60,6 +60,30 @@ ImageData.prototype.toImage = async function() {
 	URL.revokeObjectURL(imageUrl);
 	return image;
 };
+Image.prototype.toBlob = async function() {
+	let can = new OffscreenCanvas(this.width, this.height);
+	let ctx = can.getContext("2d");
+	ctx.drawImage(this, 0, 0);
+	return await can.convertToBlob();
+};
+Image.prototype.setOpacity = async function(opacity) {
+	let imageData = this.toImageData();
+	let data = imageData.data;
+	for(let i = 0; i < data.length; i += 4) {
+		data[i + 3] *= opacity;
+	}
+	return await imageData.toImage();
+};
+Image.prototype.addTint = async function(col) {
+	let imageData = this.toImageData();
+	let data = imageData.data;
+	for(let i = 0; i < data.length; i += 4) {
+		data[i] *= col[0];
+		data[i + 1] *= col[1];
+		data[i + 2] *= col[2];
+	}
+	return await imageData.toImage();
+};
 
 export const sleep = async time => new Promise(resolve => setTimeout(resolve, time));
 

@@ -3,6 +3,9 @@
 		"version": "1.0.0",
 		"holoprint_hologram:entity_alphablend": {
 			"+states": ["DisableCulling"] // This makes the ghost blocks visible when the camera is inside them. To me this makes it less confusing if you walk into one since you know where you are.
+		},
+		"holoprint_hologram_wrong_block_overlay:holoprint_hologram": {
+			"depthFunc": "Always"
 		}
 	}
 }

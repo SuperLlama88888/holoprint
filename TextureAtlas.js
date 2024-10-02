@@ -532,8 +532,6 @@ export default class TextureAtlas {
 		let ctx = newCan.getContext("2d");
 		ctx.globalAlpha = alpha;
 		ctx.drawImage(can, 0, 0);
-		// ctx.fillStyle = "#69F0AF33";
-		// ctx.fillRect(0, 0, can.width, can.height);
 		return newCan;
 	}
 	/**
@@ -556,33 +554,5 @@ export default class TextureAtlas {
 			}
 		}
 		return imageData;
-	}
-	/**
-	 * Applies a tint to an image. Requires tint to be [r, g, b] in the range 0-1.
-	 * @param {Image} image
-	 * @param {import("./BlockGeoMaker.js").Vec3} tint
-	 * @returns {OffscreenCanvas}
-	 */
-	async #tintPNGImage(image, tint) {
-		// return image;
-		let can = new OffscreenCanvas(image.width, image.height);
-		
-		let ctx = can.getContext("2d");
-		ctx.drawImage(image, 0, 0);
-		let imageData = ctx.getImageData(0, 0, can.width, can.height);
-		let data = imageData.data; // js moment
-		console.log(data)
-		for(let i = 0; i < data.length; i += 4) {
-			// if(data[i] == data[i + 1] && data[i] == data[i + 2]) {
-				data[i] *= tint[0];
-				data[i + 1] *= tint[1];
-				data[i + 2] *= tint[2];
-			// }
-		}
-		ctx.putImageData(imageData, 0, 0);
-		
-		// return can;
-		let blob = await can.convertToBlob();
-		return await blobToImage(blob);
 	}
 }

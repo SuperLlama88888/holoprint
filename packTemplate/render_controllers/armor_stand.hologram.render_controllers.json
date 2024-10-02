@@ -27,6 +27,28 @@
 				"a": 0
 			},
 			"ignore_lighting": true
+		},
+		"controller.render.armor_stand.hologram.wrong_block_overlay": {
+			"materials": [
+				{
+					"*": "Material.hologram.wrong_block_overlay"
+				}
+			],
+			"geometry": "Geometry.hologram.wrong_block_overlay",
+			"textures": ["Texture.hologram.wrong_block_overlay"],
+			"is_hurt_color": {
+				"r": 0,
+				"g": 0,
+				"b": 0,
+				"a": 0
+			},
+			"on_fire_color": {
+				"r": 0,
+				"g": 0,
+				"b": 0,
+				"a": 0
+			},
+			"ignore_lighting": true
 		}
 	}
 }

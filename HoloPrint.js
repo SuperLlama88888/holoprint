@@ -34,6 +34,7 @@ export default class HoloPrint {
 		TEXTURE_OUTLINE_ALPHA_THRESHOLD = 0, // if using difference mode, will draw outline between pixels with at least this much alpha difference; else, will draw outline on pixels next to pixels with an alpha less than or equal to this
 		DO_SPAWN_ANIMATION = false,
 		SPAWN_ANIMATION_LENGTH = 0.4, // relative
+		WRONG_BLOCK_OVERLAY_COLOR = [1, 0, 0, 0.3],
 		MATERIAL_LIST_LANGUAGE = "en_US"
 	} = {}, resourcePackStack = new ResourcePackStack(), previewCont) {
 		this.config = {
@@ -51,6 +52,7 @@ export default class HoloPrint {
 			TEXTURE_OUTLINE_ALPHA_THRESHOLD,
 			DO_SPAWN_ANIMATION,
 			SPAWN_ANIMATION_LENGTH,
+			WRONG_BLOCK_OVERLAY_COLOR,
 			MATERIAL_LIST_LANGUAGE
 		};
 		Object.freeze(this.config);
@@ -89,7 +91,7 @@ export default class HoloPrint {
 			hologramAnimationControllers: fetch("packTemplate/animation_controllers/armor_stand.hologram.animation_controllers.json").then(res => res.jsonc()),
 			boundingBoxOutlineParticle: fetch("packTemplate/particles/bounding_box_outline.json").then(res => res.jsonc()),
 			blockValidationParticle: fetch("packTemplate/particles/block_validation.json").then(res => res.jsonc()),
-			singleWhitePixelTexture: fetch("packTemplate/textures/particle/single_white_pixel.png").then(res => res.blob()),
+			singleWhitePixelTexture: fetch("packTemplate/textures/particle/single_white_pixel.png").then(res => res.toImage()),
 			translationFile: this.resourcePackStack.fetchResource(`texts/${this.config.MATERIAL_LIST_LANGUAGE}.lang`).then(res => res.text())
 		});
 		let structure = nbt["structure"];
@@ -146,13 +148,16 @@ export default class HoloPrint {
 		
 		let entityDescription = entityFile["minecraft:client_entity"]["description"];
 		entityDescription["materials"]["hologram"] = "holoprint_hologram";
+		entityDescription["materials"]["hologram.wrong_block_overlay"] = "holoprint_hologram_wrong_block_overlay";
+		entityDescription["textures"]["hologram.wrong_block_overlay"] = "textures/entity/wrong_block_overlay";
 		entityDescription["animations"]["hologram.align"] = "animation.armor_stand.hologram.align";
 		entityDescription["animations"]["hologram.offset"] = "animation.armor_stand.hologram.offset";
 		entityDescription["animations"]["hologram.spawn"] = "animation.armor_stand.hologram.spawn";
+		entityDescription["animations"]["hologram.wrong_block_overlay"] = "animation.armor_stand.hologram.wrong_block_overlay";
 		entityDescription["animations"]["controller.hologram.layers"] = "controller.animation.armor_stand.hologram.layers";
 		entityDescription["animations"]["controller.hologram.bounding_box"] = "controller.animation.armor_stand.hologram.bounding_box";
 		entityDescription["animations"]["controller.hologram.block_validation"] = "controller.animation.armor_stand.hologram.block_validation";
-		entityDescription["scripts"]["animate"].push("hologram.align", "hologram.offset", "hologram.spawn", "controller.hologram.layers", "controller.hologram.bounding_box", "controller.hologram.block_validation");
+		entityDescription["scripts"]["animate"].push("hologram.align", "hologram.offset", "hologram.spawn", "hologram.wrong_block_overlay", "controller.hologram.layers", "controller.hologram.bounding_box", "controller.hologram.block_validation");
 		entityDescription["scripts"]["initialize"].push(`
 			t.hologram_offset_x = t.hologram_offset_x ?? 0;
 			t.hologram_offset_y = t.hologram_offset_y ?? 0;
@@ -160,11 +165,16 @@ export default class HoloPrint {
 			t.render_hologram = true;
 			t.hologram_layer = -1;
 			t.validate_hologram = false;
+			t.show_wrong_block_overlay = false;
+			t.wrong_block_x = 0;
+			t.wrong_block_y = 0;
+			t.wrong_block_z = 0;
 			t.structure_w = ${structureSize[0]};
 			t.structure_h = ${structureSize[1]};
 			t.structure_d = ${structureSize[2]};
 		`.replaceAll(/\s/g, "")); // particles need to access structure dimensions later, but their `v.` scope is different to the armour stand's, so these have to be temp variables.
 		entityDescription["geometry"]["hologram"] = "geometry.armor_stand.hologram";
+		entityDescription["geometry"]["hologram.wrong_block_overlay"] = "geometry.armor_stand.hologram.wrong_block_overlay";
 		entityDescription["render_controllers"].push({
 			"controller.render.armor_stand.hologram": `
 				v.last_pose = v.last_pose ?? v.armor_stand.pose_index;
@@ -176,6 +186,8 @@ export default class HoloPrint {
 				};
 				return t.render_hologram;
 			`.replaceAll(/\n|\t/g, "")
+		}, {
+			"controller.render.armor_stand.hologram.wrong_block_overlay": "t.show_wrong_block_overlay"
 		});
 		let outlineParticleSettings = [
 			"v.size = t.structure_w / 2; v.dir = 0; v.r = 1; v.g = 0; v.b = 0;",
@@ -199,6 +211,8 @@ export default class HoloPrint {
 				"effect": particleName
 			});
 		});
+		
+		let wrongBlockOverlayTexture = await (await singleWhitePixelTexture.addTint(this.config.WRONG_BLOCK_OVERLAY_COLOR.slice(0, 3))).setOpacity(this.config.WRONG_BLOCK_OVERLAY_COLOR[3]);
 		
 		let { hologramGeo, hologramAnimations } = await awaitAllEntries({
 			hologramGeo: fetch("packTemplate/models/entity/armor_stand.hologram.geo.json").then(res => res.jsonc()), // this is where we put all the ghost blocks
@@ -315,7 +329,8 @@ export default class HoloPrint {
 					
 					blocksToValidate.push({
 						"bone_name": boneName,
-						"block": blockPalette[paletteI]["name"]
+						"block": blockPalette[paletteI]["name"],
+						"pos": [x, y, z]
 					});
 					uniqueBlocks.add(blockPalette[paletteI]["name"]);
 				}
@@ -330,7 +345,12 @@ export default class HoloPrint {
 		blocksToValidate.forEach(blockToValidate => {
 			hologramAnimationControllers["animation_controllers"]["controller.animation.armor_stand.hologram.block_validation"]["states"]["validate"]["particle_effects"].push({
 				"effect": `validate_${blockToValidate["block"]}`,
-				"locator": blockToValidate["bone_name"]
+				"locator": blockToValidate["bone_name"],
+				"pre_effect_script": `
+					v.x = ${blockToValidate["pos"][0]};
+					v.y = ${blockToValidate["pos"][1]};
+					v.z = ${blockToValidate["pos"][2]};
+				`.replaceAll(/\s/g, "")
 			});
 		});
 		
@@ -381,6 +401,7 @@ export default class HoloPrint {
 			t.hologram_texture_index = t.hologram_texture_index ?? ${defaultTextureIndex};
 			t.validate_hologram = t.validate_hologram ?? false;
 			t.hologram_layer = t.hologram_layer ?? -1;
+			t.show_wrong_block_overlay = t.show_wrong_block_overlay ?? false;
 			t.armor_stand_interaction = t.armor_stand_interaction ?? false;
 			
 			v.attack = v.attack_time > 0 && (v.last_attack_time == 0 || v.attack_time < v.last_attack_time);
@@ -396,9 +417,9 @@ export default class HoloPrint {
 					q.is_item_name_any('slot.weapon.mainhand', 'minecraft:glass')? {
 						t.hologram_texture_index = math.clamp(t.hologram_texture_index + (q.is_sneaking? -1 : 1), 0, ${textureBlobs.length - 1});
 					};
-					q.is_item_name_any('slot.weapon.mainhand', 'minecraft:iron_ingot')? {
-						t.validate_hologram = !t.validate_hologram;
-					};
+				};
+				q.is_item_name_any('slot.weapon.mainhand', 'minecraft:iron_ingot')? {
+					t.validate_hologram = !t.validate_hologram;
 				};
 			};
 			t.render_hologram && ((v.attack && q.equipped_item_any_tag('slot.weapon.mainhand', 'minecraft:planks')) || t.armor_stand_interaction)? {
@@ -492,7 +513,8 @@ export default class HoloPrint {
 			particle["particle_effect"]["components"]["minecraft:particle_expire_if_in_blocks"] = [`minecraft:${blockName}`];
 			pack.file(`particles/${particleName}.json`, JSON.stringify(particle));
 		});
-		pack.file("textures/particle/single_white_pixel.png", singleWhitePixelTexture);
+		pack.file("textures/particle/single_white_pixel.png", await singleWhitePixelTexture.toBlob());
+		pack.file("textures/entity/wrong_block_overlay.png", await wrongBlockOverlayTexture.toBlob());
 		pack.file("animations/armor_stand.hologram.animation.json", JSON.stringify(hologramAnimations));
 		textureBlobs.forEach(([textureName, blob]) => {
 			pack.file(`textures/entity/${textureName}.png`, blob);
