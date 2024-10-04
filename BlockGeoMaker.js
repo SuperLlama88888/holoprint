@@ -52,6 +52,7 @@ export default class BlockGeoMaker {
 		"stone_button": 0,
 		"stone_pressure_plate": 0
 	};
+	static #noCubesWarningSuppressingBlockShapes = ["door"]; // block shapes that ignore the no cubes warnings
 	
 	static #REDSTONE_DUST_TINTS = function() {
 		// net.minecraft.world.level.block.RedStoneWireBlock
@@ -115,8 +116,8 @@ export default class BlockGeoMaker {
 		let blockName = block["name"];
 		let blockShape = this.#getBlockShape(blockName);
 		let boneCubes = this.#makeBoneCubes(block, blockShape);
-		if(boneCubes.length == 0) {
-			console.debug(`No cubes are being rendered for block ${blockName}`);
+		if(boneCubes.length == 0 && !(blockShape in BlockGeoMaker.#noCubesWarningSuppressingBlockShapes)) {
+			console.warn(`No cubes are being rendered for block ${blockName}`);
 		}
 		let bone = {
 			"cubes": boneCubes
@@ -196,11 +197,37 @@ export default class BlockGeoMaker {
 			[, blockShape, specialTexture] = blockShape.match(/^(\w+)\{(textures\/[\w\/]+)\}$/);
 		}
 		
-		let cubes = this.#blockShapeGeos[blockShape];
-		if(!cubes) {
+		let unfilteredCubes = this.#blockShapeGeos[blockShape];
+		if(!unfilteredCubes) {
 			console.error(`Could not find geometry for block shape ${blockShape}; defaulting to "block"`);
-			cubes = this.#blockShapeGeos["block"];
+			unfilteredCubes = this.#blockShapeGeos["block"];
 		}
+		let filteredCubes = structuredClone(unfilteredCubes).filter(cube => {
+			if("if" in cube) {
+				if(!this.#checkBlockStateConditional(block, cube["if"])) {
+					return false;
+				}
+				delete cube["if"]; // later on, when determining if a bone cube is mergeable, we only allow cubes with "pos" and "size" keys. I am lazy so it only checks if there are exactly 2 keys in the cube. hence, we need to delete the "if" key here.
+			}
+			return true;
+		});
+		// add easy property accessors
+		filteredCubes.forEach(cube => {
+			Object.defineProperties(cube, Object.fromEntries(["x", "y", "z", "w", "h", "d"].map((prop, i) => [prop, {
+				get() {
+					return (i < 3? this["pos"] : this["size"])[i % 3];
+				},
+				set(value) {
+					(i < 3? this["pos"] : this["size"])[i % 3] = value;
+				}
+			}])));
+		});
+		let actualCubes = [];
+		let copycatCubes = []; // these are the cubes that have "copy" instead of "size" and as such aren't really cubes...
+		filteredCubes.forEach(cube => {
+			("size" in cube? actualCubes : copycatCubes).push(cube);
+		});
+		let cubes = [...this.#mergeCubes(actualCubes), ...copycatCubes];
 		
 		let blockName = block["name"];
 		let variant = this.#getTextureVariant(block);
@@ -208,12 +235,6 @@ export default class BlockGeoMaker {
 		
 		let boneCubes = [];
 		cubes.forEach(cube => {
-			if("if" in cube) {
-				if(!this.#checkBlockStateConditional(block, cube["if"])) {
-					return;
-				}
-			}
-			
 			if("copy" in cube) {
 				let blockCopy = structuredClone(block);
 				if("block_states" in cube) {
@@ -229,45 +250,45 @@ export default class BlockGeoMaker {
 						boneCube["pivot"] = boneCube["pivot"].map((x, i) => x + cube["pos"][i]);
 					}
 				});
-				boneCubes.push(...copiedBoneCubes);
+				boneCubes.push(...copiedBoneCubes); // TODO: make copies be cullable between each other
 				return;
 			}
 			
 			// In MCBE most non-full-block textures look at where the part that is being rendered is in relation to the entire cube space it's in - like it's being projected onto a full face then cut out. Kinda hard to explain sorry, I recommend messing around with fence textures so you understand how it works.
 			// Pretty sure some need to be mirrored still. this includes the top of the torch
-			let westUvOffset = [cube["pos"][2], 16 - cube["pos"][1] - cube["size"][1]];
-			let eastUvOffset = [16 - cube["pos"][2] - cube["size"][2], 16 - cube["pos"][1] - cube["size"][1]];
-			let downUvOffset = [cube["pos"][0], cube["pos"][2]]; // upside down???
-			let upUvOffset = [cube["pos"][0], cube["pos"][2]];
-			let northUvOffset = [cube["pos"][0], 16 - cube["pos"][1] - cube["size"][1]];
-			let southUvOffset = [16 - cube["pos"][0] - cube["size"][0], 16 - cube["pos"][1] - cube["size"][1]];
+			let westUvOffset = [cube.z, 16 - cube.y - cube.h];
+			let eastUvOffset = [16 - cube.z - cube.d, 16 - cube.y - cube.h];
+			let downUvOffset = [cube.x, cube.z]; // upside down???
+			let upUvOffset = [cube.x, cube.z];
+			let northUvOffset = [cube.x, 16 - cube.y - cube.h];
+			let southUvOffset = [16 - cube.x - cube.w, 16 - cube.y - cube.h];
 			let boneCube = {
 				"origin": cube["pos"],
 				"size": cube["size"],
 				"uv": {
 					"west": {
 						"uv": cube["uv"]?.["west"] ?? cube["uv"]?.["side"] ?? cube["uv"]?.["*"] ?? westUvOffset,
-						"uv_size": cube["uv_sizes"]?.["west"] ?? cube["uv_sizes"]?.["side"] ?? cube["uv_sizes"]?.["*"] ?? [cube["size"][2], cube["size"][1]]
+						"uv_size": cube["uv_sizes"]?.["west"] ?? cube["uv_sizes"]?.["side"] ?? cube["uv_sizes"]?.["*"] ?? [cube.d, cube.h]
 					},
 					"east": {
 						"uv": cube["uv"]?.["east"] ?? cube["uv"]?.["side"] ?? cube["uv"]?.["*"] ?? eastUvOffset,
-						"uv_size": cube["uv_sizes"]?.["east"] ?? cube["uv_sizes"]?.["side"] ?? cube["uv_sizes"]?.["*"] ?? [cube["size"][2], cube["size"][1]]
+						"uv_size": cube["uv_sizes"]?.["east"] ?? cube["uv_sizes"]?.["side"] ?? cube["uv_sizes"]?.["*"] ?? [cube.d, cube.h]
 					},
 					"down": {
 						"uv": cube["uv"]?.["down"] ?? cube["uv"]?.["*"] ?? downUvOffset,
-						"uv_size": cube["uv_sizes"]?.["down"] ?? cube["uv_sizes"]?.["*"] ?? [cube["size"][0], cube["size"][2]]
+						"uv_size": cube["uv_sizes"]?.["down"] ?? cube["uv_sizes"]?.["*"] ?? [cube.w, cube.d]
 					},
 					"up": {
 						"uv": cube["uv"]?.["up"] ?? cube["uv"]?.["*"] ?? upUvOffset,
-						"uv_size": cube["uv_sizes"]?.["up"] ?? cube["uv_sizes"]?.["*"] ?? [cube["size"][0], cube["size"][2]]
+						"uv_size": cube["uv_sizes"]?.["up"] ?? cube["uv_sizes"]?.["*"] ?? [cube.w, cube.d]
 					},
 					"north": {
 						"uv": cube["uv"]?.["north"] ?? cube["uv"]?.["side"] ?? cube["uv"]?.["*"] ?? northUvOffset,
-						"uv_size": cube["uv_sizes"]?.["north"] ?? cube["uv_sizes"]?.["side"] ?? cube["uv_sizes"]?.["*"] ?? [cube["size"][0], cube["size"][1]]
+						"uv_size": cube["uv_sizes"]?.["north"] ?? cube["uv_sizes"]?.["side"] ?? cube["uv_sizes"]?.["*"] ?? [cube.w, cube.h]
 					},
 					"south": {
 						"uv": cube["uv"]?.["south"] ?? cube["uv"]?.["side"] ?? cube["uv"]?.["*"] ?? southUvOffset,
-						"uv_size": cube["uv_sizes"]?.["south"] ?? cube["uv_sizes"]?.["side"] ?? cube["uv_sizes"]?.["*"] ?? [cube["size"][0], cube["size"][1]]
+						"uv_size": cube["uv_sizes"]?.["south"] ?? cube["uv_sizes"]?.["side"] ?? cube["uv_sizes"]?.["*"] ?? [cube.w, cube.h]
 					}
 				}
 			};
@@ -275,17 +296,17 @@ export default class BlockGeoMaker {
 			let croppable = false;
 			// When the size of a cube in a direction is 0, we can remove all faces but 1. Because we have DisableCulling in the material, this single face will render from the back as well.
 			// On a side note, if there wasn't the DisableCulling material state and we rendered both faces on opposite sides, the texture wouldn't be mirrored on the other side, so this is another bug fix ig
-			if(cube["size"][0] == 0) {
+			if(cube.w == 0) {
 				// 0 width: only render west
 				["east", "down", "up", "north", "south"].forEach(faceName => delete boneCube["uv"][faceName]);
 				croppable = true;
 			}
-			if(cube["size"][1] == 0) {
+			if(cube.h == 0) {
 				// 0 height: only render down
 				["west", "east", "up", "north", "south"].forEach(faceName => delete boneCube["uv"][faceName]);
 				croppable = true;
 			}
-			if(cube["size"][2] == 0) {
+			if(cube.d == 0) {
 				// 0 depth: only render north
 				["west", "east", "down", "up", "south"].forEach(faceName => delete boneCube["uv"][faceName]);
 				croppable = true;
@@ -365,6 +386,44 @@ export default class BlockGeoMaker {
 			boneCubes.push(boneCube);
 		});
 		return boneCubes;
+	}
+	/**
+	 * Merges cubes together greedily.
+	 * @param {Array<Object>} cubes
+	 * @returns {Array<Object>}
+	 */
+	#mergeCubes(cubes) {
+		let unmergeableCubes = [];
+		let mergeableCubes = [];
+		cubes.forEach(cube => {
+			if(!cube["size"].some(x => x == 0) && Object.keys(cube).length == 2) { // 2 keys: pos and size
+				mergeableCubes.push(cube);
+			} else {
+				unmergeableCubes.push(cube);
+			}
+		});
+		
+		let mergedCubes = [];
+		mergeableCubes.forEach(cube1 => { // this is the cube we're trying to add to mergedCubes
+			tryMerging: while(true) {
+				for(let [i, cube2] of mergedCubes.entries()) {
+					if(this.#tryMergeCubesOneWay(cube1, cube2)) {
+						console.debug("Merged cube", cube2, "into", cube1);
+						mergedCubes.splice(i, 1);
+						continue tryMerging; // since boneCube1 has been mutated, this stops the current comparison of boneCube1 with the already merged cubes, and makes it start again.
+					} else if(this.#tryMergeCubesOneWay(cube2, cube1)) {
+						console.debug("Merged cube", cube1, "into", cube2);
+						mergedCubes.splice(i, 1);
+						cube1 = cube2;
+						continue tryMerging; // boneCube2 has been mutated, so we removed it from mergedCubes and swap it out for boneCube1, then restart trying to merge it.
+					}
+				}
+				break; // we'll only get to here when it's checked all combinations between the already merged cubes and
+			}
+			mergedCubes.push(cube1);
+		});
+		
+		return [...unmergeableCubes, ...mergedCubes];
 	}
 	/**
 	 * Gets the index of the variant to use in terrain_texture.json for a block.
@@ -498,5 +557,30 @@ export default class BlockGeoMaker {
 		});
 		let orRes = andRes.some(x => x); // only || operations remain
 		return orRes;
+	}
+	/**
+	 * Unpurely tries to merge the cube into the first if the second is more positive than the first.
+	 * @param {Object} cube1
+	 * @param {Object} cube2
+	 * @returns {Boolean} If the second cube was merged into the first.
+	 */
+	#tryMergeCubesOneWay(cube1, cube2) {
+		if(cube1.x + cube1.w == cube2.x) { // bone cube 2 is to the right of bone cube 1
+			if(cube1.y == cube2.y && cube1.z == cube2.z && cube1.h == cube2.h && cube1.d == cube2.d) {
+				cube1.w += cube2.w; // grow cube 1...
+				return true;
+			}
+		} else if(cube1.y + cube1.h == cube2.y) { // bone cube 2 is above bone cube 1
+			if(cube1.x == cube2.x && cube1.z == cube2.z && cube1.w == cube2.w && cube1.d == cube2.d) {
+				cube1.h += cube2.h;
+				return true;
+			}
+		} else if(cube1.z + cube1.d == cube2.z) { // bone cube 2 is behind bone cube 1
+			if(cube1.x == cube2.x && cube1.y == cube2.y && cube1.w == cube2.w && cube1.h == cube2.h) {
+				cube1.d += cube2.d;
+				return true;
+			}
+		}
+		return false;
 	}
 }
