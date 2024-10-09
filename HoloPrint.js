@@ -81,7 +81,7 @@ export default class HoloPrint {
 		
 		// Make the pack
 		let { manifest, packIcon, entityFile, hologramRenderControllers, defaultPlayerRenderControllers, armorStandGeo, hologramMaterial, hologramAnimationControllers, boundingBoxOutlineParticle, blockValidationParticle, singleWhitePixelTexture, translationFile } = await awaitAllEntries({
-			manifest: fetch("packTemplate/manifest.json").then(res => res.json()),
+			manifest: fetch("packTemplate/manifest.json").then(res => res.jsonc()),
 			packIcon: this.#makePackIcon(structureFile),
 			entityFile: this.resourcePackStack.fetchResource("entity/armor_stand.entity.json").then(res => res.jsonc()),
 			hologramRenderControllers: fetch("packTemplate/render_controllers/armor_stand.hologram.render_controllers.json").then(res => res.jsonc()), // We add the overlay colour here. We could do it with the canvas but the advantage is that doing it with overlay_color in the render controller is it only renders the overlay on pixels where there's actually texture, whereas if we add it to the texture itself the overlay will render on transparent pixels as well (you could make it only add overlay on solid pixels with the canvas as well but this is easier and possibly changeable in-game).
@@ -158,20 +158,33 @@ export default class HoloPrint {
 		entityDescription["animations"]["controller.hologram.bounding_box"] = "controller.animation.armor_stand.hologram.bounding_box";
 		entityDescription["animations"]["controller.hologram.block_validation"] = "controller.animation.armor_stand.hologram.block_validation";
 		entityDescription["scripts"]["animate"].push("hologram.align", "hologram.offset", "hologram.spawn", "hologram.wrong_block_overlay", "controller.hologram.layers", "controller.hologram.bounding_box", "controller.hologram.block_validation");
-		entityDescription["scripts"]["initialize"].push(this.#functionToMolang(t => {
+		entityDescription["scripts"]["initialize"].push(this.#functionToMolang((q, t) => {
 			t.hologram_offset_x ??= 0;
 			t.hologram_offset_y ??= 0;
 			t.hologram_offset_z ??= 0;
-			t.render_hologram = true;
-			t.hologram_layer = -1;
-			t.validate_hologram = false;
-			t.show_wrong_block_overlay = false;
-			t.wrong_block_x = 0;
-			t.wrong_block_y = 0;
-			t.wrong_block_z = 0;
-			t.structure_w = $[structureSize[0]];
-			t.structure_h = $[structureSize[1]];
-			t.structure_d = $[structureSize[2]];
+			if(q.distance_from_camera <= 10) {
+				t.render_hologram = true;
+				t.hologram_layer = -1;
+				t.validate_hologram = false;
+				t.show_wrong_block_overlay = false;
+				t.wrong_block_x = 0;
+				t.wrong_block_y = 0;
+				t.wrong_block_z = 0;
+				t.structure_w = $[structureSize[0]];
+				t.structure_h = $[structureSize[1]];
+				t.structure_d = $[structureSize[2]];
+			} else {
+				t.render_hologram ??= true;
+				t.hologram_layer ??= -1;
+				t.validate_hologram ??= false;
+				t.show_wrong_block_overlay ??= false;
+				t.wrong_block_x ??= 0;
+				t.wrong_block_y ??= 0;
+				t.wrong_block_z ??= 0;
+				t.structure_w ??= $[structureSize[0]];
+				t.structure_h ??= $[structureSize[1]];
+				t.structure_d ??= $[structureSize[2]];
+			}
 		}, { structureSize })); // particles need to access structure dimensions later, but their `v.` scope is different to the armour stand's, so these have to be temp variables.
 		entityDescription["geometry"]["hologram"] = "geometry.armor_stand.hologram";
 		entityDescription["geometry"]["hologram.wrong_block_overlay"] = "geometry.armor_stand.hologram.wrong_block_overlay";
