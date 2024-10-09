@@ -158,10 +158,10 @@ export default class HoloPrint {
 		entityDescription["animations"]["controller.hologram.bounding_box"] = "controller.animation.armor_stand.hologram.bounding_box";
 		entityDescription["animations"]["controller.hologram.block_validation"] = "controller.animation.armor_stand.hologram.block_validation";
 		entityDescription["scripts"]["animate"].push("hologram.align", "hologram.offset", "hologram.spawn", "hologram.wrong_block_overlay", "controller.hologram.layers", "controller.hologram.bounding_box", "controller.hologram.block_validation");
-		entityDescription["scripts"]["initialize"].push(`
-			t.hologram_offset_x = t.hologram_offset_x ?? 0;
-			t.hologram_offset_y = t.hologram_offset_y ?? 0;
-			t.hologram_offset_z = t.hologram_offset_z ?? 0;
+		entityDescription["scripts"]["initialize"].push(this.#functionToMolang(t => {
+			t.hologram_offset_x ??= 0;
+			t.hologram_offset_y ??= 0;
+			t.hologram_offset_z ??= 0;
 			t.render_hologram = true;
 			t.hologram_layer = -1;
 			t.validate_hologram = false;
@@ -169,23 +169,23 @@ export default class HoloPrint {
 			t.wrong_block_x = 0;
 			t.wrong_block_y = 0;
 			t.wrong_block_z = 0;
-			t.structure_w = ${structureSize[0]};
-			t.structure_h = ${structureSize[1]};
-			t.structure_d = ${structureSize[2]};
-		`.replaceAll(/\s/g, "")); // particles need to access structure dimensions later, but their `v.` scope is different to the armour stand's, so these have to be temp variables.
+			t.structure_w = $[structureSize[0]];
+			t.structure_h = $[structureSize[1]];
+			t.structure_d = $[structureSize[2]];
+		}, { structureSize })); // particles need to access structure dimensions later, but their `v.` scope is different to the armour stand's, so these have to be temp variables.
 		entityDescription["geometry"]["hologram"] = "geometry.armor_stand.hologram";
 		entityDescription["geometry"]["hologram.wrong_block_overlay"] = "geometry.armor_stand.hologram.wrong_block_overlay";
 		entityDescription["render_controllers"].push({
-			"controller.render.armor_stand.hologram": `
-				v.last_pose = v.last_pose ?? v.armor_stand.pose_index;
-				(v.armor_stand.pose_index != v.last_pose)? {
-					t.render_hologram? {
+			"controller.render.armor_stand.hologram": this.#functionToMolang((v, t) => {
+				v.last_pose ??= v.armor_stand.pose_index;
+				if(v.armor_stand.pose_index != v.last_pose) {
+					if(t.render_hologram) {
 						t.armor_stand_interaction = true;
-					};
+					}
 					v.last_pose = v.armor_stand.pose_index;
-				};
+				}
 				return t.render_hologram;
-			`.replaceAll(/\n|\t/g, "")
+			})
 		}, {
 			"controller.render.armor_stand.hologram.wrong_block_overlay": "t.show_wrong_block_overlay"
 		});
@@ -392,83 +392,83 @@ export default class HoloPrint {
 			};
 		}
 		
-		let initVariables = `
-			v.last_attack_time = v.last_attack_time ?? 0;
-			t.render_hologram = t.render_hologram ?? true;
-			t.hologram_offset_x = t.hologram_offset_x ?? 0;
-			t.hologram_offset_y = t.hologram_offset_y ?? 0;
-			t.hologram_offset_z = t.hologram_offset_z ?? 0;
-			t.hologram_texture_index = t.hologram_texture_index ?? ${defaultTextureIndex};
-			t.validate_hologram = t.validate_hologram ?? false;
-			t.hologram_layer = t.hologram_layer ?? -1;
-			t.show_wrong_block_overlay = t.show_wrong_block_overlay ?? false;
-			t.armor_stand_interaction = t.armor_stand_interaction ?? false;
+		let initVariables = this.#functionToMolang((v, t) => {
+			v.last_attack_time ??= 0;
+			t.render_hologram ??= true;
+			t.hologram_offset_x ??= 0;
+			t.hologram_offset_y ??= 0;
+			t.hologram_offset_z ??= 0;
+			t.hologram_texture_index ??= $[defaultTextureIndex];
+			t.validate_hologram ??= false;
+			t.hologram_layer ??= -1;
+			t.show_wrong_block_overlay ??= false;
+			t.armor_stand_interaction ??= false;
 			
 			v.attack = v.attack_time > 0 && (v.last_attack_time == 0 || v.attack_time < v.last_attack_time);
 			v.last_attack_time = v.attack_time;
-		`;
+		}, { defaultTextureIndex });
 		let totalLayers = structureSize[1];
-		let renderingControls = `
-			v.attack? {
-				q.is_item_name_any('slot.weapon.mainhand', 'minecraft:stone')? {
+		let renderingControls = this.#functionToMolang((q, t, v, textureBlobsCount) => {
+			if(v.attack) {
+				if(q.is_item_name_any("slot.weapon.mainhand", "minecraft:stone")) {
 					t.render_hologram = !t.render_hologram;
-				};
-				t.render_hologram? {
-					q.is_item_name_any('slot.weapon.mainhand', 'minecraft:glass')? {
-						t.hologram_texture_index = math.clamp(t.hologram_texture_index + (q.is_sneaking? -1 : 1), 0, ${textureBlobs.length - 1});
-					};
-				};
-				q.is_item_name_any('slot.weapon.mainhand', 'minecraft:iron_ingot')? {
+				}
+				if(t.render_hologram) {
+					if(q.is_item_name_any("slot.weapon.mainhand", "minecraft:glass")) {
+						t.hologram_texture_index = Math.clamp(t.hologram_texture_index + (q.is_sneaking? -1 : 1), 0, $[textureBlobsCount - 1]);
+					}
+				}
+				if(q.is_item_name_any("slot.weapon.mainhand", "minecraft:iron_ingot")) {
 					t.validate_hologram = !t.validate_hologram;
-				};
-			};
-			t.render_hologram && ((v.attack && q.equipped_item_any_tag('slot.weapon.mainhand', 'minecraft:planks')) || t.armor_stand_interaction)? {
+				}
+			}
+			if(t.render_hologram && (v.attack && q.equipped_item_any_tag("slot.weapon.mainhand", "minecraft:planks") || t.armor_stand_interaction)) {
 				t.hologram_layer = t.hologram_layer + (q.is_sneaking && !t.armor_stand_interaction? -1 : 1);
-				(t.hologram_layer < -1)? {
-					t.hologram_layer = ${totalLayers - 1};
-				};
-				(t.hologram_layer >= ${totalLayers})? {
+				if(t.hologram_layer < -1) {
+					t.hologram_layer = $[totalLayers - 1];
+				}
+				if(t.hologram_layer >= $[totalLayers]) {
 					t.hologram_layer = -1;
-				};
+				}
 				t.armor_stand_interaction = false;
-			};
-		`;
-		let movementControls = `
-			(v.attack && q.is_item_name_any('slot.weapon.mainhand', 'minecraft:stick'))? {
-				(q.cardinal_player_facing == 0)? {
-					t.hologram_offset_y = t.hologram_offset_y - 1;
-				};
-				(q.cardinal_player_facing == 1)? {
-					t.hologram_offset_y = t.hologram_offset_y + 1;
-				};
-				(q.cardinal_player_facing == 2)? {
-					t.hologram_offset_z = t.hologram_offset_z - 1;
-				};
-				(q.cardinal_player_facing == 3)? {
-					t.hologram_offset_z = t.hologram_offset_z + 1;
-				};
-				(q.cardinal_player_facing == 4)? {
-					t.hologram_offset_x = t.hologram_offset_x + 1;
-				};
-				(q.cardinal_player_facing == 5)? {
-					t.hologram_offset_x = t.hologram_offset_x - 1;
-				};
-			};
-		`;
+			}
+		}, { totalLayers, textureBlobsCount: textureBlobs.length });
+		let movementControls = this.#functionToMolang((q, t, v) => {
+			if(v.attack && q.is_item_name_any("slot.weapon.mainhand", "minecraft:stick")) {
+				if(q.cardinal_player_facing == 0) {
+					t.hologram_offset_y--;
+				}
+				if(q.cardinal_player_facing == 1) {
+					t.hologram_offset_y++;
+				}
+				if(q.cardinal_player_facing == 2) {
+					t.hologram_offset_z--;
+				}
+				if(q.cardinal_player_facing == 3) {
+					t.hologram_offset_z++;
+				}
+				if(q.cardinal_player_facing == 4) {
+					t.hologram_offset_x++;
+				}
+				if(q.cardinal_player_facing == 5) {
+					t.hologram_offset_x--;
+				}
+			}
+		});
 		let playerRenderControllers = this.#patchRenderControllers(defaultPlayerRenderControllers, {
-			"controller.render.player.first_person": `
-				(!q.is_in_ui && !v.map_face_icon)? {
-					${initVariables}
-					${renderingControls}
-				};
-			`,
-			"controller.render.player.third_person": `
-				(!q.is_in_ui && !v.map_face_icon)? {
-					${initVariables}
-					${renderingControls}
-					${movementControls}
-				};
-			` // in first person, since the player entity is always at the front of the screen, it's always facing south so movement controls don't work.
+			"controller.render.player.first_person": this.#functionToMolang((q, v) => {
+				if(!q.is_in_ui && !v.map_face_icon) {
+					$[initVariables]
+					$[renderingControls]
+				}
+			}, { initVariables, renderingControls }),
+			"controller.render.player.third_person": this.#functionToMolang((q, v) => {
+				if(!q.is_in_ui) {
+					$[initVariables]
+					$[renderingControls]
+					$[movementControls] // in first person, since the player entity is always at the front of the screen, it's always facing south so movement controls don't work.
+				}
+			}, { initVariables, renderingControls, movementControls })
 		});
 		
 		// I have no idea if these visible bounds actually influence anything...
@@ -754,6 +754,71 @@ export default class HoloPrint {
 		ctx.fillRect(0, 0, can.width, can.height);
 		
 		return await can.convertToBlob();
+	}
+	/**
+	 * Converts a function into minified Molang code. Variables can be referenced with $[...].
+	 * @param {Function} func
+	 * @param {Object} [vars]
+	 * @returns {String} Molang code
+	 */
+	#functionToMolang(func, vars = {}) {
+		let funcCode = func.toString();
+		let funcBody = funcCode.slice(funcCode.indexOf("{") + 1, funcCode.lastIndexOf("}")).replaceAll(/\/\/.+/g, "").replaceAll(/(?<!return)\s/g, "");
+		let mathedCode = funcBody.replaceAll(`"`, `'`).replaceAll(/([\w\.]+)(\+|-){2};/g, "$1=$1$21;").replaceAll(/([\w\.]+)--;/g, "$1=$1-1;").replaceAll(/([\w\.]+)(\+|-|\*|\/|\?\?)=([^;]+);/g, "$1=$1$2$3;")
+		
+		// I have no idea how to make this smaller. I really wish JS had a native AST conversion API
+		let conditionedCode = "";
+		let parenthesisCounter = 0;
+		let inIfCondition = false;
+		for(let i = 0; i < mathedCode.length; i++) {
+			let char = mathedCode[i];
+			if(mathedCode.slice(i, i + 3) == "if(") {
+				inIfCondition = true;
+				parenthesisCounter++;
+				i += 2;
+				continue;
+			} else if(mathedCode.slice(i, i + 4) == "else") {
+				conditionedCode = conditionedCode.slice(0, -1) + ":"; // replace the ; with :
+				i += 3;
+				continue;
+			} else if(char == "(") {
+				parenthesisCounter++;
+			} else if(char == ")") {
+				parenthesisCounter--;
+				if(parenthesisCounter == 0 && inIfCondition) {
+					inIfCondition = false;
+					conditionedCode += "?";
+					continue;
+				}
+			} else if(char == "}") {
+				conditionedCode += "};";
+				continue;
+			}
+			conditionedCode += char;
+		}
+		// Yay more fun regular expressions, this time to work with variable substitution ($[...])
+		let variabledCode = conditionedCode.replaceAll(/\$\[(\w+)(?:\[(\d+)\])?(?:(\+|-|\*|\/)(\d+))?\]/g, (match, varName, index, operator, operand) => {
+			if(varName in vars) {
+				let value = vars[varName];
+				if(index != undefined) {
+					if(index in value) {
+						value = value[index];
+					} else {
+						throw new RangeError(`Index out of bounds: [${value.join(", ")}][${index}] does not exist`);
+					}
+				}
+				switch(operator) {
+					case "+": return +value + +operand; // must cast operands to numbers to avoid string concatenation
+					case "-": return value - operand;
+					case "*": return value * operand;
+					case "/": return value / operand;
+					default: return value;
+				}
+			} else {
+				throw new ReferenceError(`Variable "${varName}" was not passed to function -> Molang converter!`);
+			}
+		});
+		return variabledCode;
 	}
 	/**
 	 * JSON.stringify(), but shortens numbers to at most 4 decimal places to avoid JS floating-point errors making stringified numbers long.
