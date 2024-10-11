@@ -162,6 +162,9 @@ export default class HoloPrint {
 			t.hologram_offset_x ??= 0;
 			t.hologram_offset_y ??= 0;
 			t.hologram_offset_z ??= 0;
+			t.structure_w = $[structureSize[0]];
+			t.structure_h = $[structureSize[1]];
+			t.structure_d = $[structureSize[2]];
 			if(q.distance_from_camera <= 10) {
 				t.render_hologram = true;
 				t.hologram_layer = -1;
@@ -170,9 +173,6 @@ export default class HoloPrint {
 				t.wrong_block_x = 0;
 				t.wrong_block_y = 0;
 				t.wrong_block_z = 0;
-				t.structure_w = $[structureSize[0]];
-				t.structure_h = $[structureSize[1]];
-				t.structure_d = $[structureSize[2]];
 			} else {
 				t.render_hologram ??= true;
 				t.hologram_layer ??= -1;
@@ -181,9 +181,6 @@ export default class HoloPrint {
 				t.wrong_block_x ??= 0;
 				t.wrong_block_y ??= 0;
 				t.wrong_block_z ??= 0;
-				t.structure_w ??= $[structureSize[0]];
-				t.structure_h ??= $[structureSize[1]];
-				t.structure_d ??= $[structureSize[2]];
 			}
 		}, { structureSize })); // particles need to access structure dimensions later, but their `v.` scope is different to the armour stand's, so these have to be temp variables.
 		entityDescription["geometry"]["hologram"] = "geometry.armor_stand.hologram";
@@ -221,7 +218,8 @@ export default class HoloPrint {
 			let particleName = `bounding_box_outline_${i}`;
 			entityDescription["particle_effects"][particleName] = `holoprint:${particleName}`;
 			hologramAnimationControllers["animation_controllers"]["controller.animation.armor_stand.hologram.bounding_box"]["states"]["default"]["particle_effects"].push({
-				"effect": particleName
+				"effect": particleName,
+				"locator": "hologram_root"
 			});
 		});
 		

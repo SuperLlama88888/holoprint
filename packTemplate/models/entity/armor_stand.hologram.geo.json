@@ -8,8 +8,14 @@
 			},
 			"bones": [
 				{
+					"name": "hologram_alignment_wrapper"
+				},
+				{
 					"name": "hologram_root",
-					"pivot": [0, 0, 0]
+					"parent": "hologram_alignment_wrapper",
+					"locators": {
+						"hologram_root": [0, 0, 0]
+					}
 				}
 			]
 		},
@@ -21,7 +27,11 @@
 			},
 			"bones": [
 				{
+					"name": "wrong_block_overlay_alignment_wrapper"
+				},
+				{
 					"name": "wrong_block_overlay",
+					"parent": "wrong_block_overlay_alignment_wrapper",
 					"cubes": [
 						{
 							"origin": [-8, 0, -8],

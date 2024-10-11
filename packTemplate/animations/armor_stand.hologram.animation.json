@@ -13,7 +13,7 @@ I also wonder if we could have a "rotation lock" option which makes the hologram
 		"animation.armor_stand.hologram.align": {
 			"loop": "hold_on_last_frame",
 			"bones": {
-				"hologram_root": {
+				"hologram_alignment_wrapper": {
 					"position": [
 						// Snap to nearest block. Unfortunately looks glitchy when moving since it takes a tick for the position to update.
 						// x and z of armor stands is +0.5
@@ -26,6 +26,18 @@ I also wonder if we could have a "rotation lock" option which makes the hologram
 						"-(q.body_y_rotation - 90 * math.floor(q.body_y_rotation / 90))", // Snap to 90-deg directions
 						0
 					]
+				},
+				"wrong_block_overlay_alignment_wrapper": {
+					"position": [
+						0,
+						"-16 * (q.position(1) - math.floor(q.position(1)))",
+						0
+					],
+					"rotation": [
+						0,
+						"-(q.body_y_rotation - 90 * math.floor(q.body_y_rotation / 90))",
+						0
+					]
 				}
 			}
 		},
@@ -33,6 +45,13 @@ I also wonder if we could have a "rotation lock" option which makes the hologram
 			"loop": "hold_on_last_frame",
 			"bones": {
 				"hologram_root": {
+					"position": [
+						"t.hologram_offset_x * 16",
+						"t.hologram_offset_y * 16",
+						"t.hologram_offset_z * 16"
+					]
+				},
+				"wrong_block_overlay": {
 					"position": [
 						"t.hologram_offset_x * 16",
 						"t.hologram_offset_y * 16",
