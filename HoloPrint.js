@@ -158,7 +158,8 @@ export default class HoloPrint {
 		entityDescription["animations"]["controller.hologram.bounding_box"] = "controller.animation.armor_stand.hologram.bounding_box";
 		entityDescription["animations"]["controller.hologram.block_validation"] = "controller.animation.armor_stand.hologram.block_validation";
 		entityDescription["scripts"]["animate"].push("hologram.align", "hologram.offset", "hologram.spawn", "hologram.wrong_block_overlay", "controller.hologram.layers", "controller.hologram.bounding_box", "controller.hologram.block_validation");
-		entityDescription["scripts"]["initialize"].push(this.#functionToMolang((q, t) => {
+		entityDescription["scripts"]["initialize"].push(this.#functionToMolang((q, t, v) => {
+			v.hologram_dir = Math.floor(q.body_y_rotation / 90) + 2; // [south, west, north, east] (since it goes from -180 to 180)
 			t.hologram_offset_x ??= 0;
 			t.hologram_offset_y ??= 0;
 			t.hologram_offset_z ??= 0;
