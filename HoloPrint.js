@@ -6,7 +6,7 @@ import TranslationFileParser from "./TranslationFileParser.js";
 import TextureAtlas from "./TextureAtlas.js";
 import BlockGeoMaker from "./BlockGeoMaker.js";
 
-import { abs, awaitAllEntries, blobToImage, downloadBlob, max, min, pi, sha256, sha256text } from "./essential.js";
+import { abs, awaitAllEntries, blobToImage, downloadBlob, floor, max, min, pi, sha256, sha256text } from "./essential.js";
 import ResourcePackStack from "./ResourcePackStack.js";
 
 export default class HoloPrint {
@@ -80,7 +80,7 @@ export default class HoloPrint {
 		let structureSize = nbt["size"].map(x => +x); // Stored as Number instances: https://github.com/Offroaders123/NBTify/issues/50
 		
 		// Make the pack
-		let { manifest, packIcon, entityFile, hologramRenderControllers, defaultPlayerRenderControllers, armorStandGeo, hologramMaterial, hologramAnimationControllers, boundingBoxOutlineParticle, blockValidationParticle, singleWhitePixelTexture, translationFile } = await awaitAllEntries({
+		let { manifest, packIcon, entityFile, hologramRenderControllers, defaultPlayerRenderControllers, armorStandGeo, hologramMaterial, hologramAnimationControllers, boundingBoxOutlineParticle, blockValidationParticle, singleWhitePixelTexture, hudScreenUI, translationFile } = await awaitAllEntries({
 			manifest: fetch("packTemplate/manifest.json").then(res => res.jsonc()),
 			packIcon: this.#makePackIcon(structureFile),
 			entityFile: this.resourcePackStack.fetchResource("entity/armor_stand.entity.json").then(res => res.jsonc()),
@@ -92,6 +92,7 @@ export default class HoloPrint {
 			boundingBoxOutlineParticle: fetch("packTemplate/particles/bounding_box_outline.json").then(res => res.jsonc()),
 			blockValidationParticle: fetch("packTemplate/particles/block_validation.json").then(res => res.jsonc()),
 			singleWhitePixelTexture: fetch("packTemplate/textures/particle/single_white_pixel.png").then(res => res.toImage()),
+			hudScreenUI: fetch("packTemplate/ui/hud_screen.json").then(res => res.jsonc()),
 			translationFile: this.resourcePackStack.fetchResource(`texts/${this.config.MATERIAL_LIST_LANGUAGE}.lang`).then(res => res.text())
 		});
 		let structure = nbt["structure"];
@@ -496,6 +497,31 @@ export default class HoloPrint {
 		let finalBlockCounts = await this.#finaliseBlockCounts(blockCountsMap, translationFile);
 		let totalMaterialCount = finalBlockCounts.reduce((a, b) => a + b[1], 0);
 		
+		let partitionedBlockCounts = finalBlockCounts.map(([translatedBlockName, count, blockName]) => {
+			if(count >= 64) {
+				let parts = [[floor(count / 1728), "b"], [floor(count / 64) % 27, "s"], [count % 64, ""]].filter(([n]) => n).map(x => x.join(""));
+				return [translatedBlockName, `${count} = ${parts.join(" + ")}`, blockName];
+			} else {
+				return [translatedBlockName, String(count), blockName];
+			}
+		});
+		// console.log(partitionedBlockCounts);
+		let [blockMetadata, itemMetadata] = await Promise.all([
+			this.resourcePackStack.fetchData("metadata/vanilladata_modules/mojang-blocks.json").then(res => res.json()),
+			this.resourcePackStack.fetchData("metadata/vanilladata_modules/mojang-items.json").then(res => res.json())
+		]);
+		let missingItemAux = blockMetadata["data_items"].find(block => block.name == "minecraft:reserved6")["raw_id"];
+		hudScreenUI["material_list"]["controls"].unshift(...partitionedBlockCounts.map(([translatedBlockName, count, blockName], i) => ({
+			[`material_list_${i}@hud.material_list_item`]: {
+				"$block_name": translatedBlockName,
+				"$block_count": count,
+				"$item_id_aux": 65536 * ((itemMetadata["data_items"].find(item => item.name == `minecraft:${blockName}`) ?? blockMetadata["data_items"].find(item => item.name == `minecraft:${blockName}`))?.["raw_id"] ?? missingItemAux),
+				"$background_opacity": i % 2 * 0.2
+			}
+		})));
+		hudScreenUI["material_list_wrapper"]["size"][1] = partitionedBlockCounts.length * 12 + 12; // 12px for each item + 12px for the heading
+		hudScreenUI["material_list_heading"]["controls"][1]["pack_name"]["text"] += structureName;
+		
 		manifest["header"]["description"] += `\n\nTotal block count: ${totalMaterialCount}\n`;
 		manifest["header"]["description"] += finalBlockCounts.map(([translatedBlockName, count]) => `${count} ${translatedBlockName}`).join(", ");
 		
@@ -531,6 +557,7 @@ export default class HoloPrint {
 		textureBlobs.forEach(([textureName, blob]) => {
 			pack.file(`textures/entity/${textureName}.png`, blob);
 		});
+		pack.file("ui/hud_screen.json", JSON.stringify(hudScreenUI));
 		
 		let zippedPack = await pack.generateAsync({
 			type: "blob",
@@ -660,7 +687,7 @@ export default class HoloPrint {
 			return acc;
 		}, {}));
 		fixedBlockCounts.sort((a, b) => b[1] - a[1]);
-		let translatedBlockCounts = fixedBlockCounts.map(([blockName, count]) => [tfp.getBlockName(blockName), count]);
+		let translatedBlockCounts = fixedBlockCounts.map(([blockName, count]) => [tfp.getBlockName(blockName), count, blockName]);
 		return translatedBlockCounts;
 	}
 	/**
