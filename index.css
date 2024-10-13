@@ -146,32 +146,21 @@ button:hover, input[type="file"]:hover::file-selector-button, select:hover {
 	padding: 1px 5px;
 	font-size: 1.3em;
 }
-#previewCont {
-	contain: layout;
-	display: inline-block;
-	/* width: 512px;
-	height: 512px; */
-}
-.lil-gui {
-	position: absolute;
-	top: 0;
-	right: 0;
-}
 img, canvas {
 	display: inline-block;
-	image-rendering: pixelated;
 	width: 400px;
 	border: 1px solid black;
 	background: url("assets/noise.svg");
-}
-canvas {
-	width: 500px;
 	/* color: #4C33CC;
 	color: #2C33B3;
-	color: #4CF0A0 */
+	color: #4CF0A0
 	color: hsl(300, 24%, 53%);
 	color: #D899D8;
-	color: #D7B3D7;
+	color: #D7B3D7; */
+}
+#previewCont {
+	padding: 5px;
+	text-align: center;
 }
 .hidden {
 	display: none !important;

@@ -369,17 +369,7 @@ export default class HoloPrint {
 		
 		let textureBlobs = textureAtlas.imageBlobs;
 		
-		// let preview = await new PreviewRenderer(this.previewCont, textureAtlas, structureSize);
-		// // console.log(hologramGeo);
-		// // await new Promise(()=>{})
-		// blockGeoMaker.allCubes.forEach(cube => preview.addCube(cube));
-		// function renderPreview() {
-		// 	preview.render();
-		// 	window.requestAnimationFrame(renderPreview);
-		// }
-		// window.requestAnimationFrame(renderPreview);
-		
-		// blobToImage(packIcon).then(image => document.body.appendChild(image));
+		new PreviewRenderer(this.previewCont, textureAtlas, hologramGeo); // is async but we won't wait for it
 		
 		let structureName = structureFile.name.match(/(.+)\.[^.]+$/)[1];
 		

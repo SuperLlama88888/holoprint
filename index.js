@@ -136,9 +136,7 @@ async function makePack(structureFile, localResourcePacks) {
 		MATERIAL_LIST_LANGUAGE: formData.get("materialListLanguage")
 	};
 	
-	let previewCont = document.createElement("div");
-	previewCont.id = "previewCont";
-	document.body.appendChild(previewCont);
+	let previewCont = selectEl("#previewCont");
 	
 	let resourcePackStack = new ResourcePackStack(localResourcePacks);
 	logger.setOriginTime(performance.now());

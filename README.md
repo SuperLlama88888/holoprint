@@ -47,10 +47,11 @@ https://github.com/user-attachments/assets/8c6a25db-9637-454f-97d7-f324e78580e8
   - [Magic Method Docs](https://github.com/BedrockPlus/MagicMethodDocs): Documentation of [Chainsketch](https://www.youtube.com/@Chainsketch)'s technique to pass data between entities in resource packs, written by [White](https://github.com/WhiteOnGitHub) and [chyves](https://github.com/notchyves)
   - [Microsoft BE reference docs](https://learn.microsoft.com/en-us/minecraft/creator/reference): Official schemas for addons/resource packs
 - JavaScript libraries:
-  - [tga.js](https://github.com/vthibault/tga.js): TGA to PNG image conversion
   - [NBTify](https://github.com/Offroaders123/NBTify): Minecraft NBT reader
+  - [tga.js](https://github.com/vthibault/tga.js): TGA to PNG image conversion
+  - [potpack](https://github.com/mapbox/potpack): Texture atlas packing
   - [JSZip](https://github.com/Stuk/jszip): Pack zipping
-  - [three.js](https://github.com/mrdoob/three.js): 3D renderer for previews
+  - [bridge-model-viewer](https://github.com/bridge-core/model-viewer) and [three.js](https://github.com/mrdoob/three.js): Preview rendering
   - [strip-json-comments](https://github.com/sindresorhus/strip-json-comments): Removes comments from JSON files
 
 ### Code outline
