@@ -758,8 +758,49 @@
 	],
 	"liquid": [
 		{
+			"if": "liquid_depth == 0",
 			"pos": [0, 0, 0],
 			"size": [16, 14, 16]
+		},
+		{
+			"if": "liquid_depth == 1",
+			"pos": [0, 0, 0],
+			"size": [16, 12.5, 16]
+		},
+		{
+			"if": "liquid_depth == 2",
+			"pos": [0, 0, 0],
+			"size": [16, 10.5, 16]
+		},
+		{
+			"if": "liquid_depth == 3",
+			"pos": [0, 0, 0],
+			"size": [16, 9, 16]
+		},
+		{
+			"if": "liquid_depth == 4",
+			"pos": [0, 0, 0],
+			"size": [16, 7, 16]
+		},
+		{
+			"if": "liquid_depth == 5",
+			"pos": [0, 0, 0],
+			"size": [16, 5.5, 16]
+		},
+		{
+			"if": "liquid_depth == 6",
+			"pos": [0, 0, 0],
+			"size": [16, 3.5, 16]
+		},
+		{
+			"if": "liquid_depth == 7",
+			"pos": [0, 0, 0],
+			"size": [16, 1.5, 16]
+		},
+		{
+			"if": "liquid_depth >= 8",
+			"pos": [0, 0, 0],
+			"size": [16, 16, 16]
 		}
 	],
 	"scaffolding": [ // todo: fix top bit
