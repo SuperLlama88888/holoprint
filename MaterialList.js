@@ -12,6 +12,7 @@
 import { floor, nanToUndefined } from "./essential.js";
 
 export default class MaterialList {
+	static #ignoredBlocks = ["flowing_water", "flowing_lava"]; // these don't appear to be used anymore
 	/** Blocks that have a different item or item ID. */
 	static #blockToItemIDS = {
 		"unpowered_repeater": "repeater",
@@ -21,9 +22,7 @@ export default class MaterialList {
 		"redstone_wire": "redstone",
 		"unlit_redstone_torch": "redstone_torch",
 		"water": "water_bucket",
-		"flowing_water": "water_bucket",
 		"lava": "lava_bucket",
-		"flowing_lava": "lava_bucket",
 		"powder_snow": "powder_snow_bucket",
 		"lit_furnace": "furnace",
 		"lit_blast_furnace": "blast_furnace",
@@ -50,6 +49,7 @@ export default class MaterialList {
 		"tile.dark_oak_fence": "tile.darkOakFence",
 		"item.water_bucket": "item.bucketWater",
 		"item.lava_bucket": "item.bucketLava",
+		"item.powder_snow_bucket": "item.bucketPowderSnow",
 		"tile.wall_banner": "tile.standing_banner",
 		"tile.daylight_detector_inverted": "tile.daylight_detector"
 	};
@@ -93,6 +93,9 @@ export default class MaterialList {
 	 * @param {Number} count
 	 */
 	add(blockName, count = 1) {
+		if(blockName in MaterialList.#ignoredBlocks) {
+			return;
+		}
 		let itemName = MaterialList.#blockToItemIDS[blockName] ?? blockName;
 		if(/double_.*slab$/.test(itemName)) {
 			itemName = itemName.replace("double_", "");

@@ -1,13 +1,13 @@
 import * as NBT from "https://esm.run/nbtify@2.0.0";
 import JSZip from "https://esm.run/jszip@3.10.1";
 
-import PreviewRenderer from "./PreviewRenderer.js";
-import TextureAtlas from "./TextureAtlas.js";
 import BlockGeoMaker from "./BlockGeoMaker.js";
+import TextureAtlas from "./TextureAtlas.js";
+import MaterialList from "./MaterialList.js";
+import PreviewRenderer from "./PreviewRenderer.js";
 
 import { abs, awaitAllEntries, blobToImage, max, min, pi, sha256, sha256text } from "./essential.js";
 import ResourcePackStack from "./ResourcePackStack.js";
-import MaterialList from "./MaterialList.js";
 
 export default class HoloPrint {
 	static #IGNORED_BLOCKS = ["air", "piston_arm_collision", "sticky_piston_arm_collision"]; // blocks to be ignored when scanning the structure file
@@ -99,7 +99,7 @@ export default class HoloPrint {
 		});
 		let structure = nbt["structure"];
 		
-		let { palette: blockPalette, indices: blockPaletteIndices } = this.#tweakBlockPalette(structure);
+		let { palette: blockPalette, indices: blockPaletteIndicesByLayer } = this.#tweakBlockPalette(structure);
 		// console.log("indices: ", blockIndices);
 		
 		let blockGeoMaker = await new BlockGeoMaker(this.config);
@@ -277,7 +277,7 @@ export default class HoloPrint {
 		);
 		
 		let blocksToValidate = [];
-		let uniqueBlocks = new Set();
+		let uniqueBlocksToValidate = new Set();
 		
 		let materialList = new MaterialList(blockMetadata, itemMetadata, translationFile);
 		for(let y = 0; y < structureSize[1]; y++) {
@@ -322,46 +322,54 @@ export default class HoloPrint {
 			for(let x = 0; x < structureSize[0]; x++) {
 				for(let z = 0; z < structureSize[2]; z++) {
 					let i = (x * structureSize[1] + y) * structureSize[2] + z;
-					let paletteI = blockPaletteIndices[i];
-					if(!(paletteI in boneTemplatePalette)) {
-						if(paletteI in blockPalette) {
-							console.error(`A bone template wasn't made for blockPalette[${paletteI}] = ${blockPalette[paletteI]["name"]}!`);
+					blockPaletteIndicesByLayer.forEach((blockPaletteIndices, layerI) => {
+						let paletteI = blockPaletteIndices[i];
+						if(!(paletteI in boneTemplatePalette)) {
+							if(paletteI in blockPalette) {
+								console.error(`A bone template wasn't made for blockPalette[${paletteI}] = ${blockPalette[paletteI]["name"]}!`);
+							}
+							return;
 						}
-						continue;
-					}
-					let boneTemplate = boneTemplatePalette[paletteI];
-					// console.table({x, y, z, i, paletteI, boneTemplate});
-					
-					let boneName = `b_${x}_${y}_${z}`;
-					let bonePos = [-16 * x - 8, 16 * y, 16 * z - 8]; // I got these values from trial and error with blockbench (which makes the x negative I think. it's weird.)
-					let positionedBoneTemplate = blockGeoMaker.positionBoneTemplate(boneTemplate, bonePos);
-					hologramGeo["minecraft:geometry"][0]["bones"].push({
-						"name": boneName,
-						"parent": layerName,
-						...positionedBoneTemplate
+						let boneTemplate = boneTemplatePalette[paletteI];
+						// console.table({x, y, z, i, paletteI, boneTemplate});
+						
+						let boneName = `b_${x}_${y}_${z}`;
+						if(boneName == hologramGeo["minecraft:geometry"][0]["bones"].at(-1)["name"]) {
+							boneName += `_${layerI}`;
+						}
+						let bonePos = [-16 * x - 8, 16 * y, 16 * z - 8]; // I got these values from trial and error with blockbench (which makes the x negative I think. it's weird.)
+						let positionedBoneTemplate = blockGeoMaker.positionBoneTemplate(boneTemplate, bonePos);
+						hologramGeo["minecraft:geometry"][0]["bones"].push({
+							"name": boneName,
+							"parent": layerName,
+							...positionedBoneTemplate
+						});
+						hologramGeo["minecraft:geometry"][0]["bones"][1]["locators"][boneName] = bonePos.map(x => x + 8);
+						
+						if(this.config.DO_SPAWN_ANIMATION) {
+							hologramAnimations["animations"]["animation.armor_stand.hologram.spawn"]["bones"][boneName] = makeHologramSpawnAnimation(x, y, z);
+						}
+						
+						let blockName = blockPalette[paletteI]["name"];
+						materialList.add(blockName);
+						
+						if(layerI == 0) { // particle_expire_if_in_blocks only works on the first layer :(
+							blocksToValidate.push({
+								"bone_name": boneName,
+								"block": blockName,
+								"pos": [x, y, z]
+							});
+							uniqueBlocksToValidate.add(blockName);
+						}
 					});
-					hologramGeo["minecraft:geometry"][0]["bones"][1]["locators"][boneName] = bonePos.map(x => x + 8);
-					
-					if(this.config.DO_SPAWN_ANIMATION) {
-						hologramAnimations["animations"]["animation.armor_stand.hologram.spawn"]["bones"][boneName] = makeHologramSpawnAnimation(x, y, z);
-					}
-					
-					let blockName = blockPalette[paletteI]["name"];
-					materialList.add(blockName);
-					
-					blocksToValidate.push({
-						"bone_name": boneName,
-						"block": blockName,
-						"pos": [x, y, z]
-					});
-					uniqueBlocks.add(blockName);
 				}
 			}
 		}
 		let totalBlocks = materialList.totalMaterialCount;
+		let totalBlocksToValidate = blocksToValidate.length;
 		
 		// add the particles' short names, and then reference them in the animation controller
-		uniqueBlocks.forEach(blockName => {
+		uniqueBlocksToValidate.forEach(blockName => {
 			let particleName = `validate_${blockName}`;
 			entityDescription["particle_effects"][particleName] = `holoprint:${particleName}`;
 		});
@@ -417,12 +425,12 @@ export default class HoloPrint {
 			t.validate_hologram ??= false;
 			t.hologram_layer ??= -1;
 			t.show_wrong_block_overlay ??= false;
-			t.wrong_blocks ??= $[totalBlocks];
+			t.wrong_blocks ??= $[totalBlocksToValidate];
 			t.armor_stand_interaction ??= false;
 			
 			v.attack = v.attack_time > 0 && (v.last_attack_time == 0 || v.attack_time < v.last_attack_time);
 			v.last_attack_time = v.attack_time;
-		}, { defaultTextureIndex, totalBlocks });
+		}, { defaultTextureIndex, totalBlocksToValidate });
 		let totalLayers = structureSize[1];
 		let renderingControls = this.#functionToMolang((q, t, v, textureBlobsCount) => {
 			if(v.attack) {
@@ -437,7 +445,7 @@ export default class HoloPrint {
 				if(q.is_item_name_any("slot.weapon.mainhand", "minecraft:iron_ingot")) {
 					t.validate_hologram = !t.validate_hologram;
 					if(t.validate_hologram) {
-						t.wrong_blocks = $[totalBlocks];
+						t.wrong_blocks = $[totalBlocksToValidate];
 					}
 				}
 			}
@@ -451,7 +459,7 @@ export default class HoloPrint {
 				}
 				t.armor_stand_interaction = false;
 			}
-		}, { totalLayers, textureBlobsCount: textureBlobs.length, totalBlocks });
+		}, { totalLayers, textureBlobsCount: textureBlobs.length, totalBlocksToValidate });
 		let movementControls = this.#functionToMolang((q, t, v) => {
 			if(v.attack && q.is_item_name_any("slot.weapon.mainhand", "minecraft:stick")) {
 				if(q.cardinal_player_facing == 0) {
@@ -538,7 +546,7 @@ export default class HoloPrint {
 			particle["particle_effect"]["components"]["minecraft:emitter_initialization"]["creation_expression"] = particleMolang.replaceAll(/\s/g, "");
 			pack.file(`particles/bounding_box_outline_${i}.json`, JSON.stringify(particle));
 		});
-		uniqueBlocks.forEach(blockName => {
+		uniqueBlocksToValidate.forEach(blockName => {
 			let particleName = `validate_${blockName}`;
 			let particle = structuredClone(blockValidationParticle);
 			particle["particle_effect"]["description"]["identifier"] = `holoprint:${particleName}`;
@@ -603,13 +611,13 @@ export default class HoloPrint {
 		});
 		console.log("Block versions:", [...blockVersions]);
 		
-		// add block entities into the block palette
-		let indices = structuredClone(structure["block_indices"][0]).map(x => +x);
+		// add block entities into the block palette (on layer 0)
+		let indices = structure["block_indices"].map(layer => structuredClone(layer).map(i => +i));
 		let newIndexCache = new Map();
 		let entitylessBlockEntityIndices = new Set(); // contains all the block palette indices for blocks with block entities. since they don't have block entity data yet, and all block entities well be cloned and added to the end of the palette, we can remove all the entries in here from the palette.
 		let blockPositionData = structure["palette"]["default"]["block_position_data"];
 		for(let i in blockPositionData) {
-			let oldPaletteI = indices[i];
+			let oldPaletteI = indices[0][i];
 			if(!(oldPaletteI in palette)) { // if the block is ignored, it will be deleted already, so there's no need to touch its block entities
 				continue;
 			}
@@ -633,11 +641,11 @@ export default class HoloPrint {
 			
 			// check that we haven't seen this block entity before. since in JS objects are compared by reference we have to stringify it first then check the cache.
 			if(newIndexCache.has(stringifiedNewBlock)) {
-				indices[i] = newIndexCache.get(stringifiedNewBlock);
+				indices[0][i] = newIndexCache.get(stringifiedNewBlock);
 			} else {
 				let paletteI = palette.length;
 				palette[paletteI] = newBlock;
-				indices[i] = paletteI;
+				indices[0][i] = paletteI;
 				newIndexCache.set(stringifiedNewBlock, paletteI);
 				entitylessBlockEntityIndices.add(oldPaletteI); // we can schedule to delete the original block palette entry later, as it doesn't have any block entity data and all block entities clone it.
 			}

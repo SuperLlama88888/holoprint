@@ -42,6 +42,7 @@ export default class TextureAtlas {
 	/** Block IDs from the structure file that need to be remapped to something else in blocks.json, _._ means variants */
 	static #blocksDotJsonPatches = { // caused mainly by bugs like MCPE-186255 and MCPE-177977. ideally this doesn't exist.
 		"grass_block": "grass",
+		"trip_wire": "tripWire",
 		"oak_planks": "planks.0",
 		"spruce_planks": "planks.1",
 		"birch_planks": "planks.2",
