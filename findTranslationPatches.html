@@ -12,33 +12,27 @@
 <script type="module">
 	import ResourcePackStack from "./ResourcePackStack.js";
 	import SimpleLogger from "./SimpleLogger.js";
-	import TranslationFileParser from "./TranslationFileParser.js";
+	import MaterialList from "./MaterialList.js";
 	
 	let logger = new SimpleLogger(document.querySelector("#log"));
 	logger.patchConsoleMethods();
 	
 	let rps = new ResourcePackStack();
-	let translationFile = await rps.fetchResource("texts/en_US.lang").then(res => res.text());
-	let [blockMetadata, itemData] = await Promise.all([
+	let [blockMetadata, itemMetadata, translationFile] = await Promise.all([
 		rps.fetchData("metadata/vanilladata_modules/mojang-blocks.json").then(res => res.json()),
-		rps.fetchData("metadata/vanilladata_modules/mojang-items.json").then(res => res.json())
+		rps.fetchData("metadata/vanilladata_modules/mojang-items.json").then(res => res.json()),
+		rps.fetchResource("texts/en_US.lang").then(res => res.text())
 	]);
 	let blockNames = [];
 	blockMetadata["data_items"].forEach(block => {
 		let blockName = block["name"].replace(/^minecraft:/, "");
-		if(["hard_", "element_", "colored_torch_"].some(prefix => blockName.startsWith(prefix))) { // chemistry features
+		if(["hard_", "element_", "colored_torch_"].some(prefix => blockName.startsWith(prefix)) || ["chemical_heat", "compound_creator", "lab_table", "material_reducer"].includes(blockName)) { // chemistry features
 			return;
 		}
 		blockNames.push(blockName);
 	});
-	let tfp = await new TranslationFileParser(rps, translationFile);
 	
-	let missingTranslations = 0;
-	blockNames.forEach(blockName => {
-		let translation = tfp.getBlockName(blockName);
-		if(translation == blockName) {
-			missingTranslations++;
-		}
-	});
-	console.log(`Finished checking with ${missingTranslations} missing translations`);
+	let materialList = new MaterialList(blockMetadata, itemMetadata, translationFile);
+	blockNames.forEach(blockName => materialList.add(blockName));
+	console.log(materialList.export());
 </script>

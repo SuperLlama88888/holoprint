@@ -35,7 +35,45 @@
 				}
 			],
 			"geometry": "Geometry.hologram.wrong_block_overlay",
-			"textures": ["Texture.hologram.wrong_block_overlay"],
+			"textures": [
+				"Texture.hologram.overlay"
+			],
+			"overlay_color": {
+				"r": 1,
+				"g": 0,
+				"b": 0,
+				"a": 1
+			},
+			"is_hurt_color": {
+				"r": 0,
+				"g": 0,
+				"b": 0,
+				"a": 0
+			},
+			"on_fire_color": {
+				"r": 0,
+				"g": 0,
+				"b": 0,
+				"a": 0
+			},
+			"ignore_lighting": true
+		},
+		"controller.render.armor_stand.hologram.valid_structure_overlay": {
+			"materials": [
+				{
+					"*": "Material.hologram"
+				}
+			],
+			"geometry": "Geometry.hologram.valid_structure_overlay",
+			"textures": [
+				"Texture.hologram.overlay"
+			],
+			"overlay_color": {
+				"r": 0,
+				"g": 1,
+				"b": 0,
+				"a": 0.7
+			},
 			"is_hurt_color": {
 				"r": 0,
 				"g": 0,

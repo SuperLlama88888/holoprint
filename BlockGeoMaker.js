@@ -370,7 +370,7 @@ export default class BlockGeoMaker {
 				if("tint" in cube) {
 					textureRef["tint"] = hexColourToClampedTriplet(cube["tint"]);
 				}
-				if("states" in block && "redstone_signal" in block["states"]) {
+				if(blockName == "redstone_wire") {
 					textureRef["tint"] = BlockGeoMaker.#REDSTONE_DUST_TINTS[block["states"]["redstone_signal"]];
 				}
 				

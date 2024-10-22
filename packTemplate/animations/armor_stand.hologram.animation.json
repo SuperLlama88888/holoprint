@@ -38,6 +38,18 @@ I also wonder if we could have a "rotation lock" option which makes the hologram
 						"-(q.body_y_rotation - 90 * math.floor(q.body_y_rotation / 90))",
 						0
 					]
+				},
+				"valid_structure_overlay_alignment_wrapper": {
+					"position": [
+						0,
+						"-16 * (q.position(1) - math.floor(q.position(1)))",
+						0
+					],
+					"rotation": [
+						0,
+						"-(q.body_y_rotation - 90 * math.floor(q.body_y_rotation / 90))",
+						0
+					]
 				}
 			}
 		},
@@ -57,12 +69,18 @@ I also wonder if we could have a "rotation lock" option which makes the hologram
 						"t.hologram_offset_y * 16",
 						"(v.hologram_dir == 0? t.hologram_offset_z: (v.hologram_dir == 1? t.hologram_offset_x : (v.hologram_dir == 2? -t.hologram_offset_z : -t.hologram_offset_x))) * 16"
 					]
+				},
+				"valid_structure_overlay": {
+					"position": [
+						"(v.hologram_dir == 0? t.hologram_offset_x : (v.hologram_dir == 1? -t.hologram_offset_z : (v.hologram_dir == 2? -t.hologram_offset_x : t.hologram_offset_z))) * 16",
+						"t.hologram_offset_y * 16",
+						"(v.hologram_dir == 0? t.hologram_offset_z: (v.hologram_dir == 1? t.hologram_offset_x : (v.hologram_dir == 2? -t.hologram_offset_z : -t.hologram_offset_x))) * 16"
+					]
 				}
 			}
 		},
 		"animation.armor_stand.hologram.spawn": {
 			// A fun spawning animation
-			"loop": "hold_on_last_frame",
 			"bones": {}
 		},
 		"animation.armor_stand.hologram.wrong_block_overlay": {

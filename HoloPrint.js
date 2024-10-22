@@ -2,12 +2,12 @@ import * as NBT from "https://esm.run/nbtify@2.0.0";
 import JSZip from "https://esm.run/jszip@3.10.1";
 
 import PreviewRenderer from "./PreviewRenderer.js";
-import TranslationFileParser from "./TranslationFileParser.js";
 import TextureAtlas from "./TextureAtlas.js";
 import BlockGeoMaker from "./BlockGeoMaker.js";
 
-import { abs, awaitAllEntries, blobToImage, downloadBlob, floor, max, min, pi, sha256, sha256text } from "./essential.js";
+import { abs, awaitAllEntries, blobToImage, max, min, pi, sha256, sha256text } from "./essential.js";
 import ResourcePackStack from "./ResourcePackStack.js";
+import MaterialList from "./MaterialList.js";
 
 export default class HoloPrint {
 	static #IGNORED_BLOCKS = ["air", "piston_arm_collision", "sticky_piston_arm_collision"]; // blocks to be ignored when scanning the structure file
@@ -32,7 +32,7 @@ export default class HoloPrint {
 		TEXTURE_OUTLINE_COLOUR = "#00F9",
 		TEXTURE_OUTLINE_ALPHA_DIFFERENCE_MODE = "threshold", // difference: will compare alpha channel difference; threshold: will only look at the second pixel
 		TEXTURE_OUTLINE_ALPHA_THRESHOLD = 0, // if using difference mode, will draw outline between pixels with at least this much alpha difference; else, will draw outline on pixels next to pixels with an alpha less than or equal to this
-		DO_SPAWN_ANIMATION = false,
+		DO_SPAWN_ANIMATION = true,
 		SPAWN_ANIMATION_LENGTH = 0.4, // relative
 		WRONG_BLOCK_OVERLAY_COLOR = [1, 0, 0, 0.3],
 		MATERIAL_LIST_LANGUAGE = "en_US"
@@ -80,7 +80,7 @@ export default class HoloPrint {
 		let structureSize = nbt["size"].map(x => +x); // Stored as Number instances: https://github.com/Offroaders123/NBTify/issues/50
 		
 		// Make the pack
-		let { manifest, packIcon, entityFile, hologramRenderControllers, defaultPlayerRenderControllers, armorStandGeo, hologramMaterial, hologramAnimationControllers, boundingBoxOutlineParticle, blockValidationParticle, singleWhitePixelTexture, hudScreenUI, translationFile } = await awaitAllEntries({
+		let { manifest, packIcon, entityFile, hologramRenderControllers, defaultPlayerRenderControllers, armorStandGeo, hologramMaterial, hologramAnimationControllers, boundingBoxOutlineParticle, blockValidationParticle, singleWhitePixelTexture, hudScreenUI, translationFile, blockMetadata, itemMetadata } = await awaitAllEntries({
 			manifest: fetch("packTemplate/manifest.json").then(res => res.jsonc()),
 			packIcon: this.#makePackIcon(structureFile),
 			entityFile: this.resourcePackStack.fetchResource("entity/armor_stand.entity.json").then(res => res.jsonc()),
@@ -93,7 +93,9 @@ export default class HoloPrint {
 			blockValidationParticle: fetch("packTemplate/particles/block_validation.json").then(res => res.jsonc()),
 			singleWhitePixelTexture: fetch("packTemplate/textures/particle/single_white_pixel.png").then(res => res.toImage()),
 			hudScreenUI: fetch("packTemplate/ui/hud_screen.json").then(res => res.jsonc()),
-			translationFile: this.resourcePackStack.fetchResource(`texts/${this.config.MATERIAL_LIST_LANGUAGE}.lang`).then(res => res.text())
+			translationFile: this.resourcePackStack.fetchResource(`texts/${this.config.MATERIAL_LIST_LANGUAGE}.lang`).then(res => res.text()),
+			blockMetadata: this.resourcePackStack.fetchData("metadata/vanilladata_modules/mojang-blocks.json").then(res => res.json()),
+			itemMetadata: this.resourcePackStack.fetchData("metadata/vanilladata_modules/mojang-items.json").then(res => res.json())
 		});
 		let structure = nbt["structure"];
 		
@@ -150,7 +152,7 @@ export default class HoloPrint {
 		let entityDescription = entityFile["minecraft:client_entity"]["description"];
 		entityDescription["materials"]["hologram"] = "holoprint_hologram";
 		entityDescription["materials"]["hologram.wrong_block_overlay"] = "holoprint_hologram_wrong_block_overlay";
-		entityDescription["textures"]["hologram.wrong_block_overlay"] = "textures/entity/wrong_block_overlay";
+		entityDescription["textures"]["hologram.overlay"] = "textures/entity/overlay";
 		entityDescription["animations"]["hologram.align"] = "animation.armor_stand.hologram.align";
 		entityDescription["animations"]["hologram.offset"] = "animation.armor_stand.hologram.offset";
 		entityDescription["animations"]["hologram.spawn"] = "animation.armor_stand.hologram.spawn";
@@ -159,8 +161,7 @@ export default class HoloPrint {
 		entityDescription["animations"]["controller.hologram.bounding_box"] = "controller.animation.armor_stand.hologram.bounding_box";
 		entityDescription["animations"]["controller.hologram.block_validation"] = "controller.animation.armor_stand.hologram.block_validation";
 		entityDescription["scripts"]["animate"].push("hologram.align", "hologram.offset", "hologram.spawn", "hologram.wrong_block_overlay", "controller.hologram.layers", "controller.hologram.bounding_box", "controller.hologram.block_validation");
-		entityDescription["scripts"]["initialize"].push(this.#functionToMolang((q, t, v) => {
-			v.hologram_dir = Math.floor(q.body_y_rotation / 90) + 2; // [south, west, north, east] (since it goes from -180 to 180)
+		entityDescription["scripts"]["initialize"].push(this.#functionToMolang((q, t) => {
 			t.hologram_offset_x ??= 0;
 			t.hologram_offset_y ??= 0;
 			t.hologram_offset_z ??= 0;
@@ -185,8 +186,13 @@ export default class HoloPrint {
 				t.wrong_block_z ??= 0;
 			}
 		}, { structureSize })); // particles need to access structure dimensions later, but their `v.` scope is different to the armour stand's, so these have to be temp variables.
+		entityDescription["scripts"]["pre_animation"] ??= [];
+		entityDescription["scripts"]["pre_animation"].push(this.#functionToMolang((v, q) => {
+			v.hologram_dir = Math.floor(q.body_y_rotation / 90) + 2; // [south, west, north, east] (since it goes from -180 to 180)
+		}));
 		entityDescription["geometry"]["hologram"] = "geometry.armor_stand.hologram";
 		entityDescription["geometry"]["hologram.wrong_block_overlay"] = "geometry.armor_stand.hologram.wrong_block_overlay";
+		entityDescription["geometry"]["hologram.valid_structure_overlay"] = "geometry.armor_stand.hologram.valid_structure_overlay";
 		entityDescription["render_controllers"].push({
 			"controller.render.armor_stand.hologram": this.#functionToMolang((v, t) => {
 				v.last_pose ??= v.armor_stand.pose_index;
@@ -200,6 +206,8 @@ export default class HoloPrint {
 			})
 		}, {
 			"controller.render.armor_stand.hologram.wrong_block_overlay": "t.show_wrong_block_overlay"
+		}, {
+			"controller.render.armor_stand.hologram.valid_structure_overlay": "t.validate_hologram && t.wrong_blocks == 0"
 		});
 		let outlineParticleSettings = [
 			"v.size = t.structure_w / 2; v.dir = 0; v.r = 1; v.g = 0; v.b = 0;",
@@ -225,7 +233,7 @@ export default class HoloPrint {
 			});
 		});
 		
-		let wrongBlockOverlayTexture = await (await singleWhitePixelTexture.addTint(this.config.WRONG_BLOCK_OVERLAY_COLOR.slice(0, 3))).setOpacity(this.config.WRONG_BLOCK_OVERLAY_COLOR[3]);
+		let overlayTexture = await singleWhitePixelTexture.setOpacity(this.config.WRONG_BLOCK_OVERLAY_COLOR[3]);
 		
 		let { hologramGeo, hologramAnimations } = await awaitAllEntries({
 			hologramGeo: fetch("packTemplate/models/entity/armor_stand.hologram.geo.json").then(res => res.jsonc()), // this is where we put all the ghost blocks
@@ -234,6 +242,9 @@ export default class HoloPrint {
 		
 		hologramGeo["minecraft:geometry"][0]["description"]["texture_width"] = textureAtlas.atlasWidth;
 		hologramGeo["minecraft:geometry"][0]["description"]["texture_height"] = textureAtlas.atlasHeight;
+		
+		hologramGeo["minecraft:geometry"][2]["bones"][1]["cubes"][0]["origin"][0] = 8 - structureSize[0] * 16;
+		hologramGeo["minecraft:geometry"][2]["bones"][1]["cubes"][0]["size"] = structureSize.map(x => x * 16);
 		
 		let makeHologramSpawnAnimation;
 		if(this.config.DO_SPAWN_ANIMATION) {
@@ -254,9 +265,9 @@ export default class HoloPrint {
 			delete hologramAnimations["animations"]["animation.armor_stand.hologram.spawn"]["bones"];
 		}
 		
-		let hologramLayerStates = hologramAnimationControllers["animation_controllers"]["controller.animation.armor_stand.hologram.layers"]["states"];
+		let layerAnimations = hologramAnimationControllers["animation_controllers"]["controller.animation.armor_stand.hologram.layers"]["states"];
 		let topLayer = structureSize[1] - 1;
-		hologramLayerStates["default"]["transitions"].push(
+		layerAnimations["default"]["transitions"].push(
 			{
 				"l_0": `t.hologram_layer > -1 && t.hologram_layer != ${topLayer}`
 			},
@@ -268,7 +279,7 @@ export default class HoloPrint {
 		let blocksToValidate = [];
 		let uniqueBlocks = new Set();
 		
-		let blockCountsMap = new Map();
+		let materialList = new MaterialList(blockMetadata, itemMetadata, translationFile);
 		for(let y = 0; y < structureSize[1]; y++) {
 			let layerName = `l_${y}`;
 			hologramGeo["minecraft:geometry"][0]["bones"].push({
@@ -276,13 +287,13 @@ export default class HoloPrint {
 				"parent": "hologram_root",
 				"pivot": [8, 0, -8]
 			});
-			hologramLayerStates[layerName] = {
+			layerAnimations[layerName] = {
 				"animations": [`hologram.l_${y}`],
 				"blend_transition": 0.1,
 				"blend_via_shortest_path": true,
 				"transitions": [
 					{
-						[y == 0? "default" : `l_${y - 1}`]: `t.hologram_layer < ${y} ${y == topLayer? "&& t.hologram_layer != -1" : ""}`
+						[y == 0? "default" : `l_${y - 1}`]: `t.hologram_layer < ${y}${y == topLayer? " && t.hologram_layer != -1" : ""}`
 					},
 					(y == topLayer? {
 						"default": "t.hologram_layer == -1"
@@ -327,28 +338,27 @@ export default class HoloPrint {
 					hologramGeo["minecraft:geometry"][0]["bones"].push({
 						"name": boneName,
 						"parent": layerName,
-						"locators": {
-							[boneName]: bonePos.map(x => x + 8)
-						},
 						...positionedBoneTemplate
 					});
+					hologramGeo["minecraft:geometry"][0]["bones"][1]["locators"][boneName] = bonePos.map(x => x + 8);
 					
 					if(this.config.DO_SPAWN_ANIMATION) {
 						hologramAnimations["animations"]["animation.armor_stand.hologram.spawn"]["bones"][boneName] = makeHologramSpawnAnimation(x, y, z);
 					}
 					
 					let blockName = blockPalette[paletteI]["name"];
-					blockCountsMap.set(blockName, (blockCountsMap.get(blockName) ?? 0) + 1);
+					materialList.add(blockName);
 					
 					blocksToValidate.push({
 						"bone_name": boneName,
-						"block": blockPalette[paletteI]["name"],
+						"block": blockName,
 						"pos": [x, y, z]
 					});
-					uniqueBlocks.add(blockPalette[paletteI]["name"]);
+					uniqueBlocks.add(blockName);
 				}
 			}
 		}
+		let totalBlocks = materialList.totalMaterialCount;
 		
 		// add the particles' short names, and then reference them in the animation controller
 		uniqueBlocks.forEach(blockName => {
@@ -369,7 +379,9 @@ export default class HoloPrint {
 		
 		let textureBlobs = textureAtlas.imageBlobs;
 		
-		new PreviewRenderer(this.previewCont, textureAtlas, hologramGeo); // is async but we won't wait for it
+		if(totalBlocks < 1000) {
+			new PreviewRenderer(this.previewCont, textureAtlas, hologramGeo, hologramAnimations); // is async but we won't wait for it
+		}
 		
 		let structureName = structureFile.name.match(/(.+)\.[^.]+$/)[1];
 		
@@ -405,11 +417,12 @@ export default class HoloPrint {
 			t.validate_hologram ??= false;
 			t.hologram_layer ??= -1;
 			t.show_wrong_block_overlay ??= false;
+			t.wrong_blocks ??= $[totalBlocks];
 			t.armor_stand_interaction ??= false;
 			
 			v.attack = v.attack_time > 0 && (v.last_attack_time == 0 || v.attack_time < v.last_attack_time);
 			v.last_attack_time = v.attack_time;
-		}, { defaultTextureIndex });
+		}, { defaultTextureIndex, totalBlocks });
 		let totalLayers = structureSize[1];
 		let renderingControls = this.#functionToMolang((q, t, v, textureBlobsCount) => {
 			if(v.attack) {
@@ -423,9 +436,12 @@ export default class HoloPrint {
 				}
 				if(q.is_item_name_any("slot.weapon.mainhand", "minecraft:iron_ingot")) {
 					t.validate_hologram = !t.validate_hologram;
+					if(t.validate_hologram) {
+						t.wrong_blocks = $[totalBlocks];
+					}
 				}
 			}
-			if(t.render_hologram && (v.attack && q.equipped_item_any_tag("slot.weapon.mainhand", "minecraft:planks") || t.armor_stand_interaction)) {
+			if(t.render_hologram && ((v.attack && q.equipped_item_any_tag("slot.weapon.mainhand", "minecraft:planks")) || t.armor_stand_interaction)) {
 				t.hologram_layer = t.hologram_layer + (q.is_sneaking && !t.armor_stand_interaction? -1 : 1);
 				if(t.hologram_layer < -1) {
 					t.hologram_layer = $[totalLayers - 1];
@@ -435,7 +451,7 @@ export default class HoloPrint {
 				}
 				t.armor_stand_interaction = false;
 			}
-		}, { totalLayers, textureBlobsCount: textureBlobs.length });
+		}, { totalLayers, textureBlobsCount: textureBlobs.length, totalBlocks });
 		let movementControls = this.#functionToMolang((q, t, v) => {
 			if(v.attack && q.is_item_name_any("slot.weapon.mainhand", "minecraft:stick")) {
 				if(q.cardinal_player_facing == 0) {
@@ -482,38 +498,26 @@ export default class HoloPrint {
 		hologramGeo["minecraft:geometry"][0]["description"]["visible_bounds_width"] = visibleBoundsWidth;
 		hologramGeo["minecraft:geometry"][0]["description"]["visible_bounds_height"] = visibleBoundsHeight;
 		
-		console.log("Block counts map:", blockCountsMap);
+		console.log("Block counts map:", materialList.materials);
 		
-		let finalBlockCounts = await this.#finaliseBlockCounts(blockCountsMap, translationFile);
-		let totalMaterialCount = finalBlockCounts.reduce((a, b) => a + b[1], 0);
+		let finalisedMaterialList = materialList.export();
+		console.log("Finalised material list:", finalisedMaterialList);
 		
-		let partitionedBlockCounts = finalBlockCounts.map(([translatedBlockName, count, blockName]) => {
-			if(count >= 64) {
-				let parts = [[floor(count / 1728), "b"], [floor(count / 64) % 27, "s"], [count % 64, ""]].filter(([n]) => n).map(x => x.join(""));
-				return [translatedBlockName, `${count} = ${parts.join(" + ")}`, blockName];
-			} else {
-				return [translatedBlockName, String(count), blockName];
-			}
-		});
 		// console.log(partitionedBlockCounts);
-		let [blockMetadata, itemMetadata] = await Promise.all([
-			this.resourcePackStack.fetchData("metadata/vanilladata_modules/mojang-blocks.json").then(res => res.json()),
-			this.resourcePackStack.fetchData("metadata/vanilladata_modules/mojang-items.json").then(res => res.json())
-		]);
 		let missingItemAux = blockMetadata["data_items"].find(block => block.name == "minecraft:reserved6")["raw_id"];
-		hudScreenUI["material_list"]["controls"].unshift(...partitionedBlockCounts.map(([translatedBlockName, count, blockName], i) => ({
-			[`material_list_${i}@hud.material_list_item`]: {
-				"$block_name": translatedBlockName,
-				"$block_count": count,
-				"$item_id_aux": 65536 * ((itemMetadata["data_items"].find(item => item.name == `minecraft:${blockName}`) ?? blockMetadata["data_items"].find(item => item.name == `minecraft:${blockName}`))?.["raw_id"] ?? missingItemAux),
+		hudScreenUI["material_list"]["controls"].push(...finalisedMaterialList.map(({ translationKey, partitionedCount, auxId }, i) => ({
+			[`material_list_${i}@hud.material_list_entry`]: {
+				"$item_translation_key": translationKey,
+				"$item_count": partitionedCount,
+				"$item_id_aux": auxId ?? missingItemAux,
 				"$background_opacity": i % 2 * 0.2
 			}
 		})));
-		hudScreenUI["material_list_wrapper"]["size"][1] = partitionedBlockCounts.length * 12 + 12; // 12px for each item + 12px for the heading
+		hudScreenUI["material_list_wrapper"]["size"][1] = finalisedMaterialList.length * 12 + 12; // 12px for each item + 12px for the heading
 		hudScreenUI["material_list_heading"]["controls"][1]["pack_name"]["text"] += structureName;
 		
-		manifest["header"]["description"] += `\n\nTotal block count: ${totalMaterialCount}\n`;
-		manifest["header"]["description"] += finalBlockCounts.map(([translatedBlockName, count]) => `${count} ${translatedBlockName}`).join(", ");
+		manifest["header"]["description"] += `\n\nTotal block count: ${totalBlocks}\n`;
+		manifest["header"]["description"] += finalisedMaterialList.map(({ translatedName, count }) => `${count} ${translatedName}`).join(", ");
 		
 		console.info("Finished making all pack files!");
 		
@@ -523,7 +527,7 @@ export default class HoloPrint {
 		pack.file("pack_icon.png", packIcon);
 		pack.file("entity/armor_stand.entity.json", JSON.stringify(entityFile));
 		pack.file("render_controllers/armor_stand.hologram.render_controllers.json", JSON.stringify(hologramRenderControllers));
-		pack.file("render_controllers/player.hologram_controls.render_controllers.json", JSON.stringify(playerRenderControllers));
+		pack.file("render_controllers/player.render_controllers.json", JSON.stringify(playerRenderControllers));
 		pack.file("models/entity/armor_stand.geo.json", JSON.stringify(armorStandGeo));
 		pack.file("models/entity/armor_stand.hologram.geo.json", this.#stringifyWithFixedDecimals(hologramGeo));
 		pack.file("materials/entity.material", JSON.stringify(hologramMaterial));
@@ -542,7 +546,7 @@ export default class HoloPrint {
 			pack.file(`particles/${particleName}.json`, JSON.stringify(particle));
 		});
 		pack.file("textures/particle/single_white_pixel.png", await singleWhitePixelTexture.toBlob());
-		pack.file("textures/entity/wrong_block_overlay.png", await wrongBlockOverlayTexture.toBlob());
+		pack.file("textures/entity/overlay.png", await overlayTexture.toBlob());
 		pack.file("animations/armor_stand.hologram.animation.json", JSON.stringify(hologramAnimations));
 		textureBlobs.forEach(([textureName, blob]) => {
 			pack.file(`textures/entity/${textureName}.png`, blob);
@@ -577,9 +581,9 @@ export default class HoloPrint {
 	}
 	
 	/**
-	 * Removes ignored blocks from the block palette, and adds block entities as seperate entries.
+	 * Removes ignored blocks from the block palette, and adds block entities as separate entries.
 	 * @param {Object} structure The de-NBT-ed structure file
-	 * @returns {{ palette: Object, indices: Object }}
+	 * @returns {{ palette: Array<Number>, indices: [Array<Number>, Array<Number>] }}
 	 */
 	#tweakBlockPalette(structure) {
 		let palette = structuredClone(structure["palette"]["default"]["block_palette"]);
@@ -657,28 +661,6 @@ export default class HoloPrint {
 		
 		
 		// return playerRenderControllers;
-	}
-	/**
-	 * Finalises block counts, turning them from a map into an array of pairs.
-	 * @param {Map<String, Number>} blockCountsMap
-	 * @param {*} translationFile
-	 * @returns {[ String, Number ]}
-	 */
-	async #finaliseBlockCounts(blockCountsMap, translationFile) {
-		let tfp = await new TranslationFileParser(this.resourcePackStack, translationFile);
-		let fixedBlockCounts = Object.entries([...blockCountsMap.entries()].reduce((acc, [blockName, count]) => {
-			if(!this.config.IGNORED_MATERIAL_LIST_BLOCKS.includes(blockName)) {
-				if(/double_.*slab$/.test(blockName)) {
-					blockName = blockName.replace("double_", "");
-					count *= 2;
-				}
-				acc[blockName] = (acc[blockName] ?? 0) + count;
-			}
-			return acc;
-		}, {}));
-		fixedBlockCounts.sort((a, b) => b[1] - a[1]);
-		let translatedBlockCounts = fixedBlockCounts.map(([blockName, count]) => [tfp.getBlockName(blockName), count, blockName]);
-		return translatedBlockCounts;
 	}
 	/**
 	 * Patches a set of render controllers with some extra Molang code. Returns a new set of render controllers.

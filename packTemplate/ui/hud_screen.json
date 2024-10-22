@@ -148,7 +148,7 @@
 		"anchor_from": "top_left",
 		"controls": []
 	},
-	"material_list_item": {
+	"material_list_entry": {
 		"type": "image",
 		"size": ["100%", 12],
 		"texture": "textures/ui/White",
@@ -171,7 +171,7 @@
 							}
 						},
 						{
-							"block_icon": {
+							"item_icon": {
 								"type": "custom",
 								"renderer": "inventory_item_renderer",
 								"property_bag": {
@@ -189,18 +189,20 @@
 							}
 						},
 						{
-							"block_name": {
+							"item_name": {
 								"type": "label",
-								"text": "$block_name",
-								"size": ["100% - 14px - 70px", 10],
+								"text": "$item_translation_key",
+								"localize": true,
+								"size": ["100% - 13px - 70px", 10], // leave 70px for the block count
 								"font_scale_factor": 0.8
 							}
 						},
 						{
-							"block_count": {
+							"item_count": {
 								"type": "label",
-								"text": "$block_count",
+								"text": "$item_count",
 								"size": ["fill", 10],
+								// "text_alignment": "right",
 								"font_scale_factor": 0.8
 							}
 						}

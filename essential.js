@@ -90,6 +90,7 @@ export const sleep = async time => new Promise(resolve => setTimeout(resolve, ti
 export const { min, max, floor, ceil, sqrt, round, abs, PI: pi } = Math;
 export const clamp = (n, lowest, highest) => min(max(n, lowest), highest);
 export const lerp = (a, b, x) => a + (b - a) * x;
+export const nanToUndefined = x => Number.isNaN(x)? undefined : x;
 
 export function range(a, b, c) {
 	if(b == undefined && c == undefined) {

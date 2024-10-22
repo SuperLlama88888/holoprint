@@ -79,6 +79,7 @@ id1(Block palette)
 
 ### Code guidelines
 - Ensure code formatting and styling follows everything else.
+- All code is to be in American English; other English dialects can be used in comments, commit messages etc.
 - Add comments around ambiguous areas of code.
 - Use snake_case for data (i.e. Minecraft JSON, our JSON) and camelCase for everything else.
 - Console output is mirrored to the user. Each console function should be used in different contexts:

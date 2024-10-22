@@ -42,6 +42,30 @@
 					]
 				}
 			]
+		},
+		{
+			"description": {
+				"identifier": "geometry.armor_stand.hologram.valid_structure_overlay",
+				"texture_width": 16,
+				"texture_height": 16
+			},
+			"bones": [
+				{
+					"name": "valid_structure_overlay_alignment_wrapper"
+				},
+				{
+					"name": "valid_structure_overlay",
+					"parent": "valid_structure_overlay_alignment_wrapper",
+					"cubes": [
+						{
+							"origin": ["JS puts this in since +x in MC isn't the same as +x in models", 0, -8],
+							// size is also put in by JS
+							"inflate": 0.05,
+							"uv": [0, 0]
+						}
+					]
+				}
+			]
 		}
 	]
 }

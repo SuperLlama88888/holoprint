@@ -8,9 +8,10 @@ export default class PreviewRenderer {
 	 * Create a preview renderer for a completed geometry file.
 	 * @param {HTMLElement} cont
 	 * @param {TextureAtlas} textureAtlas
-	 * @param {Object} geo
+	 * @param {Object} geo Contents of the `.geo.json` file
+	 * @param {Object} animations Contents of the `.animation.json` file
 	 */
-	constructor(cont, textureAtlas, geo) {
+	constructor(cont, textureAtlas, geo, animations) {
 		return (async () => {
 			let can = document.createElement("canvas");
 			let imageBlob = textureAtlas.imageBlobs.at(-1)[1];
@@ -29,6 +30,10 @@ export default class PreviewRenderer {
 			cont.appendChild(can);
 			this.viewer.controls.minDistance = 10;
 			this.viewer.controls.maxDistance = 1000;
+			
+			let animator = this.viewer.getModel().animator;
+			animator.addAnimation("spawn", animations["animations"]["animation.armor_stand.hologram.spawn"]);
+			animator.play("spawn");
 			
 			return this;
 		})();
