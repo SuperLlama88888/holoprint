@@ -67,18 +67,30 @@ document.onEvent("DOMContentLoaded", () => {
 			dropFileNotice.classList.add("hidden");
 		}
 	});
-	document.documentElement.onEvent("drop", e => {
+	document.documentElement.onEvent("drop", async e => {
 		e.preventDefault();
 		dragCounter = 0;
 		dropFileNotice.classList.add("hidden");
 		let files = [...e.dataTransfer.files]; // apparently this is a "historical accident": https://stackoverflow.com/a/74641156
 		let structureFiles = files.filter(file => file.name.endsWith(".mcstructure"));
+		let resourcePacks = files.filter(file => file.name.endsWith(".mcpack"));
 		
-		let dataTransfer = new DataTransfer();
 		let structureFilesInput = generatePackForm.elements.namedItem("structureFiles");
-		// [...structureFilesInput.files, ...structureFiles].forEach(file => dataTransfer.items.add(file));
-		dataTransfer.items.add(structureFiles[0]);
-		structureFilesInput.files = dataTransfer.files;
+		if(structureFiles.length) {
+			let dataTransfer = new DataTransfer();
+			// [...structureFilesInput.files, ...structureFiles].forEach(file => dataTransfer.items.add(file));
+			dataTransfer.items.add(structureFiles[0]);
+			structureFilesInput.files = dataTransfer.files;
+		}
+		for(let resourcePack of resourcePacks) {
+			let structureFile = await HoloPrint.extractStructureFileFromPack(resourcePack);
+			if(structureFile) {
+				let dataTransfer = new DataTransfer();
+				dataTransfer.items.add(structureFile);
+				structureFilesInput.files = dataTransfer.files;
+				break;
+			}
+		}
 	});
 	
 	let logCont = selectEl("#log");

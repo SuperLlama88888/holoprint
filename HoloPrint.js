@@ -62,7 +62,7 @@ export default class HoloPrint {
 	/**
 	 * Makes a HoloPrint resource pack from a structure file.
 	 * @param {File} structureFile Structure file (.mcstructure)
-	 * @returns {File} Resource pack (.mcpack)
+	 * @returns {Promise<File>} Resource pack (.mcpack)
 	 */
 	async makePack(structureFile) {
 		let startTime = performance.now();
@@ -334,8 +334,10 @@ export default class HoloPrint {
 						// console.table({x, y, z, i, paletteI, boneTemplate});
 						
 						let boneName = `b_${x}_${y}_${z}`;
+						let firstBoneForThisBlock = true;
 						if(boneName == hologramGeo["minecraft:geometry"][0]["bones"].at(-1)["name"]) {
 							boneName += `_${layerI}`;
+							firstBoneForThisBlock = false;
 						}
 						let bonePos = [-16 * x - 8, 16 * y, 16 * z - 8]; // I got these values from trial and error with blockbench (which makes the x negative I think. it's weird.)
 						let positionedBoneTemplate = blockGeoMaker.positionBoneTemplate(boneTemplate, bonePos);
@@ -344,7 +346,9 @@ export default class HoloPrint {
 							"parent": layerName,
 							...positionedBoneTemplate
 						});
-						hologramGeo["minecraft:geometry"][0]["bones"][1]["locators"][boneName] = bonePos.map(x => x + 8);
+						if(firstBoneForThisBlock) { // we only need 1 locator for each block position, even though there may be 2 bones in this position because of the 2nd layer
+							hologramGeo["minecraft:geometry"][0]["bones"][1]["locators"][boneName] = bonePos.map(x => x + 8);
+						}
 						
 						if(this.config.DO_SPAWN_ANIMATION) {
 							hologramAnimations["animations"]["animation.armor_stand.hologram.spawn"]["bones"][boneName] = makeHologramSpawnAnimation(x, y, z);
@@ -572,20 +576,31 @@ export default class HoloPrint {
 		return new File([zippedPack], `${structureName}.holoprint.mcpack`);
 	}
 	/**
+	 * Retrieves the structure file from a completed HoloPrint resource pack
+	 * @param {File} resourcePack HoloPrint resource pack (.mcpack)
+	 * @returns {Promise<File>}
+	 */
+	static async extractStructureFileFromPack(resourcePack) {
+		let packFolder = await JSZip.loadAsync(resourcePack);
+		console.log(packFolder.file(".mcstructure"))
+		let structureBlob = await packFolder.file(".mcstructure")?.async("blob");
+		if(!structureBlob) {
+			return undefined;
+		}
+		let packName = resourcePack.name.slice(0, resourcePack.name.indexOf("."));
+		return new File([structureBlob], `${packName}.mcstructure`);
+	}
+	/**
 	 * Updates a HoloPrint resource pack by remaking it.
 	 * @param {File} resourcePack HoloPrint resource pack to update (.mcpack)
-	 * @returns {File}
+	 * @returns {Promise<File>}
 	 */
 	async updatePack(resourcePack) {
-		let packFolder = await JSZip.loadAsync(resourcePack);
-		let structureBlob = await packFolder.file(".mcstructure")?.blob();
-		if(!structureBlob) {
-			console.error(`No structure file found inside resource pack; cannot update pack!`);
-			return;
+		let structureFile = HoloPrint.extractStructureFileFromPack(resourcePack);
+		if(!structureFile) {
+			throw new Error(`No structure file found inside resource pack ${resourcePack.name}; cannot update pack!`);
 		}
-		
-		let packName = resourcePack.name.slice(0, resourcePack.name.indexOf("."));
-		return await this.makePack(new File([structureBlob], `${packName}.mcstructure`));
+		return await this.makePack(structureFile);
 	}
 	
 	/**
@@ -702,7 +717,7 @@ export default class HoloPrint {
 	/**
 	 * Makes a blob for pack_icon.png based on a structure file's SHA256 hash
 	 * @param {File} structureFile
-	 * @returns {Blob}
+	 * @returns {Promise<Blob>}
 	 */
 	async #makePackIcon(structureFile) {
 		let fileHashBytes = [...await sha256(structureFile)]; // I feel like I should wrap the async expression in brackets...

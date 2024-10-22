@@ -305,7 +305,7 @@ export default class TextureAtlas {
 	/**
 	 * Loads images from a set of tinted texture paths.
 	 * @param {Set<TextureFragment>} textureFragments 
-	 * @returns {Array<ImageFragment>}
+	 * @returns {Promise<Array<ImageFragment>>}
 	 */
 	async #loadImages(textureFragments) {
 		let tgaLoader = new TGALoader();

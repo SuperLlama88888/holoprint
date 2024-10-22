@@ -1817,13 +1817,47 @@
 			}
 		}
 	],
-	"glass_pane": [
+	"glass_pane": [ // todo: add connections to other blocks correctly
 		{
 			"pos": [7, 0, 0],
 			"size": [2, 16, 16],
 			"textures": {
 				"east": "up",
 				"up": "east"
+			}
+		}
+	],
+	"item_frame": [
+		{
+			"pos": [3, 3, 15.5],
+			"size": [10, 10, 0.5]
+		},
+		{
+			"pos": [2, 2, 15],
+			"size": [12, 1, 1],
+			"textures": {
+				"*": "textures/blocks/planks_birch"
+			}
+		},
+		{
+			"pos": [2, 13, 15],
+			"size": [12, 1, 1],
+			"textures": {
+				"*": "textures/blocks/planks_birch"
+			}
+		},
+		{
+			"pos": [2, 3, 15],
+			"size": [1, 10, 1],
+			"textures": {
+				"*": "textures/blocks/planks_birch"
+			}
+		},
+		{
+			"pos": [13, 3, 15],
+			"size": [1, 10, 1],
+			"textures": {
+				"*": "textures/blocks/planks_birch"
 			}
 		}
 	]
