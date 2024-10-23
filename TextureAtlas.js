@@ -1,4 +1,4 @@
-import { awaitAllEntries, blobToImage, closestFactorPair, floor, hexColourToClampedTriplet, JSONSet, lerp, max, range } from "./essential.js";
+import { awaitAllEntries, blobToImage, ceil, closestFactorPair, floor, hexColourToClampedTriplet, JSONSet, lerp, max, range } from "./essential.js";
 import TGALoader from "https://esm.run/tga-js@1.1.1"; // We could use dynamic import as this isn't used all the time but it's so small it won't matter
 import potpack from "https://esm.run/potpack@2.0.0";
 
@@ -48,9 +48,7 @@ export default class TextureAtlas {
 		"birch_planks": "planks.2",
 		"jungle_planks": "planks.3",
 		"acacia_planks": "planks.4",
-		"dark_oak_planks": "planks.5", // check this works
-		"brick_wall": "cobblestone_wall.6",
-		"stone_brick_wall": "cobblestone_wall.7"
+		"dark_oak_planks": "planks.5" // check this works
 	};
 	
 	// All the blocks in blocks.json that should use carried textures
@@ -380,9 +378,27 @@ export default class TextureAtlas {
 	 * @param {Array<ImageFragment>} imageFragments
 	 */
 	async #stitchTextureAtlas(imageFragments) {
-		// Keep order as potpack shuffles them
 		imageFragments.forEach((imageFragment, i) => {
-			imageFragment["i"] = i;
+			imageFragment["i"] = i; // Keep order as potpack shuffles them
+			imageFragment["actualSize"] = [imageFragment["w"], imageFragment["h"]]; // since we're modifying w/h, we need to keep references to everything before.
+			imageFragment["offset"] = [0, 0];
+			// fractional dimensions don't work with js canvas, so we need to extract the full part of the texture we need, but keep the uv positions fractional
+			if(!Number.isInteger(imageFragment["sourceX"])) {
+				imageFragment["offset"][0] = imageFragment["sourceX"] % 1;
+				imageFragment["w"] += imageFragment["offset"][1];
+				imageFragment["sourceX"] = floor(imageFragment["sourceX"]);
+			}
+			if(!Number.isInteger(imageFragment["sourceY"])) {
+				imageFragment["offset"][1] = imageFragment["sourceY"] % 1;
+				imageFragment["h"] += imageFragment["offset"][1];
+				imageFragment["sourceY"] = floor(imageFragment["sourceY"]);
+			}
+			if(!Number.isInteger(imageFragment["w"])) {
+				imageFragment["w"] = ceil(imageFragment["w"]);
+			}
+			if(!Number.isInteger(imageFragment["h"])) {
+				imageFragment["h"] = ceil(imageFragment["h"]);
+			}
 		});
 		let packing = potpack(imageFragments);
 		imageFragments.sort((a, b) => a["i"] - b["i"]);
@@ -404,11 +420,9 @@ export default class TextureAtlas {
 			// document.body.appendChild(imageFragment.image);
 			// console.table({sourcePos,textureSize,destPos})
 			ctx.drawImage(imageFragment.image, ...sourcePos, ...textureSize, ...destPos, ...textureSize); // take the entire source image and draw it onto the canvas at the specified uv with its dimensions.
-			// let uv = destPos.map((x, i) => (x - sourcePos[i]) / TEXTURE_UV_SIZE);
 			let imageUv = {
-				// "uv": [uv[0] - imageFragment.sourceX / TEXTURE_UV_SIZE, uv[1] - imageFragment.sourceY / TEXTURE_UV_SIZE],
-				"uv": destPos,
-				"uv_size": textureSize
+				"uv": destPos.map((x, i) => x + imageFragment["offset"][i]),
+				"uv_size": imageFragment["actualSize"]
 			};
 			if("crop" in imageFragment) {
 				imageUv["crop"] = imageFragment["crop"];

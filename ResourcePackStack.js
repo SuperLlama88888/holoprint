@@ -55,7 +55,7 @@ export default class ResourcePackStack {
 }
 
 export class VanillaDataFetcher {
-	static #VANILLA_RESOURCES_LINK = "https://raw.githubusercontent.com/Mojang/bedrock-samples/v1.21.30.25-preview"; // No / at the end
+	static #VANILLA_RESOURCES_LINK = "https://raw.githubusercontent.com/Mojang/bedrock-samples/v1.21.40.25-preview"; // No / at the end
 	
 	/**
 	 * Fetches vanilla data files from the Mojang/bedrock-samples repository on GitHub.
