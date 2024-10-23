@@ -167,7 +167,7 @@
 		"glow_lichen": "multi_face",
 		"hanging_roots": "cross_texture",
 		"lightning_rod": "lightning_rod",
-		"pointed_dripstone": "cross_texture",
+		"pointed_dripstone": "pointed_dripstone",
 		"mangrove_propagule": "cross_texture",
 		"sculk_sensor": "sculk_sensor",
 		"sculk_vein": "multi_face",

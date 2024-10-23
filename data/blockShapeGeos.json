@@ -117,11 +117,14 @@
 	"honey_block": [ // this is unofficial (i.e. not in https://wiki.bedrock.dev/blocks/block-shapes.html)
 		{
 			"pos": [0, 0, 0],
-			"size": [16, 16, 16]
+			"size": [16, 16, 16],
+			"textures": {
+				"*": "down"
+			}
 		},
 		{
 			"pos": [1, 1, 1],
-			"size": [14, 14, 14]
+			"size": [14, 14, 14] // the bottom texture uses the transparent outer layer texture, probably a bug.
 		}
 	],
 	"farmland": [ // another "unofficial" block shape
@@ -1859,6 +1862,58 @@
 			"textures": {
 				"*": "textures/blocks/planks_birch"
 			}
+		}
+	],
+	"bubble_column": [ // this is like when the fancy bubbles setting is off
+		{
+			"pos": [1, 0, 1],
+			"size": [14, 16, 14],
+			"textures": {
+				"side": "north",
+				"up": "none",
+				"down": "none"
+			}
+		},
+		{
+			"pos": [5, 0, 5],
+			"size": [6, 16, 6],
+			"textures": {
+				"side": "south",
+				"up": "none",
+				"down": "none"
+			}
+		}
+	],
+	"pointed_dripstone": [
+		{
+			"if": "dripstone_thickness == tip",
+			"copy": "cross_texture",
+			"pos": [0, 0, 0],
+			"terrain_texture": "pointed_dripstone_tip"
+		},
+		{
+			"if": "dripstone_thickness == frustum",
+			"copy": "cross_texture",
+			"pos": [0, 0, 0],
+			"terrain_texture": "pointed_dripstone_frustum"
+		},
+		{
+			"if": "dripstone_thickness == middle",
+			"copy": "cross_texture",
+			"pos": [0, 0, 0],
+			"terrain_texture": "pointed_dripstone_middle"
+		},
+		{
+			"if": "dripstone_thickness == base",
+			"copy": "cross_texture",
+			"pos": [0, 0, 0],
+			"terrain_texture": "pointed_dripstone_base"
+		},
+		{
+			"if": "dripstone_thickness == merge",
+			"copy": "cross_texture",
+			"pos": [0, 0, 0],
+			"terrain_texture": "pointed_dripstone_merge"
 		}
 	]
 }

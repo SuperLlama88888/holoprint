@@ -24,6 +24,7 @@ import potpack from "https://esm.run/potpack@2.0.0";
  * @typedef {Object} TextureFragment
  * @property {String} texturePath
  * @property {import("./BlockGeoMaker.js").Vec3} [tint]
+ * @property {Number} opacity
  * @property {Vec2} uv
  * @property {Vec2} uv_size
  * @property {Boolean} croppable If a texture can be cropped automatically
@@ -54,6 +55,13 @@ export default class TextureAtlas {
 	// All the blocks in blocks.json that should use carried textures
 	// to check: calibrated_sculk_sensor, sculk_sensor, sculk_shrieker
 	static #blocksDotJsonCarriedTextures = ["acacia_leaves", "birch_leaves", "dark_oak_leaves", "fern", "jungle_leaves", "leaves", "leaves2", "light_block", "light_block_0", "light_block_1", "light_block_2", "light_block_3", "light_block_4", "light_block_5", "light_block_6", "light_block_7", "light_block_8", "light_block_9", "light_block_10", "light_block_11", "light_block_12", "light_block_13", "light_block_14", "light_block_15", "mangrove_leaves", "oak_leaves", "short_grass", "spruce_leaves", "tall_grass", "vine", "waterlily"];
+	
+	/** Blocks that are transparent and need a certain opacity applied to them */
+	static #transparentBlocks = {
+		"water": 0.65,
+		"flowing_water": 0.65,
+		"slime": 0.8
+	};
 	
 	/** Terrain texture keys that should lead to a texture path always, instead of what's in terrain_texture.json */
 	static #terrainTexturePatches = {
@@ -132,6 +140,7 @@ export default class TextureAtlas {
 		textureRefs.forEach(textureRef => {
 			let texturePath;
 			let tint = textureRef["tint"];
+			let opacity = 1;
 			if("texture_path_override" in textureRef) {
 				texturePath = textureRef["texture_path_override"];
 			} else {
@@ -149,10 +158,14 @@ export default class TextureAtlas {
 				}
 				
 				tint ??= TextureAtlas.#terrainTextureTints[terrainTextureKey];
+				if(blockName in TextureAtlas.#transparentBlocks) {
+					opacity = TextureAtlas.#transparentBlocks[blockName];
+				}
 			}
 			let textureFragment = {
 				"texturePath": texturePath,
 				"tint": tint,
+				"opacity": opacity,
 				"uv": textureRef["uv"],
 				"uv_size": textureRef["uv_size"],
 				"croppable": textureRef["croppable"]
@@ -307,8 +320,7 @@ export default class TextureAtlas {
 	 */
 	async #loadImages(textureFragments) {
 		let tgaLoader = new TGALoader();
-		return await Promise.all([...textureFragments].map(async textureFragment => {
-			let { texturePath, tint, uv: sourceUv, uv_size: uvSize, croppable } = textureFragment;
+		return await Promise.all([...textureFragments].map(async ({ texturePath, tint, opacity, uv: sourceUv, uv_size: uvSize, croppable }) => {
 			let imageRes = await this.resourcePackStack.fetchResource(`${texturePath}.png`);
 			let imageData;
 			let imageIsTga = false;
@@ -330,6 +342,9 @@ export default class TextureAtlas {
 			if(tint) {
 				imageData = this.#tintImageData(imageData, tint, imageIsTga); // with tinted TGA images, only full-opacity pixels are tinted, and transparent pixels are made opaque.
 				// console.debug(`Tinted ${texturePath} with tint ${tint}!`);
+			}
+			if(opacity != 1) {
+				imageData = this.#setImageDataOpacity(imageData, opacity);
 			}
 			let { width: imageW, height: imageH } = imageData;
 			let image = await imageData.toImage();
@@ -567,6 +582,19 @@ export default class TextureAtlas {
 			if(onlyAlpha) {
 				data[i + 3] = 255;
 			}
+		}
+		return imageData;
+	}
+	/**
+	 * Sets the opacity of pixels in some image data.
+	 * @param {ImageData} imageData
+	 * @param {Number} opacity 0-1
+	 * @returns {ImageData}
+	 */
+	#setImageDataOpacity(imageData, opacity) {
+		let data = imageData.data;
+		for(let i = 0; i < data.length; i += 4) {
+			data[i + 3] *= opacity;
 		}
 		return imageData;
 	}

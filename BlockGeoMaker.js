@@ -50,9 +50,17 @@ export default class BlockGeoMaker {
 		"lit_smoker": 0,
 		"normal_stone_stairs": 0,
 		"stone_button": 0,
-		"stone_pressure_plate": 0
+		"stone_pressure_plate": 0,
+		"bubble_column": 0,
+		"wooden_button": 0,
+		"wooden_door": 0,
+		"spruce_door": 1,
+		"birch_door": 2,
+		"jungle_door": 3,
+		"acacia_door": 4,
+		"dark_oak_door": 5,
+		"iron_door": 6
 	};
-	static #noCubesWarningSuppressingBlockShapes = ["door"]; // block shapes that ignore the no cubes warnings
 	
 	static #REDSTONE_DUST_TINTS = function() {
 		// net.minecraft.world.level.block.RedStoneWireBlock
@@ -116,8 +124,8 @@ export default class BlockGeoMaker {
 		let blockName = block["name"];
 		let blockShape = this.#getBlockShape(blockName);
 		let boneCubes = this.#makeBoneCubes(block, blockShape);
-		if(boneCubes.length == 0 && !(blockShape in BlockGeoMaker.#noCubesWarningSuppressingBlockShapes)) {
-			console.warn(`No cubes are being rendered for block ${blockName}`);
+		if(boneCubes.length == 0) {
+			console.debug(`No cubes are being rendered for block ${blockName}`);
 		}
 		let bone = {
 			"cubes": boneCubes

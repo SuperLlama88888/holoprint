@@ -30,6 +30,9 @@
 		"cake": {
 			"bite_counter": [0, 1, 1, 1, 1, 1, 1]
 		},
+		"pointed_dripstone": {
+			"hanging": [1, 0]
+		},
 		"/copper_bulb/": { // test regular expression on block names
 			"#exclusive_add": true,
 			"lit": [0, 1],
