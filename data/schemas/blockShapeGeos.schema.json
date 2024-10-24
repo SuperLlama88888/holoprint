@@ -113,7 +113,7 @@
 									{
 										"description": "A file path to a texture file, without the file extension.",
 										"type": "string",
-										"pattern": "^textures/[\\w/]+$"
+										"pattern": "^textures/.+[^/]$"
 									}
 								]
 							}
@@ -154,15 +154,7 @@
 					},
 					"terrain_texture": {
 						"description": "Forces this cube to use a specific terrain_texture.json key.",
-						"type": "string",
-						"oneOf": [
-							{
-								"pattern": "^\\w+$"
-							},
-							{
-								"pattern": "^#block_name(\\[-?\\d+:-?\\d*\\]|\\[:-?\\d+\\])?$"
-							}
-						]
+						"type": "string"
 					},
 					"variant": {
 						"description": "Forces this cube to use a specific variant instead of looking at block states (or the eigenvariant).",

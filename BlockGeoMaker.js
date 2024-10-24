@@ -243,6 +243,9 @@ export default class BlockGeoMaker {
 		
 		let boneCubes = [];
 		cubes.forEach(cube => {
+			if("terrain_texture" in cube) {
+				cube["terrain_texture"] = this.interpolateInBlockValues(cube["terrain_texture"], block);
+			}
 			if("copy" in cube) {
 				let blockCopy = structuredClone(block);
 				if("block_states" in cube) {
@@ -341,6 +344,7 @@ export default class BlockGeoMaker {
 					delete boneCube["uv"][faceName];
 					continue;
 				}
+				textureFace = this.interpolateInBlockValues(textureFace, block);
 				let textureRef = {
 					"uv": face["uv"].map((x, i) => x / textureSize[i]),
 					"uv_size": face["uv_size"].map((x, i) => x / textureSize[i]),
@@ -355,16 +359,11 @@ export default class BlockGeoMaker {
 					} else {
 						console.error(`No #tex for block ${blockName} and blockshape ${blockShape}!`);
 					}
-				} else if(/^textures\/[\w\/]+$/.test(textureFace)) { // file path
+				} else if(/^textures\/.+[^/]$/.test(textureFace)) { // file path
 					textureRef["texture_path_override"] = textureFace;
 				} else {
 					let terrainTextureOverride = cube["terrain_texture"] ?? blockShapeTerrainTextureOverride;
 					if(terrainTextureOverride) {
-						let slicing = terrainTextureOverride.match(/^#block_name(\[(-?\d+):(-?\d*)\]|\[:(-?\d+)\])?$/);
-						if(slicing) {
-							terrainTextureOverride = blockName.slice(slicing[2], slicing[4] ?? (slicing[3] == ""? undefined : slicing[3]));
-							console.debug(`Sliced ${blockName} into ${terrainTextureOverride} for terrain texture override`);
-						}
 						delete textureRef["block_name"];
 						delete textureRef["texture_face"];
 						textureRef["terrain_texture_override"] = terrainTextureOverride;
@@ -565,6 +564,56 @@ export default class BlockGeoMaker {
 		});
 		let orRes = andRes.some(x => x); // only || operations remain
 		return orRes;
+	}
+	/**
+	 * Substitutes values from a block into a particular expression.
+	 * @param {String} fullExpression
+	 * @param {Block} block
+	 * @returns {String}
+	 */
+	interpolateInBlockValues(fullExpression, block) {
+		let wholeStringValue;
+		let substitutedExpression = fullExpression.replaceAll(/\${([^}]+)}/g, (bracketedExpression, expression) => {
+			if(wholeStringValue != undefined) return;
+			let match = expression.replaceAll(/\s/g, "").match(/^(#block_name|#block_states|#block_entity_data)((?:\.\w+|\[-?\d+\])*)(\[(-?\d+):(-?\d*)\]|\[:(-?\d+)\])?(?:\?\?(.+))?$/);
+			if(!match) {
+				console.error(`Wrongly formatted expression: ${bracketedExpression}`);
+				return "";
+			}
+			let [, specialVar, propertyChain, ...slicingAndDefault] = match;
+			console.log(match)
+			let value = function() {
+				switch(specialVar) {
+					case "#block_name": return block["name"];
+					case "#block_states": return block["states"];
+					case "#block_entity_data": return block["block_entity_data"];
+				}
+				console.error(`Unknown special variable: ${specialVar}`);
+			}();
+			propertyChain.match(/\.\w+|\[-?\d+\]/g)?.forEach(property => {
+				let keys = property.match(/^\.(\w+)|\[(\d+)\]$/);
+				value = value?.[keys[1] ?? keys[2]];
+			});
+			if(slicingAndDefault) {
+				value = value?.slice(slicingAndDefault[1], slicingAndDefault[3] ?? (slicingAndDefault[2] == ""? undefined : slicingAndDefault[2]));
+			}
+			if(value == undefined || value == "") {
+				if(slicingAndDefault[4] != undefined) {
+					let defaultValue = slicingAndDefault[4];
+					if(/SET_WHOLE_STRING\([^)]+\)/.test(defaultValue)) {
+						wholeStringValue = defaultValue.match(/\(([^)]+)\)/)[1];
+					} else {
+						value = defaultValue;
+					}
+				} else {
+					console.error(`Nothing for ${specialVar}${propertyChain} in block:`, block);
+					return "";
+				}
+			}
+			console.debug(`Changed ${bracketedExpression} to ${value}!`, block);
+			return value;
+		});
+		return wholeStringValue ?? substitutedExpression;
 	}
 	/**
 	 * Unpurely tries to merge the cube into the first if the second is more positive than the first.

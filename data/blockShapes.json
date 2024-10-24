@@ -118,6 +118,7 @@
 		"fire": "fire",
 		"soul_fire": "fire",
 		"flower_pot": "flower_pot",
+		"decorated_pot": "decorated_pot",
 		"frame": "item_frame",
 		"glow_frame": "item_frame",
 		"hopper": "hopper",

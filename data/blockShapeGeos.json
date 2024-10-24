@@ -1143,7 +1143,7 @@
 		{
 			"copy": "template_candle_tall",
 			"pos": [7, 8, 7],
-			"terrain_texture": "#block_name[:-5]" // block name is blue_candle_cake, we need to remove _cake
+			"terrain_texture": "${#block_name[:-5]}" // block name is blue_candle_cake, we need to remove _cake
 		}
 	],
 	"stonecutter": [
@@ -1886,34 +1886,61 @@
 	],
 	"pointed_dripstone": [
 		{
-			"if": "dripstone_thickness == tip",
 			"copy": "cross_texture",
 			"pos": [0, 0, 0],
-			"terrain_texture": "pointed_dripstone_tip"
+			"terrain_texture": "pointed_dripstone_${#block_states.dripstone_thickness}"
+		}
+	],
+	"decorated_pot": [
+		{
+			"pos": [1, 0, 1],
+			"size": [14, 16, 14],
+			"variant": 0,
+			"textures": {
+				"up": "none",
+				"down": "none",
+				"west": "textures/blocks/${#block_entity_data.sherds[1][10:-6] ?? SET_WHOLE_STRING(side)}_pattern", // sherd name is minecraft:idk_pottery_sherd, we want to look at textures/blocks/idk_pottery_pattern
+				"east": "textures/blocks/${#block_entity_data.sherds[2][10:-6] ?? SET_WHOLE_STRING(side)}_pattern",
+				"north": "textures/blocks/${#block_entity_data.sherds[0][10:-6] ?? SET_WHOLE_STRING(side)}_pattern",
+				"south": "textures/blocks/${#block_entity_data.sherds[3][10:-6] ?? SET_WHOLE_STRING(side)}_pattern"
+			}
 		},
 		{
-			"if": "dripstone_thickness == frustum",
-			"copy": "cross_texture",
-			"pos": [0, 0, 0],
-			"terrain_texture": "pointed_dripstone_frustum"
+			"pos": [1, 0, 1],
+			"size": [14, 16, 14],
+			"variant": 1,
+			"texture_size": [32, 32],
+			"textures": {
+				"side": "none" // this is just the top and bottom. the texture is stored in a different file which is why it must be split up into 2 cubes :/
+			},
+			"uv": {
+				"up": [0, 13],
+				"down": [0, 13]
+			}
 		},
 		{
-			"if": "dripstone_thickness == middle",
-			"copy": "cross_texture",
-			"pos": [0, 0, 0],
-			"terrain_texture": "pointed_dripstone_middle"
+			"pos": [5, 16, 5],
+			"size": [6, 1, 6],
+			"variant": 1,
+			"texture_size": [32, 32],
+			"textures": {
+				"up": "none",
+				"down": "none"
+			},
+			"uv": {
+				"side": [0, 11]
+			}
 		},
 		{
-			"if": "dripstone_thickness == base",
-			"copy": "cross_texture",
-			"pos": [0, 0, 0],
-			"terrain_texture": "pointed_dripstone_base"
-		},
-		{
-			"if": "dripstone_thickness == merge",
-			"copy": "cross_texture",
-			"pos": [0, 0, 0],
-			"terrain_texture": "pointed_dripstone_merge"
+			"pos": [4, 17, 4],
+			"size": [8, 3, 8],
+			"variant": 1,
+			"texture_size": [32, 32],
+			"uv": {
+				"side": [0, 8],
+				"up": [8, 0],
+				"down": [16, 0]
+			}
 		}
 	]
 }

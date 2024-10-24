@@ -110,6 +110,19 @@ export function addOrdinalSuffix(num) {
 	return num + (num % 10 == 1 && num % 100 != 11? "st" : num % 10 == 2 && num % 100 != 12? "nd" : num % 10 == 3 && num % 100 != 13? "rd" : "th");
 }
 
+export function stringToImageData(text, textCol = "black", backgroundCol = "white", font = "12px monospace") {
+	let can = new OffscreenCanvas(0, 20);
+	let ctx = can.getContext("2d");
+	ctx.font = font;
+	can.width = ctx.measureText(text).width;
+	ctx.fillStyle = backgroundCol;
+	ctx.fillRect(0, 0, can.width, can.height);
+	ctx.fillStyle = textCol;
+	ctx.font = font;
+	ctx.fillText(text, 0, 15);
+	return ctx.getImageData(0, 0, can.width, can.height);
+}
+
 export function getStackTrace() {
 	return (new Error()).stack.split("\n").slice(1);
 }
