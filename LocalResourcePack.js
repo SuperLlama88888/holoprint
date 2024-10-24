@@ -1,4 +1,8 @@
+import { sha256, sha256text } from "./essential.js";
+
 export default class LocalResourcePack {
+	/** @type {String} A unique hash for this local resource pack. */
+	hash;
 	#files;
 	
 	/**
@@ -6,10 +10,18 @@ export default class LocalResourcePack {
 	 * @param {FileList} fileList
 	 */
 	constructor(fileList = []) {
-		this.#files = new Map();
-		[...fileList].forEach(file => {
-			this.#files.set(file.webkitRelativePath.slice(file.webkitRelativePath.indexOf("/") + 1), file); // the relative path starts with rootFolder/...
-		});
+		return (async () => {
+			this.#files = new Map();
+			let folderSummary = [];
+			for(let file of [...fileList]) {
+				let filePath = file.webkitRelativePath.slice(file.webkitRelativePath.indexOf("/") + 1); // the relative path starts with rootFolder/...
+				this.#files.set(filePath, file);
+				folderSummary.push(filePath, await sha256(file));
+			}
+			this.hash = (await sha256text(folderSummary.join("\n"))).toHexadecimalString();
+			
+			return this;
+		})();
 	}
 	/**
 	 * Gets a file from the local resource pack, or undefined if it doesn't exist.

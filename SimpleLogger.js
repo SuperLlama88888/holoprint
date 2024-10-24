@@ -99,11 +99,7 @@ export default class SimpleLogger {
 	}
 	
 	patchConsoleMethods() {
-		[console._log, console._warn, console._error, console._info] = [console.log, console.warn, console.error, console.info];
-		console.log = (...args) => {
-			// this.log(...args);
-			return console._log.apply(console, [getStackTrace()[1].match(/\/([^\/]+\.[^\.]+:\d+:\d+)/)[1] + "\n", ...args]);
-		};
+		[console._warn, console._error, console._info] = [console.warn, console.error, console.info];
 		console.warn = (...args) => {
 			this.warn(...args);
 			return console._warn.apply(console, [getStackTrace()[1].match(/\/([^\/]+\.[^\.]+:\d+:\d+)/)[1] + "\n", ...args]);

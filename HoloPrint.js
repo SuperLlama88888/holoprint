@@ -65,6 +65,11 @@ export default class HoloPrint {
 	 * @returns {Promise<File>} Resource pack (.mcpack)
 	 */
 	async makePack(structureFile) {
+		if(this.resourcePackStack instanceof Promise) {
+			console.debug("Waiting for resource pack stack initialisation...");
+			this.resourcePackStack = await this.resourcePackStack; // since the default new ResourcePackStack() in the construcotr is async it could be a promise.
+			console.debug("Resource pack stack initialised!");
+		}
 		let startTime = performance.now();
 		
 		let arrayBuffer;
@@ -391,10 +396,6 @@ export default class HoloPrint {
 		
 		let textureBlobs = textureAtlas.imageBlobs;
 		
-		if(totalBlocks < 1000) {
-			new PreviewRenderer(this.previewCont, textureAtlas, hologramGeo, hologramAnimations); // is async but we won't wait for it
-		}
-		
 		let structureName = structureFile.name.match(/(.+)\.[^.]+$/)[1];
 		
 		manifest["header"]["name"] = `§uHoloPrint:§r ${structureName}`;
@@ -573,6 +574,11 @@ export default class HoloPrint {
 			}
 		});
 		console.info(`Finished creating pack in ${(performance.now() - startTime).toFixed(0) / 1000}s!`);
+		
+		if(totalBlocks < 1000) {
+			new PreviewRenderer(this.previewCont, textureAtlas, hologramGeo, hologramAnimations); // is async but we won't wait for it
+		}
+		
 		return new File([zippedPack], `${structureName}.holoprint.mcpack`);
 	}
 	/**

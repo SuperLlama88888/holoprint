@@ -117,7 +117,7 @@ export function getStackTrace() {
 /**
  * Returns the SHA-256 hash of a blob.
  * @param {Blob} blob
- * @returns {Uint8Array}
+ * @returns {Promise<Uint8Array>}
  */
 export async function sha256(blob) {
 	return new Uint8Array(await crypto.subtle.digest("SHA-256", await blob.arrayBuffer()));
@@ -125,6 +125,9 @@ export async function sha256(blob) {
 export async function sha256text(text) {
 	return new Uint8Array(await crypto.subtle.digest("SHA-256", (new TextEncoder()).encode(text)));
 }
+Uint8Array.prototype.toHexadecimalString = function() {
+	return [...this].map(ch => ch.toString(16).padStart(2, "0")).join("");
+};
 
 export async function awaitAllEntries(object) {
 	await Promise.all(Object.entries(object).map(async ([key, promise]) => {

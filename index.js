@@ -39,7 +39,7 @@ let logger;
 
 let supabaseLogger;
 
-document.onEvent("DOMContentLoaded", () => {
+document.onEvent("DOMContentLoaded", async () => {
 	document.body.appendChild = selectEl("main").appendChild.bind(selectEl("main"));
 	
 	dropFileNotice = selectEl("#dropFileNotice");
@@ -98,12 +98,16 @@ document.onEvent("DOMContentLoaded", () => {
 	logger.patchConsoleMethods();
 	
 	generatePackForm = selectEl("#generatePackForm");
-	generatePackForm.onEvent("submit", e => {
+	generatePackForm.onEvent("submit", async e => {
 		e.preventDefault();
 		
 		let formData = new FormData(generatePackForm);
-		let localResourcePack = new LocalResourcePack(generatePackForm.elements.namedItem("localResourcePack").files);
-		makePack(formData.get("structureFiles"), [localResourcePack]);
+		let resourcePacks = [];
+		let localResourcePackFiles = generatePackForm.elements.namedItem("localResourcePack").files;
+		if(localResourcePackFiles.length) {
+			resourcePacks.push(await new LocalResourcePack(localResourcePackFiles));
+		}
+		makePack(formData.get("structureFiles"), resourcePacks);
 	});
 	generatePackFormSubmitButton = generatePackForm.elements.namedItem("submit");
 	
@@ -113,13 +117,13 @@ document.onEvent("DOMContentLoaded", () => {
 	});
 	
 	let materialListLanguageSelector = selectEl("#materialListLanguageSelector");
-	(new ResourcePackStack()).fetchResource("texts/language_names.json").then(res => res.json()).then(languages => {
+	(await new ResourcePackStack()).fetchResource("texts/language_names.json").then(res => res.json()).then(languages => {
 		materialListLanguageSelector.firstElementChild.remove();
 		languages.forEach(([languageCode, languageName]) => {
 			materialListLanguageSelector.appendChild(new Option(languageName, languageCode, false, languageCode.replace("_", "-") == navigator.language));
 		});
 	}).catch(e => {
-		console.warn(`Couldn't load language_names.json: ${e}`);
+		console.warn("Couldn't load language_names.json:", e);
 	});
 });
 
@@ -150,7 +154,7 @@ async function makePack(structureFile, localResourcePacks) {
 	
 	let previewCont = selectEl("#previewCont");
 	
-	let resourcePackStack = new ResourcePackStack(localResourcePacks);
+	let resourcePackStack = await new ResourcePackStack(localResourcePacks);
 	logger.setOriginTime(performance.now());
 	window.logger = logger;
 	

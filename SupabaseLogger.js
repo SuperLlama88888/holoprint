@@ -13,7 +13,7 @@ export default class SupabaseLogger {
 	 */
 	async recordStructureUsage(structureFile) {
 		console.info("Hashing structure file...");
-		let fullFileHash = [...await sha256(structureFile)].map(ch => ch.toString(16).padStart(2, "0")).join("");
+		let fullFileHash = (await sha256(structureFile)).toHexadecimalString();
 		let shortFileHash = fullFileHash.slice(0, 8);
 		// console.log(`Full file hash: ${fullFileHash}`);
 		console.log(`Finished hashing structure file: ${shortFileHash}`);

@@ -1,6 +1,7 @@
 import { awaitAllEntries, blobToImage, ceil, closestFactorPair, floor, hexColourToClampedTriplet, JSONSet, lerp, max, range } from "./essential.js";
 import TGALoader from "https://esm.run/tga-js@1.1.1"; // We could use dynamic import as this isn't used all the time but it's so small it won't matter
 import potpack from "https://esm.run/potpack@2.0.0";
+import ResourcePackStack from "./ResourcePackStack.js";
 
 /**
  * 2D vector.
@@ -102,6 +103,11 @@ export default class TextureAtlas {
 	atlasHeight;
 	textureFillEfficiency; // how much of the texture atlas is filled with images
 	
+	/**
+	 * Creates a texture atlas for loading images from texture references and stitching them together.
+	 * @param {Object} config
+	 * @param {ResourcePackStack} resourcePackStack
+	 */
 	constructor(config, resourcePackStack) {
 		return (async () => { // async constructor pattern from https://stackoverflow.com/a/50885340
 			this.config = config;

@@ -17,7 +17,7 @@
 	let logger = new SimpleLogger(document.querySelector("#log"));
 	logger.patchConsoleMethods();
 	
-	let rps = new ResourcePackStack();
+	let rps = await new ResourcePackStack();
 	let [blockMetadata, itemMetadata, translationFile] = await Promise.all([
 		rps.fetchData("metadata/vanilladata_modules/mojang-blocks.json").then(res => res.json()),
 		rps.fetchData("metadata/vanilladata_modules/mojang-items.json").then(res => res.json()),
