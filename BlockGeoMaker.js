@@ -34,7 +34,8 @@ import { awaitAllEntries, clamp, hexColourToClampedTriplet, JSONSet } from "./es
  */
 
 export default class BlockGeoMaker {
-	static #eigenvariants = { // variant numbers tied to specific blocks. they will always have these variant indices.
+	/** variant numbers tied to specific blocks. they will always have these variant indices. */
+	static #eigenvariants = {
 		"grass_block": 0, // for the tints; this makes it look like the forest or flower forest biomes
 		"unpowered_repeater": 0,
 		"powered_repeater": 1,
@@ -196,30 +197,61 @@ export default class BlockGeoMaker {
 	 * Makes the cubes in a bone from a block.
 	 * @param {Block} block
 	 * @param {String} blockShape
-	 * @param {String} [blockShapeTerrainTextureOverride]
 	 * @returns {Array}
 	 */
-	#makeBoneCubes(block, blockShape, blockShapeTerrainTextureOverride) {
+	#makeBoneCubes(block, blockShape) {
 		let specialTexture;
 		if(blockShape.includes("{")) {
 			[, blockShape, specialTexture] = blockShape.match(/^(\w+)\{(textures\/[\w\/]+)\}$/);
 		}
 		
-		let unfilteredCubes = this.#blockShapeGeos[blockShape];
+		let unfilteredCubes = structuredClone(this.#blockShapeGeos[blockShape]);
 		if(!unfilteredCubes) {
 			console.error(`Could not find geometry for block shape ${blockShape}; defaulting to "block"`);
-			unfilteredCubes = this.#blockShapeGeos["block"];
+			unfilteredCubes = structuredClone(this.#blockShapeGeos["block"]);
 		}
-		let filteredCubes = structuredClone(unfilteredCubes).filter(cube => {
+		let filteredCubes = [];
+		while(unfilteredCubes.length) {
+			// For each unfiltered cube, we add it to filteredCubes if we've checked the "if" flag. If there are copies, we then add them back to unfilteredCubes.
+			let cube = unfilteredCubes.shift();
+			if("block_states" in cube) {
+				let blockOverride = structuredClone(block);
+				blockOverride["states"] = { ...blockOverride["states"], ...cube["block_states"] };
+				cube["block_override"] = blockOverride;
+			}
 			if("if" in cube) {
-				if(!this.#checkBlockStateConditional(block, cube["if"])) {
-					return false;
+				if(!this.#checkBlockStateConditional(cube["block_override"] ?? block, cube["if"])) {
+					continue;
 				}
 				delete cube["if"]; // later on, when determining if a bone cube is mergeable, we only allow cubes with "pos" and "size" keys. I am lazy so it only checks if there are exactly 2 keys in the cube. hence, we need to delete the "if" key here.
 			}
-			return true;
-		});
-		// add easy property accessors
+			if("terrain_texture" in cube) {
+				cube["terrain_texture"] = this.#interpolateInBlockValues(cube["block_override"] ?? block, cube["terrain_texture"]);
+			}
+			if("copy" in cube) {
+				let copiedCubes = structuredClone(this.#blockShapeGeos[cube["copy"]]);
+				if(!copiedCubes) {
+					console.error(`Could not find geometry for block shape ${blockShape}; defaulting to "block"`);
+					copiedCubes = structuredClone(this.#blockShapeGeos["block"]);
+				}
+				copiedCubes.forEach(copiedCube => {
+					copiedCube["pos"] = copiedCube["pos"].map((x, i) => x + cube["pos"][i]);
+					if("rot" in copiedCube) {
+						copiedCube["pivot"] = (copiedCube["pivot"] ?? [8, 8, 8]).map((x, i) => x + cube["pos"][i]);
+					}
+					if("block_states" in cube) {
+						copiedCube["block_states"] = { ...cube["block_states"], ...copiedCube["block_states"] };
+					}
+					if("terrain_texture" in cube) { // even though we use ??, we don't want to set terrain_texture to undefined, since that will be "in" copiedCube
+						copiedCube["terrain_texture"] ??= cube["terrain_texture"];
+					}
+				});
+				unfilteredCubes.push(...copiedCubes);
+			} else {
+				filteredCubes.push(cube);
+			}
+		}
+		// add easy property accessors. I could make a class if I wanted to
 		filteredCubes.forEach(cube => {
 			Object.defineProperties(cube, Object.fromEntries(["x", "y", "z", "w", "h", "d"].map((prop, i) => [prop, {
 				get() {
@@ -230,12 +262,7 @@ export default class BlockGeoMaker {
 				}
 			}])));
 		});
-		let actualCubes = [];
-		let copycatCubes = []; // these are the cubes that have "copy" instead of "size" and as such aren't really cubes...
-		filteredCubes.forEach(cube => {
-			("size" in cube? actualCubes : copycatCubes).push(cube);
-		});
-		let cubes = [...this.#mergeCubes(actualCubes), ...copycatCubes];
+		let cubes = this.#mergeCubes(filteredCubes);
 		
 		let blockName = block["name"];
 		let variant = this.#getTextureVariant(block);
@@ -243,28 +270,6 @@ export default class BlockGeoMaker {
 		
 		let boneCubes = [];
 		cubes.forEach(cube => {
-			if("terrain_texture" in cube) {
-				cube["terrain_texture"] = this.interpolateInBlockValues(cube["terrain_texture"], block);
-			}
-			if("copy" in cube) {
-				let blockCopy = structuredClone(block);
-				if("block_states" in cube) {
-					blockCopy["states"] ??= {};
-					Object.entries(cube["block_states"]).forEach(([blockStateName, blockStateValue]) => {
-						blockCopy["states"][blockStateName] = blockStateValue;
-					});
-				}
-				let copiedBoneCubes = this.#makeBoneCubes(blockCopy, cube["copy"], cube["terrain_texture"] ?? blockShapeTerrainTextureOverride);
-				copiedBoneCubes.forEach(boneCube => {
-					boneCube["origin"] = boneCube["origin"].map((x, i) => x + cube["pos"][i]);
-					if("pivot" in boneCube) {
-						boneCube["pivot"] = boneCube["pivot"].map((x, i) => x + cube["pos"][i]);
-					}
-				});
-				boneCubes.push(...copiedBoneCubes); // TODO: make copies be cullable between each other
-				return;
-			}
-			
 			// In MCBE most non-full-block textures look at where the part that is being rendered is in relation to the entire cube space it's in - like it's being projected onto a full face then cut out. Kinda hard to explain sorry, I recommend messing around with fence textures so you understand how it works.
 			// Pretty sure some need to be mirrored still. this includes the top of the torch
 			let westUvOffset = [cube.z, 16 - cube.y - cube.h];
@@ -327,10 +332,16 @@ export default class BlockGeoMaker {
 			if("variant" in cube) {
 				cubeVariant = cube["variant"];
 			} else if(cube["ignore_eigenvariant"]) {
-				if(variantWithoutEigenvariant == undefined) {
-					variantWithoutEigenvariant = this.#getTextureVariant(block, true);
+				if("block_override" in cube) {
+					cubeVariant = this.#getTextureVariant(cube["block_override"], true);
+				} else {
+					if(variantWithoutEigenvariant == undefined) {
+						variantWithoutEigenvariant = this.#getTextureVariant(block, true);
+					}
+					cubeVariant = variantWithoutEigenvariant;
 				}
-				cubeVariant = variantWithoutEigenvariant;
+			} else if("block_override" in cube) {
+				cubeVariant = this.#getTextureVariant(cube["block_override"]);
 			} else {
 				cubeVariant = variant; // default variant for this block
 			}
@@ -344,7 +355,7 @@ export default class BlockGeoMaker {
 					delete boneCube["uv"][faceName];
 					continue;
 				}
-				textureFace = this.interpolateInBlockValues(textureFace, block);
+				textureFace = this.#interpolateInBlockValues(cube["block_override"] ?? block, textureFace);
 				let textureRef = {
 					"uv": face["uv"].map((x, i) => x / textureSize[i]),
 					"uv_size": face["uv_size"].map((x, i) => x / textureSize[i]),
@@ -362,7 +373,7 @@ export default class BlockGeoMaker {
 				} else if(/^textures\/.+[^/]$/.test(textureFace)) { // file path
 					textureRef["texture_path_override"] = textureFace;
 				} else {
-					let terrainTextureOverride = cube["terrain_texture"] ?? blockShapeTerrainTextureOverride;
+					let terrainTextureOverride = cube["terrain_texture"];
 					if(terrainTextureOverride) {
 						delete textureRef["block_name"];
 						delete textureRef["texture_face"];
@@ -489,12 +500,15 @@ export default class BlockGeoMaker {
 		return variant;
 	}
 	/** Scales a bone cube towards (8, 8, 8).
-	 * @param {*} boneCube
-	 * @returns {*}
+	 * @param {Object} boneCube
+	 * @returns {Object}
 	 */
 	#scaleBoneCube(boneCube) {
 		boneCube["origin"] = boneCube["origin"].map(x => (x - 8) * this.config.SCALE + 8);
 		boneCube["size"] = boneCube["size"].map(x => x * this.config.SCALE);
+		if("pivot" in boneCube) {
+			boneCube["pivot"] = boneCube["pivot"].map(x => (x - 8) * this.config.SCALE + 8);
+		}
 		return boneCube;
 	}
 	#checkBlockStateConditional(block, conditional) {
@@ -567,11 +581,11 @@ export default class BlockGeoMaker {
 	}
 	/**
 	 * Substitutes values from a block into a particular expression.
-	 * @param {String} fullExpression
 	 * @param {Block} block
+	 * @param {String} fullExpression
 	 * @returns {String}
 	 */
-	interpolateInBlockValues(fullExpression, block) {
+	#interpolateInBlockValues(block, fullExpression) {
 		let wholeStringValue;
 		let substitutedExpression = fullExpression.replaceAll(/\${([^}]+)}/g, (bracketedExpression, expression) => {
 			if(wholeStringValue != undefined) return;
@@ -581,7 +595,6 @@ export default class BlockGeoMaker {
 				return "";
 			}
 			let [, specialVar, propertyChain, ...slicingAndDefault] = match;
-			console.log(match)
 			let value = function() {
 				switch(specialVar) {
 					case "#block_name": return block["name"];
@@ -602,6 +615,7 @@ export default class BlockGeoMaker {
 					let defaultValue = slicingAndDefault[4];
 					if(/SET_WHOLE_STRING\([^)]+\)/.test(defaultValue)) {
 						wholeStringValue = defaultValue.match(/\(([^)]+)\)/)[1];
+						return;
 					} else {
 						value = defaultValue;
 					}

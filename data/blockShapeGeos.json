@@ -1137,7 +1137,8 @@
 			"copy": "cake",
 			"pos": [0, 0, 0],
 			"block_states": {
-				"bite_counter": 0 // avoid the warnings
+				"bite_counter": 0, // use the full cake model
+				"lit": 0 // without this, lit candle cakes would show the inside texture on the west
 			}
 		},
 		{

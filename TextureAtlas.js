@@ -128,7 +128,7 @@ export default class TextureAtlas {
 			flipbookTextures.map(entry => {
 				this.#flipbookTexturesAndSizes.set(entry["flipbook_texture"], entry["replicate"] ?? 1);
 			});
-			console.log(this.#flipbookTexturesAndSizes)
+			// console.log("Flipbook textures -> sizes:", this.#flipbookTexturesAndSizes);
 			
 			return this;
 		})();
@@ -343,7 +343,7 @@ export default class TextureAtlas {
 				} else {
 					console.warn(`No texture found at ${texturePath}`);
 					imageData = stringToImageData(texturePath);
-					sourceUv = [0, 0],
+					sourceUv = [0, 0];
 					uvSize = [1, 1];
 				}
 			}

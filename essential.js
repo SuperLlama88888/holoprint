@@ -141,6 +141,9 @@ export async function sha256text(text) {
 Uint8Array.prototype.toHexadecimalString = function() {
 	return [...this].map(ch => ch.toString(16).padStart(2, "0")).join("");
 };
+Array.prototype.removeFalsies = function() {
+	return this.filter(el => el);
+};
 
 export async function awaitAllEntries(object) {
 	await Promise.all(Object.entries(object).map(async ([key, promise]) => {
