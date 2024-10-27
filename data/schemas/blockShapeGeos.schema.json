@@ -37,6 +37,15 @@
 						"minItems": 3,
 						"maxItems": 3
 					},
+					"translate": {
+						"description": "Translates this cube or any cubes from the \"copy\" property. This is applied after automatic UV calculations.",
+						"type": "array",
+						"items": {
+							"type": "number"
+						},
+						"minItems": 3,
+						"maxItems": 3
+					},
 					"rot": {
 						"description": "The XYZ rotation of the cube (in degrees; applied in the order X-Y-Z) around its pivot.",
 						"type": "array",
@@ -131,7 +140,7 @@
 						"maxItems": 2
 					},
 					"copy": {
-						"description": "Copies another block shape to use in this block shape. Translation can be achieved with the \"pos\" property, and block states can be set in the \"block_states\" property.",
+						"description": "Copies another block shape to use in this block shape. Translation can be achieved with the \"translate\" property (\"pos\" has no effect), and other fields will be copied over as well.",
 						"type": "string",
 						"pattern": "^\\w+$"
 					},
@@ -176,7 +185,7 @@
 						"required": ["pos", "size"]
 					},
 					{
-						"required": ["copy", "pos"]
+						"required": ["copy"]
 					}
 				],
 				"default": {

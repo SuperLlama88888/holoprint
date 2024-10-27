@@ -1,4 +1,4 @@
-import { awaitAllEntries, blobToImage, ceil, closestFactorPair, floor, hexColourToClampedTriplet, JSONSet, lerp, max, range, stringToImageData } from "./essential.js";
+import { awaitAllEntries, blobToImage, ceil, closestFactorPair, floor, hexColorToClampedTriplet, JSONSet, lerp, max, range, stringToImageData } from "./essential.js";
 import TGALoader from "https://esm.run/tga-js@1.1.1"; // We could use dynamic import as this isn't used all the time but it's so small it won't matter
 import potpack from "https://esm.run/potpack@2.0.0";
 import ResourcePackStack from "./ResourcePackStack.js";
@@ -6,6 +6,10 @@ import ResourcePackStack from "./ResourcePackStack.js";
 /**
  * 2D vector.
  * @typedef {[Number, Number]} Vec2
+ */
+/**
+ * 3D vector.
+ * @typedef {[Number, Number, Number]} Vec3
  */
 /**
  * A texture reference, made in BlockGeoMaker.js and turned into a texture in TextureAtlas.js.
@@ -24,7 +28,8 @@ import ResourcePackStack from "./ResourcePackStack.js";
  * An unresolved texture fragment containing an image path, tint, and UV position and size.
  * @typedef {Object} TextureFragment
  * @property {String} texturePath
- * @property {import("./BlockGeoMaker.js").Vec3} [tint]
+ * @property {Vec3} [tint]
+ * @property {Vec3} [tint_like_png]
  * @property {Number} opacity
  * @property {Vec2} uv
  * @property {Vec2} uv_size
@@ -39,6 +44,9 @@ import ResourcePackStack from "./ResourcePackStack.js";
  * @property {Number} sourceX
  * @property {Number} sourceY
  */
+
+const foliageTint = hexColorToClampedTriplet("#79C05A");
+const waterTint = hexColorToClampedTriplet("#44AFF5");
 
 export default class TextureAtlas {
 	/** Block IDs from the structure file that need to be remapped to something else in blocks.json, _._ means variants */
@@ -55,7 +63,7 @@ export default class TextureAtlas {
 	
 	// All the blocks in blocks.json that should use carried textures
 	// to check: calibrated_sculk_sensor, sculk_sensor, sculk_shrieker
-	static #blocksDotJsonCarriedTextures = ["acacia_leaves", "birch_leaves", "dark_oak_leaves", "fern", "jungle_leaves", "leaves", "leaves2", "light_block", "light_block_0", "light_block_1", "light_block_2", "light_block_3", "light_block_4", "light_block_5", "light_block_6", "light_block_7", "light_block_8", "light_block_9", "light_block_10", "light_block_11", "light_block_12", "light_block_13", "light_block_14", "light_block_15", "mangrove_leaves", "oak_leaves", "short_grass", "spruce_leaves", "tall_grass", "vine", "waterlily"];
+	static #blocksDotJsonCarriedTextures = ["acacia_leaves", "birch_leaves", "dark_oak_leaves", "fern", "jungle_leaves", "leaves", "leaves2", "light_block", "light_block_0", "light_block_1", "light_block_2", "light_block_3", "light_block_4", "light_block_5", "light_block_6", "light_block_7", "light_block_8", "light_block_9", "light_block_10", "light_block_11", "light_block_12", "light_block_13", "light_block_14", "light_block_15", "mangrove_leaves", "oak_leaves", "short_grass", "spruce_leaves", "vine", "waterlily"];
 	
 	/** Blocks that are transparent and need a certain opacity applied to them */
 	static #transparentBlocks = {
@@ -74,12 +82,18 @@ export default class TextureAtlas {
 	static #extraFlipbookTextures = ["textures/blocks/soul_lantern"]; // https://bugs.mojang.com/browse/MCPE-89643
 	
 	static #terrainTextureTints = {
-		"grass_top": hexColourToClampedTriplet("#79C05A"), // tinting in terrain_texture.json is only for grass_side...
-		"flowing_water_grey": hexColourToClampedTriplet("#44AFF5"),
-		"flowing_water": hexColourToClampedTriplet("#44AFF5"),
-		"still_water_grey": hexColourToClampedTriplet("#44AFF5"),
-		"still_water": hexColourToClampedTriplet("#44AFF5")
+		"grass_top": foliageTint, // tinting in terrain_texture.json is only for grass_side...
+		"tall_grass_bottom": foliageTint,
+		"tall_grass_top": foliageTint,
+		"large_fern_bottom": foliageTint,
+		"large_fern_top": foliageTint,
+		"flowing_water_grey": waterTint,
+		"flowing_water": waterTint,
+		"still_water_grey": waterTint,
+		"still_water": waterTint,
 	};
+	/** All terrain texture keys that are tinted but should be tinted how PNGs are, despite loading TGA images. */
+	static #terrainTextureTintsLikePng = ["tall_grass_bottom", "tall_grass_top", "large_fern_bottom", "large_fern_top"];
 	
 	#blocksDotJson;
 	#terrainTexture;
@@ -146,6 +160,7 @@ export default class TextureAtlas {
 		textureRefs.forEach(textureRef => {
 			let texturePath;
 			let tint = textureRef["tint"];
+			let tintLikePng;
 			let opacity = 1;
 			if("texture_path_override" in textureRef) {
 				texturePath = textureRef["texture_path_override"];
@@ -156,7 +171,7 @@ export default class TextureAtlas {
 				let texturePathAndTint = this.#getTexturePathAndTint(terrainTextureKey, variant);
 				texturePath = texturePathAndTint["texturePath"];
 				if(tint == undefined && "tint" in texturePathAndTint) {
-					tint = hexColourToClampedTriplet(texturePathAndTint["tint"]);
+					tint = hexColorToClampedTriplet(texturePathAndTint["tint"]);
 				}
 				if(!texturePath) {
 					console.error(`No texture for block ${blockName} on side ${textureRef["texture_face"]}!`);
@@ -164,6 +179,9 @@ export default class TextureAtlas {
 				}
 				
 				tint ??= TextureAtlas.#terrainTextureTints[terrainTextureKey];
+				if(tint && TextureAtlas.#terrainTextureTintsLikePng.includes(terrainTextureKey)) {
+					tintLikePng = true;
+				}
 				if(blockName in TextureAtlas.#transparentBlocks) {
 					opacity = TextureAtlas.#transparentBlocks[blockName];
 				}
@@ -171,6 +189,7 @@ export default class TextureAtlas {
 			let textureFragment = {
 				"texturePath": texturePath,
 				"tint": tint,
+				"tint_like_png": tintLikePng,
 				"opacity": opacity,
 				"uv": textureRef["uv"],
 				"uv_size": textureRef["uv_size"],
@@ -326,7 +345,7 @@ export default class TextureAtlas {
 	 */
 	async #loadImages(textureFragments) {
 		let tgaLoader = new TGALoader();
-		return await Promise.all([...textureFragments].map(async ({ texturePath, tint, opacity, uv: sourceUv, uv_size: uvSize, croppable }) => {
+		return await Promise.all([...textureFragments].map(async ({ texturePath, tint, tint_like_png: tintLikePng, opacity, uv: sourceUv, uv_size: uvSize, croppable }) => {
 			let imageRes = await this.resourcePackStack.fetchResource(`${texturePath}.png`);
 			let imageData;
 			let imageIsTga = false;
@@ -348,7 +367,7 @@ export default class TextureAtlas {
 				}
 			}
 			if(tint) {
-				imageData = this.#tintImageData(imageData, tint, imageIsTga); // with tinted TGA images, only full-opacity pixels are tinted, and transparent pixels are made opaque.
+				imageData = this.#tintImageData(imageData, tint, imageIsTga && !tintLikePng); // with tinted TGA images, only full-opacity pixels are tinted, and transparent pixels are made opaque.
 				// console.debug(`Tinted ${texturePath} with tint ${tint}!`);
 			}
 			if(opacity != 1) {
@@ -513,7 +532,7 @@ export default class TextureAtlas {
 		
 		let imageData = ogCan.getContext("2d").getImageData(0, 0, ogCan.width, ogCan.height);
 		
-		ctx.fillStyle = this.config.TEXTURE_OUTLINE_COLOUR;
+		ctx.fillStyle = this.config.TEXTURE_OUTLINE_COLOR;
 		
 		const compareAlpha = (currentPixel, otherPixel) => this.config.TEXTURE_OUTLINE_ALPHA_DIFFERENCE_MODE == "difference"? currentPixel - otherPixel >= this.config.TEXTURE_OUTLINE_ALPHA_THRESHOLD : otherPixel <= this.config.TEXTURE_OUTLINE_ALPHA_THRESHOLD;
 		

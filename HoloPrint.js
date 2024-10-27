@@ -29,7 +29,7 @@ export default class HoloPrint {
 		MINI_SCALE = 0.125, // size of ghost blocks when in the mini view for layers
 		LAYER_MODE = "single", // single | all_below
 		TEXTURE_OUTLINE_WIDTH = 0.25, // pixels, x ∈ [0, 1], x ∈ 2^ℝ
-		TEXTURE_OUTLINE_COLOUR = "#00F9",
+		TEXTURE_OUTLINE_COLOR = "#00F9",
 		TEXTURE_OUTLINE_ALPHA_DIFFERENCE_MODE = "threshold", // difference: will compare alpha channel difference; threshold: will only look at the second pixel
 		TEXTURE_OUTLINE_ALPHA_THRESHOLD = 0, // if using difference mode, will draw outline between pixels with at least this much alpha difference; else, will draw outline on pixels next to pixels with an alpha less than or equal to this
 		DO_SPAWN_ANIMATION = true,
@@ -47,7 +47,7 @@ export default class HoloPrint {
 			MINI_SCALE,
 			LAYER_MODE,
 			TEXTURE_OUTLINE_WIDTH,
-			TEXTURE_OUTLINE_COLOUR,
+			TEXTURE_OUTLINE_COLOR,
 			TEXTURE_OUTLINE_ALPHA_DIFFERENCE_MODE,
 			TEXTURE_OUTLINE_ALPHA_THRESHOLD,
 			DO_SPAWN_ANIMATION,
@@ -630,7 +630,7 @@ export default class HoloPrint {
 				delete block["states"]; // easier viewing
 			}
 		});
-		console.log("Block versions:", [...blockVersions]);
+		console.log("Block versions:", [...blockVersions], [...blockVersions].map(v => v.toString(16).padStart(8, 0).match(/.{2}/g).map(x => parseInt(x, 16)).join(".")));
 		
 		// add block entities into the block palette (on layer 0)
 		let indices = structure["block_indices"].map(layer => structuredClone(layer).map(i => +i));

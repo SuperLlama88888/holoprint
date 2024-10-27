@@ -2,7 +2,7 @@
 // READ: this also looks pretty comprehensive: https://github.com/MCBE-Development-Wiki/mcbe-dev-home/blob/main/docs/misc/enums/block_shape.md
 // https://github.com/bricktea/MCStructure/blob/main/docs/1.16.201/enums/B.md
 
-import { awaitAllEntries, clamp, hexColourToClampedTriplet, JSONSet } from "./essential.js";
+import { awaitAllEntries, clamp, hexColorToClampedTriplet, JSONSet } from "./essential.js";
 
 // https://wiki.bedrock.dev/visuals/material-creations.html#overlay-color-in-render-controllers
 // https://wiki.bedrock.dev/documentation/materials.html#entity-alphatest
@@ -37,6 +37,7 @@ export default class BlockGeoMaker {
 	/** variant numbers tied to specific blocks. they will always have these variant indices. */
 	static #eigenvariants = {
 		"grass_block": 0, // for the tints; this makes it look like the forest or flower forest biomes
+		"grass_path": 0, // down texture uses dirt instead of flattened_dirt :/
 		"unpowered_repeater": 0,
 		"powered_repeater": 1,
 		"unpowered_comparator": 0,
@@ -54,13 +55,20 @@ export default class BlockGeoMaker {
 		"stone_pressure_plate": 0,
 		"bubble_column": 0,
 		"wooden_button": 0,
+		"wooden_pressure_plate": 0,
 		"wooden_door": 0,
 		"spruce_door": 1,
 		"birch_door": 2,
 		"jungle_door": 3,
 		"acacia_door": 4,
 		"dark_oak_door": 5,
-		"iron_door": 6
+		"iron_door": 6,
+		"oak_leaves": 0,
+		"spruce_leaves": 0,
+		"birch_leaves": 0,
+		"jungle_leaves": 0,
+		"acacia_leaves": 0,
+		"dark_oak_leaves": 0,
 	};
 	
 	static #REDSTONE_DUST_TINTS = function() {
@@ -234,17 +242,18 @@ export default class BlockGeoMaker {
 					console.error(`Could not find geometry for block shape ${blockShape}; defaulting to "block"`);
 					copiedCubes = structuredClone(this.#blockShapeGeos["block"]);
 				}
+				let fieldsToCopy = Object.keys(cube).filter(field => !["copy", "translate"].includes(field));
 				copiedCubes.forEach(copiedCube => {
-					copiedCube["pos"] = copiedCube["pos"].map((x, i) => x + cube["pos"][i]);
-					if("rot" in copiedCube) {
-						copiedCube["pivot"] = (copiedCube["pivot"] ?? [8, 8, 8]).map((x, i) => x + cube["pos"][i]);
+					if("translate" in cube) {
+						copiedCube["translate"] = (copiedCube["translate"] ?? [0, 0, 0]).map((x, i) => x + cube["translate"][i]);
 					}
-					if("block_states" in cube) {
-						copiedCube["block_states"] = { ...cube["block_states"], ...copiedCube["block_states"] };
-					}
-					if("terrain_texture" in cube) { // even though we use ??, we don't want to set terrain_texture to undefined, since that will be "in" copiedCube
-						copiedCube["terrain_texture"] ??= cube["terrain_texture"];
-					}
+					fieldsToCopy.forEach(field => { // copy all fields from this cube onto the new ones
+						if(typeof copiedCube[field] == "object") {
+							copiedCube[field] = { ...cube[field], ...copiedCube[field] }; // fields on the copied cubes still take priority over the "parent" cube (the one that's copying it)
+						} else {
+							copiedCube[field] ??= cube[field];
+						}
+					});
 				});
 				unfilteredCubes.push(...copiedCubes);
 			} else {
@@ -386,7 +395,7 @@ export default class BlockGeoMaker {
 					delete textureRef["variant"];
 				}
 				if("tint" in cube) {
-					textureRef["tint"] = hexColourToClampedTriplet(cube["tint"]);
+					textureRef["tint"] = hexColorToClampedTriplet(cube["tint"]);
 				}
 				if(blockName == "redstone_wire") {
 					textureRef["tint"] = BlockGeoMaker.#REDSTONE_DUST_TINTS[block["states"]["redstone_signal"]];
@@ -399,6 +408,12 @@ export default class BlockGeoMaker {
 			if("rot" in cube) {
 				boneCube["rotation"] = cube["rot"];
 				boneCube["pivot"] = cube["pivot"] ?? [8, 8, 8]; // we set the pivot for this cube to be the center of it. if we don't specify this it would look at the pivot for the bone, which would be different if we're doing our fancy animations.
+			}
+			if("translate" in cube) {
+				boneCube["origin"] = boneCube["origin"].map((x, i) => x + cube["translate"][i]);
+				if("rot" in cube) {
+					boneCube["pivot"] = boneCube["pivot"].map((x, i) => x + cube["translate"][i]);
+				}
 			}
 			boneCube = this.#scaleBoneCube(boneCube);
 			boneCubes.push(boneCube);

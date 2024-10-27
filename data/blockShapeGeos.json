@@ -695,31 +695,31 @@
 		},
 		{
 			"copy": "template_small_redstone_torch", // TODO: improve JSON schema when copy is present
-			"pos": [7, 2, 12],
+			"translate": [7, 2, 12],
 			"terrain_texture": "repeater_torch"
 		},
 		{
 			"if": "repeater_delay == 0",
 			"copy": "template_small_redstone_torch",
-			"pos": [7, 2, 8],
+			"translate": [7, 2, 8],
 			"terrain_texture": "repeater_torch"
 		},
 		{
 			"if": "repeater_delay == 1",
 			"copy": "template_small_redstone_torch",
-			"pos": [7, 2, 6],
+			"translate": [7, 2, 6],
 			"terrain_texture": "repeater_torch"
 		},
 		{
 			"if": "repeater_delay == 2",
 			"copy": "template_small_redstone_torch",
-			"pos": [7, 2, 4],
+			"translate": [7, 2, 4],
 			"terrain_texture": "repeater_torch"
 		},
 		{
 			"if": "repeater_delay == 3",
 			"copy": "template_small_redstone_torch",
-			"pos": [7, 2, 2],
+			"translate": [7, 2, 2],
 			"terrain_texture": "repeater_torch"
 		}
 	],
@@ -730,12 +730,12 @@
 		},
 		{
 			"copy": "template_small_redstone_torch",
-			"pos": [4, 2, 3],
+			"translate": [4, 2, 3],
 			"terrain_texture": "comparator_torch"
 		},
 		{
 			"copy": "template_small_redstone_torch",
-			"pos": [10, 2, 3],
+			"translate": [10, 2, 3],
 			"terrain_texture": "comparator_torch"
 		},
 		{
@@ -1084,58 +1084,57 @@
 		{
 			"if": "candles == 0",
 			"copy": "template_candle_tall",
-			"pos": [7, 0, 7]
+			"translate": [7, 0, 7]
 		},
 		{
 			"if": "candles == 1",
 			"copy": "template_candle_tall",
-			"pos": [5, 0, 7]
+			"translate": [5, 0, 7]
 		},
 		{
 			"if": "candles == 1",
 			"copy": "template_candle_medium",
-			"pos": [9, 0, 8]
+			"translate": [9, 0, 8]
 		},
 		{
 			"if": "candles == 2",
 			"copy": "template_candle_tall",
-			"pos": [6, 0, 6]
+			"translate": [6, 0, 6]
 		},
 		{
 			"if": "candles == 2",
 			"copy": "template_candle_medium",
-			"pos": [9, 0, 7]
+			"translate": [9, 0, 7]
 		},
 		{
 			"if": "candles == 2",
 			"copy": "template_candle_short",
-			"pos": [7, 0, 9]
+			"translate": [7, 0, 9]
 		},
 		{
 			"if": "candles == 3",
 			"copy": "template_candle_tall",
-			"pos": [6, 0, 5]
+			"translate": [6, 0, 5]
 		},
 		{
 			"if": "candles == 3",
 			"copy": "template_candle_medium",
-			"pos": [9, 0, 5]
+			"translate": [9, 0, 5]
 		},
 		{
 			"if": "candles == 3",
 			"copy": "template_candle_medium",
-			"pos": [5, 0, 8]
+			"translate": [5, 0, 8]
 		},
 		{
 			"if": "candles == 3",
 			"copy": "template_candle_short",
-			"pos": [8, 0, 8]
+			"translate": [8, 0, 8]
 		}
 	],
 	"candle_cake": [
 		{
 			"copy": "cake",
-			"pos": [0, 0, 0],
 			"block_states": {
 				"bite_counter": 0, // use the full cake model
 				"lit": 0 // without this, lit candle cakes would show the inside texture on the west
@@ -1143,7 +1142,7 @@
 		},
 		{
 			"copy": "template_candle_tall",
-			"pos": [7, 8, 7],
+			"translate": [7, 8, 7],
 			"terrain_texture": "${#block_name[:-5]}" // block name is blue_candle_cake, we need to remove _cake
 		}
 	],
@@ -1246,7 +1245,7 @@
 		{
 			"if": "attachment == standing",
 			"copy": "template_bell_main",
-			"pos": [4, 1, 4]
+			"translate": [4, 1, 4]
 		},
 		{
 			"if": "attachment == standing",
@@ -1275,7 +1274,7 @@
 		{
 			"if": "attachment != standing",
 			"copy": "template_bell_main",
-			"pos": [4, 4, 4]
+			"translate": [4, 4, 4]
 		},
 		{
 			"if": "attachment == hanging",
@@ -1326,7 +1325,7 @@
 		{
 			"if": "hanging == 0",
 			"copy": "template_lantern",
-			"pos": [5, 0, 5]
+			"translate": [5, 0, 5]
 		},
 		{
 			"if": "hanging == 0",
@@ -1349,7 +1348,7 @@
 		{
 			"if": "hanging == 1",
 			"copy": "template_lantern",
-			"pos": [5, 2, 5]
+			"translate": [5, 2, 5]
 		},
 		{
 			"if": "hanging == 1",
@@ -1409,19 +1408,19 @@
 	"campfire": [ // facing west
 		{
 			"copy": "template_campfire_log_z",
-			"pos": [1, 0, 0]
+			"translate": [1, 0, 0]
 		},
 		{
 			"copy": "template_campfire_log_z",
-			"pos": [11, 0, 0]
+			"translate": [11, 0, 0]
 		},
 		{
 			"copy": "template_campfire_log_x",
-			"pos": [0, 3, 1]
+			"translate": [0, 3, 1]
 		},
 		{
 			"copy": "template_campfire_log_x",
-			"pos": [0, 3, 11]
+			"translate": [0, 3, 11]
 		},
 		{
 			"if": "extinguished == 0",
@@ -1888,7 +1887,6 @@
 	"pointed_dripstone": [
 		{
 			"copy": "cross_texture",
-			"pos": [0, 0, 0],
 			"terrain_texture": "pointed_dripstone_${#block_states.dripstone_thickness}"
 		}
 	],
@@ -1941,6 +1939,491 @@
 				"side": [0, 8],
 				"up": [8, 0],
 				"down": [16, 0]
+			}
+		}
+	],
+	"cactus": [
+		{
+			"pos": [0, 0, 1],
+			"size": [16, 16, 14],
+			"textures": {
+				"east": "none",
+				"west": "none"
+			}
+		},
+		{
+			"pos": [1, 0, 0],
+			"size": [14, 16, 16],
+			"textures": {
+				"north": "none",
+				"south": "none",
+				"up": "none",
+				"down": "none"
+			}
+		}
+	],
+	"double_plant": [
+		{
+			"if": "upper_block_bit == 0",
+			"copy": "cross_texture",
+			"textures": {
+				"*": "down"
+			}
+		},
+		{
+			"if": "upper_block_bit == 1",
+			"copy": "cross_texture",
+			"textures": {
+				"*": "up"
+			}
+		}
+	],
+	"sunflower": [
+		{
+			"copy": "double_plant"
+		},
+		{
+			"if": "upper_block_bit == 1",
+			"pos": [6.4, -0.5, 1],
+			"size": [0, 16, 14],
+			"rot": [0, 0, 20],
+			"uv": {
+				"*": [0, 0]
+			},
+			"variant": 0 // this is the front texture
+		},
+		{
+			"if": "upper_block_bit == 1",
+			"pos": [6.7, -0.5, 1],
+			"size": [0, 16, 14],
+			"rot": [0, 0, 20],
+			"uv": {
+				"*": [0, 0]
+			},
+			"variant": 1 // this is the back texture
+		}
+	],
+	"mangrove_propagule": [
+		{
+			"if": "hanging == 0",
+			"copy": "cross_texture"
+		},
+		{
+			"if": "hanging == 1",
+			"pos": [7, 14, 8],
+			"size": [2, 2, 0],
+			"rot": [0, 45, 0],
+			"uv": {
+				"*": [0, 0]
+			}
+		},
+		{
+			"if": "hanging == 1",
+			"pos": [7, 14, 8],
+			"size": [2, 2, 0],
+			"rot": [0, -45, 0],
+			"uv": {
+				"*": [0, 0]
+			}
+		},
+		{
+			"if": "hanging == 1",
+			"pos": [7, 13, 7],
+			"size": [2, 1, 2],
+			"uv": {
+				"up": [0, 0],
+				"side": [0, 2],
+				"down": [0, 3]
+			}
+		},
+		{
+			"if": "hanging == 1",
+			"pos": [7, 13.4142, 4.9176], // tan(22.5deg) = √2 - 1, 13 + tan(22.5deg) = 12 + √2 ≈ 13.4142, 8 - 2 - √(1^2 + tan(22.5deg)^2) = 6 - √(4 - 2√2) ≈ 4.9176
+			"size": [2, 0, 2],
+			"rot": [22.5, 0, 0],
+			"pivot": [8, 13.4142, 8],
+			"uv": {
+				"*": [8, 3]
+			}
+		},
+		{
+			"if": "hanging == 1",
+			"pos": [7, 13.4142, 4.9176],
+			"size": [2, 0, 2],
+			"rot": [22.5, 90, 0],
+			"pivot": [8, 13.4142, 8],
+			"uv": {
+				"*": [8, 3]
+			}
+		},
+		{
+			"if": "hanging == 1",
+			"pos": [7, 13.4142, 4.9176],
+			"size": [2, 0, 2],
+			"rot": [22.5, 180, 0],
+			"pivot": [8, 13.4142, 8],
+			"uv": {
+				"*": [8, 3]
+			}
+		},
+		{
+			"if": "hanging == 1",
+			"pos": [7, 13.4142, 4.9176],
+			"size": [2, 0, 2],
+			"rot": [22.5, -90, 0],
+			"pivot": [8, 13.4142, 8],
+			"uv": {
+				"*": [8, 3]
+			}
+		},
+		{
+			"if": "hanging == 1 && propagule_stage > 0",
+			"pos": [7, 10, 7],
+			"size": [2, 3, 2],
+			"uv": {
+				"*": [0, 7],
+				"down": [0, 10]
+			}
+		},
+		{
+			"if": "hanging == 1 && propagule_stage == 2",
+			"pos": [7, 7, 8],
+			"size": [2, 3, 0],
+			"rot": [0, 45, 0],
+			"uv": {
+				"*": [3, 7]
+			}
+		},
+		{
+			"if": "hanging == 1 && propagule_stage == 2",
+			"pos": [7, 7, 8],
+			"size": [2, 3, 0],
+			"rot": [0, -45, 0],
+			"uv": {
+				"*": [3, 7]
+			}
+		},
+		{
+			"if": "hanging == 1 && propagule_stage == 3",
+			"pos": [7, 3, 8],
+			"size": [2, 7, 0],
+			"rot": [0, 45, 0],
+			"uv": {
+				"*": [3, 3]
+			}
+		},
+		{
+			"if": "hanging == 1 && propagule_stage == 3",
+			"pos": [7, 3, 8],
+			"size": [2, 7, 0],
+			"rot": [0, -45, 0],
+			"uv": {
+				"*": [3, 3]
+			}
+		},
+		{
+			"if": "hanging == 1 && propagule_stage == 4",
+			"pos": [7, 0, 8],
+			"size": [2, 10, 0],
+			"rot": [0, 45, 0],
+			"uv": {
+				"*": [3, 0]
+			}
+		},
+		{
+			"if": "hanging == 1 && propagule_stage == 4",
+			"pos": [7, 0, 8],
+			"size": [2, 10, 0],
+			"rot": [0, -45, 0],
+			"uv": {
+				"*": [3, 0]
+			}
+		}
+	],
+	"pitcher_plant": [
+		{
+			"copy": "double_plant",
+			"translate": [0, -6, 0]
+		}
+	],
+	"pitcher_crop": [
+		{
+			"if": "growth == 0",
+			"pos": [5, -1, 5],
+			"size": [6, 4, 6],
+			"textures": {
+				"side": "north"
+			},
+			"uv": {
+				"side": [5, 10]
+			}
+		},
+		{
+			"if": "growth > 0 && upper_block_bit == 0",
+			"pos": [3, -1, 3],
+			"size": [10, 6, 10],
+			"textures": {
+				"side": "north"
+			},
+			"uv": {
+				"side": [3, 10]
+			}
+		},
+		{
+			"if": "growth >= 1 && growth <= 2",
+			"copy": "cross_texture",
+			"translate": [0, 5, 0],
+			"textures": {
+				"*": "south"
+			},
+			"uv": {
+				"*": [0, 0]
+			}
+		},
+		{
+			"if": "growth >= 3 && upper_block_bit == 0",
+			"copy": "cross_texture",
+			"textures": {
+				"*": "south"
+			}
+		},
+		{
+			"if": "growth == 3 && upper_block_bit == 1",
+			"copy": "cross_texture",
+			"textures": {
+				"*": "east"
+			},
+			"variant": 0
+		},
+		{
+			"if": "growth == 4 && upper_block_bit == 1",
+			"copy": "cross_texture",
+			"textures": {
+				"*": "east"
+			},
+			"variant": 1
+		}
+	],
+	"plant_stem": [ // Quick note on tints for these: They are generated in net/minecraft/client/color/block/BlockColors.java (at least of 1.19), and the formula is [r, g, b] = [i * 32, 255 - i * 8, i * 4] where i is the growth stage (0-7).
+		{
+			"if": "growth == 0",
+			"pos": [0, -1, 8],
+			"size": [16, 1, 0],
+			"rot": [0, 45, 0],
+			"uv": {
+				"*": [0, 1]
+			},
+			"tint": "#00FF00"
+		},
+		{
+			"if": "growth == 0",
+			"pos": [0, -1, 8],
+			"size": [16, 1, 0],
+			"rot": [0, -45, 0],
+			"uv": {
+				"*": [0, 1]
+			},
+			"tint": "#00FF00"
+		},
+		{
+			"if": "growth == 1",
+			"pos": [0, -1, 8],
+			"size": [16, 3, 0],
+			"rot": [0, 45, 0],
+			"uv": {
+				"*": [0, 1]
+			},
+			"tint": "#20F704"
+		},
+		{
+			"if": "growth == 1",
+			"pos": [0, -1, 8],
+			"size": [16, 3, 0],
+			"rot": [0, -45, 0],
+			"uv": {
+				"*": [0, 1]
+			},
+			"tint": "#20F704"
+		},
+		{
+			"if": "growth == 2",
+			"pos": [0, -1, 8],
+			"size": [16, 5, 0],
+			"rot": [0, 45, 0],
+			"uv": {
+				"*": [0, 1]
+			},
+			"tint": "#40EF08"
+		},
+		{
+			"if": "growth == 2",
+			"pos": [0, -1, 8],
+			"size": [16, 5, 0],
+			"rot": [0, -45, 0],
+			"uv": {
+				"*": [0, 1]
+			},
+			"tint": "#40EF08"
+		},
+		{
+			"if": "growth == 3",
+			"pos": [0, -1, 8],
+			"size": [16, 7, 0],
+			"rot": [0, 45, 0],
+			"uv": {
+				"*": [0, 1]
+			},
+			"tint": "#60E70C"
+		},
+		{
+			"if": "growth == 3",
+			"pos": [0, -1, 8],
+			"size": [16, 7, 0],
+			"rot": [0, -45, 0],
+			"uv": {
+				"*": [0, 1]
+			},
+			"tint": "#60E70C"
+		},
+		{
+			"if": "growth == 4",
+			"pos": [0, -1, 8],
+			"size": [16, 9, 0],
+			"rot": [0, 45, 0],
+			"uv": {
+				"*": [0, 1]
+			},
+			"tint": "#80DF10"
+		},
+		{
+			"if": "growth == 4",
+			"pos": [0, -1, 8],
+			"size": [16, 9, 0],
+			"rot": [0, -45, 0],
+			"uv": {
+				"*": [0, 1]
+			},
+			"tint": "#80DF10"
+		},
+		{
+			"if": "growth == 5",
+			"pos": [0, -1, 8],
+			"size": [16, 11, 0],
+			"rot": [0, 45, 0],
+			"uv": {
+				"*": [0, 1]
+			},
+			"tint": "#A0D714"
+		},
+		{
+			"if": "growth == 5",
+			"pos": [0, -1, 8],
+			"size": [16, 11, 0],
+			"rot": [0, -45, 0],
+			"uv": {
+				"*": [0, 1]
+			},
+			"tint": "#A0D714"
+		},
+		{
+			"if": "growth == 6",
+			"pos": [0, -1, 8],
+			"size": [16, 13, 0],
+			"rot": [0, 45, 0],
+			"uv": {
+				"*": [0, 1]
+			},
+			"tint": "#C0CF18"
+		},
+		{
+			"if": "growth == 6",
+			"pos": [0, -1, 8],
+			"size": [16, 13, 0],
+			"rot": [0, -45, 0],
+			"uv": {
+				"*": [0, 1]
+			},
+			"tint": "#C0CF18"
+		},
+		{
+			"if": "growth == 7 && facing_direction < 2",
+			"pos": [0, -1, 8],
+			"size": [16, 15, 0],
+			"rot": [0, 45, 0],
+			"uv": {
+				"*": [0, 1]
+			},
+			"tint": "#E0C71C"
+		},
+		{
+			"if": "growth == 7 && facing_direction < 2",
+			"pos": [0, -1, 8],
+			"size": [16, 15, 0],
+			"rot": [0, -45, 0],
+			"uv": {
+				"*": [0, 1]
+			},
+			"tint": "#E0C71C"
+		},
+		{
+			"if": "growth == 7 && facing_direction >= 2",
+			"pos": [0, -1, 8],
+			"size": [16, 7, 0],
+			"rot": [0, 45, 0],
+			"uv": {
+				"*": [0, 1]
+			},
+			"variant": 0,
+			"tint": "#E0C71C"
+		},
+		{
+			"if": "growth == 7 && facing_direction >= 2",
+			"pos": [0, -1, 8],
+			"size": [16, 7, 0],
+			"rot": [0, -45, 0],
+			"uv": {
+				"*": [0, 1]
+			},
+			"variant": 0,
+			"tint": "#E0C71C"
+		},
+		{
+			"if": "growth == 7 && facing_direction >= 2",
+			"pos": [8, -1, 0],
+			"size": [0, 15, 16],
+			"uv": {
+				"*": [0, 1]
+			},
+			"tint": "#E0C71C"
+		}
+	],
+	"sweet_berry_bush": [
+		{
+			"if": "growth == 0",
+			"copy": "cross_texture",
+			"textures": {
+				"*": "down"
+			}
+		},
+		{
+			"if": "growth == 1",
+			"copy": "cross_texture",
+			"textures": {
+				"*": "up"
+			}
+		},
+		{
+			"if": "growth == 2",
+			"copy": "cross_texture",
+			"textures": {
+				"*": "north"
+			}
+		},
+		{
+			"if": "growth == 3",
+			"copy": "cross_texture",
+			"textures": {
+				"*": "south"
 			}
 		}
 	]

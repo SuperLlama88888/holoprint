@@ -21,7 +21,7 @@
 					"description": "The specific block shape to apply these texture-variating block state definitions to.",
 					"$ref": "#/definitions/variant"
 				},
-				"^/\\w+/$":  {
+				"^/.+/$":  {
 					"description": "A regular expression matching block names to apply these texture-variating block state definitions to.",
 					"$ref": "#/definitions/variant"
 				}

@@ -23,9 +23,9 @@
 				"cracked": 1,
 				"max_cracked": 2
 			},
-			"growth": [0, 0, 1, 1, 2, 2, 2, 3],
 			"composter_fill_level": [42, 1, 1, 1, 1, 1, 1, 1, 2], // first is never used
-			"honey_level": [0, 0, 0, 0, 0, 1]
+			"honey_level": [0, 0, 0, 0, 0, 1],
+			"moisturized_amount": [1, 0, 0, 0, 0, 0, 0, 0] // farmland
 		},
 		"cake": {
 			"bite_counter": [0, 1, 1, 1, 1, 1, 1]
@@ -33,10 +33,31 @@
 		"pointed_dripstone": {
 			"hanging": [1, 0]
 		},
+		"mangrove_propagule": {
+			"hanging": [0, 1]
+		},
+		"pitcher_crop": {
+			"growth": [42, 0, 1, 2, 3] // this is used for the actual flower/stem bit. the bottom thingy doesn't have variants
+		},
+		"plant_stem": {
+			"facing_direction": [0, 0, 1, 1, 1, 1]
+		},
 		"/copper_bulb/": { // test regular expression on block names
 			"#exclusive_add": true,
 			"lit": [0, 1],
 			"powered_bit": [0, 2]
+		},
+		"/^wheat$/": {
+			"growth": [0, 1, 2, 3, 4, 5, 6, 7]
+		},
+		"/^potatoes|carrots|beetroot$/": {
+			"growth": [0, 0, 1, 1, 2, 2, 2, 3]
+		},
+		"/^torchflower_crop$/": {
+			"growth": [0, 1]
+		},
+		"/^nether_wart$/": {
+			"age": [0, 1, 2, 3]
 		}
 	},
 	"rotations": { // by block shape
@@ -126,6 +147,14 @@
 				"7": [0, 0, 0],
 				"8": [0, 90, 0],
 				"9": [0, 180, 0]
+			},
+			"minecraft:block_face": { // amethyst buds/crystals
+				"up": [0, 0, 0],
+				"down": [180, 0, 0],
+				"west": [0, 0, 90],
+				"east": [0, 0, -90],
+				"north": [90, 0, 0],
+				"south": [-90, 0, 0]
 			}
 		},
 		"button": {
@@ -175,6 +204,9 @@
 		},
 		"item_frame": {
 			"facing_direction": [[90, 0, 0], [-90, 0, 0], [0, 0, 0], [0, 180, 0], [0, -90, 0], [0, 90, 0]]
+		},
+		"plant_stem": { // for melon/pumpkin stems
+			"facing_direction": [[0, 0, 0], [0, 0, 0], [0, 180, 0], [0, 0, 0], [0, 90, 0], [0, -90, 0]]
 		}
 	}
 }

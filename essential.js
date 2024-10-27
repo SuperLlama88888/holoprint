@@ -102,8 +102,8 @@ export function range(a, b, c) {
 	}
 }
 
-export function hexColourToClampedTriplet(hexColour) {
-	let [, r, g, b] = hexColour.match(/^#([0-9a-f]{2})([0-9a-f]{2})([0-9a-f]{2})/i);
+export function hexColorToClampedTriplet(hexColor) {
+	let [, r, g, b] = hexColor.match(/^#([0-9a-f]{2})([0-9a-f]{2})([0-9a-f]{2})/i);
 	return [r, g, b].map(x => parseInt(x, 16) / 255);
 }
 export function addOrdinalSuffix(num) {

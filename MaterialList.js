@@ -12,7 +12,7 @@
 import { floor, nanToUndefined } from "./essential.js";
 
 export default class MaterialList {
-	static #ignoredBlocks = ["flowing_water", "flowing_lava"]; // these don't appear to be used anymore
+	static #ignoredBlocks = ["flowing_water", "flowing_lava", "piston_arm_collision", "sticky_piston_arm_collision"]; // these don't appear to be used anymore
 	/** Blocks that have a different item or item ID. */
 	static #blockToItemIDS = {
 		"unpowered_repeater": "repeater",
@@ -31,7 +31,26 @@ export default class MaterialList {
 		"lit_deepslate_redstone_ore": "deepslate_redstone_ore",
 		"lit_redstone_lamp": "redstone_lamp",
 		"melon_stem": "melon_seeds",
-		"wall_sign": "oak_sign"
+		"pumpkin_stem": "pumpkin_seeds", // this one actually exists in the translation files as "Pumpkin Stem"; however, leaving it would break consistency with everything else
+		"pitcher_crop": "pitcher_pod",
+		"torchflower_crop": "torchflower_seeds",
+		"potatoes": "potato",
+		"carrots": "carrot",
+		"wall_sign": "oak_sign",
+		"spruce_wall_sign": "spruce_sign",
+		"birch_wall_sign": "birch_sign",
+		"jungle_wall_sign": "jungle_sign",
+		"acacia_wall_sign": "acacia_sign",
+		"darkoak_wall_sign": "dark_oak_sign",
+		"mangrove_wall_sign": "mangrove_sign",
+		"mangrove_standing_sign": "mangrove_sign",
+		"bamboo_wall_sign": "bamboo_sign",
+		"bamboo_standing_sign": "bamboo_sign",
+		"cherry_wall_sign": "cherry_sign",
+		"cherry_standing_sign": "cherry_sign",
+		"pale_oak_wall_sign": "pale_oak_sign",
+		"pale_oak_standing_sign": "pale_oak_sign",
+		"bamboo_sapling": "bamboo"
 	};
 	/** Remappings for serialization_ids mapping to the wrong things in .lang files */
 	static #serializationIdPatches = {
@@ -51,7 +70,25 @@ export default class MaterialList {
 		"item.lava_bucket": "item.bucketLava",
 		"item.powder_snow_bucket": "item.bucketPowderSnow",
 		"tile.wall_banner": "tile.standing_banner",
-		"tile.daylight_detector_inverted": "tile.daylight_detector"
+		"tile.daylight_detector_inverted": "tile.daylight_detector",
+		"tile.tube_coral_wall_fan": "tile.coral_fan.blue_fan.name",
+		"tile.brain_coral_wall_fan": "tile.coral_fan.pink_fan.name",
+		"tile.bubble_coral_wall_fan": "tile.coral_fan.purple_fan.name",
+		"tile.fire_coral_wall_fan": "tile.coral_fan.red_fan.name",
+		"tile.horn_coral_wall_fan": "tile.coral_fan.yellow_fan.name",
+		"tile.dead_tube_coral_wall_fan": "tile.coral_fan_dead.blue_fan.name",
+		"tile.dead_brain_coral_wall_fan": "tile.coral_fan_dead.pink_fan.name",
+		"tile.dead_bubble_coral_wall_fan": "tile.coral_fan_dead.purple_fan.name",
+		"tile.dead_fire_coral_wall_fan": "tile.coral_fan_dead.red_fan.name",
+		"tile.dead_horn_coral_wall_fan": "tile.coral_fan_dead.yellow_fan.name",
+		"tile.seagrass": "tile.seagrass.seagrass", // least surprising bugrock moment
+		"item.creeper_head": "item.skull.creeper",
+		"item.dragon_head": "item.skull.dragon",
+		"item.piglin_head": "item.skull.piglin",
+		"item.player_head": "item.skull.player",
+		"item.skeleton_skull": "item.skull.skeleton",
+		"item.wither_skeleton_skull": "item.skull.wither",
+		"item.zombie_head": "item.skull.zombie",
 	};
 	
 	materials;
@@ -93,7 +130,7 @@ export default class MaterialList {
 	 * @param {Number} count
 	 */
 	add(blockName, count = 1) {
-		if(blockName in MaterialList.#ignoredBlocks) {
+		if(MaterialList.#ignoredBlocks.includes(blockName)) {
 			return;
 		}
 		let itemName = MaterialList.#blockToItemIDS[blockName] ?? blockName;
