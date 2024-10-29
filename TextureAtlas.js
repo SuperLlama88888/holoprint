@@ -53,6 +53,7 @@ export default class TextureAtlas {
 	static #blocksDotJsonPatches = { // caused mainly by bugs like MCPE-186255 and MCPE-177977. ideally this doesn't exist.
 		"grass_block": "grass",
 		"trip_wire": "tripWire",
+		"sea_lantern": "seaLantern",
 		"oak_planks": "planks.0",
 		"spruce_planks": "planks.1",
 		"birch_planks": "planks.2",

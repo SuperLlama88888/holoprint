@@ -33,7 +33,7 @@ export default class HoloPrint {
 		TEXTURE_OUTLINE_ALPHA_DIFFERENCE_MODE = "threshold", // difference: will compare alpha channel difference; threshold: will only look at the second pixel
 		TEXTURE_OUTLINE_ALPHA_THRESHOLD = 0, // if using difference mode, will draw outline between pixels with at least this much alpha difference; else, will draw outline on pixels next to pixels with an alpha less than or equal to this
 		DO_SPAWN_ANIMATION = true,
-		SPAWN_ANIMATION_LENGTH = 0.4, // relative
+		SPAWN_ANIMATION_LENGTH = 0.4, // in seconds
 		WRONG_BLOCK_OVERLAY_COLOR = [1, 0, 0, 0.3],
 		MATERIAL_LIST_LANGUAGE = "en_US"
 	} = {}, resourcePackStack = new ResourcePackStack(), previewCont) {
@@ -253,17 +253,17 @@ export default class HoloPrint {
 		
 		let makeHologramSpawnAnimation;
 		if(this.config.DO_SPAWN_ANIMATION) {
+			let totalAnimationLength = 0;
 			makeHologramSpawnAnimation = (x, y, z) => {
 				let delay = this.config.SPAWN_ANIMATION_LENGTH * 0.25 * (structureSize[0] - x + y + structureSize[2] - z + Math.random() * 2) + 0.05;
 				delay = Number(delay.toFixed(2));
-				// return {
-				// 	"scale": `${this.config.MINI_SCALE} + ${1 - this.config.MINI_SCALE} * (1 - math.pow(1 - math.clamp((q.anim_time - ${delay}) / ${this.config.SPAWN_ANIMATION_LENGTH}, 0, 1), 3))`
-				// };
+				let animationEnd = Number((delay + this.config.SPAWN_ANIMATION_LENGTH).toFixed(2));
+				totalAnimationLength = max(totalAnimationLength, animationEnd);
+				hologramAnimations["animations"]["animation.armor_stand.hologram.spawn"]["animation_length"] = totalAnimationLength;
 				return {
-					"scale": `1 - math.pow(1 - math.clamp((q.anim_time - ${delay}) / ${this.config.SPAWN_ANIMATION_LENGTH}, 0, 1), 3)` // requires pivot to be block center
+					"scale": `q.anim_time <= ${delay}? 0 : (q.anim_time >= ${animationEnd}? 1 : (1 - math.pow(1 - (q.anim_time - ${delay}) / ${this.config.SPAWN_ANIMATION_LENGTH}, 3)))`.replaceAll(" ", "")
 				};
 			};
-			hologramAnimations["animations"]["animation.armor_stand.hologram.spawn"]["animation_length"] = this.config.SPAWN_ANIMATION_LENGTH * (1 + 0.25 * (structureSize.reduce((a, b) => a + b) * 2) + 0.05); // very janky
 		} else {
 			// Totally empty animation
 			delete hologramAnimations["animations"]["animation.armor_stand.hologram.spawn"]["loop"];
@@ -396,7 +396,7 @@ export default class HoloPrint {
 		
 		let textureBlobs = textureAtlas.imageBlobs;
 		
-		let structureName = structureFile.name.match(/(.+)\.[^.]+$/)[1];
+		let structureName = structureFile.name.match(/(.*)\.[^.]+$/)[1];
 		
 		manifest["header"]["name"] = `§uHoloPrint:§r ${structureName}`;
 		manifest["header"]["description"] = `§u★HoloPrint§r resource pack generated on §o${(new Date()).toLocaleString()}§r\nDeveloped by §l§6SuperLlama88888§r`;
@@ -717,7 +717,7 @@ export default class HoloPrint {
 					...controller,
 					"textures": [patch, ...controller["textures"].slice(1)]
 				}];
-			}).filter(x => x))
+			}).removeFalsies())
 		};
 	}
 	/**

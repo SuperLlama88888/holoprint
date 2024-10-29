@@ -8,39 +8,75 @@
 			"type": "string"
 		},
 		"texture_variants": {
-			"description": "Texture-variating block state definitions, grouped by block shapes.",
+			"description": "Texture-variating block state definitions.",
 			"type": "object",
 			"properties": {
 				"*": {
-					"description": "All block shapes will look at these texture-variating block state definitions.",
-					"$ref": "#/definitions/variant"
-				}
-			},
-			"patternProperties": {
-				"^\\w+$": {
-					"description": "The specific block shape to apply these texture-variating block state definitions to.",
+					"description": "Texture-variating block state definitions for all blocks.",
 					"$ref": "#/definitions/variant"
 				},
-				"^/.+/$":  {
-					"description": "A regular expression matching block names to apply these texture-variating block state definitions to.",
-					"$ref": "#/definitions/variant"
+				"block_shapes": {
+					"description": "Texture-variating block state definitions for specific block shapes.",
+					"type": "object",
+					"patternProperties": {
+						"^\\w+$": {
+							"description": "The block shapes (comma-delimited) to apply these texture-variating block state definitions to.",
+							"$ref": "#/definitions/variant"
+						}
+					},
+					"additionalProperties": false
+				},
+				"block_names": {
+					"description": "Texture-variating block state definitions for specific blocks.",
+					"type": "object",
+					"patternProperties": {
+						"^[\\w,]+$": {
+							"description": "The block names (comma-delimited) to apply these texture-variating block state definitions to.",
+							"$ref": "#/definitions/variant"
+						},
+						"^/.+/$": {
+							"description": "A regular expression matching block names to apply these texture-variating block state definitions to.",
+							"$ref": "#/definitions/variant"
+						}
+					},
+					"additionalProperties": false
 				}
 			},
 			"additionalProperties": false
 		},
 		"rotations": {
-			"description": "Block-rotating block state definitions, grouped by block shapes.",
+			"description": "Block-rotating block state definitions.",
 			"type": "object",
 			"properties": {
 				"*": {
-					"description": "All block shapes will be affected by these block state rotation definitions.",
+					"description": "Block state rotation definitions for all blocks.",
 					"$ref": "#/definitions/rotation"
-				}
-			},
-			"patternProperties": {
-				"^\\w+$": {
-					"description": "The specific block shape to apply these block state rotation definitions to.",
-					"$ref": "#/definitions/rotation"
+				},
+				"block_shapes": {
+					"description": "Block state rotation definitions for specific block shapes.",
+					"type": "object",
+					"patternProperties": {
+						"^[\\w,]+$": {
+							"description": "The block shapes (comma-delimited) to apply these block state rotation definitions to.",
+							"$ref": "#/definitions/rotation"
+						}
+					},
+					"additionalProperties": false
+				},
+				"block_names": {
+					"description": "Block state rotation definitions for specific blocks.",
+					"type": "object",
+					"patternProperties": {
+						"^[\\w,]+$": {
+							"description": "The block names (comma-delimited) to apply these block state rotation definitions to.",
+							"$ref": "#/definitions/rotation"
+						},
+						"^/.+/$": {
+							"description": "A regular expression matching block names to apply these block state rotation definitions to.",
+							"$ref": "#/definitions/rotation"
+						}
+					},
+					"additionalProperties": false
 				}
 			},
 			"additionalProperties": false

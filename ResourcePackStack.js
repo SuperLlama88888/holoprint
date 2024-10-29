@@ -40,49 +40,43 @@ export default class ResourcePackStack {
 		})();
 	}
 	
-	async fetchData(link) {
-		let cacheLink = `https://holoprint-cache/${link}`;
-		let res = this.cacheEnabled && await this.#cache.match(cacheLink);
-		if(!res) {
-			res = await this.#vanillaDataFetcher.fetch(link);
-			if(this.cacheEnabled) {
-				this.#cache.put(cacheLink, res.clone());
-			}
-		}
-		return res;
+	async fetchData(filePath) {
+		return this.#vanillaDataFetcher.fetch(filePath);
 	}
 	/**
 	 * Fetches a resource pack file.
-	 * @param {String} filePath 
+	 * @param {String} resourcePath 
 	 * @returns {Promise<Response>}
 	 */
-	async fetchResource(filePath) {
-		let dataPath = `resource_pack/${filePath}`;
-		let cacheLink = `https://holoprint-cache/${dataPath}`;
+	async fetchResource(resourcePath) {
+		let filePath = `resource_pack/${resourcePath}`;
+		let cacheLink = `https://holoprint-cache/${filePath}`;
 		let res = this.cacheEnabled && await this.#cache.match(cacheLink);
 		if(!res) {
-			if(ResourcePackStack.#JSON_FILES_TO_MERGE.includes(filePath)) {
-				let vanillaFile = await this.fetchData(dataPath).then(res => res.jsonc());
-				let resourcePackFiles = await Promise.all(this.#localResourcePacks.map(resourcePack => resourcePack.getFile(filePath)?.jsonc()));
-				resourcePackFiles.reverse();
-				let allFiles = [vanillaFile, ...resourcePackFiles.filter(file => file)];
+			if(ResourcePackStack.#JSON_FILES_TO_MERGE.includes(resourcePath)) {
+				let vanillaFile = await this.fetchData(filePath).then(res => res.jsonc());
+				let resourcePackFiles = await Promise.all(this.#localResourcePacks.map(resourcePack => resourcePack.getFile(resourcePath)?.jsonc()));
+				resourcePackFiles.reverse(); // start with the lowest priority pack, so that they get overwritten by higher priority packs
+				let allFiles = [vanillaFile, ...resourcePackFiles.removeFalsies()];
 				if(allFiles.length == 1) {
-					return new Response(JSON.stringify(vanillaFile)); // aahhh it goes back and forth between an object and json so much.
+					res = new Response(JSON.stringify(vanillaFile)); // aahhh it goes back and forth between an object and json so much.
+				} else {
+					let mergedFile = mergeObjects(allFiles);
+					console.debug(`Merged JSON file ${resourcePath}:`, mergedFile, "From:", allFiles);
+					res = new Response(JSON.stringify(mergedFile));
 				}
-				let mergedFile = mergeObjects(allFiles);
-				console.debug(`Merged JSON file ${filePath}:`, mergedFile, "From:", allFiles);
-				res = new Response(JSON.stringify(mergedFile));
 			} else {
 				for(let localResourcePack of this.#localResourcePacks) {
-					let resource = localResourcePack.getFile(filePath);
+					let resource = localResourcePack.getFile(resourcePath);
 					if(resource) {
-						return new Response(resource);
+						res = new Response(resource);
+						break;
 					}
 				}
-				res = await this.#vanillaDataFetcher.fetch(dataPath);
+				res ??= await this.fetchData(filePath);
 			}
 			if(this.cacheEnabled) {
-				await this.#cache.put(cacheLink, res.clone());
+				this.#cache.put(cacheLink, res.clone()).catch(e => console.warn(`Failed to save resource to cache ${this.cacheName}:`, e));
 			}
 		}
 		return res;
@@ -91,19 +85,34 @@ export default class ResourcePackStack {
 
 export class VanillaDataFetcher {
 	static #VANILLA_RESOURCES_LINK = "https://raw.githubusercontent.com/Mojang/bedrock-samples"; // No / at the end
+	
+	version;
+	cacheName;
+	#cache;
 	/**
 	 * Creates a vanilla data fetch to fetch data from the Mojang/bedrock-samples repository.
 	 * @param {String} version The name of the GitHub tag for a specific Minecraft version.
 	 */
 	constructor(version) {
 		this.version = version;
+		this.cacheName = `VanillaDataFetcher_${this.version}`;
+		this.#cache = caches.open(this.cacheName);
 	}
 	/**
 	 * Fetches vanilla data files from the Mojang/bedrock-samples repository on GitHub.
 	 * @param {String} filePath
 	 * @returns {Promise<Response>}
 	 */
-	fetch(filePath) {
-		return fetch(`${VanillaDataFetcher.#VANILLA_RESOURCES_LINK}/${this.version}/${filePath}`);
+	async fetch(filePath) {
+		if(this.#cache instanceof Promise) {
+			this.#cache = await this.#cache;
+		}
+		let cacheLink = `https://holoprint-cache/${filePath}`;
+		let res = await this.#cache.match(cacheLink);
+		if(!res) {
+			res = await fetch(`${VanillaDataFetcher.#VANILLA_RESOURCES_LINK}/${this.version}/${filePath}`);
+			this.#cache.put(cacheLink, res.clone()).catch(e => console.warn(`Failed to save vanilla data to cache ${this.cacheName}:`, e));
+		}
+		return res;
 	}
 }

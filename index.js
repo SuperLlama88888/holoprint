@@ -1,4 +1,4 @@
-import { selectEl, downloadBlob } from "./essential.js";
+import { selectEl, downloadBlob, sleep } from "./essential.js";
 import HoloPrint from "./HoloPrint.js";
 import SimpleLogger from "./SimpleLogger.js";
 import SupabaseLogger from "./SupabaseLogger.js";
@@ -7,6 +7,7 @@ import ResourcePackStack from "./ResourcePackStack.js";
 import LocalResourcePack from "./LocalResourcePack.js";
 
 const IN_PRODUCTION = location.host.includes(".github.io"); // hosted on GitHub Pages
+const ACTUAL_CONSOLE_LOG = false;
 
 const supabaseProjectUrl = "https://gnzyfffwvulwxbczqpgl.supabase.co";
 const supabaseApiKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImduenlmZmZ3dnVsd3hiY3pxcGdsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MjMwMjE3NzgsImV4cCI6MjAzODU5Nzc3OH0.AWMhFcP3PiMD3dMC_SeIVuPx128KVpgfkZ5qBStDuVw";
@@ -93,9 +94,11 @@ document.onEvent("DOMContentLoaded", async () => {
 		}
 	});
 	
-	let logCont = selectEl("#log");
-	logger = new SimpleLogger(logCont);
-	logger.patchConsoleMethods();
+	if(!ACTUAL_CONSOLE_LOG) {
+		let logCont = selectEl("#log");
+		logger = new SimpleLogger(logCont);
+		logger.patchConsoleMethods();
+	}
 	
 	generatePackForm = selectEl("#generatePackForm");
 	generatePackForm.onEvent("submit", async e => {
@@ -114,6 +117,17 @@ document.onEvent("DOMContentLoaded", async () => {
 	let opacityModeSelect = generatePackForm.elements.namedItem("opacityMode");
 	opacityModeSelect.onEventAndNow("change", () => {
 		generatePackForm.elements.namedItem("opacity").parentElement.classList.toggle("hidden", opacityModeSelect.value == "multiple");
+	});
+	
+	let clearResourcePackCacheButton = selectEl("#clearResourcePackCacheButton");
+	clearResourcePackCacheButton.onEvent("click", async () => {
+		caches.clear();
+		let originalButtonText = clearResourcePackCacheButton.innerText;
+		clearResourcePackCacheButton.innerText = "Resource pack cache cleared!";
+		clearResourcePackCacheButton.setAttribute("disabled", "");
+		await sleep(2000);
+		clearResourcePackCacheButton.innerText = originalButtonText;
+		clearResourcePackCacheButton.removeAttribute("disabled");
 	});
 	
 	let materialListLanguageSelector = selectEl("#materialListLanguageSelector");
@@ -141,6 +155,7 @@ async function makePack(structureFile, localResourcePacks) {
 	
 	let formData = new FormData(generatePackForm);
 	let config = {
+		IGNORED_BLOCKS: formData.get("ignoredBlocks").split(/\W/).removeFalsies(),
 		SCALE: formData.get("scale") / 100,
 		OPACITY: formData.get("opacity") / 100,
 		MULTIPLE_OPACITIES: formData.get("opacityMode") == "multiple",
@@ -149,6 +164,7 @@ async function makePack(structureFile, localResourcePacks) {
 		TEXTURE_OUTLINE_COLOR: formData.get("textureOutlineColor"),
 		TEXTURE_OUTLINE_ALPHA_THRESHOLD: +formData.get("textureOutlineAlphaThreshold"),
 		TEXTURE_OUTLINE_ALPHA_DIFFERENCE_MODE: formData.get("textureOutlineAlphaDifferenceMode"),
+		DO_SPAWN_ANIMATION: formData.get("spawnAnimationEnabled"),
 		MATERIAL_LIST_LANGUAGE: formData.get("materialListLanguage")
 	};
 	
@@ -159,11 +175,15 @@ async function makePack(structureFile, localResourcePacks) {
 	window.logger = logger;
 	
 	let pack;
-	try {
-		let hp = new HoloPrint(config, resourcePackStack, previewCont);
+	let hp = new HoloPrint(config, resourcePackStack, previewCont);
+	if(ACTUAL_CONSOLE_LOG) {
 		pack = await hp.makePack(structureFile);
-	} catch(e) {
-		console.error(`Pack creation failed: ${e}`);
+	} else {
+		try {
+			pack = await hp.makePack(structureFile);
+		} catch(e) {
+			console.error(`Pack creation failed: ${e}`);
+		}
 	}
 	
 	if(IN_PRODUCTION) {

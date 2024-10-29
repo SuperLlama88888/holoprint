@@ -159,7 +159,7 @@ export default class MaterialList {
 					if(!serializationId && !blockSerializationId) {
 						console.warn(`Cannot find any translation key for ${itemName}!`);
 					} else {
-						console.warn(`Cannot translate ${[serializationId, blockSerializationId].filter(x => x).join(" or ")} for item "${itemName}"!`);
+						console.warn(`Cannot translate ${[serializationId, blockSerializationId].removeFalsies().join(" or ")} for item "${itemName}"!`);
 					}
 					serializationId ??= blockSerializationId ?? itemName;
 					translatedName = serializationId;

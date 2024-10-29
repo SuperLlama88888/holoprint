@@ -59,6 +59,7 @@
 		"sticky_piston": "piston{textures/entity/pistonarm/pistonArmSticky}",
 		"dispenser": "dispenser",
 		"dropper": "dispenser",
+		"barrel": "barrel",
 		
 		"furnace": "furnace",
 		"blast_furnace": "furnace",

@@ -58,6 +58,10 @@
 							</details>
 						</fieldset>
 						<br/>
+						<label>Spawn animation: <input type="checkbox" name="spawnAnimationEnabled" checked/></label>
+						<br/>
+						<label>Ignored blocks: <input type="text" name="ignoredBlocks" placeholder="block_1 block_2 etc."/></label>
+						<br/>
 						<details>
 							<summary>Advanced</summary>
 							<label>Layer mode: <select name="layerMode">
@@ -71,6 +75,7 @@
 							</select></label>
 							<br/>
 							<label class="hidden">Hologram opacity: <input type="number" min="10" max="100" step="5" value="90" name="opacity"/>%</label>
+							<button type="button" id="clearResourcePackCacheButton">Clear resource pack cache</button>
 						</details>
 					</fieldset>
 					<fieldset>

@@ -1800,6 +1800,17 @@
 			}
 		}
 	],
+	"barrel": [
+		{
+			"pos": [0, 0, 0],
+			"size": [16, 16, 16],
+			"textures": {
+				"side": "west",
+				"up": "north",
+				"down": "south"
+			}
+		}
+	],
 	"furnace": [ // facing south by default
 		{
 			"pos": [0, 0, 0],

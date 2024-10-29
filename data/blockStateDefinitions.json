@@ -27,37 +27,44 @@
 			"honey_level": [0, 0, 0, 0, 0, 1],
 			"moisturized_amount": [1, 0, 0, 0, 0, 0, 0, 0] // farmland
 		},
-		"cake": {
-			"bite_counter": [0, 1, 1, 1, 1, 1, 1]
+		"block_shapes": {
+			"cake": {
+				"bite_counter": [0, 1, 1, 1, 1, 1, 1]
+			},
+			"pointed_dripstone": {
+				"hanging": [1, 0]
+			},
+			"mangrove_propagule": {
+				"hanging": [0, 1]
+			},
+			"pitcher_crop": {
+				"growth": [42, 0, 1, 2, 3] // this is used for the actual flower/stem bit. the bottom thingy doesn't have variants
+			},
+			"plant_stem": {
+				"facing_direction": [0, 0, 1, 1, 1, 1]
+			},
+			"barrel": {
+				"open_bit": [0, 1]
+			}
 		},
-		"pointed_dripstone": {
-			"hanging": [1, 0]
-		},
-		"mangrove_propagule": {
-			"hanging": [0, 1]
-		},
-		"pitcher_crop": {
-			"growth": [42, 0, 1, 2, 3] // this is used for the actual flower/stem bit. the bottom thingy doesn't have variants
-		},
-		"plant_stem": {
-			"facing_direction": [0, 0, 1, 1, 1, 1]
-		},
-		"/copper_bulb/": { // test regular expression on block names
-			"#exclusive_add": true,
-			"lit": [0, 1],
-			"powered_bit": [0, 2]
-		},
-		"/^wheat$/": {
-			"growth": [0, 1, 2, 3, 4, 5, 6, 7]
-		},
-		"/^potatoes|carrots|beetroot$/": {
-			"growth": [0, 0, 1, 1, 2, 2, 2, 3]
-		},
-		"/^torchflower_crop$/": {
-			"growth": [0, 1]
-		},
-		"/^nether_wart$/": {
-			"age": [0, 1, 2, 3]
+		"block_names": {
+			"/copper_bulb/": { // test regular expression on block names
+				"#exclusive_add": true,
+				"lit": [0, 1],
+				"powered_bit": [0, 2]
+			},
+			"wheat": {
+				"growth": [0, 1, 2, 3, 4, 5, 6, 7]
+			},
+			"potatoes,carrots,beetroot": {
+				"growth": [0, 0, 1, 1, 2, 2, 2, 3]
+			},
+			"torchflower_crop": {
+				"growth": [0, 1]
+			},
+			"nether_wart": {
+				"age": [0, 1, 2, 3]
+			}
 		}
 	},
 	"rotations": { // by block shape
@@ -157,56 +164,71 @@
 				"south": [-90, 0, 0]
 			}
 		},
-		"button": {
-			"facing_direction": { // button orientation for north/south/east/west is mirrored to that of pistons, which also use facing_direction
-				"0": [180, 0, 0], // down
-				"1": [0, 0, 0], // up
-				"2": [90, 0, 0], // north
-				"3": [90, 180, 0], // south
-				"4": [90, -90, 0], // west
-				"5": [90, 90, 0] // east
+		"block_shapes": {
+			"button": {
+				"facing_direction": { // button orientation for north/south/east/west is mirrored to that of pistons, which also use facing_direction
+					"0": [180, 0, 0], // down
+					"1": [0, 0, 0], // up
+					"2": [90, 0, 0], // north
+					"3": [90, 180, 0], // south
+					"4": [90, -90, 0], // west
+					"5": [90, 90, 0] // east
+				}
+			},
+			"hopper": {
+				"facing_direction": { // really wish they split these generic states up, into seperate ones - like already done with lever_direction, torch_facing_direction, etc.
+					"0": [0, 0, 0], // down
+					"2": [0, 0, 0], // north
+					"3": [0, 180, 0], // south
+					"4": [0, -90, 0], // west
+					"5": [0, 90, 0] // east
+				}
+			},
+			"trapdoor": { // TODO: fix hinge position being wrong - look at birch trapdoors with trapdoors.mcstructure
+				"direction": {
+					"0": [0, 0, 0], // west
+					"1": [0, 180, 0], // east
+					"2": [0, 90, 0], // north
+					"3": [0, -90, 0] // south
+				}
+			},
+			"wall_sign": { // todo: merge with hopper defs maybe
+				"facing_direction": {
+					"2": [0, 0, 0], // north
+					"3": [0, 180, 0], // south
+					"4": [0, -90, 0], // west
+					"5": [0, 90, 0] // east
+				}
+			},
+			"grindstone": {
+				"attachment": {
+					"standing": [0, 0, 0],
+					"side": [-90, 0, 0],
+					"hanging": [-180, 0, 0]
+				}
+			},
+			"dispenser": {
+				"facing_direction": [[0, 0, 0], [180, 0, 0], [0, 0, 0], [0, 180, 0], [0, -90, 0], [0, 90, 0]]
+			},
+			"item_frame": {
+				"facing_direction": [[90, 0, 0], [-90, 0, 0], [0, 0, 0], [0, 180, 0], [0, -90, 0], [0, 90, 0]]
+			},
+			"plant_stem": { // for melon/pumpkin stems
+				"facing_direction": [[0, 0, 0], [0, 0, 0], [0, 180, 0], [0, 0, 0], [0, 90, 0], [0, -90, 0]]
+			},
+			"barrel": {
+				"facing_direction": [[180, 0, 0], [0, 0, 0], [90, 0, 0], [90, 180, 0], [90, -90, 0], [90, 90, 0]]
 			}
 		},
-		"hopper": {
-			"facing_direction": { // really wish they split these generic states up, into seperate ones - like already done with lever_direction, torch_facing_direction, etc.
-				"0": [0, 0, 0], // down
-				"2": [0, 0, 0], // north
-				"3": [0, 180, 0], // south
-				"4": [0, -90, 0], // west
-				"5": [0, 90, 0] // east
+		"block_names": {
+			"carved_pumpkin,lit_pumpkin": {
+				"minecraft:cardinal_direction": { // this is opposite to how it is usually
+					"north": [0, 180, 0],
+					"south": [0, 0, 0],
+					"east": [0, -90, 0],
+					"west": [0, 90, 0]
+				}
 			}
-		},
-		"trapdoor": { // TODO: fix hinge position being wrong - look at birch trapdoors with trapdoors.mcstructure
-			"direction": {
-				"0": [0, 0, 0], // west
-				"1": [0, 180, 0], // east
-				"2": [0, 90, 0], // north
-				"3": [0, -90, 0] // south
-			}
-		},
-		"wall_sign": { // todo: merge with hopper defs maybe
-			"facing_direction": {
-				"2": [0, 0, 0], // north
-				"3": [0, 180, 0], // south
-				"4": [0, -90, 0], // west
-				"5": [0, 90, 0] // east
-			}
-		},
-		"grindstone": {
-			"attachment": {
-				"standing": [0, 0, 0],
-				"side": [-90, 0, 0],
-				"hanging": [-180, 0, 0]
-			}
-		},
-		"dispenser": {
-			"facing_direction": [[0, 0, 0], [180, 0, 0], [0, 0, 0], [0, 180, 0], [0, -90, 0], [0, 90, 0]]
-		},
-		"item_frame": {
-			"facing_direction": [[90, 0, 0], [-90, 0, 0], [0, 0, 0], [0, 180, 0], [0, -90, 0], [0, 90, 0]]
-		},
-		"plant_stem": { // for melon/pumpkin stems
-			"facing_direction": [[0, 0, 0], [0, 0, 0], [0, 180, 0], [0, 0, 0], [0, 90, 0], [0, -90, 0]]
 		}
 	}
 }

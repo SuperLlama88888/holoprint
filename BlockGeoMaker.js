@@ -69,6 +69,9 @@ export default class BlockGeoMaker {
 		"jungle_leaves": 0,
 		"acacia_leaves": 0,
 		"dark_oak_leaves": 0,
+		"carved_pumpkin": 0,
+		"lit_pumpkin": 1,
+		"pumpkin": 2
 	};
 	
 	static #REDSTONE_DUST_TINTS = function() {
@@ -84,16 +87,21 @@ export default class BlockGeoMaker {
 	}();
 	
 	config;
-	allCubes; // All the cubes ever created by BlockGeoMaker
 	textureRefs;
 	
 	#individualBlockShapes;
 	#blockShapePatterns;
 	#blockShapeGeos;
 	
-	#blockStateRotations;
-	#blockStateTextureVariants;
-	#blockStateTextureVariantPatterns;
+	#globalBlockStateRotations;
+	#blockShapeBlockStateRotations;
+	#blockNameBlockStateRotations;
+	#blockNamePatternBlockStateRotations;
+	
+	#globalBlockStateTextureVariants;
+	#blockShapeBlockStateTextureVariants;
+	#blockNameBlockStateTextureVariants;
+	#blockNamePatternBlockStateTextureVariants;
 	
 	#cachedBlockShapes;
 	
@@ -101,7 +109,6 @@ export default class BlockGeoMaker {
 		return (async () => {
 			this.config = config;
 			
-			this.allCubes = [];
 			this.textureRefs = new JSONSet();
 			
 			let { blockShapes, blockShapeGeos, blockStateDefs } = await awaitAllEntries({
@@ -115,9 +122,44 @@ export default class BlockGeoMaker {
 			
 			// console.log(this.#blockShapeGeos)
 			
-			this.#blockStateRotations = blockStateDefs["rotations"];
-			this.#blockStateTextureVariants = blockStateDefs["texture_variants"];
-			this.#blockStateTextureVariantPatterns = Object.entries(blockStateDefs["texture_variants"]).filter(([blockShape]) => blockShape.startsWith("/") && blockShape.endsWith("/")).map(([pattern, variants]) => [new RegExp(pattern.slice(1, -1)), variants]);
+			// block-state-driven rotations/texture variants can either be global, based on block shape, based on specific block names, or based on regular expressions for block names, hence the many variables.
+			this.#globalBlockStateRotations = blockStateDefs["rotations"]["*"];
+			this.#blockShapeBlockStateRotations = [];
+			Object.entries(blockStateDefs["rotations"]["block_shapes"]).forEach(([blockShapes, rotationDefs]) => {
+				blockShapes.split(",").forEach(blockShape => {
+					this.#blockShapeBlockStateRotations[blockShape] = rotationDefs;
+				});
+			});
+			this.#blockNameBlockStateRotations = [];
+			this.#blockNamePatternBlockStateRotations = [];
+			Object.entries(blockStateDefs["rotations"]["block_names"]).forEach(([blockNames, rotationDefs]) => {
+				if(blockNames.startsWith("/") && blockNames.endsWith("/")) {
+					this.#blockNamePatternBlockStateRotations.push([new RegExp(blockNames.slice(1, -1)), rotationDefs]);
+				} else {
+					blockNames.split(",").forEach(blockName => {
+						this.#blockNameBlockStateRotations[blockName] = rotationDefs; // todo: make these Maps?
+					});
+				}
+			});
+			
+			this.#globalBlockStateTextureVariants = blockStateDefs["texture_variants"]["*"];
+			this.#blockShapeBlockStateTextureVariants = [];
+			Object.entries(blockStateDefs["texture_variants"]["block_shapes"]).forEach(([blockShapes, textureVariantDefs]) => {
+				blockShapes.split(",").forEach(blockShape => {
+					this.#blockShapeBlockStateTextureVariants[blockShape] = textureVariantDefs;
+				});
+			});
+			this.#blockNameBlockStateTextureVariants = [];
+			this.#blockNamePatternBlockStateTextureVariants = [];
+			Object.entries(blockStateDefs["texture_variants"]["block_names"]).forEach(([blockNames, textureVariantDefs]) => {
+				if(blockNames.startsWith("/") && blockNames.endsWith("/")) {
+					this.#blockNamePatternBlockStateTextureVariants.push([new RegExp(blockNames.slice(1, -1)), textureVariantDefs]);
+				} else {
+					blockNames.split(",").forEach(blockName => {
+						this.#blockNameBlockStateTextureVariants[blockName] = textureVariantDefs;
+					});
+				}
+			});
 			
 			this.#cachedBlockShapes = new Map();
 			
@@ -139,14 +181,12 @@ export default class BlockGeoMaker {
 		let bone = {
 			"cubes": boneCubes
 		};
+		let blockShapeSpecificRotations = this.#blockShapeBlockStateRotations[blockShape];
+		let blockNameSpecificRotations = this.#blockNameBlockStateRotations[blockName];
 		Object.entries(block["states"] ?? {}).forEach(([blockStateName, blockStateValue]) => {
-			let rotations;
-			if(blockShape in this.#blockStateRotations && blockStateName in this.#blockStateRotations[blockShape]) {
-				rotations = this.#blockStateRotations[blockShape][blockStateName];
-			} else if(blockStateName in this.#blockStateRotations["*"]) {
-				rotations = this.#blockStateRotations["*"][blockStateName];
-			} else {
-				return; // no block state definition
+			let rotations = blockNameSpecificRotations?.[blockStateName] ?? this.#blockNamePatternBlockStateRotations.find(([pattern, rotations]) => pattern.test(blockName) && blockName in rotations)?.[1] ?? blockShapeSpecificRotations?.[blockStateName] ?? this.#globalBlockStateRotations[blockStateName]; // order: block name (exact match), block name (regular expression pattern), block shape, global
+			if(!rotations) {
+				return; // this block state doesn't control rotation
 			}
 			
 			if(!(blockStateValue in rotations)) {
@@ -180,7 +220,6 @@ export default class BlockGeoMaker {
 		if("pivot" in bone) {
 			bone["pivot"] = bone["pivot"].map((x, i) => x + blockPos[i]);
 		}
-		this.allCubes.push(...bone["cubes"]);
 		return bone;
 	}
 	/**
@@ -479,8 +518,8 @@ export default class BlockGeoMaker {
 			return -1;
 		}
 		let blockShape = this.#getBlockShape(blockName); // In copied block shapes, we want to look at the original block shape's texture variants, not the copied's. E.g. With candle_cake, we don't want the cake that is copied to look at the texture variants for cake (which includes bite_counter).
-		let blockShapeSpecificVariants = this.#blockStateTextureVariants[blockShape];
-		let blockNameSpecificVariants = this.#blockStateTextureVariantPatterns.find(([pattern]) => pattern.test(blockName))?.[1];
+		let blockShapeSpecificVariants = this.#blockShapeBlockStateTextureVariants[blockShape];
+		let blockNameSpecificVariants = this.#blockNameBlockStateTextureVariants[blockName] ?? this.#blockNamePatternBlockStateTextureVariants.find(([pattern]) => pattern.test(blockName))?.[1];
 		if(blockNameSpecificVariants?.["#exclusive_add"]) {
 			let variant = 0;
 			Object.entries(block["states"]).forEach(([blockStateName, blockStateValue]) => {
@@ -497,7 +536,7 @@ export default class BlockGeoMaker {
 		}
 		let variant = -1;
 		Object.entries(block["states"]).forEach(([blockStateName, blockStateValue]) => {
-			let blockStateVariants = blockNameSpecificVariants?.[blockStateName] ?? blockShapeSpecificVariants?.[blockStateName] ?? this.#blockStateTextureVariants["*"][blockStateName];
+			let blockStateVariants = blockNameSpecificVariants?.[blockStateName] ?? blockShapeSpecificVariants?.[blockStateName] ?? this.#globalBlockStateTextureVariants[blockStateName];
 			if(blockStateVariants == undefined) {
 				return;
 			}

@@ -91,6 +91,7 @@ id1(Block palette)
 - `for(... of ...)` loops should be used only for iterables that don't have the `.forEach()` method, or in async functions when everything must happen in order. Use `.forEach()` instead.
 
 ### To-Do, planned features
+- Could we use #define USE_COLOR_MASK in a material to apply opacity?!?!?
 - Putting the pack creator inside an addon and creating it inside the addon? But saving the file won't work... unless we use @minecraft/server-net to upload it to a server but that's only BDS (I think)
   - Since HoloPrint is made in JavaScript it'd mostly be portable inside an addon, but web APIs would need replacements with other libraries. I also hope we can access vanilla textures in addons.
   - I haven't looked at the capabilities of the Scripting API with the Editor but if we could put it in there, it would be even better!
@@ -143,6 +144,7 @@ id1(Block palette)
   - run the addon in BDS with a local server to get a file of all the blocks and their possible states. really useful
 - Structure of decompiled functions/classes in MCBE: https://github.com/bricktea/MCStructure
 - All in-game block shapes: https://wiki.mcbe-dev.net/p/%E6%96%B9%E5%9D%97/BlockShape
+- https://github.com/pmmp/BedrockBlockUpgradeSchema
 
 ### Block entity data needed
 - Banner: rendering texture
@@ -151,7 +153,7 @@ id1(Block palette)
 - Cauldron: water colour, potion content
 - Chest: double chests, inventory
 - Crafter: inventory
-- Decorated pot: sherd faces
+- Decorated pot: sherd faces, inventory
 - Dispenser/dropper: inventory
 - Enchantment table: book rotation?!?!?!
 - Flower pot: block inside the pot

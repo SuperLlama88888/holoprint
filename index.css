@@ -113,9 +113,10 @@ summary {
 	font-weight: 500;
 	font-size: 1rem;
 }
-button, input[type="file"]::file-selector-button, select {
+button, input[type="checkbox"], input[type="file"]::file-selector-button, select {
 	padding: 1px 4px;
 	border: 2px solid #D899D8;
+	accent-color: #D899D8;
 	border-radius: 7px;
 	background: #EEDEEE;
 	font-family: inherit;
@@ -123,6 +124,9 @@ button, input[type="file"]::file-selector-button, select {
 }
 button:hover, input[type="file"]:hover::file-selector-button, select:hover {
 	background: #E8C8E8;
+}
+input[type="checkbox"] {
+	display: inline-block;
 }
 
 #fileInputLabel {
