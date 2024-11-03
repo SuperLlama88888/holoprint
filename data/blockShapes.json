@@ -117,6 +117,7 @@
 		"peony": "double_plant",
 		"double_plant": "double_plant", // legcay
 		
+		"bamboo_fence_gate": "bamboo_fence_gate", // has special texture so requires special UV mapping. other fence gates don't have any UV mapping so they need separate block shapes :(
 		"stonecutter_block": "stonecutter",
 		"enchanting_table": "enchanting_table",
 		"grindstone": "grindstone",

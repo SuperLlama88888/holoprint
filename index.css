@@ -78,10 +78,8 @@ form {
 	width: 70%;
 	font-weight: 500;
 	text-align: center;
-	background: #EEDEEE;
 	border: 3px solid #D899D8;
 	border-radius: 25px;
-	cursor: pointer;
 }
 #structureFilesInput ~ div p {
 	margin: 0;
@@ -98,6 +96,9 @@ form {
 fieldset:has(#structureFilesInput:invalid) ~ * {
 	display: none;
 }
+label {
+	display: block;
+}
 input, select {
 	font-family: monospace;
 }
@@ -113,7 +114,7 @@ summary {
 	font-weight: 500;
 	font-size: 1rem;
 }
-button, input[type="checkbox"], input[type="file"]::file-selector-button, select {
+button, input[type="checkbox"], input[type="number"], input[type="text"], textarea, input[type="file"]::file-selector-button, select, .buttonlike {
 	padding: 1px 4px;
 	border: 2px solid #D899D8;
 	accent-color: #D899D8;
@@ -121,12 +122,59 @@ button, input[type="checkbox"], input[type="file"]::file-selector-button, select
 	background: #EEDEEE;
 	font-family: inherit;
 	cursor: pointer;
+	transition: background 0.15s;
 }
-button:hover, input[type="file"]:hover::file-selector-button, select:hover {
+input[type="number"], input[type="text"], textarea {
+	cursor: text;
+	outline-width: thin;
+	accent-color: auto;
+}
+button:not(:disabled):hover, input[type="file"]:not(:disabled):hover::file-selector-button, select:not(:disabled):hover, .buttonlike:hover {
 	background: #E8C8E8;
+}
+button:disabled, input[type="file"]:disabled::file-selector-button, selector:disabled, .buttonlike:disabled {
+	cursor: not-allowed;
+}
+input[type="number"]:hover, input[type="text"]:hover, textarea:hover {
+	background: #EAD5EA;
+}
+button:active, input[type="file"]:active::file-selector-button, select:active, .buttonlike:active {
+	background: #DABADA;
 }
 input[type="checkbox"] {
 	display: inline-block;
+}
+.resetButton {
+	position: absolute;
+	right: 10px;
+	top: 0;
+}
+
+#configTabsCont {
+	display: flex;
+	flex-wrap: wrap;
+	justify-content: space-evenly;
+}
+#configTabsCont input[type="radio"][name="configTabs"] {
+	position: absolute; /* stay at top */
+	opacity: 0;
+}
+#configTabsCont > label {
+	flex: 1 1 0;
+	text-align: center;
+	margin: 10px 5px 5px;
+}
+#configTabsCont > fieldset {
+	width: 100%;
+	order: 1;
+	contain: layout;
+}
+#configTabsCont input[type="radio"][name="configTabs"]:checked + label {
+	background: #E8C8E8;
+	font-weight: 500;
+}
+#configTabsCont input[type="radio"][name="configTabs"]:not(:checked) + label + fieldset {
+	display: none;
 }
 
 #fileInputLabel {
@@ -146,9 +194,18 @@ input[type="checkbox"] {
 	justify-content: center;
 	align-items: center;
 }
-.importantButton {
-	padding: 1px 5px;
-	font-size: 1.3em;
+#generatePackButton {
+	margin: 4px auto;
+	padding: 10px;
+	box-sizing: border-box;
+	width: 70%;
+	display: block;
+	
+	border-width: 3px;
+	border-radius: 25px;
+	text-align: center;
+	font-size: 1.4em;
+	font-weight: 500;
 }
 img, canvas {
 	display: inline-block;

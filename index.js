@@ -1,4 +1,4 @@
-import { selectEl, downloadBlob, sleep } from "./essential.js";
+import { selectEl, downloadBlob, sleep, selectEls } from "./essential.js";
 import HoloPrint from "./HoloPrint.js";
 import SimpleLogger from "./SimpleLogger.js";
 import SupabaseLogger from "./SupabaseLogger.js";
@@ -122,12 +122,24 @@ document.onEvent("DOMContentLoaded", async () => {
 	let clearResourcePackCacheButton = selectEl("#clearResourcePackCacheButton");
 	clearResourcePackCacheButton.onEvent("click", async () => {
 		caches.clear();
-		let originalButtonText = clearResourcePackCacheButton.innerText;
-		clearResourcePackCacheButton.innerText = "Resource pack cache cleared!";
-		clearResourcePackCacheButton.setAttribute("disabled", "");
-		await sleep(2000);
-		clearResourcePackCacheButton.innerText = originalButtonText;
-		clearResourcePackCacheButton.removeAttribute("disabled");
+		temporarilyChangeText(clearResourcePackCacheButton, "Resource pack cache cleared!");
+	});
+	
+	selectEls(".resetButton").forEach(el => {
+		el.onEvent("click", () => {
+			let fieldset = el.parentElement;
+			let elementsToSave = [...generatePackForm.elements].filter(el => el.localName != "fieldset" && el.localName != "button" && !fieldset.contains(el));
+			let oldValues = elementsToSave.map(el => el.files ?? el.value);
+			generatePackForm.reset();
+			elementsToSave.forEach((el, i) => {
+				if(el.type == "file") {
+					el.files = oldValues[i];
+				} else {
+					el.value = oldValues[i];
+				}
+			});
+			temporarilyChangeText(el, el.dataset.resetText ?? el.innerText);
+		});
 	});
 	
 	let materialListLanguageSelector = selectEl("#materialListLanguageSelector");
@@ -149,6 +161,14 @@ async function handleLaunchFile(file) {
 	let pack = await makePack(file);
 	return pack;
 }
+async function temporarilyChangeText(el, text, duration = 2000) {
+	let originalText = el.innerText;
+	el.innerText = text;
+	el.setAttribute("disabled", "");
+	await sleep(duration);
+	el.innerText = originalText;
+	el.removeAttribute("disabled");
+}
 
 async function makePack(structureFile, localResourcePacks) {
 	generatePackFormSubmitButton.disabled = true;
@@ -165,7 +185,10 @@ async function makePack(structureFile, localResourcePacks) {
 		TEXTURE_OUTLINE_ALPHA_THRESHOLD: +formData.get("textureOutlineAlphaThreshold"),
 		TEXTURE_OUTLINE_ALPHA_DIFFERENCE_MODE: formData.get("textureOutlineAlphaDifferenceMode"),
 		DO_SPAWN_ANIMATION: formData.get("spawnAnimationEnabled"),
-		MATERIAL_LIST_LANGUAGE: formData.get("materialListLanguage")
+		MATERIAL_LIST_LANGUAGE: formData.get("materialListLanguage"),
+		PACK_ICON_BLOB: formData.get("packIcon").size? formData.get("packIcon") : undefined,
+		AUTHORS: formData.get("author").split(",").map(x => x.trim()).removeFalsies(),
+		DESCRIPTION: formData.get("description") || undefined
 	};
 	
 	let previewCont = selectEl("#previewCont");

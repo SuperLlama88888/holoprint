@@ -4,7 +4,7 @@ import stripJsonComments from "https://esm.run/strip-json-comments@5.0.1";
 
 /** @returns {Element|null} */
 export const selectEl = selector => document.querySelector(selector);
-/** @returns {NodeListOf<Element>} */
+/** @returns {NodeListOf<HTMLElement>} */
 export const selectEls = selector => document.querySelectorAll(selector);
 
 HTMLElement.prototype.selectEl = function(query) {

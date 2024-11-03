@@ -28,6 +28,7 @@ export default class SimpleLogger {
 		logHeader.appendChild(this.#warningCountNode);
 		let downloadLogsButton = document.createElement("button");
 		downloadLogsButton.innerText = "Download all logs";
+		downloadLogsButton.setAttribute("type", "button");
 		downloadLogsButton.onEvent("click", () => {
 			downloadBlob(new Blob([JSON.stringify(this.allLogs)]), "holoprint_logs.json");
 		});

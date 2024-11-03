@@ -26,64 +26,72 @@
 						<legend>Upload structure files (<code>*.mcstructure</code>)</legend>
 						<label>
 							<input type="file" accept=".mcstructure" name="structureFiles" required id="structureFilesInput"/>
-							<div><p>Upload a file</p><p>Or drop files here</p></div> <!-- Defaults to a submit button -->
+							<div class="buttonlike"><p>Upload a file</p><p>Or drop files here</p></div>
 						</label>
 					</fieldset>
-					<fieldset>
-						<legend>Settings</legend>
-						<label>Language (material list): <select name="materialListLanguage" id="materialListLanguageSelector">
-							<option value="en_US" selected>English (United States)</option>
-						</select></label>
-						<br/>
-						<label>Hologram scale: <input type="number" min="70" max="100" step="1" value="95" name="scale"/>%</label>
+					<div id="configTabsCont">
+						<input type="radio" checked name="configTabs" form="" id="settingsTab"/>
+						<label for="settingsTab" class="buttonlike">Settings</label>
 						<fieldset>
-							<legend>Textures</legend>
-							<label>Texture outline width: <select name="textureOutlineWidth">
-								<option value="0">None</option>
-								<option value="0.125">0.125px</option>
-								<option value="0.25" selected>0.25px</option>
-								<option value="0.5">0.5px</option>
-								<option value="1">1px</option>
+							<legend>Settings</legend>
+							<label>Language (material list): <select name="materialListLanguage" id="materialListLanguageSelector">
+								<option value="en_US" selected>English (United States)</option>
 							</select></label>
-							<br/>
-							<label>Texture outline color: <input type="text" value="#00FA" name="textureOutlineColor"/></label>
+							<label>Hologram scale: <input type="number" min="70" max="100" step="1" value="95" name="scale"/>%</label>
+							<fieldset>
+								<legend>Textures</legend>
+								<label>Texture outline width: <select name="textureOutlineWidth">
+									<option value="0">None</option>
+									<option value="0.125">0.125px</option>
+									<option value="0.25" selected>0.25px</option>
+									<option value="0.5">0.5px</option>
+									<option value="1">1px</option>
+								</select></label>
+								<label>Texture outline color: <input type="text" value="#00FA" name="textureOutlineColor"/></label>
+								<details>
+									<summary>Advanced</summary>
+									<label>Texture outline alpha threshold: <input type="number" min="0" max="255" value="0" name="textureOutlineAlphaThreshold"></label>
+									<label>Texture outline alpha comparison mode: <select name="textureOutlineAlphaDifferenceMode">
+										<option value="threshold" selected>Threshold</option>
+										<option value="difference">Difference</option>
+									</select></label>
+								</details>
+							</fieldset>
+							<label>Spawn animation: <input type="checkbox" name="spawnAnimationEnabled" checked/></label>
+							<label>Ignored blocks: <input type="text" name="ignoredBlocks" placeholder="block_1 block_2 etc."/></label>
 							<details>
 								<summary>Advanced</summary>
-								<label>Texture outline alpha threshold: <input type="number" min="0" max="255" value="0" name="textureOutlineAlphaThreshold"></label>
-								<br/>
-								<label>Texture outline alpha comparison mode: <select name="textureOutlineAlphaDifferenceMode">
-									<option value="threshold" selected>Threshold</option>
-									<option value="difference">Difference</option>
+								<label>Layer mode: <select name="layerMode">
+									<option value="single" selected>Single layer</option>
+									<option value="all_below">All layers below</option>
 								</select></label>
+								<label>Opacity mode: <select name="opacityMode">
+									<option value="multiple" selected>In-game controls</option>
+									<option value="single">Single option</option>
+								</select></label>
+								<label class="hidden">Hologram opacity: <input type="number" min="10" max="100" step="5" value="90" name="opacity"/>%</label>
 							</details>
+							<button type="button" class="resetButton" data-reset-text="Settings reset!">Reset</button>
 						</fieldset>
-						<br/>
-						<label>Spawn animation: <input type="checkbox" name="spawnAnimationEnabled" checked/></label>
-						<br/>
-						<label>Ignored blocks: <input type="text" name="ignoredBlocks" placeholder="block_1 block_2 etc."/></label>
-						<br/>
-						<details>
-							<summary>Advanced</summary>
-							<label>Layer mode: <select name="layerMode">
-								<option value="single" selected>Single layer</option>
-								<option value="all_below">All layers below</option>
-							</select></label>
-							<br/>
-							<label>Opacity mode: <select name="opacityMode">
-								<option value="multiple" selected>In-game controls</option>
-								<option value="single">Single option</option>
-							</select></label>
-							<br/>
-							<label class="hidden">Hologram opacity: <input type="number" min="10" max="100" step="5" value="90" name="opacity"/>%</label>
+						<input type="radio" name="configTabs" form="" id="metadataTab"/>
+						<label for="metadataTab" class="buttonlike">Metadata</label>
+						<fieldset>
+							<legend>Metadata</legend>
+							<label>Pack icon (<code>*.png</code>): <input type="file" accept=".png" name="packIcon"/></label>
+							<label>Structure author: <input type="text" placeholder="MinecraftLover123" name="author"/></label>
+							<label>Description:<br/><textarea placeholder="This is my epic house!" rows="3" cols="20" name="description"></textarea></label>
+							<button type="button" class="resetButton" data-reset-text="Metadata reset!">Reset</button>
+						</fieldset>
+						<input type="radio" name="configTabs" form="" id="resourcesTab"/>
+						<label for="resourcesTab" class="buttonlike">Resource packs</label>
+						<fieldset>
+							<legend>Resource packs</legend>
+							<label>Upload a local resource pack:<br/><input type="file" webkitdirectory name="localResourcePack"/></label>
 							<button type="button" id="clearResourcePackCacheButton">Clear resource pack cache</button>
-						</details>
-					</fieldset>
-					<fieldset>
-						<legend>Resource packs</legend>
-						<label>Upload a local resource pack:<br/><input type="file" webkitdirectory name="localResourcePack"/></label>
-					</fieldset>
-					<br/>
-					<button name="submit" class="importantButton">Generate pack</button>
+							<button type="button" class="resetButton" data-reset-text="Resource packs reset!">Reset</button>
+						</fieldset>
+					</div>
+					<button name="submit" id="generatePackButton">Generate pack</button>
 				</fieldset>
 				<div id="previewCont"></div>
 				<div id="log"></div>

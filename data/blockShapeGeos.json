@@ -162,7 +162,7 @@
 			"size": [4, 16, 4]
 		}
 	],
-	"fence_gate": [ // TODO: lower by 3 pixels with the in_wall_bit block state
+	"template_fence_gate": [
 		{
 			"pos": [0, 5, 7],
 			"size": [2, 11, 2]
@@ -215,6 +215,148 @@
 			"if": "open_bit == 1",
 			"pos": [14, 9, 13],
 			"size": [2, 3, 2]
+		}
+	],
+	"fence_gate": [
+		{
+			"if": "in_wall_bit == 0",
+			"copy": "template_fence_gate"
+		},
+		{
+			"if": "in_wall_bit == 1",
+			"copy": "template_fence_gate",
+			"translate": [0, -3, 0]
+		}
+	],
+	"template_bamboo_fence_gate": [
+		{
+			"pos": [0, 5, 7],
+			"size": [2, 11, 2],
+			"uv": {
+				"*": [0, 2]
+			}
+		},
+		{
+			"pos": [14, 5, 7],
+			"size": [2, 11, 2],
+			"uv": {
+				"*": [0, 2]
+			}
+		},
+		{
+			"if": "open_bit == 0",
+			"pos": [2, 6, 7],
+			"size": [4, 3, 2],
+			"uv": {
+				"*": [3, 9]
+			}
+		},
+		{
+			"if": "open_bit == 0",
+			"pos": [2, 12, 7],
+			"size": [4, 3, 2],
+			"uv": {
+				"*": [3, 9]
+			}
+		},
+		{
+			"if": "open_bit == 0",
+			"pos": [6, 6, 7],
+			"size": [2, 9, 2],
+			"uv": {
+				"*": [8, 3]
+			}
+		},
+		{
+			"if": "open_bit == 0",
+			"pos": [8, 6, 7],
+			"size": [2, 9, 2],
+			"uv": {
+				"*": [8, 3]
+			}
+		},
+		{
+			"if": "open_bit == 0",
+			"pos": [10, 6, 7],
+			"size": [4, 3, 2],
+			"uv": {
+				"*": [3, 9]
+			}
+		},
+		{
+			"if": "open_bit == 0",
+			"pos": [10, 12, 7],
+			"size": [4, 3, 2],
+			"uv": {
+				"*": [3, 9]
+			}
+		},
+		{
+			"if": "open_bit == 1",
+			"pos": [0, 6, 9],
+			"size": [2, 3, 4],
+			"uv": {
+				"side": [3, 9],
+				"up": [3, 1],
+				"down": [3, 1]
+			}
+		},
+		{
+			"if": "open_bit == 1",
+			"pos": [0, 12, 9],
+			"size": [2, 3, 4],
+			"uv": {
+				"side": [3, 9],
+				"up": [3, 1],
+				"down": [3, 1]
+			}
+		},
+		{
+			"if": "open_bit == 1",
+			"pos": [0, 6, 13],
+			"size": [2, 9, 2],
+			"uv": {
+				"*": [8, 3]
+			}
+		},
+		{
+			"if": "open_bit == 1",
+			"pos": [14, 6, 9],
+			"size": [2, 3, 4],
+			"uv": {
+				"side": [3, 9],
+				"up": [3, 1],
+				"down": [3, 1]
+			}
+		},
+		{
+			"if": "open_bit == 1",
+			"pos": [14, 12, 9],
+			"size": [2, 3, 4],
+			"uv": {
+				"side": [3, 9],
+				"up": [3, 1],
+				"down": [3, 1]
+			}
+		},
+		{
+			"if": "open_bit == 1",
+			"pos": [14, 6, 13],
+			"size": [2, 9, 2],
+			"uv": {
+				"*": [8, 3]
+			}
+		}
+	],
+	"bamboo_fence_gate": [
+		{
+			"if": "in_wall_bit == 0",
+			"copy": "template_bamboo_fence_gate"
+		},
+		{
+			"if": "in_wall_bit == 1",
+			"copy": "template_bamboo_fence_gate",
+			"translate": [0, -3, 0]
 		}
 	],
 	"door": [ // upper door blocks don't contain all the block states, and I think that MCBE relies on the lower door to do everything. e.g. look at the nbt of a structure with door tops only, and you'll see why we need to do it this way.
@@ -694,7 +836,7 @@
 			"size": [16, 2, 16]
 		},
 		{
-			"copy": "template_small_redstone_torch", // TODO: improve JSON schema when copy is present
+			"copy": "template_small_redstone_torch",
 			"translate": [7, 2, 12],
 			"terrain_texture": "repeater_torch"
 		},

@@ -45,7 +45,7 @@ export default class ResourcePackStack {
 	}
 	/**
 	 * Fetches a resource pack file.
-	 * @param {String} resourcePath 
+	 * @param {String} resourcePath
 	 * @returns {Promise<Response>}
 	 */
 	async fetchResource(resourcePath) {

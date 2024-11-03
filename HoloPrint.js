@@ -10,52 +10,44 @@ import { abs, awaitAllEntries, blobToImage, max, min, pi, sha256, sha256text } f
 import ResourcePackStack from "./ResourcePackStack.js";
 
 export default class HoloPrint {
-	static #IGNORED_BLOCKS = ["air", "piston_arm_collision", "sticky_piston_arm_collision"]; // blocks to be ignored when scanning the structure file
-	static #IGNORED_MATERIAL_LIST_BLOCKS = []; // blocks that will always be hidden on the material list
+	static IGNORED_BLOCKS = ["air", "piston_arm_collision", "sticky_piston_arm_collision"]; // blocks to be ignored when scanning the structure file
+	static IGNORED_MATERIAL_LIST_BLOCKS = ["bubble_column"]; // blocks that will always be hidden on the material list
 	
 	static #IGNORED_BLOCK_ENTITIES = ["Beacon", "Beehive", "Bell", "BrewingStand", "ChiseledBookshelf", "CommandBlock", "Comparator", "Conduit", "EnchantTable", "EndGateway", "JigsawBlock", "Lodestone", "SculkCatalyst", "SculkShrieker", "SculkSensor", "CalibratedSculkSensor", "StructureBlock", "BrushableBlock", "TrialSpawner", "Vault"];
 	
 	resourcePackStack;
 	config;
 	
-	constructor({
-		IGNORED_BLOCKS = [],
-		IGNORED_MATERIAL_LIST_BLOCKS = [],
-		SCALE = 0.95,
-		OPACITY = 0.9,
-		MULTIPLE_OPACITIES = true,
-		// TINT = [0.53, 0.81, 0.98, 0.2], // to convert rgba to these, type 0x__ / 255 into any JS console
-		TINT = null,
-		MINI_SCALE = 0.125, // size of ghost blocks when in the mini view for layers
-		LAYER_MODE = "single", // single | all_below
-		TEXTURE_OUTLINE_WIDTH = 0.25, // pixels, x ∈ [0, 1], x ∈ 2^ℝ
-		TEXTURE_OUTLINE_COLOR = "#00F9",
-		TEXTURE_OUTLINE_ALPHA_DIFFERENCE_MODE = "threshold", // difference: will compare alpha channel difference; threshold: will only look at the second pixel
-		TEXTURE_OUTLINE_ALPHA_THRESHOLD = 0, // if using difference mode, will draw outline between pixels with at least this much alpha difference; else, will draw outline on pixels next to pixels with an alpha less than or equal to this
-		DO_SPAWN_ANIMATION = true,
-		SPAWN_ANIMATION_LENGTH = 0.4, // in seconds
-		WRONG_BLOCK_OVERLAY_COLOR = [1, 0, 0, 0.3],
-		MATERIAL_LIST_LANGUAGE = "en_US"
-	} = {}, resourcePackStack = new ResourcePackStack(), previewCont) {
-		this.config = {
-			IGNORED_BLOCKS: HoloPrint.#IGNORED_BLOCKS.concat(IGNORED_BLOCKS),
-			IGNORED_MATERIAL_LIST_BLOCKS: HoloPrint.#IGNORED_MATERIAL_LIST_BLOCKS.concat(IGNORED_MATERIAL_LIST_BLOCKS),
-			SCALE,
-			OPACITY,
-			MULTIPLE_OPACITIES,
-			TINT,
-			MINI_SCALE,
-			LAYER_MODE,
-			TEXTURE_OUTLINE_WIDTH,
-			TEXTURE_OUTLINE_COLOR,
-			TEXTURE_OUTLINE_ALPHA_DIFFERENCE_MODE,
-			TEXTURE_OUTLINE_ALPHA_THRESHOLD,
-			DO_SPAWN_ANIMATION,
-			SPAWN_ANIMATION_LENGTH,
-			WRONG_BLOCK_OVERLAY_COLOR,
-			MATERIAL_LIST_LANGUAGE
-		};
-		Object.freeze(this.config);
+	constructor(config = {}, resourcePackStack = new ResourcePackStack(), previewCont) {
+		this.config = Object.freeze({
+			...{ // defaults
+				IGNORED_BLOCKS: [],
+				IGNORED_MATERIAL_LIST_BLOCKS: [],
+				SCALE: 0.95,
+				OPACITY: 0.9,
+				MULTIPLE_OPACITIES: true,
+				// TINT = [0.53, 0.81, 0.98, 0.2], // to convert rgba to these, type 0x__ / 255 into any JS console
+				TINT: null,
+				MINI_SCALE: 0.125, // size of ghost blocks when in the mini view for layers
+				LAYER_MODE: "single", // single | all_below
+				TEXTURE_OUTLINE_WIDTH: 0.25, // pixels, x ∈ [0, 1], x ∈ 2^ℝ
+				TEXTURE_OUTLINE_COLOR: "#00F9",
+				TEXTURE_OUTLINE_ALPHA_DIFFERENCE_MODE: "threshold", // difference: will compare alpha channel difference; threshold: will only look at the second pixel
+				TEXTURE_OUTLINE_ALPHA_THRESHOLD: 0, // if using difference mode, will draw outline between pixels with at least this much alpha difference; else, will draw outline on pixels next to pixels with an alpha less than or equal to this
+				DO_SPAWN_ANIMATION: true,
+				SPAWN_ANIMATION_LENGTH: 0.4, // in seconds
+				WRONG_BLOCK_OVERLAY_COLOR: [1, 0, 0, 0.3],
+				MATERIAL_LIST_LANGUAGE: "en_US",
+				PACK_ICON_BLOB: undefined,
+				AUTHORS: undefined,
+				DESCRIPTION: undefined
+			},
+			...config,
+			...{ // overrides (applied after)
+				IGNORED_BLOCKS: config.IGNORED_BLOCKS? HoloPrint.IGNORED_BLOCKS.concat(config.IGNORED_BLOCKS) : HoloPrint.IGNORED_BLOCKS,
+				IGNORED_MATERIAL_LIST_BLOCKS: config.IGNORED_MATERIAL_LIST_BLOCKS? HoloPrint.IGNORED_MATERIAL_LIST_BLOCKS.concat(config.IGNORED_MATERIAL_LIST_BLOCKS) : HoloPrint.IGNORED_MATERIAL_LIST_BLOCKS,
+			}
+		});
 		this.resourcePackStack = resourcePackStack;
 		this.previewCont = previewCont;
 	}
@@ -87,7 +79,7 @@ export default class HoloPrint {
 		// Make the pack
 		let { manifest, packIcon, entityFile, hologramRenderControllers, defaultPlayerRenderControllers, armorStandGeo, hologramMaterial, hologramAnimationControllers, boundingBoxOutlineParticle, blockValidationParticle, singleWhitePixelTexture, hudScreenUI, translationFile, blockMetadata, itemMetadata } = await awaitAllEntries({
 			manifest: fetch("packTemplate/manifest.json").then(res => res.jsonc()),
-			packIcon: this.#makePackIcon(structureFile),
+			packIcon: this.config.PACK_ICON_BLOB ?? this.#makePackIcon(structureFile),
 			entityFile: this.resourcePackStack.fetchResource("entity/armor_stand.entity.json").then(res => res.jsonc()),
 			hologramRenderControllers: fetch("packTemplate/render_controllers/armor_stand.hologram.render_controllers.json").then(res => res.jsonc()), // We add the overlay colour here. We could do it with the canvas but the advantage is that doing it with overlay_color in the render controller is it only renders the overlay on pixels where there's actually texture, whereas if we add it to the texture itself the overlay will render on transparent pixels as well (you could make it only add overlay on solid pixels with the canvas as well but this is easier and possibly changeable in-game).
 			defaultPlayerRenderControllers: this.resourcePackStack.fetchResource("render_controllers/player.render_controllers.json").then(res => res.jsonc()),
@@ -156,7 +148,7 @@ export default class HoloPrint {
 		
 		let entityDescription = entityFile["minecraft:client_entity"]["description"];
 		entityDescription["materials"]["hologram"] = "holoprint_hologram";
-		entityDescription["materials"]["hologram.wrong_block_overlay"] = "holoprint_hologram_wrong_block_overlay";
+		entityDescription["materials"]["hologram.wrong_block_overlay"] = "holoprint_hologram.wrong_block_overlay";
 		entityDescription["textures"]["hologram.overlay"] = "textures/entity/overlay";
 		entityDescription["animations"]["hologram.align"] = "animation.armor_stand.hologram.align";
 		entityDescription["animations"]["hologram.offset"] = "animation.armor_stand.hologram.offset";
@@ -400,6 +392,13 @@ export default class HoloPrint {
 		
 		manifest["header"]["name"] = `§uHoloPrint:§r ${structureName}`;
 		manifest["header"]["description"] = `§u★HoloPrint§r resource pack generated on §o${(new Date()).toLocaleString()}§r\nDeveloped by §l§6SuperLlama88888§r`;
+		if(this.config.AUTHORS) {
+			manifest["header"]["description"] += `\nStructure made by ${this.config.AUTHORS.join(" and ")}`;
+			manifest["metadata"]["authors"].push(...this.config.AUTHORS);
+		}
+		if(this.config.DESCRIPTION) {
+			manifest["header"]["description"] += `\n${this.config.DESCRIPTION}`;
+		}
 		manifest["header"]["uuid"] = crypto.randomUUID();
 		manifest["modules"][0]["uuid"] = crypto.randomUUID();
 		

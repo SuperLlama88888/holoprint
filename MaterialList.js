@@ -12,7 +12,7 @@
 import { floor, nanToUndefined } from "./essential.js";
 
 export default class MaterialList {
-	static #ignoredBlocks = ["flowing_water", "flowing_lava", "piston_arm_collision", "sticky_piston_arm_collision"]; // these don't appear to be used anymore
+	static #ignoredBlocks = ["flowing_water", "flowing_lava"]; // these don't appear to be used anymore
 	/** Blocks that have a different item or item ID. */
 	static #blockToItemIDS = {
 		"unpowered_repeater": "repeater",
@@ -90,6 +90,10 @@ export default class MaterialList {
 		"item.wither_skeleton_skull": "item.skull.wither",
 		"item.zombie_head": "item.skull.zombie",
 	};
+	/** Translations that JUST DON'T EXIST because Bugrock :/ */
+	static #translationPatches = {
+		"tile.end_portal.name": "End Portal"
+	};
 	
 	materials;
 	totalMaterialCount;
@@ -117,7 +121,8 @@ export default class MaterialList {
 			if(hashI > -1) {
 				line = line.slice(0, hashI);
 			}
-			if(line.trim() == "") {
+			line = line.trim();
+			if(line == "") {
 				return;
 			}
 			let eqI = line.indexOf("=");
@@ -209,7 +214,7 @@ export default class MaterialList {
 	 */
 	#translate(serializationId) {
 		let translationKey = this.#serializationIdToTranslationKey(serializationId);
-		return this.#translations.get(translationKey);
+		return MaterialList.#translationPatches[translationKey] ?? this.#translations.get(translationKey);
 	}
 	/**
 	 * Partitions a number of items into how many boxes and stacks it is.
