@@ -177,7 +177,7 @@
 					"tint": {
 						"description": "A tinting colour in 6-digit hex or in a 32-bit ARGB number to apply to this cube (overrides TextureAtlas.#terrainTextureTints).",
 						"type": "string",
-						"pattern": "^(#[0-9a-fA-F]{6})|(\\${.+})$"
+						"pattern": "^(#[0-9a-fA-F]{6})|(\\$\\{.+\\})$"
 					}
 				},
 				"oneOf": [
