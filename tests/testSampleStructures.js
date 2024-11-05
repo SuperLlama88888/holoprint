@@ -149,47 +149,50 @@ async function setupBrowserAndPage(status) {
 	
 	let page = await browser.newPage();
 	page.on("console", log => {
+		let logOrigin = log.location()?.url;
+		let logText = log.text();
+		if(logOrigin && (!logOrigin?.startsWith("http://localhost:8080/") && !logOrigin?.startsWith("pptr:evaluate;")) || logText.toLowerCase().includes("three.js") || logText.toLowerCase().includes("webgl")) {
+			return;
+		}
 		switch(log.type()) {
 			case "log": {
-				ghActionsCore.debug(log.text());
+				ghActionsCore.debug(logText);
 				break;
 			}
 			case "info": {
-				ghActionsCore.info(log.text());
+				ghActionsCore.info(logText);
 				break;
 			}
 			case "error": {
 				if(log.location().lineNumber == undefined) { // In Chrome, resources that fail to load throw an error but there isn't a line (or column) number, so this filters those messages out
 					break;
 				}
-				ghActionsCore.error(log.text());
+				ghActionsCore.error(logText);
 				status.passedTest = false;
 				status.errors++;
 				break;
 			}
 			case "warn": {
-				ghActionsCore.warning(log.text());
+				ghActionsCore.warning(logText);
 				status.passedTest = false;
 				status.warnings++;
 				break;
 			}
 			case "debug": {
-				ghActionsCore.debug(`Debug: ${log.text()}`);
+				ghActionsCore.debug(`Debug: ${logText}`);
 				break;
 			}
-			case "group": // https://github.com/puppeteer/puppeteer/issues/13109
 			case "startGroup":
 			case "startGroupCollapsed": {
-				ghActionsCore.startGroup(log.text());
+				ghActionsCore.startGroup(logText);
 				break;
 			}
-			case "groupEnd":
 			case "endGroup": {
 				ghActionsCore.endGroup();
 				break;
 			}
 			default: {
-				ghActionsCore.info(`${log.type()}: ${log.text()}`);
+				ghActionsCore.info(`${log.type()}: ${logText}`);
 				ghActionsCore.notice(`Unknown log type: ${log.type()}`);
 			}
 		}
