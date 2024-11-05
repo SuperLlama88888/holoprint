@@ -116,6 +116,13 @@ export default class HoloPrint {
 				Object.keys(cube["uv"]).forEach(face => {
 					let i = cube["uv"][face];
 					let imageUv = textureAtlas.textures[i];
+					if(face == "down" || face == "up") { // in MC the down/up faces are rotated 180 degrees compared to how they are in geometry; this can be faked by flipping both axes. I don't want to use uv_rotation since that's a 1.21 thing and I want support back to 1.16.
+						imageUv = {
+							...imageUv,
+							uv: [imageUv["uv"][0] + imageUv["uv_size"][0], imageUv["uv"][1] + imageUv["uv_size"][1]],
+							uv_size: [-imageUv["uv_size"][0], -imageUv["uv_size"][1]]
+						};
+					}
 					cube["uv"][face] = {
 						"uv": imageUv["uv"],
 						"uv_size": imageUv["uv_size"]
@@ -128,8 +135,8 @@ export default class HoloPrint {
 							cube["size"][2] *= crop["w"];
 							cube["size"][1] *= crop["h"];
 						} else if(cube["size"][1] == 0) {
-							cube["origin"][0] += cube["size"][0] * crop["x"];
-							cube["origin"][2] += cube["size"][2] * crop["y"];
+							cube["origin"][0] += cube["size"][0] * (1 - crop["w"] - crop["x"]);
+							cube["origin"][2] += cube["size"][2] * (1 - crop["h"] - crop["y"]);
 							cube["size"][0] *= crop["w"];
 							cube["size"][2] *= crop["h"];
 						} else if(cube["size"][2] == 0) {
@@ -352,7 +359,9 @@ export default class HoloPrint {
 						}
 						
 						let blockName = blockPalette[paletteI]["name"];
-						materialList.add(blockName);
+						if(!this.config.IGNORED_MATERIAL_LIST_BLOCKS.includes(blockName)) {
+							materialList.add(blockName);
+						}
 						
 						if(layerI == 0) { // particle_expire_if_in_blocks only works on the first layer :(
 							blocksToValidate.push({
@@ -587,7 +596,6 @@ export default class HoloPrint {
 	 */
 	static async extractStructureFileFromPack(resourcePack) {
 		let packFolder = await JSZip.loadAsync(resourcePack);
-		console.log(packFolder.file(".mcstructure"))
 		let structureBlob = await packFolder.file(".mcstructure")?.async("blob");
 		if(!structureBlob) {
 			return undefined;

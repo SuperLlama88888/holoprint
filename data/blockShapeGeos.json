@@ -487,6 +487,9 @@
 			"size": [16, 0, 22.6274], // 16√2 ≈ 22.6274
 			"rot": [45, 0, 0],
 			"pivot": [8, 1, 0],
+			"uv": {
+				"*": [0, 0]
+			},
 			"uv_sizes": {
 				"*": [16, 16]
 			}
@@ -500,15 +503,19 @@
 			"textures": {
 				"*": "up"
 			},
+			"uv": {
+				"*": [0, 0]
+			},
 			"uv_sizes": {
 				"*": [16, 16]
 			}
 		}
 	],
-	"petals": [ // todo: add stems. the actual model has each petal at a different height but that's too much :(
+	"pink_petals": [ // todo: add stems. the actual model has each petal at a different height but that's too much :(
 		{
 			"pos": [0, 3, 0],
-			"size": [16, 0, 16]
+			"size": [16, 0, 16],
+			"variant": 0
 		}
 	],
 	"pressure_plate": [
@@ -837,31 +844,31 @@
 		},
 		{
 			"copy": "template_small_redstone_torch",
-			"translate": [7, 2, 12],
+			"translate": [7, 2, 2],
 			"terrain_texture": "repeater_torch"
 		},
 		{
 			"if": "repeater_delay == 0",
 			"copy": "template_small_redstone_torch",
-			"translate": [7, 2, 8],
+			"translate": [7, 2, 6],
 			"terrain_texture": "repeater_torch"
 		},
 		{
 			"if": "repeater_delay == 1",
 			"copy": "template_small_redstone_torch",
-			"translate": [7, 2, 6],
+			"translate": [7, 2, 8],
 			"terrain_texture": "repeater_torch"
 		},
 		{
 			"if": "repeater_delay == 2",
 			"copy": "template_small_redstone_torch",
-			"translate": [7, 2, 4],
+			"translate": [7, 2, 10],
 			"terrain_texture": "repeater_torch"
 		},
 		{
 			"if": "repeater_delay == 3",
 			"copy": "template_small_redstone_torch",
-			"translate": [7, 2, 2],
+			"translate": [7, 2, 12],
 			"terrain_texture": "repeater_torch"
 		}
 	],
@@ -872,17 +879,17 @@
 		},
 		{
 			"copy": "template_small_redstone_torch",
-			"translate": [4, 2, 3],
+			"translate": [4, 2, 11],
 			"terrain_texture": "comparator_torch"
 		},
 		{
 			"copy": "template_small_redstone_torch",
-			"translate": [10, 2, 3],
+			"translate": [10, 2, 11],
 			"terrain_texture": "comparator_torch"
 		},
 		{
 			"if": "output_subtract_bit == 0",
-			"pos": [7, 2, 12],
+			"pos": [7, 2, 2],
 			"size": [2, 2, 2],
 			"terrain_texture": "comparator_torch",
 			"ignore_eigenvariant": true,
@@ -892,7 +899,7 @@
 		},
 		{
 			"if": "output_subtract_bit == 1",
-			"pos": [7, 2, 12],
+			"pos": [7, 2, 2],
 			"size": [2, 3, 2],
 			"terrain_texture": "comparator_torch",
 			"ignore_eigenvariant": true,
@@ -1762,24 +1769,28 @@
 			"tint": "#56A5AA" // average colour of textures/environment/end_portal_colors.png
 		}
 	],
-	"observer": [ // the bottom face is messed up...
+	"observer": [ // the top face is rotated
 		{
 			"pos": [0, 0, 0],
 			"size": [16, 16, 16],
 			"textures": {
-				"down": "none"
+				"up": "none"
 			}
 		},
 		{
-			"pos": [0, 0, 0],
-			"size": [16, 0, 16],
-			"rot": [0, 180, 0]
+			"pos": [0, 15, 0],
+			"size": [16, 1, 16], // we can't make it 0-height as that will automatically use the down face and flip it back to the wrong way
+			"rot": [0, 180, 0],
+			"textures": {
+				"side": "none",
+				"down": "none"
+			}
 		}
 	],
 	"composter": [
 		{
-			"pos": [0, 0, 0],
-			"size": [16, 2, 16],
+			"pos": [2, 0, 2],
+			"size": [12, 2, 12],
 			"textures": {
 				"up": "down"
 			},
@@ -2191,9 +2202,9 @@
 		},
 		{
 			"if": "hanging == 1",
-			"pos": [7, 13.4142, 4.9176], // tan(22.5deg) = √2 - 1, 13 + tan(22.5deg) = 12 + √2 ≈ 13.4142, 8 - 2 - √(1^2 + tan(22.5deg)^2) = 6 - √(4 - 2√2) ≈ 4.9176
+			"pos": [7, 13.4142, 8.9176], // tan(22.5deg) = √2 - 1, 13 + tan(22.5deg) = 12 + √2 ≈ 13.4142, 8 + 2 - √(1^2 + tan(22.5deg)^2) = 10 - √(4 - 2√2) ≈ 8.9176
 			"size": [2, 0, 2],
-			"rot": [22.5, 0, 0],
+			"rot": [-22.5, 0, 0],
 			"pivot": [8, 13.4142, 8],
 			"uv": {
 				"*": [8, 3]
@@ -2201,9 +2212,9 @@
 		},
 		{
 			"if": "hanging == 1",
-			"pos": [7, 13.4142, 4.9176],
+			"pos": [7, 13.4142, 8.9176],
 			"size": [2, 0, 2],
-			"rot": [22.5, 90, 0],
+			"rot": [-22.5, 90, 0],
 			"pivot": [8, 13.4142, 8],
 			"uv": {
 				"*": [8, 3]
@@ -2211,9 +2222,9 @@
 		},
 		{
 			"if": "hanging == 1",
-			"pos": [7, 13.4142, 4.9176],
+			"pos": [7, 13.4142, 8.9176],
 			"size": [2, 0, 2],
-			"rot": [22.5, 180, 0],
+			"rot": [-22.5, 180, 0],
 			"pivot": [8, 13.4142, 8],
 			"uv": {
 				"*": [8, 3]
@@ -2221,9 +2232,9 @@
 		},
 		{
 			"if": "hanging == 1",
-			"pos": [7, 13.4142, 4.9176],
+			"pos": [7, 13.4142, 8.9176],
 			"size": [2, 0, 2],
-			"rot": [22.5, -90, 0],
+			"rot": [-22.5, -90, 0],
 			"pivot": [8, 13.4142, 8],
 			"uv": {
 				"*": [8, 3]
@@ -2579,5 +2590,151 @@
 				"*": "south"
 			}
 		}
-	]
+	],
+	"template_cauldron_liquid": [
+		{
+			"if": "fill_level == 1",
+			"pos": [2, 5, 2],
+			"size": [12, 0, 12]
+		},
+		{
+			"if": "fill_level == 2",
+			"pos": [2, 7, 2],
+			"size": [12, 0, 12]
+		},
+		{
+			"if": "fill_level == 3",
+			"pos": [2, 9, 2],
+			"size": [12, 0, 12]
+		},
+		{
+			"if": "fill_level == 4",
+			"pos": [2, 11, 2],
+			"size": [12, 0, 12]
+		},
+		{
+			"if": "fill_level == 5",
+			"pos": [2, 13, 2],
+			"size": [12, 0, 12]
+		},
+		{
+			"if": "fill_level == 6",
+			"pos": [2, 15, 2],
+			"size": [12, 0, 12]
+		}
+	],
+	"cauldron": [
+		{ // walls
+			"pos": [0, 3, 0],
+			"size": [2, 13, 16],
+			"textures": {
+				"side": "north",
+				"down": "south"
+			}
+		},
+		{
+			"pos": [14, 3, 0],
+			"size": [2, 13, 16],
+			"textures": {
+				"side": "north",
+				"down": "south"
+			}
+		},
+		{
+			"pos": [2, 3, 0],
+			"size": [12, 13, 2],
+			"textures": {
+				"side": "north",
+				"down": "south"
+			}
+		},
+		{
+			"pos": [2, 3, 14],
+			"size": [12, 13, 2],
+			"textures": {
+				"side": "north",
+				"down": "south"
+			}
+		},
+		{ // bottom
+			"pos": [2, 3, 2],
+			"size": [12, 1, 12],
+			"textures": {
+				"*": "south" // inside
+			}
+		},
+		{ // legs :((
+			"pos": [0, 0, 0],
+			"size": [4, 3, 2],
+			"textures": {
+				"side": "north"
+			}
+		},
+		{
+			"pos": [0, 0, 2],
+			"size": [2, 3, 2],
+			"textures": {
+				"side": "north"
+			}
+		},
+		{
+			"pos": [12, 0, 0],
+			"size": [4, 3, 2],
+			"textures": {
+				"side": "north"
+			}
+		},
+		{
+			"pos": [14, 0, 2],
+			"size": [2, 3, 2],
+			"textures": {
+				"side": "north"
+			}
+		},
+		{
+			"pos": [0, 0, 14],
+			"size": [4, 3, 2],
+			"textures": {
+				"side": "north"
+			}
+		},
+		{
+			"pos": [0, 0, 12],
+			"size": [2, 3, 4],
+			"textures": {
+				"side": "north"
+			}
+		},
+		{
+			"pos": [12, 0, 14],
+			"size": [4, 3, 2],
+			"textures": {
+				"side": "north"
+			}
+		},
+		{
+			"pos": [14, 0, 12],
+			"size": [2, 3, 2],
+			"textures": {
+				"side": "north"
+			}
+		},
+		{ // cauldron contents
+			"if": "cauldron_liquid == lava",
+			"copy": "template_cauldron_liquid",
+			"terrain_texture": "still_lava"
+		},
+		{
+			"if": "cauldron_liquid == water", // TODO: add support for potions, currently they just display the water colour
+			"copy": "template_cauldron_liquid",
+			"terrain_texture": "cauldron_water",
+			"tint": "${#block_entity_data.CustomColor ?? 4280183682}" // 4283196761 = FF 4C 61 56 (ARGB) = water colour in swamp hills, it's the closest I could find to actual cauldron water
+		},
+		{
+			"if": "cauldron_liquid == powder_snow",
+			"copy": "template_cauldron_liquid",
+			"terrain_texture": "powder_snow"
+		}
+	],
+	"debug_auto_uv_4": [{"pos":[0,0,0],"size":[4,4,4]},{"pos":[0,0,4],"size":[4,4,4]},{"pos":[0,0,8],"size":[4,4,4]},{"pos":[0,0,12],"size":[4,4,4]},{"pos":[0,4,0],"size":[4,4,4]},{"pos":[0,4,4],"size":[4,4,4]},{"pos":[0,4,8],"size":[4,4,4]},{"pos":[0,4,12],"size":[4,4,4]},{"pos":[0,8,0],"size":[4,4,4]},{"pos":[0,8,4],"size":[4,4,4]},{"pos":[0,8,8],"size":[4,4,4]},{"pos":[0,8,12],"size":[4,4,4]},{"pos":[0,12,0],"size":[4,4,4]},{"pos":[0,12,4],"size":[4,4,4]},{"pos":[0,12,8],"size":[4,4,4]},{"pos":[0,12,12],"size":[4,4,4]},{"pos":[4,0,0],"size":[4,4,4]},{"pos":[4,0,4],"size":[4,4,4]},{"pos":[4,0,8],"size":[4,4,4]},{"pos":[4,0,12],"size":[4,4,4]},{"pos":[4,4,0],"size":[4,4,4]},{"pos":[4,4,12],"size":[4,4,4]},{"pos":[4,8,0],"size":[4,4,4]},{"pos":[4,8,12],"size":[4,4,4]},{"pos":[4,12,0],"size":[4,4,4]},{"pos":[4,12,4],"size":[4,4,4]},{"pos":[4,12,8],"size":[4,4,4]},{"pos":[4,12,12],"size":[4,4,4]},{"pos":[8,0,0],"size":[4,4,4]},{"pos":[8,0,4],"size":[4,4,4]},{"pos":[8,0,8],"size":[4,4,4]},{"pos":[8,0,12],"size":[4,4,4]},{"pos":[8,4,0],"size":[4,4,4]},{"pos":[8,4,12],"size":[4,4,4]},{"pos":[8,8,0],"size":[4,4,4]},{"pos":[8,8,12],"size":[4,4,4]},{"pos":[8,12,0],"size":[4,4,4]},{"pos":[8,12,4],"size":[4,4,4]},{"pos":[8,12,8],"size":[4,4,4]},{"pos":[8,12,12],"size":[4,4,4]},{"pos":[12,0,0],"size":[4,4,4]},{"pos":[12,0,4],"size":[4,4,4]},{"pos":[12,0,8],"size":[4,4,4]},{"pos":[12,0,12],"size":[4,4,4]},{"pos":[12,4,0],"size":[4,4,4]},{"pos":[12,4,4],"size":[4,4,4]},{"pos":[12,4,8],"size":[4,4,4]},{"pos":[12,4,12],"size":[4,4,4]},{"pos":[12,8,0],"size":[4,4,4]},{"pos":[12,8,4],"size":[4,4,4]},{"pos":[12,8,8],"size":[4,4,4]},{"pos":[12,8,12],"size":[4,4,4]},{"pos":[12,12,0],"size":[4,4,4]},{"pos":[12,12,4],"size":[4,4,4]},{"pos":[12,12,8],"size":[4,4,4]},{"pos":[12,12,12],"size":[4,4,4]}] // function genDebugGeo(step) {let boneCubes = [];for(let x = 0; x < 16; x += step) {for(let y = 0; y < 16; y += step) {for(let z = 0; z < 16; z += step) {if(!x || !y || !z || x == 16 - step || y == 16 - step || z == 16 - step) {boneCubes.push({ pos: [x, y, z], size: [step, step, step] });}}}}return JSON.stringify(boneCubes);}
 }

@@ -54,7 +54,7 @@
 		"unpowered_repeater": "repeater",
 		"powered_comparator": "comparator",
 		"unpowered_comparator": "comparator",
-		"observer": "observer", // bottom face is rotated
+		"observer": "observer", // top face is rotated
 		"piston": "piston{textures/entity/pistonarm/pistonArm}",
 		"sticky_piston": "piston{textures/entity/pistonarm/pistonArmSticky}",
 		"dispenser": "dispenser",
@@ -160,8 +160,8 @@
 		"melon_stem": "plant_stem",
 		"pumpkin_stem": "plant_stem",
 		"snow_layer": "top_snow",
-		"trip_wire": "tripwire",
-		"tripwire_hook": "tripwire_hook",
+		// "trip_wire": "tripwire",
+		// "tripwire_hook": "tripwire_hook",
 		"turtle_egg": "turtle_eggs",
 		"vine": "vine",
 		"flowing_lava": "liquid",
@@ -185,7 +185,7 @@
 		"frog_spawn": "carpet", // hmm
 		"calibrated_sculk_sensor": "sculk_sensor",
 		"sniffer_egg": "sniffer_egg",
-		"pink_petals": "petals",
+		"pink_petals": "pink_petals",
 		"slime": "slime_block",
 		"honey_block": "honey_block",
 		
@@ -193,5 +193,7 @@
 		"flowering_azalea": "azalea",
 		"heavy_core": "heavy_core",
 		"scaffolding": "scaffolding"
+		
+		// "dirt": "debug_auto_uv_4" // must disable geometry merging
 	}
 }

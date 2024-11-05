@@ -125,14 +125,14 @@ export default class BlockGeoMaker {
 			// block-state-driven rotations/texture variants can either be global, based on block shape, based on specific block names, or based on regular expressions for block names, hence the many variables.
 			this.#globalBlockStateRotations = blockStateDefs["rotations"]["*"];
 			this.#blockShapeBlockStateRotations = [];
-			Object.entries(blockStateDefs["rotations"]["block_shapes"]).forEach(([blockShapes, rotationDefs]) => {
+			Object.entries(blockStateDefs["rotations"]["block_shapes"] ?? {}).forEach(([blockShapes, rotationDefs]) => {
 				blockShapes.split(",").forEach(blockShape => {
 					this.#blockShapeBlockStateRotations[blockShape] = rotationDefs;
 				});
 			});
 			this.#blockNameBlockStateRotations = [];
 			this.#blockNamePatternBlockStateRotations = [];
-			Object.entries(blockStateDefs["rotations"]["block_names"]).forEach(([blockNames, rotationDefs]) => {
+			Object.entries(blockStateDefs["rotations"]["block_names"] ?? {}).forEach(([blockNames, rotationDefs]) => {
 				if(blockNames.startsWith("/") && blockNames.endsWith("/")) {
 					this.#blockNamePatternBlockStateRotations.push([new RegExp(blockNames.slice(1, -1)), rotationDefs]);
 				} else {
@@ -144,14 +144,14 @@ export default class BlockGeoMaker {
 			
 			this.#globalBlockStateTextureVariants = blockStateDefs["texture_variants"]["*"];
 			this.#blockShapeBlockStateTextureVariants = [];
-			Object.entries(blockStateDefs["texture_variants"]["block_shapes"]).forEach(([blockShapes, textureVariantDefs]) => {
+			Object.entries(blockStateDefs["texture_variants"]["block_shapes"] ?? {}).forEach(([blockShapes, textureVariantDefs]) => {
 				blockShapes.split(",").forEach(blockShape => {
 					this.#blockShapeBlockStateTextureVariants[blockShape] = textureVariantDefs;
 				});
 			});
 			this.#blockNameBlockStateTextureVariants = [];
 			this.#blockNamePatternBlockStateTextureVariants = [];
-			Object.entries(blockStateDefs["texture_variants"]["block_names"]).forEach(([blockNames, textureVariantDefs]) => {
+			Object.entries(blockStateDefs["texture_variants"]["block_names"] ?? {}).forEach(([blockNames, textureVariantDefs]) => {
 				if(blockNames.startsWith("/") && blockNames.endsWith("/")) {
 					this.#blockNamePatternBlockStateTextureVariants.push([new RegExp(blockNames.slice(1, -1)), textureVariantDefs]);
 				} else {
@@ -319,11 +319,10 @@ export default class BlockGeoMaker {
 		let boneCubes = [];
 		cubes.forEach(cube => {
 			// In MCBE most non-full-block textures look at where the part that is being rendered is in relation to the entire cube space it's in - like it's being projected onto a full face then cut out. Kinda hard to explain sorry, I recommend messing around with fence textures so you understand how it works.
-			// Pretty sure some need to be mirrored still. this includes the top of the torch
 			let westUvOffset = [cube.z, 16 - cube.y - cube.h];
 			let eastUvOffset = [16 - cube.z - cube.d, 16 - cube.y - cube.h];
-			let downUvOffset = [cube.x, cube.z]; // upside down???
-			let upUvOffset = [cube.x, cube.z];
+			let downUvOffset = [16 - cube.x - cube.w, 16 - cube.z - cube.d];
+			let upUvOffset = [16 - cube.x - cube.w, cube.z];
 			let northUvOffset = [cube.x, 16 - cube.y - cube.h];
 			let southUvOffset = [16 - cube.x - cube.w, 16 - cube.y - cube.h];
 			let boneCube = {
@@ -434,7 +433,15 @@ export default class BlockGeoMaker {
 					delete textureRef["variant"];
 				}
 				if("tint" in cube) {
-					textureRef["tint"] = hexColorToClampedTriplet(cube["tint"]);
+					let tint = cube["tint"];
+					tint = this.#interpolateInBlockValues(cube["block_override"] ?? block, tint);
+					if(tint[0] == "#") {
+						textureRef["tint"] = hexColorToClampedTriplet(tint);
+					} else {
+						// this is from cauldrons; colour is a 32-bit ARGB colour
+						let colorCode = 4294967296 + Number(tint); // 4294967296 = 2 ** 32
+						textureRef["tint"] = [colorCode >> 16 & 0xFF, colorCode >> 8 & 0xFF, colorCode & 0xFF].map(x => x / 255);
+					}
 				}
 				if(blockName == "redstone_wire") {
 					textureRef["tint"] = BlockGeoMaker.#REDSTONE_DUST_TINTS[block["states"]["redstone_signal"]];
@@ -661,7 +668,7 @@ export default class BlockGeoMaker {
 				let keys = property.match(/^\.(\w+)|\[(\d+)\]$/);
 				value = value?.[keys[1] ?? keys[2]];
 			});
-			if(slicingAndDefault) {
+			if(slicingAndDefault[0] != undefined) {
 				value = value?.slice(slicingAndDefault[1], slicingAndDefault[3] ?? (slicingAndDefault[2] == ""? undefined : slicingAndDefault[2]));
 			}
 			if(value == undefined || value == "") {

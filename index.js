@@ -110,7 +110,7 @@ document.onEvent("DOMContentLoaded", async () => {
 		if(localResourcePackFiles.length) {
 			resourcePacks.push(await new LocalResourcePack(localResourcePackFiles));
 		}
-		makePack(formData.get("structureFiles"), resourcePacks);
+		makePack(formData.getAll("structureFiles"), resourcePacks);
 	});
 	generatePackFormSubmitButton = generatePackForm.elements.namedItem("submit");
 	
@@ -158,7 +158,7 @@ async function handleLaunchFile(file) {
 		console.error(`File is not a structure file: ${file.name}`);
 		return;
 	}
-	let pack = await makePack(file);
+	let pack = await makePack([file]);
 	return pack;
 }
 async function temporarilyChangeText(el, text, duration = 2000) {
@@ -170,10 +170,11 @@ async function temporarilyChangeText(el, text, duration = 2000) {
 	el.removeAttribute("disabled");
 }
 
-async function makePack(structureFile, localResourcePacks) {
+async function makePack(structureFiles, localResourcePacks) {
 	generatePackFormSubmitButton.disabled = true;
 	
 	let formData = new FormData(generatePackForm);
+	let authors = formData.get("author").split(",").map(x => x.trim()).removeFalsies();
 	let config = {
 		IGNORED_BLOCKS: formData.get("ignoredBlocks").split(/\W/).removeFalsies(),
 		SCALE: formData.get("scale") / 100,
@@ -187,39 +188,41 @@ async function makePack(structureFile, localResourcePacks) {
 		DO_SPAWN_ANIMATION: formData.get("spawnAnimationEnabled"),
 		MATERIAL_LIST_LANGUAGE: formData.get("materialListLanguage"),
 		PACK_ICON_BLOB: formData.get("packIcon").size? formData.get("packIcon") : undefined,
-		AUTHORS: formData.get("author").split(",").map(x => x.trim()).removeFalsies(),
+		AUTHORS: authors.length? authors : undefined,
 		DESCRIPTION: formData.get("description") || undefined
 	};
 	
 	let previewCont = selectEl("#previewCont");
 	
 	let resourcePackStack = await new ResourcePackStack(localResourcePacks);
-	logger.setOriginTime(performance.now());
-	window.logger = logger;
 	
 	let pack;
 	let hp = new HoloPrint(config, resourcePackStack, previewCont);
-	if(ACTUAL_CONSOLE_LOG) {
-		pack = await hp.makePack(structureFile);
-	} else {
-		try {
+	for(let structureFile of structureFiles) {
+		logger?.setOriginTime(performance.now());
+		
+		if(ACTUAL_CONSOLE_LOG) {
 			pack = await hp.makePack(structureFile);
-		} catch(e) {
-			console.error(`Pack creation failed: ${e}`);
+		} else {
+			try {
+				pack = await hp.makePack(structureFile);
+			} catch(e) {
+				console.error(`Pack creation failed: ${e}`);
+			}
 		}
-	}
+		
+		if(IN_PRODUCTION) {
+			supabaseLogger ??= new SupabaseLogger(supabaseProjectUrl, supabaseApiKey);
+			supabaseLogger.recordStructureUsage(structureFile);
+		}
 	
-	if(IN_PRODUCTION) {
-		supabaseLogger ??= new SupabaseLogger(supabaseProjectUrl, supabaseApiKey);
-		supabaseLogger.recordStructureUsage(structureFile);
+		let downloadButton = document.createElement("button");
+		downloadButton.classList.add("importantButton");
+		downloadButton.innerText = `Download ${pack.name}`;
+		downloadButton.onclick = () => downloadBlob(pack, pack.name);
+		downloadButton.click();
+		document.body.appendChild(downloadButton);
 	}
-	
-	let downloadButton = document.createElement("button");
-	downloadButton.classList.add("importantButton");
-	downloadButton.innerText = `Download ${pack.name}`;
-	downloadButton.onclick = () => downloadBlob(pack, pack.name);
-	downloadButton.click();
-	document.body.appendChild(downloadButton);
 	
 	generatePackFormSubmitButton.disabled = false;
 	

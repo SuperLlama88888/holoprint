@@ -119,7 +119,7 @@
 				"2": [0, 180, 0], // north
 				"3": [0, -90, 0] // east
 			},
-			"minecraft:cardinal_direction": { // repeaters, comparators
+			"minecraft:cardinal_direction": { // chests, all furnaces
 				"north": [0, 0, 0],
 				"south": [0, 180, 0],
 				"east": [0, 90, 0],
@@ -150,10 +150,10 @@
 				"3": [0, 90, 0],
 				"4": [0, 180, 0],
 				"5": [0, 0, 0],
-				"6": [0, -90, 0],
-				"7": [0, 0, 0],
-				"8": [0, 90, 0],
-				"9": [0, 180, 0]
+				"6": [0, 90, 0],
+				"7": [0, 180, 0],
+				"8": [0, -90, 0],
+				"9": [0, 0, 0]
 			},
 			"minecraft:block_face": { // amethyst buds/crystals
 				"up": [0, 0, 0],
@@ -214,10 +214,18 @@
 				"facing_direction": [[90, 0, 0], [-90, 0, 0], [0, 0, 0], [0, 180, 0], [0, -90, 0], [0, 90, 0]]
 			},
 			"plant_stem": { // for melon/pumpkin stems
-				"facing_direction": [[0, 0, 0], [0, 0, 0], [0, 180, 0], [0, 0, 0], [0, 90, 0], [0, -90, 0]]
+				"facing_direction": [[0, 0, 0], [0, 0, 0], [0, 0, 0], [0, 180, 0], [0, -90, 0], [0, 90, 0]]
 			},
 			"barrel": {
 				"facing_direction": [[180, 0, 0], [0, 0, 0], [90, 0, 0], [90, 180, 0], [90, -90, 0], [90, 90, 0]]
+			},
+			"repeater,comparator": {
+				"minecraft:cardinal_direction": { // this is opposite to how it is usually
+					"north": [0, 180, 0],
+					"south": [0, 0, 0],
+					"east": [0, -90, 0],
+					"west": [0, 90, 0]
+				}
 			}
 		},
 		"block_names": {
