@@ -1,6 +1,7 @@
 import * as THREE from "https://esm.run/three@0.147"; // @bridge-editor/model-viewer uses this version :(
-import { StandaloneModelViewer } from "https://esm.run/@bridge-editor/model-viewer";
 import TextureAtlas from "./TextureAtlas.js";
+
+let StandaloneModelViewer;
 
 export default class PreviewRenderer {
 	viewer;
@@ -13,6 +14,8 @@ export default class PreviewRenderer {
 	 */
 	constructor(cont, textureAtlas, geo, animations) {
 		return (async () => {
+			StandaloneModelViewer ??= (await import("https://esm.run/@bridge-editor/model-viewer")).StandaloneModelViewer;
+			
 			let can = document.createElement("canvas");
 			let imageBlob = textureAtlas.imageBlobs.at(-1)[1];
 			let imageUrl = URL.createObjectURL(imageBlob);
