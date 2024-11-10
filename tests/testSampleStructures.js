@@ -88,10 +88,9 @@ async function test() {
 	});
 	
 	await page.evaluate(async testStructurePaths => {
-		const { default: HoloPrint } = await import("./HoloPrint.js");
+		const HoloPrint = await import("./HoloPrint.js");
 		let totalTime = 0;
 		let packsCreated = 0;
-		let hp = new HoloPrint();
 		for(let structurePath of testStructurePaths) {
 			let structureFileName = structurePath.substring(structurePath.lastIndexOf("/") + 1);
 			console.group(`Testing ${structureFileName}...`);
@@ -99,7 +98,7 @@ async function test() {
 			let pack;
 			let startTime = performance.now();
 			try {
-				pack = await hp.makePack(structureFile);
+				pack = await HoloPrint.makePack(structureFile);
 			} catch(e) {
 				console.error(`Failed to generate pack: ${e}, ${e.stack}`);
 			}

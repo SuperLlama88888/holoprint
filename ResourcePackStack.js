@@ -15,6 +15,7 @@ export default class ResourcePackStack {
 	hash;
 	cacheName;
 	#localResourcePacks;
+	 /** @type {VanillaDataFetcher} */
 	#vanillaDataFetcher;
 	#cache;
 	
@@ -40,6 +41,11 @@ export default class ResourcePackStack {
 		})();
 	}
 	
+	/**
+	 * Fetches data from the root directory of Mojang/bedrock-samples.
+	 * @param {String} filePath 
+	 * @returns {Promise<Response>}
+	 */
 	async fetchData(filePath) {
 		return this.#vanillaDataFetcher.fetch(filePath);
 	}

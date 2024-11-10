@@ -1,5 +1,5 @@
 import { selectEl, downloadBlob, sleep, selectEls } from "./essential.js";
-import HoloPrint from "./HoloPrint.js";
+import * as HoloPrint from "./HoloPrint.js";
 import SimpleLogger from "./SimpleLogger.js";
 import SupabaseLogger from "./SupabaseLogger.js";
 
@@ -188,7 +188,7 @@ async function makePack(structureFiles, localResourcePacks) {
 		DO_SPAWN_ANIMATION: formData.get("spawnAnimationEnabled"),
 		MATERIAL_LIST_LANGUAGE: formData.get("materialListLanguage"),
 		PACK_ICON_BLOB: formData.get("packIcon").size? formData.get("packIcon") : undefined,
-		AUTHORS: authors.length? authors : undefined,
+		AUTHORS: authors,
 		DESCRIPTION: formData.get("description") || undefined
 	};
 	
@@ -197,15 +197,14 @@ async function makePack(structureFiles, localResourcePacks) {
 	let resourcePackStack = await new ResourcePackStack(localResourcePacks);
 	
 	let pack;
-	let hp = new HoloPrint(config, resourcePackStack, previewCont);
 	for(let structureFile of structureFiles) {
 		logger?.setOriginTime(performance.now());
 		
 		if(ACTUAL_CONSOLE_LOG) {
-			pack = await hp.makePack(structureFile);
+			pack = await HoloPrint.makePack(structureFile, config, resourcePackStack, previewCont);
 		} else {
 			try {
-				pack = await hp.makePack(structureFile);
+				pack = await HoloPrint.makePack(structureFile, config, resourcePackStack, previewCont);
 			} catch(e) {
 				console.error(`Pack creation failed: ${e}`);
 			}
