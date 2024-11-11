@@ -31,6 +31,8 @@ import ResourcePackStack from "./ResourcePackStack.js";
  * @property {Blob} PACK_ICON_BLOB Blob for `pack_icon.png`
  * @property {Array<String>} AUTHORS
  * @property {String|undefined} DESCRIPTION
+ * @property {Number} PREVIEW_BLOCK_LIMIT The maximum number of blocks a structure can have for rendering a preview
+ * @property {Boolean} SHOW_PREVIEW_SKYBOX
  */
 
 export const IGNORED_BLOCKS = ["air", "piston_arm_collision", "sticky_piston_arm_collision"]; // blocks to be ignored when scanning the structure file
@@ -579,8 +581,8 @@ export async function makePack(structureFile, config = {}, resourcePackStack, pr
 	});
 	console.info(`Finished creating pack in ${(performance.now() - startTime).toFixed(0) / 1000}s!`);
 	
-	if(totalBlocks < 1000 && previewCont) {
-		new PreviewRenderer(previewCont, textureAtlas, hologramGeo, hologramAnimations); // is async but we won't wait for it
+	if(totalBlocks < config.PREVIEW_BLOCK_LIMIT && previewCont) {
+		(new PreviewRenderer(previewCont, textureAtlas, hologramGeo, hologramAnimations, config.SHOW_PREVIEW_SKYBOX)).catch(e => console.error("Preview renderer error:", e)); // is async but we won't wait for it
 	}
 	
 	return new File([zippedPack], `${structureName}.holoprint.mcpack`);
@@ -642,7 +644,9 @@ function addDefaultConfig(config) {
 			MATERIAL_LIST_LANGUAGE: "en_US",
 			PACK_ICON_BLOB: undefined,
 			AUTHORS: [],
-			DESCRIPTION: undefined
+			DESCRIPTION: undefined,
+			PREVIEW_BLOCK_LIMIT: 1000,
+			SHOW_PREVIEW_SKYBOX: true
 		},
 		...config,
 		...{ // overrides (applied after)
