@@ -11,8 +11,9 @@ export default class PreviewRenderer {
 	 * @param {TextureAtlas} textureAtlas
 	 * @param {Object} geo Contents of the `.geo.json` file
 	 * @param {Object} animations Contents of the `.animation.json` file
+	 * @param {Boolean} [showSkybox] If the skybox should show or not
 	 */
-	constructor(cont, textureAtlas, geo, animations) {
+	constructor(cont, textureAtlas, geo, animations, showSkybox = true) {
 		return (async () => {
 			StandaloneModelViewer ??= (await import("https://esm.run/@bridge-editor/model-viewer")).StandaloneModelViewer;
 			
@@ -22,10 +23,15 @@ export default class PreviewRenderer {
 			this.viewer = new StandaloneModelViewer(can, geo["minecraft:geometry"][0], imageUrl, {
 				width: window.innerWidth * 0.4,
 				height: window.innerWidth * 0.4,
-				antialias: true
+				antialias: true,
+				alpha: !showSkybox
 			});
 			this.#addLighting();
-			await this.#addSkybox();
+			if(showSkybox) {
+				await this.#addSkybox();
+			} else {
+				this.viewer.scene.background = null;
+			}
 			await this.viewer.loadedModel;
 			URL.revokeObjectURL(imageUrl);
 			this.viewer.positionCamera(1.7);

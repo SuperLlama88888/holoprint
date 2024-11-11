@@ -14,6 +14,15 @@ const browserEngine = process.argv[2]?.toLowerCase() ?? function() {
 	return "chrome";
 }();
 
+const packUploadDir = path.join(__dirname, "completedPacks");
+if(!fs.existsSync(packUploadDir)) {
+	fs.mkdirSync(packUploadDir);
+}
+const screenshotUploadDir = path.join(__dirname, "screenshots");
+if(!fs.existsSync(screenshotUploadDir)) {
+	fs.mkdirSync(screenshotUploadDir);
+}
+
 test();
 
 async function test() {
@@ -21,8 +30,19 @@ async function test() {
 	
 	let server = http.createServer((req, res) => {
 		if(req.method == "GET") {
-			if(req.url == "/") { // Blank page for Puppeteer
-				res.writeHead(200, plainTextHeaders);
+			if(req.url == "/") { // tests will be run on this
+				res.writeHead(200, {
+					"Content-Type": "text/html"
+				});
+				res.write(`
+					<!DOCTYPE html>
+					<html>
+						<head></head>
+						<body style="background: transparent;">
+							<div id="previewCont"></div>
+						</body>
+					</html>
+				`);
 				res.end();
 				return;
 			}
@@ -41,12 +61,7 @@ async function test() {
 				});
 				fileStream.pipe(res);
 			});
-		} else if(req.method == "POST") {
-			let uploadDir = path.join(__dirname, "completedPacks");
-			if(!fs.existsSync(uploadDir)) {
-				fs.mkdirSync(uploadDir);
-			}
-			
+		} else if(req.method == "POST") { // a completed pack is being uploaded
 			let dataChunks = [];
 			req.on("data", chunk => {
 				dataChunks.push(chunk);
@@ -55,9 +70,21 @@ async function test() {
 			req.on("end", () => {
 				let fileBuffer = Buffer.concat(dataChunks);
 				let fileName = req.headers["content-location"];
-				let filePath = path.join(uploadDir, fileName);
+				let filePath = path.join(packUploadDir, fileName);
 				
-				fs.writeFile(filePath, fileBuffer, err => {
+				fs.writeFile(filePath, fileBuffer, async err => {
+					if(browserEngine == "chrome") {
+						try {
+							let previewImage = await page.waitForSelector("#previewCont > canvas:last-child");
+							await previewImage?.screenshot({
+								path: path.join(screenshotUploadDir, `${fileName.slice(0, fileName.indexOf("."))}.png`),
+								omitBackground: true
+							});
+						} catch(e) {
+							console.error(`Failed to get screenshot for completed pack ${filePath}:`, e);
+						}
+					}
+					
 					if(err) {
 						ghActionsCore.error(`Failed to save file to ${filePath}: ${err}`);
 						res.writeHead(500, plainTextHeaders);
@@ -75,8 +102,8 @@ async function test() {
 		console.log("Server listening on http://localhost:8080!");
 	});
 	
-	let status = {};
-	let { browser, page } = await setupBrowserAndPage(status); // we modify status.passedTest inside this function so we need to pass a reference
+	let status = {}; // we modify status.passedTest inside this function so we need to pass a reference
+	var { browser, page } = await setupBrowserAndPage(status); // yes I am using var here. this is so the page can be interacted with in the server code. otherwise I'd have to deal with janky vscode un-intelli-sense.
 	
 	// Evaluate the class and run the code
 	let testStructurePaths = [];
@@ -87,44 +114,49 @@ async function test() {
 		testStructurePaths.push(path.join("tests", "sampleStructures", filePath));
 	});
 	
-	await page.evaluate(async testStructurePaths => {
-		const HoloPrint = await import("./HoloPrint.js");
-		let totalTime = 0;
-		let packsCreated = 0;
-		for(let structurePath of testStructurePaths) {
-			let structureFileName = structurePath.substring(structurePath.lastIndexOf("/") + 1);
-			console.group(`Testing ${structureFileName}...`);
-			let structureFile = new File([await fetch(structurePath).then(res => res.blob())], structureFileName);
-			let pack;
-			let startTime = performance.now();
-			try {
-				pack = await HoloPrint.makePack(structureFile);
-			} catch(e) {
-				console.error(`Failed to generate pack: ${e}, ${e.stack}`);
-			}
-			totalTime += performance.now() - startTime;
+	let totalTime = 0;
+	let packsCreated = 0;
+	for(let structurePath of testStructurePaths) {
+		await page.reload();
+		try {
+			totalTime += await page.evaluate(async (structurePath, browserEngine) => {
+				const HoloPrint = await import("../HoloPrint.js");
+				
+				let structureFileName = structurePath.substring(structurePath.lastIndexOf("/") + 1);
+				console.group(`Testing ${structureFileName}...`);
+				let previewCont = document.querySelector("#previewCont");
+				let structureFile = new File([await fetch(structurePath).then(res => res.blob())], structureFileName);
+				let startTime = performance.now();
+				let pack = await HoloPrint.makePack(structureFile, {
+					DO_SPAWN_ANIMATION: false,
+					PREVIEW_BLOCK_LIMIT: browserEngine == "chrome"? Infinity : 0, // preview renderer doesn't work on headless Firefox
+					SHOW_PREVIEW_SKYBOX: false
+				}, undefined, previewCont);
+				let elapsedTime = performance.now() - startTime;
+				
+				try {
+					await fetch("/", {
+						method: "POST",
+						body: pack,
+						headers: {
+							"Content-Type": pack.type,
+							"Content-Location": pack.name
+						}
+					});
+				} catch(e) {
+					console.error(`Failed to upload pack: ${e}, ${e.stack}`);
+				}
+				
+				return elapsedTime;
+			}, structurePath, browserEngine);
 			packsCreated++;
-			if(!pack) {
-				continue;
-			}
-			console.groupEnd();
-			
-			try {
-				await fetch("/", {
-					method: "POST",
-					body: pack,
-					headers: {
-						"Content-Type": pack.type,
-						"Content-Location": pack.name
-					}
-				});
-			} catch(e) {
-				console.error(`Failed to upload pack: ${e}, ${e.stack}`);
-			}
+		} catch(e) {
+			console.error(`Failed to generate pack: ${e}, ${e.stack}`);
 		}
-		let timePerPack = totalTime / packsCreated;
-		console.info(`Finished creating ${packsCreated}/${testStructurePaths.length} resource packs in ${totalTime.toFixed(0) / 1000}s (${timePerPack.toFixed(0) / 1000}s/pack)!`);
-	}, testStructurePaths);
+		ghActionsCore.endGroup();
+	}
+	let timePerPack = totalTime / packsCreated;
+	console.info(`Finished creating ${packsCreated}/${testStructurePaths.length} resource packs in ${totalTime.toFixed(0) / 1000}s (${timePerPack.toFixed(0) / 1000}s/pack)!`);
 	
 	await browser.close();
 	
@@ -147,6 +179,10 @@ async function setupBrowserAndPage(status) {
 	});
 	
 	let page = await browser.newPage();
+	page.setViewport({ // bigger for screenshots
+		width: 1920,
+		height: 1080
+	});
 	page.on("console", log => {
 		let logOrigin = log.location()?.url;
 		let logText = log.text();
