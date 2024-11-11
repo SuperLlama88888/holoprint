@@ -263,6 +263,11 @@ export default class BlockGeoMaker {
 			let cube = unfilteredCubes.shift();
 			if("block_states" in cube) {
 				let blockOverride = structuredClone(block);
+				for(let blockStateName in cube["block_states"]) {
+					if(typeof cube["block_states"][blockStateName] == "string") {
+						cube["block_states"][blockStateName] = this.#interpolateInBlockValues(block, cube["block_states"][blockStateName]);
+					}
+				}
 				blockOverride["states"] = { ...blockOverride["states"], ...cube["block_states"] };
 				cube["block_override"] = blockOverride;
 			}
@@ -396,8 +401,9 @@ export default class BlockGeoMaker {
 			let textureSize = cube["texture_size"] ?? [16, 16];
 			// add generic keys to all faces, and convert texture references into indices
 			for(let faceName in boneCube["uv"]) {
+				let isSideFace = ["west", "east", "north", "south"].includes(faceName);
 				let face = boneCube["uv"][faceName];
-				let textureFace = cube["textures"]?.[faceName] ?? (["west", "east", "north", "south"].includes(faceName)? cube["textures"]?.["side"] : undefined) ?? cube["textures"]?.["*"] ?? faceName;
+				let textureFace = cube["textures"]?.[faceName] ?? (isSideFace? cube["textures"]?.["side"] : undefined) ?? cube["textures"]?.["*"] ?? faceName;
 				if(textureFace == "none") {
 					delete boneCube["uv"][faceName];
 					continue;
@@ -448,7 +454,13 @@ export default class BlockGeoMaker {
 				}
 				
 				this.textureRefs.add(textureRef);
-				boneCube["uv"][faceName] = this.textureRefs.indexOf(textureRef);
+				let flipTextureHorizontally = cube["flip_textures_horizontally"]?.includes(faceName) || (isSideFace && cube["flip_textures_horizontally"]?.includes("side")) || cube["flip_textures_horizontally"]?.includes("*");
+				let flipTextureVertically = cube["flip_textures_vertically"]?.includes(faceName) || (isSideFace && cube["flip_textures_vertically"]?.includes("side")) || cube["flip_textures_vertically"]?.includes("*");
+				boneCube["uv"][faceName] = {
+					"index": this.textureRefs.indexOf(textureRef),
+					"flip_horizontally": (faceName == "down" || faceName == "up") ^ flipTextureHorizontally, // in MC the down/up faces are rotated 180 degrees compared to how they are in geometry; this can be faked by flipping both axes. I don't want to use uv_rotation since that's a 1.21 thing and I want support back to 1.16.
+					"flip_vertically": (faceName == "down" || faceName == "up") ^ flipTextureVertically
+				};
 			}
 			
 			if("rot" in cube) {
@@ -526,6 +538,20 @@ export default class BlockGeoMaker {
 		}
 		let blockShape = this.#getBlockShape(blockName); // In copied block shapes, we want to look at the original block shape's texture variants, not the copied's. E.g. With candle_cake, we don't want the cake that is copied to look at the texture variants for cake (which includes bite_counter).
 		let blockShapeSpecificVariants = this.#blockShapeBlockStateTextureVariants[blockShape];
+		if(blockShapeSpecificVariants?.["#exclusive_add"]) {
+			let variant = 0;
+			Object.entries(block["states"]).forEach(([blockStateName, blockStateValue]) => {
+				if(blockStateName in blockShapeSpecificVariants) {
+					let blockStateVariants = blockShapeSpecificVariants[blockStateName];
+					if(!(blockStateValue in blockStateVariants)) {
+						console.error(`Block state value ${blockStateValue} for texture-variating block state ${blockStateName} not found...`);
+						return;
+					}
+					variant += blockStateVariants[blockStateValue];
+				}
+			});
+			return variant;
+		}
 		let blockNameSpecificVariants = this.#blockNameBlockStateTextureVariants[blockName] ?? this.#blockNamePatternBlockStateTextureVariants.find(([pattern]) => pattern.test(blockName))?.[1];
 		if(blockNameSpecificVariants?.["#exclusive_add"]) {
 			let variant = 0;
@@ -671,7 +697,7 @@ export default class BlockGeoMaker {
 			if(slicingAndDefault[0] != undefined) {
 				value = value?.slice(slicingAndDefault[1], slicingAndDefault[3] ?? (slicingAndDefault[2] == ""? undefined : slicingAndDefault[2]));
 			}
-			if(value == undefined || value == "") {
+			if(value == undefined || value === "") {
 				if(slicingAndDefault[4] != undefined) {
 					let defaultValue = slicingAndDefault[4];
 					if(/SET_WHOLE_STRING\([^)]+\)/.test(defaultValue)) {

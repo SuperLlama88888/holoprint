@@ -117,35 +117,38 @@ export async function makePack(structureFile, config = {}, resourcePackStack, pr
 	console.log("Texture UVs:", textureAtlas.textures);
 	boneTemplatePalette.forEach(boneTemplate => {
 		boneTemplate["cubes"].forEach(cube => {
-			Object.keys(cube["uv"]).forEach(face => {
-				let i = cube["uv"][face];
-				let imageUv = textureAtlas.textures[i];
-				if(face == "down" || face == "up") { // in MC the down/up faces are rotated 180 degrees compared to how they are in geometry; this can be faked by flipping both axes. I don't want to use uv_rotation since that's a 1.21 thing and I want support back to 1.16.
-					imageUv = {
-						...imageUv,
-						uv: [imageUv["uv"][0] + imageUv["uv_size"][0], imageUv["uv"][1] + imageUv["uv_size"][1]],
-						uv_size: [-imageUv["uv_size"][0], -imageUv["uv_size"][1]]
-					};
+			Object.keys(cube["uv"]).forEach(faceName => {
+				let face = cube["uv"][faceName];
+				let imageUv = structuredClone(textureAtlas.textures[face["index"]]);
+				if(face["flip_horizontally"]) {
+					imageUv["uv"][0] += imageUv["uv_size"][0];
+					imageUv["uv_size"][0] *= -1;
 				}
-				cube["uv"][face] = {
+				if(face["flip_vertically"]) {
+					imageUv["uv"][1] += imageUv["uv_size"][1];
+					imageUv["uv_size"][1] *= -1;
+				}
+				cube["uv"][faceName] = {
 					"uv": imageUv["uv"],
 					"uv_size": imageUv["uv_size"]
 				};
 				if("crop" in imageUv) {
 					let crop = imageUv["crop"];
+					let cropXRem = 1 - crop["w"] - crop["x"]; // remaining horizontal space on the other side of the cropped region
+					let cropYRem = 1 - crop["h"] - crop["y"];
 					if(cube["size"][0] == 0) {
-						cube["origin"][2] += cube["size"][2] * crop["x"];
-						cube["origin"][1] += cube["size"][1] * (1 - crop["h"] - crop["y"]); // the latter term gives the distance from the bottom of the texture, which is upwards direction in 3D space.
+						cube["origin"][2] += cube["size"][2] * (face["flip_horizontally"]? cropXRem : crop["x"]);
+						cube["origin"][1] += cube["size"][1] * (face["flip_vertically"]? crop["y"] : cropYRem); // the latter term is the distance from the bottom of the texture, which is upwards direction in 3D space.
 						cube["size"][2] *= crop["w"];
 						cube["size"][1] *= crop["h"];
 					} else if(cube["size"][1] == 0) {
-						cube["origin"][0] += cube["size"][0] * (1 - crop["w"] - crop["x"]);
-						cube["origin"][2] += cube["size"][2] * (1 - crop["h"] - crop["y"]);
+						cube["origin"][0] += cube["size"][0] * (face["flip_horizontally"]? cropXRem : crop["x"]);
+						cube["origin"][2] += cube["size"][2] * (face["flip_vertically"]? cropYRem: crop["y"]);
 						cube["size"][0] *= crop["w"];
 						cube["size"][2] *= crop["h"];
 					} else if(cube["size"][2] == 0) {
-						cube["origin"][0] += cube["size"][0] * crop["x"];
-						cube["origin"][1] += cube["size"][1] * (1 - crop["h"] - crop["y"]);
+						cube["origin"][0] += cube["size"][0] * (face["flip_horizontally"]? cropXRem : crop["x"]);
+						cube["origin"][1] += cube["size"][1] * (face["flip_vertically"]? crop["y"] : cropYRem);
 						cube["size"][0] *= crop["w"];
 						cube["size"][1] *= crop["h"];
 					} else {

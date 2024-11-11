@@ -59,6 +59,7 @@
 		"sticky_piston": "piston{textures/entity/pistonarm/pistonArmSticky}",
 		"dispenser": "dispenser",
 		"dropper": "dispenser",
+		"crafter": "crafter",
 		"barrel": "barrel",
 		
 		"furnace": "furnace",
@@ -160,8 +161,8 @@
 		"melon_stem": "plant_stem",
 		"pumpkin_stem": "plant_stem",
 		"snow_layer": "top_snow",
-		// "trip_wire": "tripwire",
-		// "tripwire_hook": "tripwire_hook",
+		"trip_wire": "tripwire",
+		"tripwire_hook": "tripwire_hook",
 		"turtle_egg": "turtle_eggs",
 		"vine": "vine",
 		"flowing_lava": "liquid",
@@ -192,7 +193,10 @@
 		"azalea": "azalea",
 		"flowering_azalea": "azalea",
 		"heavy_core": "heavy_core",
-		"scaffolding": "scaffolding"
+		"scaffolding": "scaffolding",
+		"big_dripleaf": "big_dripleaf",
+		"small_dripleaf_block": "small_dripleaf",
+		"spore_blossom": "spore_blossom"
 		
 		// "dirt": "debug_auto_uv_4" // must disable geometry merging
 	}

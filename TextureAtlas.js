@@ -401,7 +401,7 @@ export default class TextureAtlas {
 					"w": w / old.w,
 					"h": h / old.h
 				};
-				console.debug(`Cropped image ${texturePath} to`, crop);
+				console.debug(`Cropped part of image ${texturePath} to`, crop);
 			}
 			let imageFragment = {
 				"image": image,
