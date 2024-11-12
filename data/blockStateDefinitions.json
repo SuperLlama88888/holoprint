@@ -50,6 +50,9 @@
 				"#exclusive_add": true,
 				"triggered_bit": [0, 1],
 				"crafting": [0, 2]
+			},
+			"chorus_flower": {
+				"age": [0, 0, 0, 0, 0, 1]
 			}
 		},
 		"block_names": {
