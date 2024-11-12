@@ -216,6 +216,9 @@ export default class BlockGeoMaker {
 			if("pivot" in boneCube) {
 				boneCube["pivot"] = boneCube["pivot"].map((x, i) => x + blockPos[i]);
 			}
+			boneCube["extra_rots"]?.forEach(extraRot => {
+				extraRot["pivot"] = extraRot["pivot"].map((x, i) => x + blockPos[i]);
+			});
 		});
 		if("pivot" in bone) {
 			bone["pivot"] = bone["pivot"].map((x, i) => x + blockPos[i]);
@@ -286,7 +289,7 @@ export default class BlockGeoMaker {
 					console.error(`Could not find geometry for block shape ${blockShape}; defaulting to "block"`);
 					copiedCubes = structuredClone(this.#blockShapeGeos["block"]);
 				}
-				let fieldsToCopy = Object.keys(cube).filter(field => !["copy", "translate"].includes(field));
+				let fieldsToCopy = Object.keys(cube).filter(field => !["copy", "rot", "pivot", "translate"].includes(field));
 				copiedCubes.forEach(copiedCube => {
 					if("translate" in cube) {
 						copiedCube["translate"] = (copiedCube["translate"] ?? [0, 0, 0]).map((x, i) => x + cube["translate"][i]);
@@ -298,6 +301,20 @@ export default class BlockGeoMaker {
 							copiedCube[field] ??= cube[field];
 						}
 					});
+					if("rot" in cube) {
+						if("rot" in copiedCube) {
+							// maths for combining both rotations is hard so we handle it differently and create a list of extra rotations.
+							// HoloPrint.js will create a wrapper bone for each rotation
+							copiedCube["extra_rots"] ??= [];
+							copiedCube["extra_rots"].push({
+								"rot": cube["rot"],
+								"pivot": cube["pivot"] ?? [8, 8, 8]
+							});
+						} else {
+							copiedCube["rot"] = cube["rot"];
+							copiedCube["pivot"] = cube["pivot"] ?? copiedCube["pivot"];
+						}
+					}
 				});
 				unfilteredCubes.push(...copiedCubes);
 			} else {
@@ -467,10 +484,18 @@ export default class BlockGeoMaker {
 				boneCube["rotation"] = cube["rot"];
 				boneCube["pivot"] = cube["pivot"] ?? [8, 8, 8]; // we set the pivot for this cube to be the center of it. if we don't specify this it would look at the pivot for the bone, which would be different if we're doing our fancy animations.
 			}
+			if("extra_rots" in cube) {
+				boneCube["extra_rots"] = cube["extra_rots"];
+			}
 			if("translate" in cube) {
 				boneCube["origin"] = boneCube["origin"].map((x, i) => x + cube["translate"][i]);
 				if("rot" in cube) {
 					boneCube["pivot"] = boneCube["pivot"].map((x, i) => x + cube["translate"][i]);
+				}
+				if("extra_rots" in cube) {
+					boneCube["extra_rots"].forEach(extraRot => {
+						extraRot["pivot"] = extraRot["pivot"].map((x, i) => x + cube["translate"][i]);
+					});
 				}
 			}
 			boneCube = this.#scaleBoneCube(boneCube);
@@ -595,6 +620,11 @@ export default class BlockGeoMaker {
 		boneCube["size"] = boneCube["size"].map(x => x * this.config.SCALE);
 		if("pivot" in boneCube) {
 			boneCube["pivot"] = boneCube["pivot"].map(x => (x - 8) * this.config.SCALE + 8);
+		}
+		if("extra_rots" in boneCube) {
+			boneCube["extra_rots"].forEach(extraRot => {
+				extraRot["pivot"] = extraRot["pivot"].map(x => (x - 8) * this.config.SCALE + 8);
+			});
 		}
 		return boneCube;
 	}

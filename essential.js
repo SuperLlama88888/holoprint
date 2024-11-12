@@ -257,3 +257,22 @@ export class JSONSet extends Set {
 		return JSON.parse(value, this.#reviver);
 	}
 }
+export class JSONMap extends Map { // very barebones
+	#replacer;
+	constructor(replacer) {
+		super();
+		this.#replacer = replacer;
+	}
+	get(key) {
+		return super.get(this.#stringify(key));
+	}
+	has(key) {
+		return super.has(this.#stringify(key));
+	}
+	set(key, value) {
+		return super.set(this.#stringify(key), value)
+	}
+	#stringify(value) {
+		return JSON.stringify(value, this.#replacer);
+	}
+}

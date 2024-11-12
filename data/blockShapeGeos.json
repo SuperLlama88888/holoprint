@@ -3103,9 +3103,9 @@
 		{
 			"if": "entity.hasBook ?? 0 == 1",
 			"copy": "template_book",
-			// "rot": [67.5, 0, 0], //TODO URGENT FIX BOOK
-			// "pivot": [8, 0, 8],
-			"translate": [0, 17, 0]
+			"rot": [-22.5, 0, 0],
+			"pivot": [8, 0, 10],
+			"translate": [0, 15.2, 2]
 		}
 	],
 	"big_dripleaf": [

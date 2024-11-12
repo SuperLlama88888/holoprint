@@ -6,7 +6,7 @@ import TextureAtlas from "./TextureAtlas.js";
 import MaterialList from "./MaterialList.js";
 import PreviewRenderer from "./PreviewRenderer.js";
 
-import { abs, awaitAllEntries, blobToImage, max, min, pi, sha256, sha256text } from "./essential.js";
+import { abs, awaitAllEntries, blobToImage, JSONMap, max, min, pi, sha256, sha256text } from "./essential.js";
 import ResourcePackStack from "./ResourcePackStack.js";
 
 /**
@@ -250,9 +250,10 @@ export async function makePack(structureFile, config = {}, resourcePackStack, pr
 		
 		for(let x = 0; x < structureSize[0]; x++) {
 			for(let z = 0; z < structureSize[2]; z++) {
-				let i = (x * structureSize[1] + y) * structureSize[2] + z;
+				let blockI = (x * structureSize[1] + y) * structureSize[2] + z;
+				let firstBoneForThisBlock = true;
 				blockPaletteIndicesByLayer.forEach((blockPaletteIndices, layerI) => {
-					let paletteI = blockPaletteIndices[i];
+					let paletteI = blockPaletteIndices[blockI];
 					if(!(paletteI in boneTemplatePalette)) {
 						if(paletteI in blockPalette) {
 							console.error(`A bone template wasn't made for blockPalette[${paletteI}] = ${blockPalette[paletteI]["name"]}!`);
@@ -263,22 +264,50 @@ export async function makePack(structureFile, config = {}, resourcePackStack, pr
 					// console.table({x, y, z, i, paletteI, boneTemplate});
 					
 					let boneName = `b_${x}_${y}_${z}`;
-					let firstBoneForThisBlock = true;
-					if(boneName == hologramGeo["minecraft:geometry"][0]["bones"].at(-1)["name"]) {
+					if(!firstBoneForThisBlock) {
 						boneName += `_${layerI}`;
-						firstBoneForThisBlock = false;
 					}
 					let bonePos = [-16 * x - 8, 16 * y, 16 * z - 8]; // I got these values from trial and error with blockbench (which makes the x negative I think. it's weird.)
 					let positionedBoneTemplate = blockGeoMaker.positionBoneTemplate(boneTemplate, bonePos);
-					hologramGeo["minecraft:geometry"][0]["bones"].push({
+					let bonesToAdd = [{
 						"name": boneName,
 						"parent": layerName,
 						...positionedBoneTemplate
+					}];
+					let rotWrapperBones = new JSONMap();
+					let extraRotCounter = 0;
+					bonesToAdd[0]["cubes"] = bonesToAdd[0]["cubes"].filter(cube => {
+						if("extra_rots" in cube) { // cubes that copy with rotation in both the cube and the copied cube need wrapper bones to handle multiple rotations
+							let extraRots = cube["extra_rots"];
+							delete cube["extra_rots"];
+							if(!rotWrapperBones.has(extraRots)) { // some rotations may be the same, so we use a map to cache the wrapper bone this cube should be added to
+								let wrapperBones = [];
+								let parentBoneName = boneName;
+								extraRots.forEach(extraRot => {
+									let wrapperBoneName = `${boneName}_rot_wrapper_${extraRotCounter++}`;
+									wrapperBones.push({
+										"name": wrapperBoneName,
+										"parent": parentBoneName,
+										"cubes": [],
+										"rotation": extraRot["rot"],
+										"pivot": extraRot["pivot"]
+									});
+									parentBoneName = wrapperBoneName;
+								});
+								bonesToAdd.push(...wrapperBones);
+								rotWrapperBones.set(extraRots, wrapperBones.at(-1));
+							}
+							rotWrapperBones.get(extraRots)["cubes"].push(cube);
+							return false;
+						} else {
+							return true;
+						}
 					});
+					hologramGeo["minecraft:geometry"][0]["bones"].push(...bonesToAdd);
+					
 					if(firstBoneForThisBlock) { // we only need 1 locator for each block position, even though there may be 2 bones in this position because of the 2nd layer
 						hologramGeo["minecraft:geometry"][0]["bones"][1]["locators"][boneName] = bonePos.map(x => x + 8);
 					}
-					
 					if(config.DO_SPAWN_ANIMATION) {
 						hologramAnimations["animations"]["animation.armor_stand.hologram.spawn"]["bones"][boneName] = makeHologramSpawnAnimation(x, y, z);
 					}
@@ -287,7 +316,6 @@ export async function makePack(structureFile, config = {}, resourcePackStack, pr
 					if(!config.IGNORED_MATERIAL_LIST_BLOCKS.includes(blockName)) {
 						materialList.add(blockName);
 					}
-					
 					if(layerI == 0) { // particle_expire_if_in_blocks only works on the first layer :(
 						blocksToValidate.push({
 							"bone_name": boneName,
@@ -296,6 +324,7 @@ export async function makePack(structureFile, config = {}, resourcePackStack, pr
 						});
 						uniqueBlocksToValidate.add(blockName);
 					}
+					firstBoneForThisBlock = false;
 				});
 			}
 		}
