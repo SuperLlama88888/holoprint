@@ -397,10 +397,107 @@
 			"size": [3, 16, 16]
 		}
 	],
+	"template_book": [
+		{
+			"pos": [1, 0, 3],
+			"size": [6, 0, 10],
+			"rot": [0, 0, 4.0563],
+			"pivot": [7, 0, 8],
+			"textures": {
+				"*": "textures/entity/enchanting_table_book"
+			},
+			"uv": {
+				"*": [0, 0]
+			},
+			"texture_size": [64, 32]
+		},
+		{
+			"pos": [9, 0, 3],
+			"size": [6, 0, 10],
+			"rot": [0, 0, -4.0563],
+			"pivot": [9, 0, 8],
+			"textures": {
+				"*": "textures/entity/enchanting_table_book"
+			},
+			"uv": {
+				"*": [16, 0]
+			},
+			"texture_size": [64, 32]
+		},
+		{
+			"pos": [7, 0, 3],
+			"size": [2, 0, 10],
+			"textures": {
+				"*": "textures/entity/enchanting_table_book"
+			},
+			"uv": {
+				"*": [12, 0]
+			},
+			"texture_size": [64, 32]
+		},
+		{
+			"pos": [3, 0, 4],
+			"size": [5, 1, 8],
+			"rot": [0, 0, 4.0563],
+			"pivot": [8, 1, 8],
+			"textures": {
+				"*": "textures/entity/enchanting_table_book",
+				"down": "none"
+			},
+			"uv": {
+				"*": [1, 11]
+			},
+			"texture_size": [64, 32]
+		},
+		{
+			"pos": [8, 0, 4],
+			"size": [5, 1, 8],
+			"rot": [0, 0, -4.0563],
+			"pivot": [8, 1, 8],
+			"textures": {
+				"*": "textures/entity/enchanting_table_book",
+				"down": "none"
+			},
+			"uv": {
+				"*": [1, 11]
+			},
+			"texture_size": [64, 32]
+		},
+		{
+			"pos": [3, 1, 4],
+			"size": [5, 0, 8],
+			"rot": [0, 0, 24.3380],
+			"pivot": [8, 1, 8],
+			"textures": {
+				"*": "textures/entity/enchanting_table_book"
+			},
+			"uv": {
+				"*": [1, 11]
+			},
+			"texture_size": [64, 32]
+		},
+		{
+			"pos": [8, 1, 4],
+			"size": [5, 0, 8],
+			"rot": [0, 0, -24.3380],
+			"pivot": [8, 1, 8],
+			"textures": {
+				"*": "textures/entity/enchanting_table_book"
+			},
+			"uv": {
+				"*": [1, 11]
+			},
+			"texture_size": [64, 32]
+		}
+	],
 	"enchanting_table": [
 		{
 			"pos": [0, 0, 0],
-			"size": [16, 12, 16] // TODO: add book. look at these sources from Java: net/minecraft/client/renderer/blockentity/EnchantTableRenderer.java, net/minecraft/world/level/block/entity/EnchantmentTableBlockEntity.java, net/minecraft/client/model/BookModel.java
+			"size": [16, 12, 16]
+		},
+		{
+			"copy": "template_book",
+			"translate": [0, 13, 0]
 		}
 	],
 	"carpet": [
@@ -511,11 +608,179 @@
 			}
 		}
 	],
-	"pink_petals": [ // todo: add stems. the actual model has each petal at a different height but that's too much :(
+	"template_pink_petal_stem_1": [
+		{
+			"pos": [-0.5, 0, 0],
+			"size": [1, 1, 0],
+			"rot": [0, 45, 0],
+			"pivot": [0, 0, 0],
+			"variant": 1,
+			"uv": {
+				"*": [0, 4]
+			},
+			"tint": "#B6DB61" // cherry grove petal tint
+		},
+		{
+			"pos": [-0.5, 0, 0],
+			"size": [1, 1, 0],
+			"rot": [0, -45, 0],
+			"pivot": [0, 0, 0],
+			"variant": 1,
+			"uv": {
+				"*": [0, 4]
+			},
+			"tint": "#B6DB61"
+		}
+	],
+	"template_pink_petal_stem_2": [
+		{
+			"pos": [-0.5, 0, 0],
+			"size": [1, 2, 0],
+			"rot": [0, 45, 0],
+			"pivot": [0, 0, 0],
+			"variant": 1,
+			"uv": {
+				"*": [0, 4]
+			},
+			"tint": "#B6DB61"
+		},
+		{
+			"pos": [-0.5, 0, 0],
+			"size": [1, 2, 0],
+			"rot": [0, -45, 0],
+			"pivot": [0, 0, 0],
+			"variant": 1,
+			"uv": {
+				"*": [0, 4]
+			},
+			"tint": "#B6DB61"
+		}
+	],
+	"template_pink_petal_stem_3": [
+		{
+			"pos": [-0.5, 0, 0],
+			"size": [1, 3, 0],
+			"rot": [0, 45, 0],
+			"pivot": [0, 0, 0],
+			"variant": 1,
+			"uv": {
+				"*": [0, 4]
+			},
+			"tint": "#B6DB61"
+		},
+		{
+			"pos": [-0.5, 0, 0],
+			"size": [1, 3, 0],
+			"rot": [0, -45, 0],
+			"pivot": [0, 0, 0],
+			"variant": 1,
+			"uv": {
+				"*": [0, 4]
+			},
+			"tint": "#B6DB61"
+		}
+	],
+	"template_pink_petal_small_tall": [
+		{
+			"copy": "template_pink_petal_stem_3",
+			"translate": [1.5, 0, 1.5]
+		},
 		{
 			"pos": [0, 3, 0],
-			"size": [16, 0, 16],
+			"size": [3, 0, 3],
 			"variant": 0
+		}
+	],
+	"template_pink_petal_small_medium": [
+		{
+			"copy": "template_pink_petal_stem_2",
+			"translate": [1.5, 0, 1.5]
+		},
+		{
+			"pos": [0, 2, 0],
+			"size": [3, 0, 3],
+			"variant": 0
+		}
+	],
+	"pink_petals": [
+		{
+			"copy": "template_pink_petal_small_tall",
+			"translate": [13, 0, 4],
+			"uv": {
+				"*": [0, 4]
+			}
+		},
+		{
+			"copy": "template_pink_petal_small_tall",
+			"translate": [10, 0, 0],
+			"uv": {
+				"*": [3, 0]
+			}
+		},
+		{
+			"copy": "template_pink_petal_small_tall",
+			"translate": [8, 0, 5],
+			"uv": {
+				"*": [5, 5]
+			}
+		},
+		{
+			"if": "growth >= 1",
+			"copy": "template_pink_petal_stem_1",
+			"translate": [11.5, 0, 11.5]
+		},
+		{
+			"if": "growth >= 1",
+			"pos": [8, 1, 8],
+			"size": [7, 0, 7],
+			"variant": 0,
+			"uv": {
+				"*": [1, 8]
+			}
+		},
+		{
+			"if": "growth >= 2",
+			"copy": "template_pink_petal_small_medium",
+			"translate": [0, 0, 9],
+			"uv": {
+				"*": [13, 9]
+			}
+		},
+		{
+			"if": "growth >= 2",
+			"copy": "template_pink_petal_small_medium",
+			"translate": [5, 0, 8],
+			"uv": {
+				"*": [8, 8]
+			}
+		},
+		{
+			"if": "growth >= 2",
+			"copy": "template_pink_petal_stem_2",
+			"translate": [4, 0, 14]
+		},
+		{
+			"if": "growth >= 2",
+			"pos": [2, 2, 12],
+			"size": [4, 0, 4],
+			"variant": 0,
+			"uv": {
+				"*": [10, 12]
+			}
+		},
+		{
+			"if": "growth >= 3",
+			"copy": "template_pink_petal_stem_2",
+			"translate": [4.5, 0, 3.5]
+		},
+		{
+			"if": "growth >= 3",
+			"pos": [1, 2, 0],
+			"size": [7, 0, 7],
+			"variant": 0,
+			"uv": {
+				"*": [8, 0]
+			}
 		}
 	],
 	"pressure_plate": [
@@ -2148,8 +2413,8 @@
 		},
 		{
 			"if": "upper_block_bit == 1",
-			"pos": [6.4, -0.5, 1],
-			"size": [0, 16, 14],
+			"pos": [6.4, -0.5, 0],
+			"size": [0, 16, 16],
 			"rot": [0, 0, 20],
 			"uv": {
 				"*": [0, 0]
@@ -2158,8 +2423,8 @@
 		},
 		{
 			"if": "upper_block_bit == 1",
-			"pos": [6.7, -0.5, 1],
-			"size": [0, 16, 14],
+			"pos": [6.7, -0.5, 0],
+			"size": [0, 16, 16],
 			"rot": [0, 0, 20],
 			"uv": {
 				"*": [0, 0]
@@ -2734,6 +2999,595 @@
 			"if": "cauldron_liquid == powder_snow",
 			"copy": "template_cauldron_liquid",
 			"terrain_texture": "powder_snow"
+		}
+	],
+	"coral_fan": [
+		{
+			"pos": [0, 1, 8],
+			"size": [16, 0, 16],
+			"rot": [22.5, 0, 0],
+			"pivot": [8, 0, 8],
+			"uv": {
+				"*": [0, 0]
+			}
+		},
+		{
+			"pos": [0, 1, 8],
+			"size": [16, 0, 16],
+			"rot": [22.5, 90, 0],
+			"pivot": [8, 0, 8],
+			"uv": {
+				"*": [0, 0]
+			}
+		},
+		{
+			"pos": [0, 1, 8],
+			"size": [16, 0, 16],
+			"rot": [22.5, 180, 0],
+			"pivot": [8, 0, 8],
+			"uv": {
+				"*": [0, 0]
+			}
+		},
+		{
+			"pos": [0, 1, 8],
+			"size": [16, 0, 16],
+			"rot": [22.5, -90, 0],
+			"pivot": [8, 0, 8],
+			"uv": {
+				"*": [0, 0]
+			}
+		}
+	],
+	"coral_wall_fan": [
+		{
+			"pos": [0, 8, 0],
+			"size": [16, 0, 16],
+			"rot": [11.25, 0, 0],
+			"pivot": [8, 8, 0]
+		}
+	],
+	"lightning_rod": [
+		{
+			"pos": [7, 0, 7],
+			"size": [2, 12, 2],
+			"uv": {
+				"*": [0, 4]
+			}
+		},
+		{
+			"pos": [6, 12, 6],
+			"size": [4, 4, 4],
+			"uv": {
+				"*": [0, 0]
+			}
+		}
+	],
+	"lectern": [
+		{
+			"pos": [0, 0, 0],
+			"size": [16, 2, 16],
+			"textures": {
+				"*": "east",
+				"down": "down"
+			},
+			"uv": {
+				"side": [0, 6],
+				"south": [0, 14]
+			}
+		},
+		{
+			"pos": [4, 2, 4],
+			"size": [8, 13, 8],
+			"textures": {
+				"*": "north" // TODO: use the proper side texture for east/west. currently it's rotated 90 degrees for no reason so we'll have to have a second cube. the in-game difference is barely noticeable.
+			},
+			"uv": {
+				"side": [8, 3],
+				"south": [0, 0]
+			}
+		},
+		{
+			"pos": [0.0125, 12, 0],
+			"size": [15.975, 4, 13],
+			"rot": [-22.5, 0, 0],
+			"textures": {
+				"side": "west"
+			},
+			"uv": {
+				"side": [0, 4],
+				"south": [0, 0],
+				"up": [0, 1]
+			}
+		},
+		{
+			"if": "entity.hasBook ?? 0 == 1",
+			"copy": "template_book",
+			"rot": [-22.5, 0, 0],
+			"pivot": [8, 0, 10],
+			"translate": [0, 15.2, 2]
+		}
+	],
+	"big_dripleaf": [
+		{
+			"if": "big_dripleaf_head == 0",
+			"pos": [5.25, 0, 12],
+			"size": [5.5, 16, 0],
+			"rot": [0, 45, 0],
+			"pivot": [8, 0, 12],
+			"textures": {
+				"*": "north"
+			},
+			"uv": {
+				"*": [5, 0]
+			},
+			"uv_sizes": {
+				"*": [7, 16]
+			}
+		},
+		{
+			"if": "big_dripleaf_head == 0",
+			"pos": [5.5, 0, 12],
+			"size": [5, 16, 0],
+			"rot": [0, -45, 0],
+			"pivot": [8, 0, 12],
+			"textures": {
+				"*": "north"
+			},
+			"uv": {
+				"*": [5, 0]
+			},
+			"uv_sizes": {
+				"*": [7, 16]
+			}
+		},
+		{
+			"if": "big_dripleaf_head == 1", // stem is 1px shorter on the top block
+			"pos": [5.25, 0, 12],
+			"size": [5.5, 15, 0],
+			"rot": [0, 45, 0],
+			"pivot": [8, 0, 12],
+			"textures": {
+				"*": "north"
+			},
+			"uv": {
+				"*": [5, 0]
+			},
+			"uv_sizes": {
+				"*": [7, 16]
+			}
+		},
+		{
+			"if": "big_dripleaf_head == 1",
+			"pos": [5.5, 0, 12],
+			"size": [5, 15, 0],
+			"rot": [0, -45, 0],
+			"pivot": [8, 0, 12],
+			"textures": {
+				"*": "north"
+			},
+			"uv": {
+				"*": [5, 0]
+			},
+			"uv_sizes": {
+				"*": [7, 16]
+			}
+		},
+		{
+			"if": "big_dripleaf_head == 1", // TODO: dripleaf head tipping???
+			"pos": [0, 12, 0],
+			"size": [16, 4, 16],
+			"textures": {
+				"up": "east",
+				"down": "none",
+				"south": "none",
+				"north": "up",
+				"side": "down"
+			},
+			"flip_textures_horizontally": ["east"],
+			"translate": [0, -1, 0]
+		}
+	],
+	"template_small_dripleaf_stem": [
+		{
+			"pos": [6, 0, 12],
+			"size": [4, 16, 0],
+			"rot": [0, 45, 0],
+			"pivot": [8, 0, 12],
+			"uv": {
+				"*": [5, 0]
+			},
+			"uv_sizes": {
+				"*": [7, 16]
+			}
+		},
+		{
+			"pos": [6, 0, 12],
+			"size": [4, 16, 0],
+			"rot": [0, -45, 0],
+			"pivot": [8, 0, 12],
+			"uv": {
+				"*": [5, 0]
+			},
+			"uv_sizes": {
+				"*": [7, 16]
+			}
+		}
+	],
+	"template_small_dripleaf_leaf": [
+		{
+			"pos": [0, 0, 0],
+			"size": [8, 1, 8],
+			"pivot": [4, 0, 4],
+			"textures": {
+				"side": "down",
+				"down": "none"
+			},
+			"uv": {
+				"*": [0, 0]
+			}
+		}
+	],
+	"small_dripleaf": [
+		{
+			"if": "upper_block_bit == 0",
+			"copy": "template_small_dripleaf_stem",
+			"textures": {
+				"*": "south"
+			}
+		},
+		{
+			"if": "upper_block_bit == 1",
+			"copy": "template_small_dripleaf_stem",
+			"textures": {
+				"*": "north"
+			}
+		},
+		{
+			"if": "upper_block_bit == 1",
+			"copy": "template_small_dripleaf_leaf",
+			"rot": [0, 90, 0],
+			"translate": [0, 7, 4]
+		},
+		{
+			"if": "upper_block_bit == 1",
+			"copy": "template_small_dripleaf_leaf",
+			"translate": [8, 13, 4]
+		},
+		{
+			"if": "upper_block_bit == 1",
+			"copy": "template_small_dripleaf_leaf",
+			"rot": [0, -90, 0],
+			"translate": [8, 2, 12]
+		}
+	],
+	"spore_blossom": [
+		{
+			"pos": [0, 15.9, 0],
+			"size": [16, 0, 16],
+			"textures": {
+				"*": "up"
+			}
+		},
+		{
+			"pos": [0, 15.7, 8],
+			"size": [16, 0, 16],
+			"rot": [-22.5, 0, 0],
+			"pivot": [8, 16, 8],
+			"uv": {
+				"*": [0, 0]
+			}
+		},
+		{
+			"pos": [0, 15.7, 8],
+			"size": [16, 0, 16],
+			"rot": [-22.5, 90, 0],
+			"pivot": [8, 16, 8],
+			"uv": {
+				"*": [0, 0]
+			}
+		},
+		{
+			"pos": [0, 15.7, 8],
+			"size": [16, 0, 16],
+			"rot": [-22.5, 180, 0],
+			"pivot": [8, 16, 8],
+			"uv": {
+				"*": [0, 0]
+			}
+		},
+		{
+			"pos": [0, 15.7, 8],
+			"size": [16, 0, 16],
+			"rot": [-22.5, -90, 0],
+			"pivot": [8, 16, 8],
+			"uv": {
+				"*": [0, 0]
+			}
+		}
+	],
+	"template_brewing_stand_side": [ // this looks at the blockstate has_bottle which actually doesn't exist, but when we use this copy we set this to be the actual, relevant block state.
+		{
+			"if": "has_bottle == 0",
+			"pos": [0, 0, 8],
+			"size": [7, 16, 0],
+			"uv": {
+				"*": [9, 0]
+			},
+			"flip_textures_horizontally": ["*"]
+		},
+		{
+			"if": "has_bottle == 1",
+			"pos": [0, 0, 8],
+			"size": [7, 16, 0]
+		}
+	],
+	"brewing_stand": [
+		{
+			"pos": [7, 0, 7],
+			"size": [2, 14, 2],
+			"uv": {
+				"up": [7, 7],
+				"side": [7, 2]
+			}
+		},
+		{
+			"pos": [1, 0, 5],
+			"size": [6, 2, 6],
+			"textures": {
+				"*": "down"
+			}
+		},
+		{
+			"pos": [9, 0, 1],
+			"size": [6, 2, 6],
+			"textures": {
+				"*": "down"
+			}
+		},
+		{
+			"pos": [9, 0, 9],
+			"size": [6, 2, 6],
+			"textures": {
+				"*": "down"
+			}
+		},
+		{
+			"copy": "template_brewing_stand_side",
+			"block_states": {
+				"has_bottle": "${#block_states.brewing_stand_slot_a_bit}"
+			}
+		},
+		{
+			"copy": "template_brewing_stand_side",
+			"rot": [0, -135, 0],
+			"block_states": {
+				"has_bottle": "${#block_states.brewing_stand_slot_b_bit}"
+			}
+		},
+		{
+			"copy": "template_brewing_stand_side",
+			"rot": [0, 135, 0],
+			"block_states": {
+				"has_bottle": "${#block_states.brewing_stand_slot_c_bit}"
+			}
+		}
+	],
+	"crafter": [
+		{
+			"pos": [0, 0, 0],
+			"size": [16, 16, 16],
+			"flip_textures_vertically": ["up"]
+		}
+	],
+	"tripwire_hook": [
+		{
+			"pos": [6, 1, 14],
+			"size": [4, 8, 2],
+			"textures": {
+				"*": "down"
+			}
+		},
+		{
+			"if": "attached_bit == 0 && powered_bit == 0",
+			"pos": [6.2, 3.8, 7.9], // the hook is hollow both in-game and here
+			"size": [3.6, 0.8, 3.6],
+			"rot": [45, 0, 0],
+			"pivot": [8, 6, 5.2],
+			"textures": {
+				"*": "north"
+			},
+			"uv": {
+				"*": [5, 3]
+			},
+			"uv_sizes": {
+				"*": [6, 1],
+				"up": [6, 6],
+				"down": [6, 6]
+			}
+		},
+		{
+			"if": "attached_bit == 0 && powered_bit == 0",
+			"pos": [7.4, 5.2, 9.6],
+			"size": [1.4, 1.6, 5.6],
+			"rot": [-45, 0, 0],
+			"pivot": [8, 6, 14],
+			"textures": {
+				"*": "down"
+			},
+			"uv": {
+				"*": [7, 9]
+			},
+			"uv_sizes": {
+				"down": [2, 7],
+				"up": [2, 7],
+				"north": [2, 2],
+				"south": [2, 2],
+				"west": [7, 2],
+				"east": [7, 2]
+			}
+		},
+		{
+			"if": "attached_bit == 1 && powered_bit == 0", // TODO: add bit of string for attached tripwires
+			"pos": [6.2, 4.2, 6.7],
+			"size": [3.6, 0.8, 3.6],
+			"rot": [22.5, 0, 0],
+			"pivot": [8, 4.2, 6.7],
+			"textures": {
+				"*": "north"
+			},
+			"uv": {
+				"*": [5, 3]
+			},
+			"uv_sizes": {
+				"*": [6, 1],
+				"up": [6, 6],
+				"down": [6, 6]
+			}
+		},
+		{
+			"if": "attached_bit == 1 && powered_bit == 0",
+			"pos": [7.4, 5.2, 9.6],
+			"size": [1.4, 1.6, 5.6],
+			"rot": [10, 0, 0],
+			"pivot": [7.4, 5.2, 10],
+			"textures": {
+				"*": "down"
+			},
+			"uv": {
+				"*": [7, 9]
+			},
+			"uv_sizes": {
+				"down": [2, 7],
+				"up": [2, 7],
+				"north": [2, 2],
+				"south": [2, 2],
+				"west": [7, 2],
+				"east": [7, 2]
+			}
+		},
+		{
+			"if": "powered_bit == 1",
+			"pos": [6.2, 3.4, 6.7],
+			"size": [3.6, 0.8, 3.6],
+			"textures": {
+				"*": "north"
+			},
+			"uv": {
+				"*": [5, 3]
+			},
+			"uv_sizes": {
+				"*": [6, 1],
+				"up": [6, 6],
+				"down": [6, 6]
+			}
+		},
+		{
+			"if": "powered_bit == 1",
+			"pos": [7.4, 5.2, 9.6],
+			"size": [1.4, 1.6, 5.6],
+			"rot": [30, 0, 0],
+			"pivot": [8, 6, 14],
+			"textures": {
+				"*": "down"
+			},
+			"uv": {
+				"*": [7, 9]
+			},
+			"uv_sizes": {
+				"down": [2, 7],
+				"up": [2, 7],
+				"north": [2, 2],
+				"south": [2, 2],
+				"west": [7, 2],
+				"east": [7, 2]
+			}
+		}
+	],
+	"template_tripwire": [ // 4 individual cubes
+		{
+			"pos": [0, 4, 7.75],
+			"size": [4, 0, 0.5],
+			"uv_sizes": {
+				"*": [16, 2]
+			}
+		},
+		{
+			"pos": [4, 4, 7.75],
+			"size": [4, 0, 0.5],
+			"uv_sizes": {
+				"*": [16, 2]
+			}
+		},
+		{
+			"pos": [8, 4, 7.75],
+			"size": [4, 0, 0.5],
+			"uv_sizes": {
+				"*": [16, 2]
+			}
+		},
+		{
+			"pos": [12, 4, 7.75],
+			"size": [4, 0, 0.5],
+			"uv_sizes": {
+				"*": [16, 2]
+			}
+		}
+	],
+	"tripwire": [ // attached_bit: between 2 tripwires and unactivated, powered_bit: between 2 tripwires and activated, suspended_bit: regular string or between 2 tripwires and active
+		{
+			"if": "attached_bit == 0 && powered_bit == 0",
+			"copy": "template_tripwire",
+			"uv": {
+				"*": [0, 0]
+			}
+		},
+		{
+			"if": "attached_bit == 1 || powered_bit == 1",
+			"copy": "template_tripwire",
+			"uv": {
+				"*": [0, 6]
+			}
+		}
+	],
+	"chorus_flower": [
+		{
+			"pos": [2, 0, 2],
+			"size": [12, 16, 12]
+		},
+		{
+			"pos": [0, 2, 2],
+			"size": [2, 12, 12]
+		},
+		{
+			"pos": [2, 2, 0],
+			"size": [12, 12, 2]
+		},
+		{
+			"pos": [2, 2, 14],
+			"size": [12, 12, 2]
+		},
+		{
+			"pos": [14, 2, 2],
+			"size": [2, 12, 12]
+		}
+	],
+	"chorus_plant": [
+		{
+			"pos": [4, 0, 4],
+			"size": [8, 16, 8]
+		},
+		{
+			"pos": [3, 4, 4],
+			"size": [1, 8, 8]
+		},
+		{
+			"pos": [12, 4, 4],
+			"size": [1, 8, 8]
+		},
+		{
+			"pos": [5, 5, 2],
+			"size": [6, 6, 2]
 		}
 	],
 	"debug_auto_uv_4": [{"pos":[0,0,0],"size":[4,4,4]},{"pos":[0,0,4],"size":[4,4,4]},{"pos":[0,0,8],"size":[4,4,4]},{"pos":[0,0,12],"size":[4,4,4]},{"pos":[0,4,0],"size":[4,4,4]},{"pos":[0,4,4],"size":[4,4,4]},{"pos":[0,4,8],"size":[4,4,4]},{"pos":[0,4,12],"size":[4,4,4]},{"pos":[0,8,0],"size":[4,4,4]},{"pos":[0,8,4],"size":[4,4,4]},{"pos":[0,8,8],"size":[4,4,4]},{"pos":[0,8,12],"size":[4,4,4]},{"pos":[0,12,0],"size":[4,4,4]},{"pos":[0,12,4],"size":[4,4,4]},{"pos":[0,12,8],"size":[4,4,4]},{"pos":[0,12,12],"size":[4,4,4]},{"pos":[4,0,0],"size":[4,4,4]},{"pos":[4,0,4],"size":[4,4,4]},{"pos":[4,0,8],"size":[4,4,4]},{"pos":[4,0,12],"size":[4,4,4]},{"pos":[4,4,0],"size":[4,4,4]},{"pos":[4,4,12],"size":[4,4,4]},{"pos":[4,8,0],"size":[4,4,4]},{"pos":[4,8,12],"size":[4,4,4]},{"pos":[4,12,0],"size":[4,4,4]},{"pos":[4,12,4],"size":[4,4,4]},{"pos":[4,12,8],"size":[4,4,4]},{"pos":[4,12,12],"size":[4,4,4]},{"pos":[8,0,0],"size":[4,4,4]},{"pos":[8,0,4],"size":[4,4,4]},{"pos":[8,0,8],"size":[4,4,4]},{"pos":[8,0,12],"size":[4,4,4]},{"pos":[8,4,0],"size":[4,4,4]},{"pos":[8,4,12],"size":[4,4,4]},{"pos":[8,8,0],"size":[4,4,4]},{"pos":[8,8,12],"size":[4,4,4]},{"pos":[8,12,0],"size":[4,4,4]},{"pos":[8,12,4],"size":[4,4,4]},{"pos":[8,12,8],"size":[4,4,4]},{"pos":[8,12,12],"size":[4,4,4]},{"pos":[12,0,0],"size":[4,4,4]},{"pos":[12,0,4],"size":[4,4,4]},{"pos":[12,0,8],"size":[4,4,4]},{"pos":[12,0,12],"size":[4,4,4]},{"pos":[12,4,0],"size":[4,4,4]},{"pos":[12,4,4],"size":[4,4,4]},{"pos":[12,4,8],"size":[4,4,4]},{"pos":[12,4,12],"size":[4,4,4]},{"pos":[12,8,0],"size":[4,4,4]},{"pos":[12,8,4],"size":[4,4,4]},{"pos":[12,8,8],"size":[4,4,4]},{"pos":[12,8,12],"size":[4,4,4]},{"pos":[12,12,0],"size":[4,4,4]},{"pos":[12,12,4],"size":[4,4,4]},{"pos":[12,12,8],"size":[4,4,4]},{"pos":[12,12,12],"size":[4,4,4]}] // function genDebugGeo(step) {let boneCubes = [];for(let x = 0; x < 16; x += step) {for(let y = 0; y < 16; y += step) {for(let z = 0; z < 16; z += step) {if(!x || !y || !z || x == 16 - step || y == 16 - step || z == 16 - step) {boneCubes.push({ pos: [x, y, z], size: [step, step, step] });}}}}return JSON.stringify(boneCubes);}

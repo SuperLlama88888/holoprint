@@ -216,6 +216,9 @@ export default class BlockGeoMaker {
 			if("pivot" in boneCube) {
 				boneCube["pivot"] = boneCube["pivot"].map((x, i) => x + blockPos[i]);
 			}
+			boneCube["extra_rots"]?.forEach(extraRot => {
+				extraRot["pivot"] = extraRot["pivot"].map((x, i) => x + blockPos[i]);
+			});
 		});
 		if("pivot" in bone) {
 			bone["pivot"] = bone["pivot"].map((x, i) => x + blockPos[i]);
@@ -263,6 +266,11 @@ export default class BlockGeoMaker {
 			let cube = unfilteredCubes.shift();
 			if("block_states" in cube) {
 				let blockOverride = structuredClone(block);
+				for(let blockStateName in cube["block_states"]) {
+					if(typeof cube["block_states"][blockStateName] == "string") {
+						cube["block_states"][blockStateName] = this.#interpolateInBlockValues(block, cube["block_states"][blockStateName]);
+					}
+				}
 				blockOverride["states"] = { ...blockOverride["states"], ...cube["block_states"] };
 				cube["block_override"] = blockOverride;
 			}
@@ -281,7 +289,7 @@ export default class BlockGeoMaker {
 					console.error(`Could not find geometry for block shape ${blockShape}; defaulting to "block"`);
 					copiedCubes = structuredClone(this.#blockShapeGeos["block"]);
 				}
-				let fieldsToCopy = Object.keys(cube).filter(field => !["copy", "translate"].includes(field));
+				let fieldsToCopy = Object.keys(cube).filter(field => !["copy", "rot", "pivot", "translate"].includes(field));
 				copiedCubes.forEach(copiedCube => {
 					if("translate" in cube) {
 						copiedCube["translate"] = (copiedCube["translate"] ?? [0, 0, 0]).map((x, i) => x + cube["translate"][i]);
@@ -293,6 +301,20 @@ export default class BlockGeoMaker {
 							copiedCube[field] ??= cube[field];
 						}
 					});
+					if("rot" in cube) {
+						if("rot" in copiedCube) {
+							// maths for combining both rotations is hard so we handle it differently and create a list of extra rotations.
+							// HoloPrint.js will create a wrapper bone for each rotation
+							copiedCube["extra_rots"] ??= [];
+							copiedCube["extra_rots"].push({
+								"rot": cube["rot"],
+								"pivot": cube["pivot"] ?? [8, 8, 8]
+							});
+						} else {
+							copiedCube["rot"] = cube["rot"];
+							copiedCube["pivot"] = cube["pivot"] ?? copiedCube["pivot"];
+						}
+					}
 				});
 				unfilteredCubes.push(...copiedCubes);
 			} else {
@@ -396,8 +418,9 @@ export default class BlockGeoMaker {
 			let textureSize = cube["texture_size"] ?? [16, 16];
 			// add generic keys to all faces, and convert texture references into indices
 			for(let faceName in boneCube["uv"]) {
+				let isSideFace = ["west", "east", "north", "south"].includes(faceName);
 				let face = boneCube["uv"][faceName];
-				let textureFace = cube["textures"]?.[faceName] ?? (["west", "east", "north", "south"].includes(faceName)? cube["textures"]?.["side"] : undefined) ?? cube["textures"]?.["*"] ?? faceName;
+				let textureFace = cube["textures"]?.[faceName] ?? (isSideFace? cube["textures"]?.["side"] : undefined) ?? cube["textures"]?.["*"] ?? faceName;
 				if(textureFace == "none") {
 					delete boneCube["uv"][faceName];
 					continue;
@@ -448,17 +471,31 @@ export default class BlockGeoMaker {
 				}
 				
 				this.textureRefs.add(textureRef);
-				boneCube["uv"][faceName] = this.textureRefs.indexOf(textureRef);
+				let flipTextureHorizontally = cube["flip_textures_horizontally"]?.includes(faceName) || (isSideFace && cube["flip_textures_horizontally"]?.includes("side")) || cube["flip_textures_horizontally"]?.includes("*");
+				let flipTextureVertically = cube["flip_textures_vertically"]?.includes(faceName) || (isSideFace && cube["flip_textures_vertically"]?.includes("side")) || cube["flip_textures_vertically"]?.includes("*");
+				boneCube["uv"][faceName] = {
+					"index": this.textureRefs.indexOf(textureRef),
+					"flip_horizontally": (faceName == "down" || faceName == "up") ^ flipTextureHorizontally, // in MC the down/up faces are rotated 180 degrees compared to how they are in geometry; this can be faked by flipping both axes. I don't want to use uv_rotation since that's a 1.21 thing and I want support back to 1.16.
+					"flip_vertically": (faceName == "down" || faceName == "up") ^ flipTextureVertically
+				};
 			}
 			
 			if("rot" in cube) {
 				boneCube["rotation"] = cube["rot"];
 				boneCube["pivot"] = cube["pivot"] ?? [8, 8, 8]; // we set the pivot for this cube to be the center of it. if we don't specify this it would look at the pivot for the bone, which would be different if we're doing our fancy animations.
 			}
+			if("extra_rots" in cube) {
+				boneCube["extra_rots"] = cube["extra_rots"];
+			}
 			if("translate" in cube) {
 				boneCube["origin"] = boneCube["origin"].map((x, i) => x + cube["translate"][i]);
 				if("rot" in cube) {
 					boneCube["pivot"] = boneCube["pivot"].map((x, i) => x + cube["translate"][i]);
+				}
+				if("extra_rots" in cube) {
+					boneCube["extra_rots"].forEach(extraRot => {
+						extraRot["pivot"] = extraRot["pivot"].map((x, i) => x + cube["translate"][i]);
+					});
 				}
 			}
 			boneCube = this.#scaleBoneCube(boneCube);
@@ -526,6 +563,20 @@ export default class BlockGeoMaker {
 		}
 		let blockShape = this.#getBlockShape(blockName); // In copied block shapes, we want to look at the original block shape's texture variants, not the copied's. E.g. With candle_cake, we don't want the cake that is copied to look at the texture variants for cake (which includes bite_counter).
 		let blockShapeSpecificVariants = this.#blockShapeBlockStateTextureVariants[blockShape];
+		if(blockShapeSpecificVariants?.["#exclusive_add"]) {
+			let variant = 0;
+			Object.entries(block["states"]).forEach(([blockStateName, blockStateValue]) => {
+				if(blockStateName in blockShapeSpecificVariants) {
+					let blockStateVariants = blockShapeSpecificVariants[blockStateName];
+					if(!(blockStateValue in blockStateVariants)) {
+						console.error(`Block state value ${blockStateValue} for texture-variating block state ${blockStateName} not found...`);
+						return;
+					}
+					variant += blockStateVariants[blockStateValue];
+				}
+			});
+			return variant;
+		}
 		let blockNameSpecificVariants = this.#blockNameBlockStateTextureVariants[blockName] ?? this.#blockNamePatternBlockStateTextureVariants.find(([pattern]) => pattern.test(blockName))?.[1];
 		if(blockNameSpecificVariants?.["#exclusive_add"]) {
 			let variant = 0;
@@ -569,6 +620,11 @@ export default class BlockGeoMaker {
 		boneCube["size"] = boneCube["size"].map(x => x * this.config.SCALE);
 		if("pivot" in boneCube) {
 			boneCube["pivot"] = boneCube["pivot"].map(x => (x - 8) * this.config.SCALE + 8);
+		}
+		if("extra_rots" in boneCube) {
+			boneCube["extra_rots"].forEach(extraRot => {
+				extraRot["pivot"] = extraRot["pivot"].map(x => (x - 8) * this.config.SCALE + 8);
+			});
 		}
 		return boneCube;
 	}
@@ -671,7 +727,7 @@ export default class BlockGeoMaker {
 			if(slicingAndDefault[0] != undefined) {
 				value = value?.slice(slicingAndDefault[1], slicingAndDefault[3] ?? (slicingAndDefault[2] == ""? undefined : slicingAndDefault[2]));
 			}
-			if(value == undefined || value == "") {
+			if(value == undefined || value === "") {
 				if(slicingAndDefault[4] != undefined) {
 					let defaultValue = slicingAndDefault[4];
 					if(/SET_WHOLE_STRING\([^)]+\)/.test(defaultValue)) {

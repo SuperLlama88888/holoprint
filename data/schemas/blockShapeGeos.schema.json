@@ -178,6 +178,22 @@
 						"description": "A tinting colour in 6-digit hex or in a 32-bit ARGB number to apply to this cube (overrides TextureAtlas.#terrainTextureTints).",
 						"type": "string",
 						"pattern": "^(#[0-9a-fA-F]{6})|(\\$\\{.+\\})$"
+					},
+					"flip_textures_horizontally": {
+						"description": "An array of faces that will have their textures horizontally flipped.",
+						"type": "array",
+						"items": {
+							"type": "string",
+							"enum": ["west", "east", "down", "up", "north", "south", "side", "*"]
+						}
+					},
+					"flip_textures_vertically": {
+						"description": "An array of faces that will have their textures vertically flipped.",
+						"type": "array",
+						"items": {
+							"type": "string",
+							"enum": ["west", "east", "down", "up", "north", "south", "side", "*"]
+						}
 					}
 				},
 				"oneOf": [
