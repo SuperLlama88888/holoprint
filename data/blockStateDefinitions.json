@@ -260,7 +260,7 @@
 					"west": [0, 90, 0]
 				}
 			},
-			"loom,tripwire_hook": {
+			"loom,chiseled_bookshelf,tripwire_hook": {
 				"direction": {
 					"0": [0, 180, 0], // south
 					"1": [0, -90, 0], // west

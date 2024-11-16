@@ -3,15 +3,15 @@
 	"description": "Minecraft Bedrock build tool - generate holograms of your builds!",
 	"icons": [
 		{
-			"src": "/assets/logo_192.png",
+			"src": "assets/logo_192.png",
 			"sizes": "192x192"
 		},
 		{
-			"src": "/assets/logo_288.png",
+			"src": "assets/logo_288.png",
 			"sizes": "288x288"
 		},
 		{
-			"src": "/assets/logo_512.png",
+			"src": "assets/logo_512.png",
 			"sizes": "512x512"
 		}
 	],

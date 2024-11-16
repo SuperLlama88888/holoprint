@@ -2,25 +2,28 @@
 	"format_version": "1.10.0",
 	"particle_effect": {
 		"description": {
+			"identifier": "holoprint:bounding_box_outline",
 			"basic_render_parameters": {
 				"material": "particles_opaque",
 				"texture": "textures/particle/single_white_pixel"
 			}
 		},
 		"components": {
-			"minecraft:emitter_initialization": {}, // variables will be put in here by the JS
+			"minecraft:emitter_initialization": {
+				"creation_expression": "v.kill_particles = false;"
+			},
 			"minecraft:emitter_rate_instant": {
 				"num_particles": 1
-			},
-			"minecraft:emitter_lifetime_once": {
-				"active_time": 0
 			},
 			"minecraft:emitter_local_space": {
 				"position": true,
 				"rotation": true
 			},
+			"minecraft:emitter_lifetime_events": {
+				"expiration_event": "kill_particles" // emitter expires when animation controller state changes, but the actual particles persist. to work around this, we change a particle variable when the emitter expires, which will make all particles expire as well.
+			},
 			"minecraft:particle_lifetime_expression": {
-				"expiration_expression": "!t.render_hologram"
+				"expiration_expression": "v.kill_particles"
 			},
 			"minecraft:particle_motion_parametric": {
 				"relative_position": ["-(v.x ?? (v.dir == 0? v.size : 0)) + 0.5", "-(v.y ?? v.dir == 1? v.size : 0)", "(v.z ?? (v.dir == 2? v.size : 0)) - 0.5"]
@@ -30,7 +33,7 @@
 				"facing_camera_mode": "lookat_direction",
 				"direction": {
 					"mode": "custom",
-					"custom_direction": ["v.dir == 0? 1 : 0", "v.dir == 1? 1 : 0", "v.dir == 2? 1 : 0"]
+					"custom_direction": ["v.dir == 0", "v.dir == 1", "v.dir == 2"]
 				},
 				"uv": {
 					"uv": [0, 0],
@@ -39,6 +42,11 @@
 			},
 			"minecraft:particle_appearance_tinting": {
 				"color": ["v.r", "v.g", "v.b"]
+			}
+		},
+		"events": {
+			"kill_particles": {
+				"expression": "v.kill_particles = true;"
 			}
 		}
 	}

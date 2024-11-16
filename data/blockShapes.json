@@ -151,6 +151,7 @@
 		"sticky_piston_arm_collision": "piston_arm",
 		"end_portal_frame": "end_portal_frame",
 		"end_portal": "end_portal",
+		"end_gateway": "end_gateway",
 		"beetroot": "rows",
 		"carrots": "rows",
 		"nether_wart": "rows",

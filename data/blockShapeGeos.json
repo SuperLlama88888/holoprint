@@ -2034,6 +2034,20 @@
 			"tint": "#56A5AA" // average colour of textures/environment/end_portal_colors.png
 		}
 	],
+	"end_gateway": [ // basically an end portal cube. does not do justice to how cool it looks in the game.
+		{
+			"pos": [0, 0, 0],
+			"size": [16, 16, 16],
+			"textures": {
+				"*": "textures/entity/end_portal"
+			},
+			"texture_size": [256, 256],
+			"uv_sizes": {
+				"*": [64, 64]
+			},
+			"tint": "#56A5AA"
+		}
+	],
 	"observer": [ // the top face is rotated
 		{
 			"pos": [0, 0, 0],
@@ -2255,7 +2269,8 @@
 			"size": [2, 16, 16],
 			"textures": {
 				"east": "up",
-				"up": "east"
+				"up": "east",
+				"down": "east"
 			}
 		}
 	],
@@ -2377,7 +2392,9 @@
 			"size": [16, 16, 14],
 			"textures": {
 				"east": "none",
-				"west": "none"
+				"west": "none",
+				"up": "none",
+				"down": "none"
 			}
 		},
 		{
@@ -2388,6 +2405,13 @@
 				"south": "none",
 				"up": "none",
 				"down": "none"
+			}
+		},
+		{
+			"pos": [1, 0, 1],
+			"size": [14, 16, 14],
+			"textures": {
+				"side": "none"
 			}
 		}
 	],
