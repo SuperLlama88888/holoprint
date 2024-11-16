@@ -53,6 +53,7 @@ export default class BlockGeoMaker {
 		"normal_stone_stairs": 0,
 		"stone_button": 0,
 		"stone_pressure_plate": 0,
+		"stone_brick_stairs": 0,
 		"bubble_column": 0,
 		"wooden_button": 0,
 		"wooden_pressure_plate": 0,
@@ -306,7 +307,7 @@ export default class BlockGeoMaker {
 							// maths for combining both rotations is hard so we handle it differently and create a list of extra rotations.
 							// HoloPrint.js will create a wrapper bone for each rotation
 							copiedCube["extra_rots"] ??= [];
-							copiedCube["extra_rots"].push({
+							copiedCube["extra_rots"].unshift({
 								"rot": cube["rot"],
 								"pivot": cube["pivot"] ?? [8, 8, 8]
 							});

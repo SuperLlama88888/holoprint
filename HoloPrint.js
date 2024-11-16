@@ -66,7 +66,8 @@ export async function makePack(structureFile, config = {}, resourcePackStack, pr
 	console.info("Finished reading structure NBT!");
 	console.log("NBT:", nbt);
 	let structureSize = nbt["size"].map(x => +x); // Stored as Number instances: https://github.com/Offroaders123/NBTify/issues/50
-	let structureName = structureFile.name.match(/(.*)\.[^.]+$/)[1];
+	let totalLayers = structureSize[1];
+	let structureName = structureFile.name.replace(/(\.holoprint)?\.[^.]+$/, "");
 	
 	// Make the pack
 	let loadedStuff = await loadStuff({
@@ -113,6 +114,8 @@ export async function makePack(structureFile, config = {}, resourcePackStack, pr
 	let textureAtlas = await new TextureAtlas(config, resourcePackStack);
 	let textureRefs = [...blockGeoMaker.textureRefs];
 	await textureAtlas.makeAtlas(textureRefs); // each texture reference will get added to the textureUvs array property
+	let textureBlobs = textureAtlas.imageBlobs;
+	let defaultTextureIndex = max(textureBlobs.length - 3, 0); // default to 80% opacity
 	
 	console.log("Texture UVs:", textureAtlas.textures);
 	boneTemplatePalette.forEach(boneTemplate => {
@@ -197,10 +200,10 @@ export async function makePack(structureFile, config = {}, resourcePackStack, pr
 	let topLayer = structureSize[1] - 1;
 	layerAnimations["default"]["transitions"].push(
 		{
-			"l_0": `t.hologram_layer > -1 && t.hologram_layer != ${topLayer}`
+			"l_0": `v.hologram_layer > -1 && v.hologram_layer != ${topLayer}`
 		},
 		{
-			[`l_${topLayer}`]: `t.hologram_layer == ${topLayer}`
+			[`l_${topLayer}`]: `v.hologram_layer == ${topLayer}`
 		}
 	);
 	let entityDescription = entityFile["minecraft:client_entity"]["description"];
@@ -222,12 +225,12 @@ export async function makePack(structureFile, config = {}, resourcePackStack, pr
 			"blend_via_shortest_path": true,
 			"transitions": [
 				{
-					[y == 0? "default" : `l_${y - 1}`]: `t.hologram_layer < ${y}${y == topLayer? " && t.hologram_layer != -1" : ""}`
+					[y == 0? "default" : `l_${y - 1}`]: `v.hologram_layer < ${y}${y == topLayer? " && v.hologram_layer != -1" : ""}`
 				},
 				(y == topLayer? {
-					"default": "t.hologram_layer == -1"
+					"default": "v.hologram_layer == -1"
 				} : {
-					[`l_${y + 1}`]: `t.hologram_layer > ${y}`
+					[`l_${y + 1}`]: `v.hologram_layer > ${y}`
 				})
 			]
 		};
@@ -288,13 +291,13 @@ export async function makePack(structureFile, config = {}, resourcePackStack, pr
 									wrapperBones.push({
 										"name": wrapperBoneName,
 										"parent": parentBoneName,
-										"cubes": [],
 										"rotation": extraRot["rot"],
 										"pivot": extraRot["pivot"]
 									});
 									parentBoneName = wrapperBoneName;
 								});
 								bonesToAdd.push(...wrapperBones);
+								wrapperBones.at(-1)["cubes"] = [];
 								rotWrapperBones.set(extraRots, wrapperBones.at(-1));
 							}
 							rotWrapperBones.get(extraRots)["cubes"].push(cube);
@@ -340,86 +343,207 @@ export async function makePack(structureFile, config = {}, resourcePackStack, pr
 	entityDescription["animations"]["controller.hologram.layers"] = "controller.animation.armor_stand.hologram.layers";
 	entityDescription["animations"]["controller.hologram.bounding_box"] = "controller.animation.armor_stand.hologram.bounding_box";
 	entityDescription["animations"]["controller.hologram.block_validation"] = "controller.animation.armor_stand.hologram.block_validation";
+	entityDescription["scripts"]["animate"] ??= [];
 	entityDescription["scripts"]["animate"].push("hologram.align", "hologram.offset", "hologram.spawn", "hologram.wrong_block_overlay", "controller.hologram.layers", "controller.hologram.bounding_box", "controller.hologram.block_validation");
-	entityDescription["scripts"]["initialize"].push(functionToMolang((q, t) => {
-		t.hologram_offset_x ??= 0;
-		t.hologram_offset_y ??= 0;
-		t.hologram_offset_z ??= 0;
-		t.structure_w = $[structureSize[0]];
-		t.structure_h = $[structureSize[1]];
-		t.structure_d = $[structureSize[2]];
-		if(q.distance_from_camera <= 10) {
-			t.render_hologram = true;
-			t.hologram_layer = -1;
-			t.validate_hologram = false;
-			t.show_wrong_block_overlay = false;
-			t.wrong_block_x = 0;
-			t.wrong_block_y = 0;
-			t.wrong_block_z = 0;
-		} else {
-			t.render_hologram ??= true;
-			t.hologram_layer ??= -1;
-			t.validate_hologram ??= false;
-			t.show_wrong_block_overlay ??= false;
-			t.wrong_block_x ??= 0;
-			t.wrong_block_y ??= 0;
-			t.wrong_block_z ??= 0;
-		}
-	}, { structureSize })); // particles need to access structure dimensions later, but their `v.` scope is different to the armour stand's, so these have to be temp variables.
+	entityDescription["scripts"]["initialize"] ??= [];
+	entityDescription["scripts"]["initialize"].push(functionToMolang((v, t, q) => {
+		v.hologram_offset_x = 0;
+		v.hologram_offset_y = 0;
+		v.hologram_offset_z = 0;
+		v.structure_w = $[structureSize[0]];
+		v.structure_h = $[structureSize[1]];
+		v.structure_d = $[structureSize[2]];
+		v.render_hologram = true;
+		v.hologram_texture_index = $[defaultTextureIndex];
+		v.hologram_layer = -1;
+		v.validate_hologram = false;
+		v.show_wrong_block_overlay = false;
+		v.wrong_blocks = -1;
+		v.wrong_block_x = 0;
+		v.wrong_block_y = 0;
+		v.wrong_block_z = 0;
+		
+		// v.last_held_item = q.get_equipped_item_name ?? "";
+		v.last_held_item = "";
+		v.last_hurt_direction = 1;
+		// v.player_action_counter = t.player_action_counter ?? 0;
+		v.player_action_counter = 0;
+	}, { structureSize, defaultTextureIndex }));
 	entityDescription["scripts"]["pre_animation"] ??= [];
-	entityDescription["scripts"]["pre_animation"].push(functionToMolang((v, q) => {
+	entityDescription["scripts"]["pre_animation"].push(functionToMolang((v, q, t, textureBlobsCount, totalBlocksToValidate) => {
 		v.hologram_dir = Math.floor(q.body_y_rotation / 90) + 2; // [south, west, north, east] (since it goes from -180 to 180)
-	}));
+		
+		t.process_action = false; // this is the only place I'm using temp variables for their intended purpose
+		t.action = "";
+		t.check_layer_validity = false;
+		if(v.last_held_item != q.get_equipped_item_name) {
+			v.last_held_item = q.get_equipped_item_name;
+			t.process_action = true;
+		}
+		if(v.last_hurt_direction != q.hurt_direction) { // hitting the armour stand changes this: https://wiki.bedrock.dev/entities/non-mob-runtime-identifiers.html#notable-queries-3
+			v.last_hurt_direction = q.hurt_direction;
+			t.process_action = true;
+		}
+		
+		if(t.process_action) {
+			if(q.is_item_name_any("slot.weapon.mainhand", "minecraft:stone")) {
+				t.action = "toggle_rendering";
+			} else if(q.is_item_name_any("slot.weapon.mainhand", "minecraft:glass")) {
+				t.action = "increase_opacity";
+			} else if(q.is_item_name_any("slot.weapon.mainhand", "minecraft:iron_ingot")) {
+				t.action = "toggle_validating";
+			} else if(q.equipped_item_any_tag("slot.weapon.mainhand", "minecraft:planks")) {
+				t.action = "increase_layer";
+			} else if(q.equipped_item_any_tag("slot.weapon.mainhand", "minecraft:logs")) {
+				t.action = "decrease_layer";
+			} else if(q.is_item_name_any("slot.weapon.mainhand", "minecraft:white_wool")) { // Movement controls (I hate that I'm having to do this)
+				t.action = "move_y-";
+			} else if(q.is_item_name_any("slot.weapon.mainhand", "minecraft:red_wool")) {
+				t.action = "move_y+";
+			} else if(q.is_item_name_any("slot.weapon.mainhand", "minecraft:orange_wool")) {
+				t.action = "move_z-";
+			} else if(q.is_item_name_any("slot.weapon.mainhand", "minecraft:yellow_wool")) {
+				t.action = "move_z+";
+			} else if(q.is_item_name_any("slot.weapon.mainhand", "minecraft:lime_wool")) {
+				t.action = "move_x+";
+			} else if(q.is_item_name_any("slot.weapon.mainhand", "minecraft:light_blue_wool")) {
+				t.action = "move_x-";
+			}
+		}
+		t.player_action_counter ??= 0;
+		if(v.player_action_counter != t.player_action_counter && t.player_action_counter > 0 && t.player_action != "") {
+			v.player_action_counter = t.player_action_counter;
+			t.action = t.player_action;
+		}
+		if(t.action != "") {
+			if(t.action == "toggle_rendering") {
+				v.render_hologram = !v.render_hologram;
+			} else if(t.action == "increase_opacity") {
+				v.hologram_texture_index++;
+				if(v.hologram_texture_index >= $[textureBlobsCount]) {
+					v.hologram_texture_index = 0;
+				}
+			} else if(t.action == "decrease_opacity") {
+				v.hologram_texture_index--;
+				if(v.hologram_texture_index < 0) {
+					v.hologram_texture_index = $[textureBlobsCount - 1];
+				}
+			} else if(t.action == "toggle_validating") {
+				v.validate_hologram = !v.validate_hologram;
+				if(v.validate_hologram) {
+					v.wrong_blocks = $[totalBlocksToValidate];
+					t.wrong_blocks = $[totalBlocksToValidate];
+				} else {
+					v.show_wrong_block_overlay = false;
+				}
+			} else if(t.action == "increase_layer") {
+				v.hologram_layer++;
+				t.check_layer_validity = true;
+			} else if(t.action == "decrease_layer") {
+				v.hologram_layer--;
+				t.check_layer_validity = true;
+			} else if(t.action == "move_x-") {
+				v.hologram_offset_x--;
+			} else if(t.action == "move_x+") {
+				v.hologram_offset_x++;
+			} else if(t.action == "move_y-") {
+				v.hologram_offset_y--;
+			} else if(t.action == "move_y+") {
+				v.hologram_offset_y++;
+			} else if(t.action == "move_z-") {
+				v.hologram_offset_z--;
+			} else if(t.action == "move_z+") {
+				v.hologram_offset_z++;
+			}
+		}
+		
+		v.last_pose ??= v.armor_stand.pose_index;
+		if(v.last_pose != v.armor_stand.pose_index) {
+			v.last_pose = v.armor_stand.pose_index;
+			if(v.render_hologram) {
+				v.hologram_layer++;
+				t.check_layer_validity = true;
+			}
+		}
+		
+		if(t.check_layer_validity) {
+			if(v.hologram_layer < -1) {
+				v.hologram_layer = $[totalLayers - 1];
+			}
+			if(v.hologram_layer >= $[totalLayers]) {
+				v.hologram_layer = -1;
+			}
+		}
+		
+		if(v.validate_hologram) {
+			// block validation particles rely on temp variables. this code checks if the temp variables are defined; if they are, it updates the internal state; if not, it sets the temp variables to its internal state.
+			if((t.wrong_blocks ?? -1) == -1) {
+				t.wrong_blocks = v.wrong_blocks;
+			} else {
+				v.wrong_blocks = t.wrong_blocks;
+			}
+			if((t.show_wrong_block_overlay ?? -1) == -1) {
+				t.show_wrong_block_overlay = v.show_wrong_block_overlay;
+			} else {
+				v.show_wrong_block_overlay = t.show_wrong_block_overlay;
+			}
+			if((t.wrong_block_x ?? -1) == -1) {
+				t.wrong_block_x = v.wrong_block_x;
+			} else {
+				v.wrong_block_x = t.wrong_block_x;
+			}
+			if((t.wrong_block_y ?? -1) == -1) {
+				t.wrong_block_y = v.wrong_block_y;
+			} else {
+				v.wrong_block_y = t.wrong_block_y;
+			}
+			if((t.wrong_block_z ?? -1) == -1) {
+				t.wrong_block_z = v.wrong_block_z;
+			} else {
+				v.wrong_block_z = t.wrong_block_z;
+			}
+		}
+	}, { totalLayers, textureBlobsCount: textureBlobs.length, totalBlocksToValidate: blocksToValidate.length }));
 	entityDescription["geometry"]["hologram"] = "geometry.armor_stand.hologram";
 	entityDescription["geometry"]["hologram.wrong_block_overlay"] = "geometry.armor_stand.hologram.wrong_block_overlay";
 	entityDescription["geometry"]["hologram.valid_structure_overlay"] = "geometry.armor_stand.hologram.valid_structure_overlay";
+	entityDescription["render_controllers"] ??= [];
 	entityDescription["render_controllers"].push({
-		"controller.render.armor_stand.hologram": functionToMolang((v, t) => {
-			v.last_pose ??= v.armor_stand.pose_index;
-			if(v.armor_stand.pose_index != v.last_pose) {
-				if(t.render_hologram) {
-					t.armor_stand_interaction = true;
-				}
-				v.last_pose = v.armor_stand.pose_index;
-			}
-			return t.render_hologram;
-		})
+		"controller.render.armor_stand.hologram": "v.render_hologram"
 	}, {
-		"controller.render.armor_stand.hologram.wrong_block_overlay": "t.show_wrong_block_overlay"
+		"controller.render.armor_stand.hologram.wrong_block_overlay": "v.show_wrong_block_overlay"
 	}, {
-		"controller.render.armor_stand.hologram.valid_structure_overlay": "t.validate_hologram && t.wrong_blocks == 0"
+		"controller.render.armor_stand.hologram.valid_structure_overlay": "v.validate_hologram && v.wrong_blocks == 0"
 	});
 	let outlineParticleSettings = [
-		"v.size = t.structure_w / 2; v.dir = 0; v.r = 1; v.g = 0; v.b = 0;",
-		"v.size = t.structure_h / 2; v.dir = 1; v.r = 1 / 255; v.g = 1; v.b = 0;",
-		"v.size = t.structure_d / 2; v.dir = 2; v.r = 0; v.g = 162 / 255; v.b = 1;",
-		"v.size = t.structure_w / 2; v.dir = 0; v.y = t.structure_h; v.r = 1; v.g = 1; v.b = 1;",
-		"v.size = t.structure_w / 2; v.dir = 0; v.z = t.structure_d; v.r = 1; v.g = 1; v.b = 1;",
-		"v.size = t.structure_w / 2; v.dir = 0; v.y = t.structure_h; v.z = t.structure_d; v.r = 1; v.g = 1; v.b = 1;",
-		"v.size = t.structure_h / 2; v.dir = 1; v.x = t.structure_w; v.r = 1; v.g = 1; v.b = 1;",
-		"v.size = t.structure_h / 2; v.dir = 1; v.z = t.structure_d; v.r = 1; v.g = 1; v.b = 1;",
-		"v.size = t.structure_h / 2; v.dir = 1; v.x = t.structure_w; v.z = t.structure_d; v.r = 1; v.g = 1; v.b = 1;",
-		"v.size = t.structure_d / 2; v.dir = 2; v.x = t.structure_w; v.r = 1; v.g = 1; v.b = 1;",
-		"v.size = t.structure_d / 2; v.dir = 2; v.y = t.structure_h; v.r = 1; v.g = 1; v.b = 1;",
-		"v.size = t.structure_d / 2; v.dir = 2; v.x = t.structure_w; v.y = t.structure_h; v.r = 1; v.g = 1; v.b = 1;"
+		`v.size = ${structureSize[0] / 2}; v.dir = 0; v.r = 1; v.g = 0; v.b = 0;`,
+		`v.size = ${structureSize[1] / 2}; v.dir = 1; v.r = 1 / 255; v.g = 1; v.b = 0;`,
+		`v.size = ${structureSize[2] / 2}; v.dir = 2; v.r = 0; v.g = 162 / 255; v.b = 1;`,
+		`v.size = ${structureSize[0] / 2}; v.dir = 0; v.y = ${structureSize[1]}; v.r = 1; v.g = 1; v.b = 1;`,
+		`v.size = ${structureSize[0] / 2}; v.dir = 0; v.z = ${structureSize[2]}; v.r = 1; v.g = 1; v.b = 1;`,
+		`v.size = ${structureSize[0] / 2}; v.dir = 0; v.y = ${structureSize[1]}; v.z = ${structureSize[2]}; v.r = 1; v.g = 1; v.b = 1;`,
+		`v.size = ${structureSize[1] / 2}; v.dir = 1; v.x = ${structureSize[0]}; v.r = 1; v.g = 1; v.b = 1;`,
+		`v.size = ${structureSize[1] / 2}; v.dir = 1; v.z = ${structureSize[2]}; v.r = 1; v.g = 1; v.b = 1;`,
+		`v.size = ${structureSize[1] / 2}; v.dir = 1; v.x = ${structureSize[0]}; v.z = ${structureSize[2]}; v.r = 1; v.g = 1; v.b = 1;`,
+		`v.size = ${structureSize[2] / 2}; v.dir = 2; v.x = ${structureSize[0]}; v.r = 1; v.g = 1; v.b = 1;`,
+		`v.size = ${structureSize[2] / 2}; v.dir = 2; v.y = ${structureSize[1]}; v.r = 1; v.g = 1; v.b = 1;`,
+		`v.size = ${structureSize[2] / 2}; v.dir = 2; v.x = ${structureSize[0]}; v.y = ${structureSize[1]}; v.r = 1; v.g = 1; v.b = 1;`
 	];
 	entityDescription["particle_effects"] ??= {};
-	outlineParticleSettings.forEach((particleMolang, i) => {
-		let particleName = `bounding_box_outline_${i}`;
-		entityDescription["particle_effects"][particleName] = `holoprint:${particleName}`;
+	entityDescription["particle_effects"]["bounding_box_outline"] = "holoprint:bounding_box_outline";
+	outlineParticleSettings.forEach(particleMolang => {
 		hologramAnimationControllers["animation_controllers"]["controller.animation.armor_stand.hologram.bounding_box"]["states"]["default"]["particle_effects"].push({
-			"effect": particleName,
-			"locator": "hologram_root"
+			"effect": "bounding_box_outline",
+			"locator": "hologram_root",
+			"pre_effect_script": particleMolang.replaceAll(/\s/g, "")
 		});
 	});
 	
-	let textureBlobs = textureAtlas.imageBlobs;
-	let defaultTextureIndex = max(textureBlobs.length - 3, 0); // default to 80% opacity
 	textureBlobs.forEach(([textureName]) => {
 		entityDescription["textures"][textureName] = `textures/entity/${textureName}`;
 		hologramRenderControllers["render_controllers"]["controller.render.armor_stand.hologram"]["arrays"]["textures"]["Array.textures"].push(`Texture.${textureName}`);
 	});
-	hologramRenderControllers["render_controllers"]["controller.render.armor_stand.hologram"]["textures"][0] = `Array.textures[t.hologram_texture_index ?? ${defaultTextureIndex}]`
+	hologramRenderControllers["render_controllers"]["controller.render.armor_stand.hologram"]["textures"][0] = `Array.textures[v.hologram_texture_index ?? ${defaultTextureIndex}]`;
 	
 	if(config.TINT != undefined) {
 		// By putting the overlay in the render controller instead of modifying the texture, the overlay isn't applied on transparent pixels. It also saves us the work of having to manipulate the image data directly :)
@@ -434,7 +558,6 @@ export async function makePack(structureFile, config = {}, resourcePackStack, pr
 	let overlayTexture = await singleWhitePixelTexture.setOpacity(config.WRONG_BLOCK_OVERLAY_COLOR[3]);
 	
 	let totalBlocks = materialList.totalMaterialCount;
-	let totalBlocksToValidate = blocksToValidate.length;
 	
 	// add the particles' short names, and then reference them in the animation controller
 	uniqueBlocksToValidate.forEach(blockName => {
@@ -453,88 +576,84 @@ export async function makePack(structureFile, config = {}, resourcePackStack, pr
 		});
 	});
 	
-	// Add player controls
-	let initVariables = functionToMolang((v, t) => {
-		v.last_attack_time ??= 0;
-		t.render_hologram ??= true;
-		t.hologram_offset_x ??= 0;
-		t.hologram_offset_y ??= 0;
-		t.hologram_offset_z ??= 0;
-		t.hologram_texture_index ??= $[defaultTextureIndex];
-		t.validate_hologram ??= false;
-		t.hologram_layer ??= -1;
-		t.show_wrong_block_overlay ??= false;
-		t.wrong_blocks ??= $[totalBlocksToValidate];
-		t.armor_stand_interaction ??= false;
+	// Add player controls. These are done entirely in the render controller so custom skins aren't disabled.
+	let initVariables = functionToMolang(v => {
+		v.player_action_counter ??= 0;
+		v.last_player_action_time ??= 0;
+		v.player_action ??= "";
+		v.new_action = ""; // If we want to set a new player action, we put it here first so we can update the counter and record the time.
 		
+		v.last_attack_time ??= 0;
 		v.attack = v.attack_time > 0 && (v.last_attack_time == 0 || v.attack_time < v.last_attack_time);
 		v.last_attack_time = v.attack_time;
-	}, { defaultTextureIndex, totalBlocksToValidate });
-	let totalLayers = structureSize[1];
-	let renderingControls = functionToMolang((q, t, v, textureBlobsCount) => {
+	});
+	let renderingControls = functionToMolang((q, v) => {
 		if(v.attack) {
 			if(q.is_item_name_any("slot.weapon.mainhand", "minecraft:stone")) {
-				t.render_hologram = !t.render_hologram;
-			}
-			if(t.render_hologram) {
-				if(q.is_item_name_any("slot.weapon.mainhand", "minecraft:glass")) {
-					t.hologram_texture_index = Math.clamp(t.hologram_texture_index + (q.is_sneaking? -1 : 1), 0, $[textureBlobsCount - 1]);
+				v.new_action = "toggle_rendering";
+			} else if(q.is_item_name_any("slot.weapon.mainhand", "minecraft:glass")) {
+				if(q.is_sneaking) {
+					v.new_action = "decrease_opacity";
+				} else {
+					v.new_action = "increase_opacity";
 				}
-			}
-			if(q.is_item_name_any("slot.weapon.mainhand", "minecraft:iron_ingot")) {
-				t.validate_hologram = !t.validate_hologram;
-				if(t.validate_hologram) {
-					t.wrong_blocks = $[totalBlocksToValidate];
+			} else if(q.is_item_name_any("slot.weapon.mainhand", "minecraft:iron_ingot")) {
+				v.new_action = "toggle_validating";
+			} else if(q.equipped_item_any_tag("slot.weapon.mainhand", "minecraft:planks")) {
+				if(q.is_sneaking) {
+					v.new_action = "decrease_layer";
+				} else {
+					v.new_action = "increase_layer";
 				}
 			}
 		}
-		if(t.render_hologram && ((v.attack && q.equipped_item_any_tag("slot.weapon.mainhand", "minecraft:planks")) || t.armor_stand_interaction)) {
-			t.hologram_layer = t.hologram_layer + (q.is_sneaking && !t.armor_stand_interaction? -1 : 1);
-			if(t.hologram_layer < -1) {
-				t.hologram_layer = $[totalLayers - 1];
-			}
-			if(t.hologram_layer >= $[totalLayers]) {
-				t.hologram_layer = -1;
-			}
-			t.armor_stand_interaction = false;
-		}
-	}, { totalLayers, textureBlobsCount: textureBlobs.length, totalBlocksToValidate });
-	let movementControls = functionToMolang((q, t, v) => {
+	});
+	let movementControls = functionToMolang((q, v) => {
 		if(v.attack && q.is_item_name_any("slot.weapon.mainhand", "minecraft:stick")) {
-			if(q.cardinal_player_facing == 0) { // would this query work in armour stands as well?!
-				t.hologram_offset_y--;
-			}
-			if(q.cardinal_player_facing == 1) {
-				t.hologram_offset_y++;
-			}
-			if(q.cardinal_player_facing == 2) {
-				t.hologram_offset_z--;
-			}
-			if(q.cardinal_player_facing == 3) {
-				t.hologram_offset_z++;
-			}
-			if(q.cardinal_player_facing == 4) {
-				t.hologram_offset_x++;
-			}
-			if(q.cardinal_player_facing == 5) {
-				t.hologram_offset_x--;
+			if(q.cardinal_player_facing == 0) { // this query unfortunately doesn't work in armour stands
+				v.new_action = "move_y-";
+			} else if(q.cardinal_player_facing == 1) {
+				v.new_action = "move_y+";
+			} else if(q.cardinal_player_facing == 2) {
+				v.new_action = "move_z-";
+			} else if(q.cardinal_player_facing == 3) {
+				v.new_action = "move_z+";
+			} else if(q.cardinal_player_facing == 4) {
+				v.new_action = "move_x+";
+			} else if(q.cardinal_player_facing == 5) {
+				v.new_action = "move_x-";
 			}
 		}
+	});
+	let broadcastActions = functionToMolang((v, t, q) => {
+		if(v.new_action != "") {
+			v.player_action = v.new_action;
+			v.new_action = "";
+			v.player_action_counter++;
+			v.last_player_action_time = q.time_stamp;
+		}
+		if(q.time_stamp - v.last_player_action_time > 40) { // broadcast nothing after 2 seconds. this is so, if the player does an action a minute ago and it doesn't do anything, the armour stands don't suddenly update
+			v.player_action = "";
+		}
+		t.player_action = v.player_action;
+		t.player_action_counter = v.player_action_counter;
 	});
 	let playerRenderControllers = patchRenderControllers(defaultPlayerRenderControllers, {
 		"controller.render.player.first_person": functionToMolang((q, v) => {
 			if(!q.is_in_ui && !v.map_face_icon) {
 				$[initVariables]
 				$[renderingControls]
+				$[broadcastActions]
 			}
-		}, { initVariables, renderingControls }),
-		"controller.render.player.third_person": functionToMolang((q, v) => {
+		}, { initVariables, renderingControls, broadcastActions }),
+		"controller.render.player.third_person": functionToMolang(q => {
 			if(!q.is_in_ui) {
 				$[initVariables]
 				$[renderingControls]
-				$[movementControls] // in first person, since the player entity is always at the front of the screen, it's always facing south so movement controls don't work.
+				$[movementControls] // in first person, since the player entity is always at the front of the screen, it's always facing south so movement controls only work in third person
+				$[broadcastActions]
 			}
-		}, { initVariables, renderingControls, movementControls })
+		}, { initVariables, renderingControls, movementControls, broadcastActions })
 	});
 	
 	console.log("Block counts map:", materialList.materials);
@@ -583,12 +702,7 @@ export async function makePack(structureFile, config = {}, resourcePackStack, pr
 	pack.file("models/entity/armor_stand.hologram.geo.json", stringifyWithFixedDecimals(hologramGeo));
 	pack.file("materials/entity.material", JSON.stringify(hologramMaterial));
 	pack.file("animation_controllers/armor_stand.hologram.animation_controllers.json", JSON.stringify(hologramAnimationControllers));
-	outlineParticleSettings.forEach((particleMolang, i) => {
-		let particle = structuredClone(boundingBoxOutlineParticle);
-		particle["particle_effect"]["description"]["identifier"] = `holoprint:bounding_box_outline_${i}`;
-		particle["particle_effect"]["components"]["minecraft:emitter_initialization"]["creation_expression"] = particleMolang.replaceAll(/\s/g, "");
-		pack.file(`particles/bounding_box_outline_${i}.json`, JSON.stringify(particle));
-	});
+	pack.file("particles/bounding_box_outline.json", JSON.stringify(boundingBoxOutlineParticle));
 	uniqueBlocksToValidate.forEach(blockName => {
 		let particleName = `validate_${blockName}`;
 		let particle = structuredClone(blockValidationParticle);
@@ -714,7 +828,7 @@ async function loadStuff(stuff, resourcePackStack) {
 /**
  * Gets the contents of a response based on the requested file extension (e.g. object from .json, image from .png, etc.).
  * @param {Promise<Response>} resPromise
- * @returns {Promise<String|Blob|Object>}
+ * @returns {Promise<String|Blob|Object|HTMLImageElement>}
  */
 async function getResponseContents(resPromise) {
 	let res = await resPromise;
@@ -918,8 +1032,33 @@ async function makePackIcon(structureFile) {
  */
 function functionToMolang(func, vars = {}) {
 	let funcCode = func.toString();
-	let funcBody = funcCode.slice(funcCode.indexOf("{") + 1, funcCode.lastIndexOf("}")).replaceAll(/\/\/.+/g, "").replaceAll(/(?<!return)\s/g, "");
-	let mathedCode = funcBody.replaceAll(`"`, `'`).replaceAll(/([\w\.]+)(\+|-){2};/g, "$1=$1$21;").replaceAll(/([\w\.]+)--;/g, "$1=$1-1;").replaceAll(/([\w\.]+)(\+|-|\*|\/|\?\?)=([^;]+);/g, "$1=$1$2$3;")
+	let minifiedFuncBody = funcCode.slice(funcCode.indexOf("{") + 1, funcCode.lastIndexOf("}")).replaceAll(/\/\/.+/g, "").replaceAll(/(?<!return)\s/g, "");
+	// else if() {...} statements must be expanded to be else { if() {...} }
+	let expandedElseIfCode = "";
+	for(let i = 0; i < minifiedFuncBody.length; i++) {
+		if(minifiedFuncBody.slice(i, i + 7) == "elseif(") {
+			expandedElseIfCode += "else{if(";
+			let inIfBlock = false;
+			let braceCounter = 0;
+			i += 6;
+			let j = i;
+			for(; braceCounter > 0 || !inIfBlock; j++) {
+				if(minifiedFuncBody[j] == "{") {
+					braceCounter++;
+					inIfBlock = true;
+				} else if(minifiedFuncBody[j] == "}") {
+					braceCounter--;
+				}
+				if(braceCounter == 0 && inIfBlock && minifiedFuncBody.slice(j, j + 5) == "}else") {
+					inIfBlock = false; // keep the final else clause included
+				}
+			}
+			minifiedFuncBody = minifiedFuncBody.slice(0, j) + "}" + minifiedFuncBody.slice(j);
+			continue;
+		}
+		expandedElseIfCode += minifiedFuncBody[i];
+	}
+	let mathedCode = expandedElseIfCode.replaceAll(`"`, `'`).replaceAll(/([\w\.]+)(\+|-){2};/g, "$1=$1$21;").replaceAll(/([\w\.]+)--;/g, "$1=$1-1;").replaceAll(/([\w\.]+)(\+|-|\*|\/|\?\?)=([^;]+);/g, "$1=$1$2$3;");
 	
 	// I have no idea how to make this smaller. I really wish JS had a native AST conversion API
 	let conditionedCode = "";

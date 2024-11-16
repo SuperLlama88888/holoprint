@@ -3,22 +3,25 @@
 	"particle_effect": {
 		"description": {
 			"basic_render_parameters": {
-				"material": "particles_opaque",
+				"material": "particles_blend",
 				"texture": "textures/particle/single_white_pixel"
 			}
 		},
 		"components": {
+			"minecraft:emitter_initialization": {
+				"creation_expression": "v.kill_particles = false;"
+			},
 			"minecraft:emitter_rate_instant": {
 				"num_particles": 1
 			},
-			"minecraft:emitter_lifetime_once": {
-				"active_time": 0
+			"minecraft:emitter_lifetime_events": {
+				"expiration_event": "kill_particles"
 			},
 			"minecraft:particle_lifetime_expression": {
-				"expiration_expression": "!t.show_wrong_block_overlay? { t.show_wrong_block_overlay = true; t.wrong_block_x = v.x; t.wrong_block_y = v.y; t.wrong_block_z = v.z; }; return !t.validate_hologram;"
+				"expiration_expression": "!(t.show_wrong_block_overlay ?? false)? { t.show_wrong_block_overlay = true; t.wrong_block_x = v.x; t.wrong_block_y = v.y; t.wrong_block_z = v.z; }; return v.kill_particles;"
 			},
 			"minecraft:particle_appearance_billboard": {
-				"size": [10, "0.125 * math.max(q.distance_from_camera * 0.02 + 0.6, 1)"],
+				"size": [10, "0.125 * (q.distance_from_camera * 0.02 + 0.65)"],
 				"facing_camera_mode": "lookat_direction",
 				"direction": {
 					"mode": "custom",
@@ -30,7 +33,7 @@
 				}
 			},
 			"minecraft:particle_appearance_tinting": {
-				"color": [0.8, 0, 0]
+				"color": [0.8, 0, 0, "math.min(q.distance_from_camera / 15 + 0.5, 1)"]
 			},
 			"minecraft:particle_lifetime_events": {
 				"timeline": {
@@ -40,11 +43,14 @@
 			}
 		},
 		"events": {
+			"kill_particles": {
+				"expression": "v.kill_particles = true;"
+			},
 			"set_wrong_block_overlay_position": {
 				"expression": "t.show_wrong_block_overlay = true; t.wrong_block_x = v.x; t.wrong_block_y = v.y; t.wrong_block_z = v.z;"
 			},
 			"clear_wrong_block_overlay": {
-				"expression": "v.x == t.wrong_block_x && v.y == t.wrong_block_y && v.z == t.wrong_block_z? { t.show_wrong_block_overlay = false; }; t.wrong_blocks = t.wrong_blocks - 1;"
+				"expression": "v.x == t.wrong_block_x && v.y == t.wrong_block_y && v.z == t.wrong_block_z? { t.show_wrong_block_overlay = false; }; t.wrong_blocks = (t.wrong_blocks ?? 0) - 1;"
 			}
 		}
 	}

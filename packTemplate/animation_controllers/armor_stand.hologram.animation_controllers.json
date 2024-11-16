@@ -18,14 +18,14 @@
 					"particle_effects": [],
 					"transitions": [
 						{
-							"hidden": "!t.render_hologram"
+							"hidden": "!v.render_hologram"
 						}
 					]
 				},
 				"hidden": {
 					"transitions": [
 						{
-							"default": "t.render_hologram"
+							"default": "v.render_hologram"
 						}
 					]
 				}
@@ -37,7 +37,7 @@
 				"default": {
 					"transitions": [
 						{
-							"validate": "t.validate_hologram"
+							"validate": "v.validate_hologram"
 						}
 					]
 				},
@@ -45,7 +45,7 @@
 					"particle_effects": [],
 					"transitions": [
 						{
-							"default": "!t.validate_hologram"
+							"default": "!v.validate_hologram"
 						}
 					]
 				}
