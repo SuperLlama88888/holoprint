@@ -92,7 +92,8 @@ export default class MaterialList {
 	};
 	/** Translations that JUST DON'T EXIST because Bugrock :/ */
 	static #translationPatches = {
-		"tile.end_portal.name": "End Portal"
+		"tile.end_portal.name": "End Portal",
+		"tile.end_gateway.name": "End Gateway"
 	};
 	
 	materials;

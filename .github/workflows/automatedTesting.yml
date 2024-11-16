@@ -41,7 +41,7 @@ jobs:
           name: completed_packs_${{ matrix.browser }}
           path: tests/completedPacks
       - name: Upload screenshots as artifacts
-        if: ${{ matrix.browser == 'Chrome' }}
+        if: always() && matrix.browser == 'Chrome'
         uses: actions/upload-artifact@v4.4.3
         with:
           name: screenshots_${{ matrix.browser }}
