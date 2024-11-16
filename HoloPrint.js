@@ -663,7 +663,7 @@ export async function makePack(structureFile, config = {}, resourcePackStack, pr
 	
 	// console.log(partitionedBlockCounts);
 	let missingItemAux = blockMetadata["data_items"].find(block => block.name == "minecraft:reserved6")["raw_id"];
-	hudScreenUI["material_list"]["controls"].push(...finalisedMaterialList.map(({ translationKey, partitionedCount, auxId }, i) => ({
+	hudScreenUI["material_list_entries"]["controls"].push(...finalisedMaterialList.map(({ translationKey, partitionedCount, auxId }, i) => ({
 		[`material_list_${i}@hud.material_list_entry`]: {
 			"$item_translation_key": translationKey,
 			"$item_count": partitionedCount,
@@ -671,7 +671,7 @@ export async function makePack(structureFile, config = {}, resourcePackStack, pr
 			"$background_opacity": i % 2 * 0.2
 		}
 	})));
-	hudScreenUI["material_list_wrapper"]["size"][1] = finalisedMaterialList.length * 12 + 12; // 12px for each item + 12px for the heading
+	hudScreenUI["material_list"]["size"][1] = finalisedMaterialList.length * 12 + 12; // 12px for each item + 12px for the heading
 	hudScreenUI["material_list_heading"]["controls"][1]["pack_name"]["text"] += structureName;
 	
 	manifest["header"]["name"] = `§uHoloPrint:§r ${structureName}`;
