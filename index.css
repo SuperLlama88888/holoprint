@@ -207,6 +207,10 @@ input[type="checkbox"] {
 	font-size: 1.4em;
 	font-weight: 500;
 }
+#termsOfUseNotice {
+	display: block;
+	text-align: center;
+}
 img, canvas {
 	display: inline-block;
 	width: 400px;
