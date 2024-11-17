@@ -6,14 +6,14 @@ HoloPrint is a web app that converts MCBE structure files into resource packs sh
 ### Usage
 > [!NOTE]
 > On Android the Structure Block export button is hidden; please use [this pack](assets/structureBlockButtonAdderPack.mcpack) to add it back.
-1. Use a Structure Block to export a `.mcstructure` file. To get a structure block, run the command `/give @s structure_block`.
-![Give Structure Block command](assets/giveStructureBlockCommand.png)
+1. Use a Structure Block to export a `.mcstructure` file. To get a structure block, run the command `/give @s structure_block`.  
+![Give Structure Block command](assets/giveStructureBlockCommand.png)  
 ![Structure Block exporting](assets/structureBlockExporting.png)
-2. Go to [https://superllama88888.github.io/holoprint](https://superllama88888.github.io/holoprint), select your `.mstructure` file, and tweak settings.
+2. Go to [https://superllama88888.github.io/holoprint](https://superllama88888.github.io/holoprint), select your `.mstructure` file, and tweak settings.  
 ![Pack generation screen](assets/packGenerationScreen.png)
-3. Generate and download your resource pack (`.mcpack`).
+3. Generate and download your resource pack (`.mcpack`).  
 ![Resource pack active](assets/resourcePackActive.png)
-4. Apply your resource pack and place an armour stand in your world.
+4. Apply your resource pack and place an armour stand in your world.  
 ![Placing armour stand](assets/placingArmourStand.gif)
 
 ### Hologram controls
