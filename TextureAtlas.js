@@ -3,48 +3,6 @@ import TGALoader from "https://esm.run/tga-js@1.1.1"; // We could use dynamic im
 import potpack from "https://esm.run/potpack@2.0.0";
 import ResourcePackStack from "./ResourcePackStack.js";
 
-/**
- * 2D vector.
- * @typedef {[Number, Number]} Vec2
- */
-/**
- * 3D vector.
- * @typedef {[Number, Number, Number]} Vec3
- */
-/**
- * A texture reference, made in BlockGeoMaker.js and turned into a texture in TextureAtlas.js.
- * @typedef {Object} TextureReference
- * @property {Vec2} uv UV coordinates
- * @property {Vec2} uv_size	UV size
- * @property {String} block_name Block ID to get the texture from
- * @property {String} texture_face Which face's texture to use
- * @property {Number} variant Which terrain_texture.json variant to use
- * @property {Boolean} croppable If a texture can be cropped automatically
- * @property {String} [texture_path_override] An overriding texture file path to look at
- * @property {String} [terrain_texture_override] A terrain texture key override; will override block_name and texture_face
- * @property {Vec3} [tint] A tint override
- */
-/**
- * An unresolved texture fragment containing an image path, tint, and UV position and size.
- * @typedef {Object} TextureFragment
- * @property {String} texturePath
- * @property {Vec3} [tint]
- * @property {Vec3} [tint_like_png]
- * @property {Number} opacity
- * @property {Vec2} uv
- * @property {Vec2} uv_size
- * @property {Boolean} croppable If a texture can be cropped automatically
- */
-/**
- * An image fragment containing an image, UV position, and UV size.
- * @typedef {Object} ImageFragment
- * @property {Image} image
- * @property {Number} w Width
- * @property {Number} h Height
- * @property {Number} sourceX
- * @property {Number} sourceY
- */
-
 const foliageTint = hexColorToClampedTriplet("#79C05A");
 const waterTint = hexColorToClampedTriplet("#44AFF5");
 
@@ -627,3 +585,13 @@ export default class TextureAtlas {
 		return imageData;
 	}
 }
+
+/**
+ * @typedef {import("./HoloPrint.js").TextureReference} TextureReference
+ */
+/**
+ * @typedef {import("./HoloPrint.js").TextureFragment} TextureFragment
+ */
+/**
+ * @typedef {import("./HoloPrint.js").ImageFragment} ImageFragment
+ */

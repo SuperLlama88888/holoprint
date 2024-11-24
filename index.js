@@ -197,14 +197,14 @@ async function makePack(structureFiles, localResourcePacks) {
 	let resourcePackStack = await new ResourcePackStack(localResourcePacks);
 	
 	let pack;
-	for(let structureFile of structureFiles) {
+	// for(let structureFile of structureFiles) {
 		logger?.setOriginTime(performance.now());
 		
 		if(ACTUAL_CONSOLE_LOG) {
-			pack = await HoloPrint.makePack(structureFile, config, resourcePackStack, previewCont);
+			pack = await HoloPrint.makePack(structureFiles, config, resourcePackStack, previewCont);
 		} else {
 			try {
-				pack = await HoloPrint.makePack(structureFile, config, resourcePackStack, previewCont);
+				pack = await HoloPrint.makePack(structureFiles, config, resourcePackStack, previewCont);
 			} catch(e) {
 				console.error(`Pack creation failed: ${e}`);
 			}
@@ -212,7 +212,7 @@ async function makePack(structureFiles, localResourcePacks) {
 		
 		if(IN_PRODUCTION) {
 			supabaseLogger ??= new SupabaseLogger(supabaseProjectUrl, supabaseApiKey);
-			supabaseLogger.recordStructureUsage(structureFile);
+			supabaseLogger.recordPackCreation(structureFiles);
 		}
 	
 		let downloadButton = document.createElement("button");
@@ -221,7 +221,7 @@ async function makePack(structureFiles, localResourcePacks) {
 		downloadButton.onclick = () => downloadBlob(pack, pack.name);
 		downloadButton.click();
 		document.body.appendChild(downloadButton);
-	}
+	// }
 	
 	generatePackFormSubmitButton.disabled = false;
 	

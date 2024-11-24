@@ -2,8 +2,7 @@
 	"format_version": "1.16.0",
 	"minecraft:geometry": [
 		{
-			"description": {
-				"identifier": "geometry.armor_stand.hologram",
+			"description": { // this is a template for everything else
 				"visible_bounds_offset": [0, 1.5, 0] // do we need this?!
 			},
 			"bones": [
@@ -11,11 +10,8 @@
 					"name": "hologram_alignment_wrapper"
 				},
 				{
-					"name": "hologram_root",
-					"parent": "hologram_alignment_wrapper",
-					"locators": {
-						"hologram_root": [0, 0, 0]
-					}
+					"name": "hologram_offset_wrapper",
+					"parent": "hologram_alignment_wrapper"
 				}
 			]
 		},
@@ -27,11 +23,15 @@
 			},
 			"bones": [
 				{
-					"name": "wrong_block_overlay_alignment_wrapper"
+					"name": "hologram_alignment_wrapper"
+				},
+				{
+					"name": "hologram_offset_wrapper",
+					"parent": "hologram_alignment_wrapper"
 				},
 				{
 					"name": "wrong_block_overlay",
-					"parent": "wrong_block_overlay_alignment_wrapper",
+					"parent": "hologram_offset_wrapper",
 					"cubes": [
 						{
 							"origin": [-8, 0, -8],
@@ -51,19 +51,41 @@
 			},
 			"bones": [
 				{
-					"name": "valid_structure_overlay_alignment_wrapper"
+					"name": "hologram_alignment_wrapper"
+				},
+				{
+					"name": "hologram_offset_wrapper",
+					"parent": "hologram_alignment_wrapper"
 				},
 				{
 					"name": "valid_structure_overlay",
-					"parent": "valid_structure_overlay_alignment_wrapper",
+					"parent": "hologram_offset_wrapper",
 					"cubes": [
 						{
-							"origin": ["JS puts this in since +x in MC isn't the same as +x in models", 0, -8],
-							// size is also put in by JS
-							"inflate": 0.05,
+							"origin": [0, 0, 0],
+							"size": [16, 16, 16],
 							"uv": [0, 0]
 						}
 					]
+				}
+			]
+		},
+		{
+			"description": {
+				"identifier": "geometry.armor_stand.hologram.particle_alignment",
+				"texture_width": 16,
+				"texture_height": 16
+			},
+			"bones": [
+				{
+					"name": "hologram_alignment_wrapper"
+				},
+				{
+					"name": "hologram_offset_wrapper",
+					"parent": "hologram_alignment_wrapper",
+					"locators": {
+						"hologram_root": [0, 0, 0]
+					}
 				}
 			]
 		}

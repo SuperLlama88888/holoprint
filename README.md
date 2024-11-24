@@ -47,6 +47,7 @@ Special thanks to **kizoku246** for the house in these images!
 ### Credit
 - [Structura](https://github.com/RavinMaddHatter/Structura): Inspiration, laying the foundation for this project. Without the work of [RavinMaddHatter](https://github.com/RavinMaddHatter) and [others](https://github.com/RavinMaddHatter/Structura/graphs/contributors), this project would've taken tens of hours more to get started.
 - [Tab Key Playerlist UI](https://github.com/YuuhaLand/Tabkey_Playerlist_UI) by [YuuhaLand](https://github.com/YuuhaLand): Foundation for the material list UI
+- [Indyficcient](https://www.youtube.com/@Indyfficient): The idea of changing structure by hitting the armour stand
 - Documentation:
   - [Bedrock Wiki](https://wiki.bedrock.dev): Best resource for learning about resource/behaviour packs!
   - [Minecraft Wiki](https://minecraft.wiki): Block entity list, block states and data values, and so much more!

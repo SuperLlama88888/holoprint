@@ -6,34 +6,8 @@ import TextureAtlas from "./TextureAtlas.js";
 import MaterialList from "./MaterialList.js";
 import PreviewRenderer from "./PreviewRenderer.js";
 
-import { abs, awaitAllEntries, blobToImage, JSONMap, max, min, pi, sha256, sha256text } from "./essential.js";
+import { abs, awaitAllEntries, blobToImage, concatenateFiles, JSONMap, JSONSet, max, min, pi, sha256, sha256text } from "./essential.js";
 import ResourcePackStack from "./ResourcePackStack.js";
-
-/**
- * An object for storing HoloPrint config options.
- * @typedef {Object} HoloPrintConfig
- * @property {Array<String>} IGNORED_BLOCKS
- * @property {Array<String>} IGNORED_MATERIAL_LIST_BLOCKS
- * @property {Number} SCALE
- * @property {Number} OPACITY
- * @property {Boolean} MULTIPLE_OPACITIES Whether to generate multiple opacity images and allow in-game switching, or have a constant opacity
- * @property {Array<Number>|undefined} TINT Clamped colour quartet
- * @property {Number} MINI_SCALE Size of ghost blocks when in the mini view for layers
- * @property {("single"|"all_below")} LAYER_MODE
- * @property {Number} TEXTURE_OUTLINE_WIDTH Measured in pixels, x ∈ [0, 1], x ∈ 2^ℝ
- * @property {String} TEXTURE_OUTLINE_COLOR A colour string
- * @property {("threshold"|"difference")} TEXTURE_OUTLINE_ALPHA_DIFFERENCE_MODE difference: will compare alpha channel difference; threshold: will only look at the second pixel
- * @property {Number} TEXTURE_OUTLINE_ALPHA_THRESHOLD If using difference mode, will draw outline between pixels with at least this much alpha difference; if using threshold mode, will draw outline on pixels next to pixels with an alpha less than or equal to this
- * @property {Boolean} DO_SPAWN_ANIMATION
- * @property {Number} SPAWN_ANIMATION_LENGTH Length of each individual block's spawn animation (seconds)
- * @property {Array<Number>} WRONG_BLOCK_OVERLAY_COLOR Clamped colour quartet
- * @property {String} MATERIAL_LIST_LANGUAGE The language code, as appearing in `texts/languages.json`
- * @property {Blob} PACK_ICON_BLOB Blob for `pack_icon.png`
- * @property {Array<String>} AUTHORS
- * @property {String|undefined} DESCRIPTION
- * @property {Number} PREVIEW_BLOCK_LIMIT The maximum number of blocks a structure can have for rendering a preview
- * @property {Boolean} SHOW_PREVIEW_SKYBOX
- */
 
 export const IGNORED_BLOCKS = ["air", "piston_arm_collision", "sticky_piston_arm_collision"]; // blocks to be ignored when scanning the structure file
 export const IGNORED_MATERIAL_LIST_BLOCKS = ["bubble_column"]; // blocks that will always be hidden on the material list
@@ -41,14 +15,13 @@ const IGNORED_BLOCK_ENTITIES = ["Beacon", "Beehive", "Bell", "BrewingStand", "Ch
 
 /**
  * Makes a HoloPrint resource pack from a structure file.
- * @param {File} structureFile Structure file (.mcstructure)
+ * @param {File|Array<File>} structureFiles Either a singular structure file (`*.mcstructure`), or an array of structure files
  * @param {HoloPrintConfig} [config]
  * @param {ResourcePackStack} [resourcePackStack]
  * @param {HTMLElement} [previewCont]
- * @returns {Promise<File>} Resource pack (.mcpack)
+ * @returns {Promise<File>} Resource pack (`*.mcpack`)
  */
-export async function makePack(structureFile, config = {}, resourcePackStack, previewCont) {
-	config = addDefaultConfig(config);
+export async function makePack(structureFiles, config = {}, resourcePackStack, previewCont) {
 	if(!resourcePackStack) {
 		console.debug("Waiting for resource pack stack initialisation...");
 		resourcePackStack = await new ResourcePackStack()
@@ -56,18 +29,16 @@ export async function makePack(structureFile, config = {}, resourcePackStack, pr
 	}
 	let startTime = performance.now();
 	
-	let arrayBuffer;
-	try {
-		arrayBuffer = await structureFile.arrayBuffer();
-	} catch(e) {
-		throw new Error(`Could not read bytes of structure file!\n${e}`);
+	config = addDefaultConfig(config);
+	if(!Array.isArray(structureFiles)) {
+		structureFiles = [structureFiles];
 	}
-	let { data: nbt } = await NBT.read(arrayBuffer);
-	console.info("Finished reading structure NBT!");
-	console.log("NBT:", nbt);
-	let structureSize = nbt["size"].map(x => +x); // Stored as Number instances: https://github.com/Offroaders123/NBTify/issues/50
-	let totalLayers = structureSize[1];
-	let structureName = structureFile.name.replace(/(\.holoprint)?\.[^.]+$/, "");
+	let nbts = await Promise.all(structureFiles.map(structureFile => readStructureNBT(structureFile)));
+	console.info("Finished reading structure NBTs!");
+	console.log("NBTs:", nbts);
+	let structureSizes = nbts.map(nbt => nbt["size"].map(x => +x)); // Stored as Number instances: https://github.com/Offroaders123/NBTify/issues/50
+	let totalLayersByStructure = structureSizes.map(structureSize => structureSize[1]);
+	let structureNames = structureFiles.map(structureFile => structureFile.name.replace(/(\.holoprint)?\.[^.]+$/, ""));
 	
 	// Make the pack
 	let loadedStuff = await loadStuff({
@@ -90,7 +61,7 @@ export async function makePack(structureFile, config = {}, resourcePackStack, pr
 			translationFile: `texts/${config.MATERIAL_LIST_LANGUAGE}.lang`
 		},
 		otherFiles: {
-			packIcon: config.PACK_ICON_BLOB ?? makePackIcon(structureFile),
+			packIcon: config.PACK_ICON_BLOB ?? makePackIcon(concatenateFiles(structureFiles)),
 		},
 		data: { // these will not be put into the pack
 			blockMetadata: "metadata/vanilladata_modules/mojang-blocks.json",
@@ -100,10 +71,14 @@ export async function makePack(structureFile, config = {}, resourcePackStack, pr
 	let { manifest, packIcon, entityFile, hologramRenderControllers, defaultPlayerRenderControllers, hologramGeo, armorStandGeo, hologramMaterial, hologramAnimationControllers, hologramAnimations, boundingBoxOutlineParticle, blockValidationParticle, singleWhitePixelTexture, hudScreenUI, translationFile } = loadedStuff.files;
 	let { blockMetadata, itemMetadata } = loadedStuff.data;
 	
-	let structure = nbt["structure"];
+	let structures = nbts.map(nbt => nbt["structure"]);
 	
-	let { palette: blockPalette, indices: blockPaletteIndicesByLayer } = tweakBlockPalette(structure, config.IGNORED_BLOCKS);
-	// console.log("indices: ", blockIndices);
+	let palettesAndIndices = structures.map(structure => tweakBlockPalette(structure, config.IGNORED_BLOCKS));
+	let { palette: blockPalette, indices: allStructureIndicesByLayer } = mergeMultiplePalettesAndIndices(palettesAndIndices);
+	console.log("combined palette: ", blockPalette);
+	console.log("remapped indices: ", allStructureIndicesByLayer);
+	window.blockPalette = blockPalette;
+	window.blockIndices = allStructureIndicesByLayer;
 	
 	let blockGeoMaker = await new BlockGeoMaker(config);
 	// makeBoneTemplate() is an impure function and adds texture references to the textureRefs set property.
@@ -164,23 +139,25 @@ export async function makePack(structureFile, config = {}, resourcePackStack, pr
 	console.log("Bone template palette with resolved UVs:", boneTemplatePalette);
 	
 	// I have no idea if these visible bounds actually influence anything...
-	let visibleBoundsWidth = 16 * max(structureSize[0], structureSize[2]);
-	let visibleBoundsHeight = 16 * structureSize[1];
+	let visibleBoundsWidth = 16 * max(...structureSizes.map(structureSize => max(structureSize[0], structureSize[2])));
+	let visibleBoundsHeight = 16 * max(...structureSizes.map(structureSize => structureSize[1]));
 	armorStandGeo["minecraft:geometry"][0]["description"]["visible_bounds_width"] = visibleBoundsWidth;
 	armorStandGeo["minecraft:geometry"][0]["description"]["visible_bounds_height"] = visibleBoundsHeight;
-	hologramGeo["minecraft:geometry"][0]["description"]["visible_bounds_width"] = visibleBoundsWidth;
-	hologramGeo["minecraft:geometry"][0]["description"]["visible_bounds_height"] = visibleBoundsHeight;
+	let structureGeoTemplate = hologramGeo["minecraft:geometry"][0];
+	hologramGeo["minecraft:geometry"].splice(0, 1);
+	structureGeoTemplate["description"]["visible_bounds_width"] = visibleBoundsWidth;
+	structureGeoTemplate["description"]["visible_bounds_height"] = visibleBoundsHeight;
 	
-	hologramGeo["minecraft:geometry"][0]["description"]["texture_width"] = textureAtlas.atlasWidth;
-	hologramGeo["minecraft:geometry"][0]["description"]["texture_height"] = textureAtlas.atlasHeight;
+	structureGeoTemplate["description"]["texture_width"] = textureAtlas.atlasWidth;
+	structureGeoTemplate["description"]["texture_height"] = textureAtlas.atlasHeight;
 	
-	hologramGeo["minecraft:geometry"][2]["bones"][1]["cubes"][0]["origin"][0] = 8 - structureSize[0] * 16; // valid structure overlay dimensions, I should probably do this with Molang
-	hologramGeo["minecraft:geometry"][2]["bones"][1]["cubes"][0]["size"] = structureSize.map(x => x * 16);
-	
+	let structureWMolang = arrayToMolang(structureSizes.map(structureSize => structureSize[0]), "v.structure_index");
+	let structureHMolang = arrayToMolang(structureSizes.map(structureSize => structureSize[1]), "v.structure_index");
+	let structureDMolang = arrayToMolang(structureSizes.map(structureSize => structureSize[2]), "v.structure_index");
 	let makeHologramSpawnAnimation;
 	if(config.DO_SPAWN_ANIMATION) {
 		let totalAnimationLength = 0;
-		makeHologramSpawnAnimation = (x, y, z) => {
+		makeHologramSpawnAnimation = (x, y, z, structureSize) => {
 			let delay = config.SPAWN_ANIMATION_LENGTH * 0.25 * (structureSize[0] - x + y + structureSize[2] - z + Math.random() * 2) + 0.05;
 			delay = Number(delay.toFixed(2));
 			let animationEnd = Number((delay + config.SPAWN_ANIMATION_LENGTH).toFixed(2));
@@ -196,9 +173,9 @@ export async function makePack(structureFile, config = {}, resourcePackStack, pr
 		delete hologramAnimations["animations"]["animation.armor_stand.hologram.spawn"]["bones"];
 	}
 	
-	let layerAnimations = hologramAnimationControllers["animation_controllers"]["controller.animation.armor_stand.hologram.layers"]["states"];
-	let topLayer = structureSize[1] - 1;
-	layerAnimations["default"]["transitions"].push(
+	let layerAnimationStates = hologramAnimationControllers["animation_controllers"]["controller.animation.armor_stand.hologram.layers"]["states"];
+	let topLayer = max(...structureSizes.map(structureSize => structureSize[1])) - 1;
+	layerAnimationStates["default"]["transitions"].push(
 		{
 			"l_0": `v.hologram_layer > -1 && v.hologram_layer != ${topLayer}`
 		},
@@ -208,130 +185,145 @@ export async function makePack(structureFile, config = {}, resourcePackStack, pr
 	);
 	let entityDescription = entityFile["minecraft:client_entity"]["description"];
 	
-	let blocksToValidate = [];
+	let totalBlocksToValidateByStructure = [];
 	let uniqueBlocksToValidate = new Set();
 	
 	let materialList = new MaterialList(blockMetadata, itemMetadata, translationFile);
-	for(let y = 0; y < structureSize[1]; y++) {
-		let layerName = `l_${y}`;
-		hologramGeo["minecraft:geometry"][0]["bones"].push({
-			"name": layerName,
-			"parent": "hologram_root",
-			"pivot": [8, 0, -8]
-		});
-		layerAnimations[layerName] = {
-			"animations": [`hologram.l_${y}`],
-			"blend_transition": 0.1,
-			"blend_via_shortest_path": true,
-			"transitions": [
-				{
-					[y == 0? "default" : `l_${y - 1}`]: `v.hologram_layer < ${y}${y == topLayer? " && v.hologram_layer != -1" : ""}`
-				},
-				(y == topLayer? {
-					"default": "v.hologram_layer == -1"
-				} : {
-					[`l_${y + 1}`]: `v.hologram_layer > ${y}`
-				})
-			]
-		};
-		hologramAnimations["animations"][`animation.armor_stand.hologram.l_${y}`] = {};
-		let layerAnimation = hologramAnimations["animations"][`animation.armor_stand.hologram.l_${y}`];
-		layerAnimation["loop"] = "hold_on_last_frame";
-		layerAnimation["bones"] = {};
-		for(let otherLayerY = 0; otherLayerY < structureSize[1]; otherLayerY++) {
-			if(otherLayerY == y || config.LAYER_MODE == "all_below" && otherLayerY < y) {
-				continue;
-			}
-			layerAnimation["bones"][`l_${otherLayerY}`] = {
-				"scale": config.MINI_SCALE
+	allStructureIndicesByLayer.forEach((structureIndicesByLayer, structureI) => {
+		let structureSize = structureSizes[structureI];
+		let geoShortName = `hologram_${structureI}`;
+		let geoIdentifier = `geometry.armor_stand.hologram_${structureI}`;
+		let geo = structuredClone(structureGeoTemplate);
+		geo["description"]["identifier"] = geoIdentifier;
+		entityDescription["geometry"][geoShortName] = geoIdentifier;
+		hologramRenderControllers["render_controllers"]["controller.render.armor_stand.hologram"]["arrays"]["geometries"]["Array.geometries"].push(`Geometry.${geoShortName}`);
+		let blocksToValidate = [];
+		for(let y = 0; y < structureSize[1]; y++) {
+			let layerName = `l_${y}`;
+			geo["bones"].push({
+				"name": layerName,
+				"parent": "hologram_offset_wrapper",
+				"pivot": [8, 0, -8]
+			});
+			layerAnimationStates[layerName] = {
+				"animations": [`hologram.l_${y}`],
+				"blend_transition": 0.1,
+				"blend_via_shortest_path": true,
+				"transitions": [
+					{
+						[y == 0? "default" : `l_${y - 1}`]: `v.hologram_layer < ${y}${y == topLayer? " && v.hologram_layer != -1" : ""}`
+					},
+					(y == topLayer? {
+						"default": "v.hologram_layer == -1"
+					} : {
+						[`l_${y + 1}`]: `v.hologram_layer > ${y}`
+					})
+				]
 			};
-		}
-		if(Object.entries(layerAnimation["bones"]).length == 0) {
-			delete layerAnimation["bones"];
-		}
-		entityDescription["animations"][`hologram.l_${y}`] = `animation.armor_stand.hologram.l_${y}`;
-		
-		for(let x = 0; x < structureSize[0]; x++) {
-			for(let z = 0; z < structureSize[2]; z++) {
-				let blockI = (x * structureSize[1] + y) * structureSize[2] + z;
-				let firstBoneForThisBlock = true;
-				blockPaletteIndicesByLayer.forEach((blockPaletteIndices, layerI) => {
-					let paletteI = blockPaletteIndices[blockI];
-					if(!(paletteI in boneTemplatePalette)) {
-						if(paletteI in blockPalette) {
-							console.error(`A bone template wasn't made for blockPalette[${paletteI}] = ${blockPalette[paletteI]["name"]}!`);
-						}
-						return;
-					}
-					let boneTemplate = boneTemplatePalette[paletteI];
-					// console.table({x, y, z, i, paletteI, boneTemplate});
-					
-					let boneName = `b_${x}_${y}_${z}`;
-					if(!firstBoneForThisBlock) {
-						boneName += `_${layerI}`;
-					}
-					let bonePos = [-16 * x - 8, 16 * y, 16 * z - 8]; // I got these values from trial and error with blockbench (which makes the x negative I think. it's weird.)
-					let positionedBoneTemplate = blockGeoMaker.positionBoneTemplate(boneTemplate, bonePos);
-					let bonesToAdd = [{
-						"name": boneName,
-						"parent": layerName,
-						...positionedBoneTemplate
-					}];
-					let rotWrapperBones = new JSONMap();
-					let extraRotCounter = 0;
-					bonesToAdd[0]["cubes"] = bonesToAdd[0]["cubes"].filter(cube => {
-						if("extra_rots" in cube) { // cubes that copy with rotation in both the cube and the copied cube need wrapper bones to handle multiple rotations
-							let extraRots = cube["extra_rots"];
-							delete cube["extra_rots"];
-							if(!rotWrapperBones.has(extraRots)) { // some rotations may be the same, so we use a map to cache the wrapper bone this cube should be added to
-								let wrapperBones = [];
-								let parentBoneName = boneName;
-								extraRots.forEach(extraRot => {
-									let wrapperBoneName = `${boneName}_rot_wrapper_${extraRotCounter++}`;
-									wrapperBones.push({
-										"name": wrapperBoneName,
-										"parent": parentBoneName,
-										"rotation": extraRot["rot"],
-										"pivot": extraRot["pivot"]
-									});
-									parentBoneName = wrapperBoneName;
-								});
-								bonesToAdd.push(...wrapperBones);
-								wrapperBones.at(-1)["cubes"] = [];
-								rotWrapperBones.set(extraRots, wrapperBones.at(-1));
+			hologramAnimations["animations"][`animation.armor_stand.hologram.l_${y}`] ??= {};
+			let layerAnimation = hologramAnimations["animations"][`animation.armor_stand.hologram.l_${y}`];
+			layerAnimation["loop"] = "hold_on_last_frame";
+			layerAnimation["bones"] ??= {};
+			for(let otherLayerY = 0; otherLayerY < structureSize[1]; otherLayerY++) {
+				if(otherLayerY == y || config.LAYER_MODE == "all_below" && otherLayerY < y) {
+					continue;
+				}
+				layerAnimation["bones"][`l_${otherLayerY}`] = {
+					"scale": config.MINI_SCALE
+				};
+			}
+			if(Object.entries(layerAnimation["bones"]).length == 0) {
+				delete layerAnimation["bones"];
+			}
+			entityDescription["animations"][`hologram.l_${y}`] = `animation.armor_stand.hologram.l_${y}`;
+			
+			for(let x = 0; x < structureSize[0]; x++) {
+				for(let z = 0; z < structureSize[2]; z++) {
+					let blockI = (x * structureSize[1] + y) * structureSize[2] + z;
+					let firstBoneForThisBlock = true;
+					structureIndicesByLayer.forEach((blockPaletteIndices, layerI) => {
+						let paletteI = blockPaletteIndices[blockI];
+						if(!(paletteI in boneTemplatePalette)) {
+							if(paletteI in blockPalette) {
+								console.error(`A bone template wasn't made for blockPalette[${paletteI}] = ${blockPalette[paletteI]["name"]}!`);
 							}
-							rotWrapperBones.get(extraRots)["cubes"].push(cube);
-							return false;
-						} else {
-							return true;
+							return;
 						}
-					});
-					hologramGeo["minecraft:geometry"][0]["bones"].push(...bonesToAdd);
-					
-					if(firstBoneForThisBlock) { // we only need 1 locator for each block position, even though there may be 2 bones in this position because of the 2nd layer
-						hologramGeo["minecraft:geometry"][0]["bones"][1]["locators"][boneName] = bonePos.map(x => x + 8);
-					}
-					if(config.DO_SPAWN_ANIMATION) {
-						hologramAnimations["animations"]["animation.armor_stand.hologram.spawn"]["bones"][boneName] = makeHologramSpawnAnimation(x, y, z);
-					}
-					
-					let blockName = blockPalette[paletteI]["name"];
-					if(!config.IGNORED_MATERIAL_LIST_BLOCKS.includes(blockName)) {
-						materialList.add(blockName);
-					}
-					if(layerI == 0) { // particle_expire_if_in_blocks only works on the first layer :(
-						blocksToValidate.push({
-							"bone_name": boneName,
-							"block": blockName,
-							"pos": [x, y, z]
+						let boneTemplate = boneTemplatePalette[paletteI];
+						// console.table({x, y, z, i, paletteI, boneTemplate});
+						
+						let boneName = `b_${x}_${y}_${z}`;
+						if(!firstBoneForThisBlock) {
+							boneName += `_${layerI}`;
+						}
+						let bonePos = [-16 * x - 8, 16 * y, 16 * z - 8]; // I got these values from trial and error with blockbench (which makes the x negative I think. it's weird.)
+						let positionedBoneTemplate = blockGeoMaker.positionBoneTemplate(boneTemplate, bonePos);
+						let bonesToAdd = [{
+							"name": boneName,
+							"parent": layerName,
+							...positionedBoneTemplate
+						}];
+						let rotWrapperBones = new JSONMap();
+						let extraRotCounter = 0;
+						bonesToAdd[0]["cubes"] = bonesToAdd[0]["cubes"].filter(cube => {
+							if("extra_rots" in cube) { // cubes that copy with rotation in both the cube and the copied cube need wrapper bones to handle multiple rotations
+								let extraRots = cube["extra_rots"];
+								delete cube["extra_rots"];
+								if(!rotWrapperBones.has(extraRots)) { // some rotations may be the same, so we use a map to cache the wrapper bone this cube should be added to
+									let wrapperBones = [];
+									let parentBoneName = boneName;
+									extraRots.forEach(extraRot => {
+										let wrapperBoneName = `${boneName}_rot_wrapper_${extraRotCounter++}`;
+										wrapperBones.push({
+											"name": wrapperBoneName,
+											"parent": parentBoneName,
+											"rotation": extraRot["rot"],
+											"pivot": extraRot["pivot"]
+										});
+										parentBoneName = wrapperBoneName;
+									});
+									bonesToAdd.push(...wrapperBones);
+									wrapperBones.at(-1)["cubes"] = [];
+									rotWrapperBones.set(extraRots, wrapperBones.at(-1));
+								}
+								rotWrapperBones.get(extraRots)["cubes"].push(cube);
+								return false;
+							} else {
+								return true;
+							}
 						});
-						uniqueBlocksToValidate.add(blockName);
-					}
-					firstBoneForThisBlock = false;
-				});
+						geo["bones"].push(...bonesToAdd);
+						
+						if(firstBoneForThisBlock) { // we only need 1 locator for each block position, even though there may be 2 bones in this position because of the 2nd layer
+							hologramGeo["minecraft:geometry"][2]["bones"][1]["locators"][boneName] ??= bonePos.map(x => x + 8);
+						}
+						if(config.DO_SPAWN_ANIMATION) {
+							hologramAnimations["animations"]["animation.armor_stand.hologram.spawn"]["bones"][boneName] = makeHologramSpawnAnimation(x, y, z, structureSize);
+						}
+						
+						let blockName = blockPalette[paletteI]["name"];
+						if(!config.IGNORED_MATERIAL_LIST_BLOCKS.includes(blockName)) {
+							materialList.add(blockName);
+						}
+						if(layerI == 0) { // particle_expire_if_in_blocks only works on the first layer :(
+							blocksToValidate.push({
+								"bone_name": boneName,
+								"block": blockName,
+								"pos": [x, y, z]
+							});
+							uniqueBlocksToValidate.add(blockName);
+						}
+						firstBoneForThisBlock = false;
+					});
+				}
 			}
 		}
-	}
+		hologramGeo["minecraft:geometry"].push(geo);
+		
+		addBoundingBoxParticles(hologramAnimationControllers, structureI, structureSize);
+		addBlockValidationParticles(hologramAnimationControllers, structureI, blocksToValidate);
+		totalBlocksToValidateByStructure.push(blocksToValidate.length);
+	});
 	
 	entityDescription["materials"]["hologram"] = "holoprint_hologram";
 	entityDescription["materials"]["hologram.wrong_block_overlay"] = "holoprint_hologram.wrong_block_overlay";
@@ -346,7 +338,7 @@ export async function makePack(structureFile, config = {}, resourcePackStack, pr
 	entityDescription["scripts"]["animate"] ??= [];
 	entityDescription["scripts"]["animate"].push("hologram.align", "hologram.offset", "hologram.spawn", "hologram.wrong_block_overlay", "controller.hologram.layers", "controller.hologram.bounding_box", "controller.hologram.block_validation");
 	entityDescription["scripts"]["initialize"] ??= [];
-	entityDescription["scripts"]["initialize"].push(functionToMolang((v, t, q) => {
+	entityDescription["scripts"]["initialize"].push(functionToMolang((v, structureSize, structureCount) => {
 		v.hologram_offset_x = 0;
 		v.hologram_offset_y = 0;
 		v.hologram_offset_z = 0;
@@ -363,12 +355,15 @@ export async function makePack(structureFile, config = {}, resourcePackStack, pr
 		v.wrong_block_y = 0;
 		v.wrong_block_z = 0;
 		
+		v.structure_index = 0;
+		v.structure_count = $[structureCount];
+		
 		// v.last_held_item = q.get_equipped_item_name ?? "";
 		v.last_held_item = "";
 		v.last_hurt_direction = 1;
 		// v.player_action_counter = t.player_action_counter ?? 0;
 		v.player_action_counter = 0;
-	}, { structureSize, defaultTextureIndex }));
+	}, { structureSize: structureSizes[0], defaultTextureIndex, structureCount: structureFiles.length }));
 	entityDescription["scripts"]["pre_animation"] ??= [];
 	entityDescription["scripts"]["pre_animation"].push(functionToMolang((v, q, t, textureBlobsCount, totalBlocksToValidate) => {
 		v.hologram_dir = Math.floor(q.body_y_rotation / 90) + 2; // [south, west, north, east] (since it goes from -180 to 180)
@@ -376,6 +371,7 @@ export async function makePack(structureFile, config = {}, resourcePackStack, pr
 		t.process_action = false; // this is the only place I'm using temp variables for their intended purpose
 		t.action = "";
 		t.check_layer_validity = false;
+		t.changed_structure = false;
 		if(v.last_held_item != q.get_equipped_item_name) {
 			v.last_held_item = q.get_equipped_item_name;
 			t.process_action = true;
@@ -383,6 +379,17 @@ export async function makePack(structureFile, config = {}, resourcePackStack, pr
 		if(v.last_hurt_direction != q.hurt_direction) { // hitting the armour stand changes this: https://wiki.bedrock.dev/entities/non-mob-runtime-identifiers.html#notable-queries-3
 			v.last_hurt_direction = q.hurt_direction;
 			t.process_action = true;
+			if(!q.is_item_equipped) { // change structure on hit when holding nothing
+				t.action = "next_structure";
+			}
+		}
+		
+		v.last_pose ??= v.armor_stand.pose_index;
+		if(v.last_pose != v.armor_stand.pose_index) {
+			v.last_pose = v.armor_stand.pose_index;
+			if(v.render_hologram) {
+				t.action = "increase_layer";
+			}
 		}
 		
 		if(t.process_action) {
@@ -413,21 +420,13 @@ export async function makePack(structureFile, config = {}, resourcePackStack, pr
 		t.player_action_counter ??= 0;
 		if(v.player_action_counter != t.player_action_counter && t.player_action_counter > 0 && t.player_action != "") {
 			v.player_action_counter = t.player_action_counter;
-			t.action = t.player_action;
+			if(!q.is_item_name_any("slot.weapon.mainhand", "minecraft:bone")) {
+				t.action = t.player_action;
+			}
 		}
 		if(t.action != "") {
 			if(t.action == "toggle_rendering") {
 				v.render_hologram = !v.render_hologram;
-			} else if(t.action == "increase_opacity") {
-				v.hologram_texture_index++;
-				if(v.hologram_texture_index >= $[textureBlobsCount]) {
-					v.hologram_texture_index = 0;
-				}
-			} else if(t.action == "decrease_opacity") {
-				v.hologram_texture_index--;
-				if(v.hologram_texture_index < 0) {
-					v.hologram_texture_index = $[textureBlobsCount - 1];
-				}
 			} else if(t.action == "toggle_validating") {
 				v.validate_hologram = !v.validate_hologram;
 				if(v.validate_hologram) {
@@ -436,43 +435,66 @@ export async function makePack(structureFile, config = {}, resourcePackStack, pr
 				} else {
 					v.show_wrong_block_overlay = false;
 				}
-			} else if(t.action == "increase_layer") {
-				v.hologram_layer++;
-				t.check_layer_validity = true;
-			} else if(t.action == "decrease_layer") {
-				v.hologram_layer--;
-				t.check_layer_validity = true;
-			} else if(t.action == "move_x-") {
-				v.hologram_offset_x--;
-			} else if(t.action == "move_x+") {
-				v.hologram_offset_x++;
-			} else if(t.action == "move_y-") {
-				v.hologram_offset_y--;
-			} else if(t.action == "move_y+") {
-				v.hologram_offset_y++;
-			} else if(t.action == "move_z-") {
-				v.hologram_offset_z--;
-			} else if(t.action == "move_z+") {
-				v.hologram_offset_z++;
-			}
-		}
-		
-		v.last_pose ??= v.armor_stand.pose_index;
-		if(v.last_pose != v.armor_stand.pose_index) {
-			v.last_pose = v.armor_stand.pose_index;
-			if(v.render_hologram) {
-				v.hologram_layer++;
-				t.check_layer_validity = true;
+			} else if(v.render_hologram) { // opacity, layer, movement, and structure controls require the hologram to be visible, otherwise it could be confusing if you accidentally change something when it's invisible
+				if(t.action == "increase_opacity") {
+					v.hologram_texture_index++;
+					if(v.hologram_texture_index >= $[textureBlobsCount]) {
+						v.hologram_texture_index = 0;
+					}
+				} else if(t.action == "decrease_opacity") {
+					v.hologram_texture_index--;
+					if(v.hologram_texture_index < 0) {
+						v.hologram_texture_index = $[textureBlobsCount - 1];
+					}
+				} else if(t.action == "increase_layer") {
+					v.hologram_layer++;
+					t.check_layer_validity = true;
+				} else if(t.action == "decrease_layer") {
+					v.hologram_layer--;
+					t.check_layer_validity = true;
+				} else if(t.action == "move_x-") {
+					v.hologram_offset_x--;
+				} else if(t.action == "move_x+") {
+					v.hologram_offset_x++;
+				} else if(t.action == "move_y-") {
+					v.hologram_offset_y--;
+				} else if(t.action == "move_y+") {
+					v.hologram_offset_y++;
+				} else if(t.action == "move_z-") {
+					v.hologram_offset_z--;
+				} else if(t.action == "move_z+") {
+					v.hologram_offset_z++;
+				} else if(t.action == "next_structure" && v.structure_count > 1) {
+					v.structure_index++;
+					t.changed_structure = true;
+				} else if(t.action == "previous_structure" && v.structure_count > 1) {
+					v.structure_index--;
+					t.changed_structure = true;
+				}
 			}
 		}
 		
 		if(t.check_layer_validity) {
 			if(v.hologram_layer < -1) {
-				v.hologram_layer = $[totalLayers - 1];
+				v.hologram_layer = v.structure_h - 1;
 			}
-			if(v.hologram_layer >= $[totalLayers]) {
+			if(v.hologram_layer >= v.structure_h) {
 				v.hologram_layer = -1;
 			}
+		}
+		if(t.changed_structure) {
+			if(v.structure_index < 0) {
+				v.structure_index = v.structure_count - 1;
+			}
+			if(v.structure_index >= v.structure_count) {
+				v.structure_index = 0;
+			}
+			v.structure_w = $[structureWMolang];
+			v.structure_h = $[structureHMolang];
+			v.structure_d = $[structureDMolang];
+			v.hologram_layer = -1;
+			v.validate_hologram = false;
+			v.show_wrong_block_overlay = false;
 		}
 		
 		if(v.validate_hologram) {
@@ -503,10 +525,10 @@ export async function makePack(structureFile, config = {}, resourcePackStack, pr
 				v.wrong_block_z = t.wrong_block_z;
 			}
 		}
-	}, { totalLayers, textureBlobsCount: textureBlobs.length, totalBlocksToValidate: blocksToValidate.length }));
-	entityDescription["geometry"]["hologram"] = "geometry.armor_stand.hologram";
+	}, { textureBlobsCount: textureBlobs.length, totalBlocksToValidate: arrayToMolang(totalBlocksToValidateByStructure, "v.structure_index"), structureWMolang, structureHMolang, structureDMolang }));
 	entityDescription["geometry"]["hologram.wrong_block_overlay"] = "geometry.armor_stand.hologram.wrong_block_overlay";
 	entityDescription["geometry"]["hologram.valid_structure_overlay"] = "geometry.armor_stand.hologram.valid_structure_overlay";
+	entityDescription["geometry"]["hologram.particle_alignment"] = "geometry.armor_stand.hologram.particle_alignment";
 	entityDescription["render_controllers"] ??= [];
 	entityDescription["render_controllers"].push({
 		"controller.render.armor_stand.hologram": "v.render_hologram"
@@ -514,30 +536,9 @@ export async function makePack(structureFile, config = {}, resourcePackStack, pr
 		"controller.render.armor_stand.hologram.wrong_block_overlay": "v.show_wrong_block_overlay"
 	}, {
 		"controller.render.armor_stand.hologram.valid_structure_overlay": "v.validate_hologram && v.wrong_blocks == 0"
-	});
-	let outlineParticleSettings = [
-		`v.size = ${structureSize[0] / 2}; v.dir = 0; v.r = 1; v.g = 0; v.b = 0;`,
-		`v.size = ${structureSize[1] / 2}; v.dir = 1; v.r = 1 / 255; v.g = 1; v.b = 0;`,
-		`v.size = ${structureSize[2] / 2}; v.dir = 2; v.r = 0; v.g = 162 / 255; v.b = 1;`,
-		`v.size = ${structureSize[0] / 2}; v.dir = 0; v.y = ${structureSize[1]}; v.r = 1; v.g = 1; v.b = 1;`,
-		`v.size = ${structureSize[0] / 2}; v.dir = 0; v.z = ${structureSize[2]}; v.r = 1; v.g = 1; v.b = 1;`,
-		`v.size = ${structureSize[0] / 2}; v.dir = 0; v.y = ${structureSize[1]}; v.z = ${structureSize[2]}; v.r = 1; v.g = 1; v.b = 1;`,
-		`v.size = ${structureSize[1] / 2}; v.dir = 1; v.x = ${structureSize[0]}; v.r = 1; v.g = 1; v.b = 1;`,
-		`v.size = ${structureSize[1] / 2}; v.dir = 1; v.z = ${structureSize[2]}; v.r = 1; v.g = 1; v.b = 1;`,
-		`v.size = ${structureSize[1] / 2}; v.dir = 1; v.x = ${structureSize[0]}; v.z = ${structureSize[2]}; v.r = 1; v.g = 1; v.b = 1;`,
-		`v.size = ${structureSize[2] / 2}; v.dir = 2; v.x = ${structureSize[0]}; v.r = 1; v.g = 1; v.b = 1;`,
-		`v.size = ${structureSize[2] / 2}; v.dir = 2; v.y = ${structureSize[1]}; v.r = 1; v.g = 1; v.b = 1;`,
-		`v.size = ${structureSize[2] / 2}; v.dir = 2; v.x = ${structureSize[0]}; v.y = ${structureSize[1]}; v.r = 1; v.g = 1; v.b = 1;`
-	];
+	}, "controller.render.armor_stand.hologram.particle_alignment");
 	entityDescription["particle_effects"] ??= {};
 	entityDescription["particle_effects"]["bounding_box_outline"] = "holoprint:bounding_box_outline";
-	outlineParticleSettings.forEach(particleMolang => {
-		hologramAnimationControllers["animation_controllers"]["controller.animation.armor_stand.hologram.bounding_box"]["states"]["default"]["particle_effects"].push({
-			"effect": "bounding_box_outline",
-			"locator": "hologram_root",
-			"pre_effect_script": particleMolang.replaceAll(/\s/g, "")
-		});
-	});
 	
 	textureBlobs.forEach(([textureName]) => {
 		entityDescription["textures"][textureName] = `textures/entity/${textureName}`;
@@ -563,17 +564,6 @@ export async function makePack(structureFile, config = {}, resourcePackStack, pr
 	uniqueBlocksToValidate.forEach(blockName => {
 		let particleName = `validate_${blockName}`;
 		entityDescription["particle_effects"][particleName] = `holoprint:${particleName}`;
-	});
-	blocksToValidate.forEach(blockToValidate => {
-		hologramAnimationControllers["animation_controllers"]["controller.animation.armor_stand.hologram.block_validation"]["states"]["validate"]["particle_effects"].push({
-			"effect": `validate_${blockToValidate["block"]}`,
-			"locator": blockToValidate["bone_name"],
-			"pre_effect_script": `
-				v.x = ${blockToValidate["pos"][0]};
-				v.y = ${blockToValidate["pos"][1]};
-				v.z = ${blockToValidate["pos"][2]};
-			`.replaceAll(/\s/g, "")
-		});
 	});
 	
 	// Add player controls. These are done entirely in the render controller so custom skins aren't disabled.
@@ -604,6 +594,12 @@ export async function makePack(structureFile, config = {}, resourcePackStack, pr
 					v.new_action = "decrease_layer";
 				} else {
 					v.new_action = "increase_layer";
+				}
+			} else if(q.is_item_name_any("slot.weapon.mainhand", "minecraft:arrow")) {
+				if(q.is_sneaking) {
+					v.new_action = "previous_structure";
+				} else {
+					v.new_action = "next_structure";
 				}
 			}
 		}
@@ -672,9 +668,9 @@ export async function makePack(structureFile, config = {}, resourcePackStack, pr
 		}
 	})));
 	hudScreenUI["material_list"]["size"][1] = finalisedMaterialList.length * 12 + 12; // 12px for each item + 12px for the heading
-	hudScreenUI["material_list_heading"]["controls"][1]["pack_name"]["text"] += structureName;
+	hudScreenUI["material_list_heading"]["controls"][1]["pack_name"]["text"] += structureNames.join(", ");
 	
-	manifest["header"]["name"] = `§uHoloPrint:§r ${structureName}`;
+	manifest["header"]["name"] = `§uHoloPrint:§r ${structureNames.join(", ")}`;
 	manifest["header"]["description"] = `§u★HoloPrint§r resource pack generated on §o${(new Date()).toLocaleString()}§r\nDeveloped by §l§6SuperLlama88888§r`;
 	if(config.AUTHORS.length) {
 		manifest["header"]["description"] += `\nStructure made by ${config.AUTHORS.join(" and ")}`;
@@ -692,7 +688,13 @@ export async function makePack(structureFile, config = {}, resourcePackStack, pr
 	console.info("Finished making all pack files!");
 	
 	let pack = new JSZip();
-	pack.file(".mcstructure", structureFile);
+	if(structureFiles.length == 1) {
+		pack.file(".mcstructure", structureFiles[0]);
+	} else {
+		structureFiles.forEach((structureFile, i) => {
+			pack.file(`${i}.mcstructure`, structureFile);
+		});
+	}
 	pack.file("manifest.json", JSON.stringify(manifest));
 	pack.file("pack_icon.png", packIcon);
 	pack.file("entity/armor_stand.entity.json", JSON.stringify(entityFile));
@@ -728,14 +730,16 @@ export async function makePack(structureFile, config = {}, resourcePackStack, pr
 	console.info(`Finished creating pack in ${(performance.now() - startTime).toFixed(0) / 1000}s!`);
 	
 	if(totalBlocks < config.PREVIEW_BLOCK_LIMIT && previewCont) {
-		(new PreviewRenderer(previewCont, textureAtlas, hologramGeo, hologramAnimations, config.SHOW_PREVIEW_SKYBOX)).catch(e => console.error("Preview renderer error:", e)); // is async but we won't wait for it
+		hologramGeo["minecraft:geometry"].filter(geo => geo["description"]["identifier"].startsWith("geometry.armor_stand.hologram_")).map(geo => {
+			(new PreviewRenderer(previewCont, textureAtlas, geo, hologramAnimations, config.SHOW_PREVIEW_SKYBOX)).catch(e => console.error("Preview renderer error:", e)); // is async but we won't wait for it
+		});
 	}
 	
-	return new File([zippedPack], `${structureName}.holoprint.mcpack`);
+	return new File([zippedPack], `${structureNames.join("+")}.holoprint.mcpack`);
 }
 /**
  * Retrieves the structure file from a completed HoloPrint resource pack
- * @param {File} resourcePack HoloPrint resource pack (.mcpack)
+ * @param {File} resourcePack HoloPrint resource pack (`*.mcpack)
  * @returns {Promise<File>}
  */
 export async function extractStructureFileFromPack(resourcePack) {
@@ -749,7 +753,7 @@ export async function extractStructureFileFromPack(resourcePack) {
 }
 /**
  * Updates a HoloPrint resource pack by remaking it.
- * @param {File} resourcePack HoloPrint resource pack to update (.mcpack)
+ * @param {File} resourcePack HoloPrint resource pack to update (`*.mcpack`)
  * @param {HoloPrintConfig} [config]
  * @param {ResourcePackStack} [resourcePackStack]
  * @param {HTMLElement} [previewCont]
@@ -802,6 +806,16 @@ function addDefaultConfig(config) {
 	});
 }
 /**
+ * Reads the NBT of a structure file, returning a JSON object.
+ * @param {File} structureFile `*.mcstructure`
+ * @returns {Promise<Object>}
+ */
+async function readStructureNBT(structureFile) {
+	let arrayBuffer = await structureFile.arrayBuffer().catch(e => { throw new Error(`Could not read bytes of structure file ${structureFile.name}!\n${e}`); });
+	let nbt = await NBT.read(arrayBuffer).catch(e => { throw new Error(`Could not parse NBT of structure file ${structureFile.name}!\n${e}`); });
+	return nbt.data;
+}
+/**
  * Loads many files from different sources.
  * @param {Object} stuff
  * @param {ResourcePackStack} resourcePackStack
@@ -847,7 +861,7 @@ async function getResponseContents(resPromise) {
 /**
  * Removes ignored blocks from the block palette, and adds block entities as separate entries.
  * @param {Object} structure The de-NBT-ed structure file
- * @returns {{ palette: Array<Number>, indices: [Array<Number>, Array<Number>] }}
+ * @returns {{ palette: Array<Block>, indices: [Array<Number>, Array<Number>] }}
  */
 function tweakBlockPalette(structure, ignoredBlocks) {
 	let palette = structuredClone(structure["palette"]["default"]["block_palette"]);
@@ -910,15 +924,109 @@ function tweakBlockPalette(structure, ignoredBlocks) {
 		// console.log(`deleting entityless block entity ${paletteI} = ${JSON.stringify(blockPalette[paletteI])}`);
 		delete palette[paletteI]; // this makes the blockPalette array discontinuous; when using native array methods, they skip over the empty slots.
 	}
-	// console.log("palette: ", blockPalette, JSON.stringify(blockPalette));
-	// console.log("indices: ", blockPaletteIndices, JSON.stringify(blockPaletteIndices));
-	console.log("palette: ", palette);
-	console.log("indices: ", indices);
-	// blockIndices = blockIndices.map(i => blockPalette[i]);
-	window.blockPalette = palette;
-	window.blockIndices = indices;
 	
 	return { palette, indices };
+}
+/**
+ * Combines multiple block palettes into one, and updates indices for each.
+ * @param {Array<{palette: Array<Block>, indices: Array<[Number, Number]>}>} palettesAndIndices
+ * @returns {{palette: Array<Block>, indices: Array<Array<[Number, Number]>>}}
+ */
+function mergeMultiplePalettesAndIndices(palettesAndIndices) {
+	if(palettesAndIndices.length == 1) {
+		return {
+			palette: palettesAndIndices[0].palette,
+			indices: [palettesAndIndices[0].indices]
+		};
+	}
+	let mergedPaletteSet = new JSONSet();
+	let remappedIndices = [];
+	palettesAndIndices.forEach(({ palette, indices }) => {
+		let indexRemappings = [];
+		palette.forEach((block, i) => {
+			mergedPaletteSet.add(block);
+			indexRemappings[i] = mergedPaletteSet.indexOf(block);
+		});
+		remappedIndices.push(indices.map(layer => layer.map(i => indexRemappings[i] ?? -1)));
+	});
+	return {
+		palette: [...mergedPaletteSet],
+		indices: remappedIndices
+	};
+}
+/**
+ * Adds bounding box particles for a single structure to the hologram animation controllers in-place.
+ * @param {Object} hologramAnimationControllers
+ * @param {Number} structureI
+ * @param {Vec3} structureSize
+ */
+function addBoundingBoxParticles(hologramAnimationControllers, structureI, structureSize) {
+	let outlineParticleSettings = [
+		`v.size = ${structureSize[0] / 2}; v.dir = 0; v.r = 1; v.g = 0; v.b = 0;`,
+		`v.size = ${structureSize[1] / 2}; v.dir = 1; v.r = 1 / 255; v.g = 1; v.b = 0;`,
+		`v.size = ${structureSize[2] / 2}; v.dir = 2; v.r = 0; v.g = 162 / 255; v.b = 1;`,
+		`v.size = ${structureSize[0] / 2}; v.dir = 0; v.y = ${structureSize[1]}; v.r = 1; v.g = 1; v.b = 1;`,
+		`v.size = ${structureSize[0] / 2}; v.dir = 0; v.z = ${structureSize[2]}; v.r = 1; v.g = 1; v.b = 1;`,
+		`v.size = ${structureSize[0] / 2}; v.dir = 0; v.y = ${structureSize[1]}; v.z = ${structureSize[2]}; v.r = 1; v.g = 1; v.b = 1;`,
+		`v.size = ${structureSize[1] / 2}; v.dir = 1; v.x = ${structureSize[0]}; v.r = 1; v.g = 1; v.b = 1;`,
+		`v.size = ${structureSize[1] / 2}; v.dir = 1; v.z = ${structureSize[2]}; v.r = 1; v.g = 1; v.b = 1;`,
+		`v.size = ${structureSize[1] / 2}; v.dir = 1; v.x = ${structureSize[0]}; v.z = ${structureSize[2]}; v.r = 1; v.g = 1; v.b = 1;`,
+		`v.size = ${structureSize[2] / 2}; v.dir = 2; v.x = ${structureSize[0]}; v.r = 1; v.g = 1; v.b = 1;`,
+		`v.size = ${structureSize[2] / 2}; v.dir = 2; v.y = ${structureSize[1]}; v.r = 1; v.g = 1; v.b = 1;`,
+		`v.size = ${structureSize[2] / 2}; v.dir = 2; v.x = ${structureSize[0]}; v.y = ${structureSize[1]}; v.r = 1; v.g = 1; v.b = 1;`
+	];
+	let boundingBoxAnimation = {
+		"particle_effects": [],
+		"transitions": [
+			{
+				"hidden": `!v.render_hologram || v.structure_index != ${structureI}`
+			}
+		]
+	};
+	outlineParticleSettings.forEach(particleMolang => {
+		boundingBoxAnimation["particle_effects"].push({
+			"effect": "bounding_box_outline",
+			"locator": "hologram_root",
+			"pre_effect_script": particleMolang.replaceAll(/\s/g, "")
+		});
+	});
+	let animationStateName = `visible_${structureI}`;
+	hologramAnimationControllers["animation_controllers"]["controller.animation.armor_stand.hologram.bounding_box"]["states"][animationStateName] = boundingBoxAnimation;
+	hologramAnimationControllers["animation_controllers"]["controller.animation.armor_stand.hologram.bounding_box"]["states"]["hidden"]["transitions"].push({
+		[animationStateName]: `v.render_hologram && v.structure_index == ${structureI}`
+	});
+}
+/**
+ * Adds block validation particles for a single structure to the hologram animation controllers in-place.
+ * @param {Object} hologramAnimationControllers
+ * @param {Number} structureI
+ * @param {Array<Object>} blocksToValidate
+ */
+function addBlockValidationParticles(hologramAnimationControllers, structureI, blocksToValidate) {
+	let blockValidationAnimation = {
+		"particle_effects": [],
+		"transitions": [
+			{
+				"default": "!v.validate_hologram" // when changing structure it will always stop validating, so there's no need to check v.structure_index
+			}
+		]
+	};
+	blocksToValidate.forEach(blockToValidate => {
+		blockValidationAnimation["particle_effects"].push({
+			"effect": `validate_${blockToValidate["block"]}`,
+			"locator": blockToValidate["bone_name"],
+			"pre_effect_script": `
+				v.x = ${blockToValidate["pos"][0]};
+				v.y = ${blockToValidate["pos"][1]};
+				v.z = ${blockToValidate["pos"][2]};
+			`.replaceAll(/\s/g, "") // this is only used for setting the wrong block overlay position; the particle's position is set using a locator
+		});
+	});
+	let animationStateName = `validate_${structureI}`;
+	hologramAnimationControllers["animation_controllers"]["controller.animation.armor_stand.hologram.block_validation"]["states"][animationStateName] = blockValidationAnimation;
+	hologramAnimationControllers["animation_controllers"]["controller.animation.armor_stand.hologram.block_validation"]["states"]["default"]["transitions"].push({
+		[animationStateName]: `v.validate_hologram && v.structure_index == ${structureI}`
+	});
 }
 /**
  * Patches a set of render controllers with some extra Molang code. Returns a new set of render controllers.
@@ -957,7 +1065,6 @@ function patchRenderControllers(renderControllers, patches) {
 async function makePackIcon(structureFile) {
 	let fileHashBytes = [...await sha256(structureFile)]; // I feel like I should wrap the async expression in brackets...
 	let fileHashBits = fileHashBytes.map(byte => [7, 6, 5, 4, 3, 2, 1, 0].map(bitI => byte >> bitI & 0x1)).flat();
-	window.fhb = fileHashBits;
 	
 	const ICON_RESOLUTION = [4, 6][fileHashBytes[1] % 2]; // either 4x4 or 6x6 large tiles
 	const ICON_TILE_SIZE = 200 / ICON_RESOLUTION;
@@ -1023,6 +1130,14 @@ async function makePackIcon(structureFile) {
 	ctx.fillRect(0, 0, can.width, can.height);
 	
 	return await can.convertToBlob();
+}
+/**
+ * Creates a Molang expression that mimics array access. Defaults to the last element if nothing is found.
+ * @param {Array} array
+ * @returns {String}
+ */
+function arrayToMolang(array, indexVar) {
+	return array.map((el, i) => i == array.length - 1? el : `${i > 0? "(" : ""}${indexVar}==${i}?${el}:`).join("") + ")".repeat(max(array.length - 2, 0));
 }
 /**
  * Converts a function into minified Molang code. Variables can be referenced with $[...].
@@ -1123,12 +1238,110 @@ function stringifyWithFixedDecimals(value) {
 	const NUMBER_OF_DECIMALS = 4;
 	return JSON.stringify(value, (key, x) => {
 		if(typeof x == "number") {
-			let oldNumber = x;
+			// let oldNumber = x;
 			x = Number(x.toFixed(NUMBER_OF_DECIMALS));
-			if(abs(x - oldNumber) > 10 ** (-NUMBER_OF_DECIMALS - 1)) {
-				console.debug(`Turned long number ${oldNumber} into ${x} when stringifying JSON`);
-			}
+			// if(abs(x - oldNumber) > 10 ** (-NUMBER_OF_DECIMALS - 1)) {
+			// 	console.debug(`Turned long number ${oldNumber} into ${x} when stringifying JSON`);
+			// }
 		}
 		return x;
 	});
 }
+
+/**
+ * An object for storing HoloPrint config options.
+ * @typedef {Object} HoloPrintConfig
+ * @property {Array<String>} IGNORED_BLOCKS
+ * @property {Array<String>} IGNORED_MATERIAL_LIST_BLOCKS
+ * @property {Number} SCALE
+ * @property {Number} OPACITY
+ * @property {Boolean} MULTIPLE_OPACITIES Whether to generate multiple opacity images and allow in-game switching, or have a constant opacity
+ * @property {Array<Number>|undefined} TINT Clamped colour quartet
+ * @property {Number} MINI_SCALE Size of ghost blocks when in the mini view for layers
+ * @property {("single"|"all_below")} LAYER_MODE
+ * @property {Number} TEXTURE_OUTLINE_WIDTH Measured in pixels, x ∈ [0, 1], x ∈ 2^ℝ
+ * @property {String} TEXTURE_OUTLINE_COLOR A colour string
+ * @property {("threshold"|"difference")} TEXTURE_OUTLINE_ALPHA_DIFFERENCE_MODE difference: will compare alpha channel difference; threshold: will only look at the second pixel
+ * @property {Number} TEXTURE_OUTLINE_ALPHA_THRESHOLD If using difference mode, will draw outline between pixels with at least this much alpha difference; if using threshold mode, will draw outline on pixels next to pixels with an alpha less than or equal to this
+ * @property {Boolean} DO_SPAWN_ANIMATION
+ * @property {Number} SPAWN_ANIMATION_LENGTH Length of each individual block's spawn animation (seconds)
+ * @property {Array<Number>} WRONG_BLOCK_OVERLAY_COLOR Clamped colour quartet
+ * @property {String} MATERIAL_LIST_LANGUAGE The language code, as appearing in `texts/languages.json`
+ * @property {Blob} PACK_ICON_BLOB Blob for `pack_icon.png`
+ * @property {Array<String>} AUTHORS
+ * @property {String|undefined} DESCRIPTION
+ * @property {Number} PREVIEW_BLOCK_LIMIT The maximum number of blocks a structure can have for rendering a preview
+ * @property {Boolean} SHOW_PREVIEW_SKYBOX
+ */
+/**
+ * A block palette entry, similar to how it appears in the NBT, as used in HoloPrint.
+ * @typedef {Object} Block
+ * @property {String} name The block's ID
+ * @property {*} [states] Block states
+ * @property {*} [block_entity_data] Block entity data
+ */
+/**
+ * An unpositioned bone for geometry files without name or parent. All units/coordinates are relative to (0, 0, 0).
+ * @typedef {Object} BoneTemplate
+ * @property {Vec3} [pivot] The block's center point of rotation
+ * @property {Vec3} [rotation] The block's rotation
+ * @property {Array} cubes
+ */
+/**
+ * A positioned bone for geometry files.
+ * @typedef {Object} Bone
+ * @augments BoneTemplate
+ * @property {String} name
+ * @property {String} parent
+ */
+/**
+ * A texture reference, made in BlockGeoMaker.js and turned into a texture in TextureAtlas.js.
+ * @typedef {Object} TextureReference
+ * @property {Vec2} uv UV coordinates
+ * @property {Vec2} uv_size	UV size
+ * @property {String} block_name Block ID to get the texture from
+ * @property {String} texture_face Which face's texture to use
+ * @property {Number} variant Which terrain_texture.json variant to use
+ * @property {Boolean} croppable If a texture can be cropped automatically
+ * @property {String} [texture_path_override] An overriding texture file path to look at
+ * @property {String} [terrain_texture_override] A terrain texture key override; will override block_name and texture_face
+ * @property {Vec3} [tint] A tint override
+ */
+/**
+ * An unresolved texture fragment containing an image path, tint, and UV position and size.
+ * @typedef {Object} TextureFragment
+ * @property {String} texturePath
+ * @property {Vec3} [tint]
+ * @property {Boolean} [tint_like_png]
+ * @property {Number} opacity
+ * @property {Vec2} uv
+ * @property {Vec2} uv_size
+ * @property {Boolean} croppable If a texture can be cropped automatically
+ */
+/**
+ * An image fragment containing an image, UV position, and UV size.
+ * @typedef {Object} ImageFragment
+ * @property {Image} image
+ * @property {Number} w Width
+ * @property {Number} h Height
+ * @property {Number} sourceX
+ * @property {Number} sourceY
+ */
+/**
+ * An entry in a material list.
+ * @typedef {Object} MaterialListEntry
+ * @property {String} itemName
+ * @property {String} translationKey
+ * @property {String} translatedName
+ * @property {Number} count How many of this item is required
+ * @property {String} partitionedCount A formatted string representing partitions of the total count
+ * @property {Number} auxId The item's aux ID
+ */
+/**
+ * 2D vector.
+ * @typedef {[Number, Number]} Vec2
+ */
+/**
+ * 3D vector.
+ * @typedef {[Number, Number, Number]} Vec3
+ */

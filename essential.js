@@ -146,6 +146,9 @@ Uint8Array.prototype.toHexadecimalString = function() {
 Array.prototype.removeFalsies = function() {
 	return this.filter(el => el);
 };
+export function concatenateFiles(files, name) {
+	return new File(files, name ?? files.map(file => file.name).join(","));
+}
 
 CacheStorage.prototype.clear = async function() {
 	(await this.keys()).forEach(cacheName => this.delete(cacheName));

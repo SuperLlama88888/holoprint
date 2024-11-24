@@ -9,7 +9,7 @@ export default class PreviewRenderer {
 	 * Create a preview renderer for a completed geometry file.
 	 * @param {HTMLElement} cont
 	 * @param {TextureAtlas} textureAtlas
-	 * @param {Object} geo Contents of the `.geo.json` file
+	 * @param {Object} geo The Minecraft geometry object
 	 * @param {Object} animations Contents of the `.animation.json` file
 	 * @param {Boolean} [showSkybox] If the skybox should show or not
 	 */
@@ -20,7 +20,7 @@ export default class PreviewRenderer {
 			let can = document.createElement("canvas");
 			let imageBlob = textureAtlas.imageBlobs.at(-1)[1];
 			let imageUrl = URL.createObjectURL(imageBlob);
-			this.viewer = new StandaloneModelViewer(can, geo["minecraft:geometry"][0], imageUrl, {
+			this.viewer = new StandaloneModelViewer(can, geo, imageUrl, {
 				width: window.innerWidth * 0.4,
 				height: window.innerWidth * 0.4,
 				antialias: true,

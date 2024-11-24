@@ -11,23 +11,11 @@
 				}
 			}
 		},
-		"controller.animation.armor_stand.hologram.bounding_box": {
-			"initial_state": "default",
+		"controller.animation.armor_stand.hologram.bounding_box": { // each structure has a different size so a different state with different particle scripts is created for each structure
+			"initial_state": "visible_0",
 			"states": {
-				"default": {
-					"particle_effects": [],
-					"transitions": [
-						{
-							"hidden": "!v.render_hologram"
-						}
-					]
-				},
 				"hidden": {
-					"transitions": [
-						{
-							"default": "v.render_hologram"
-						}
-					]
+					"transitions": []
 				}
 			}
 		},
@@ -35,19 +23,7 @@
 			"initial_state": "default",
 			"states": {
 				"default": {
-					"transitions": [
-						{
-							"validate": "v.validate_hologram"
-						}
-					]
-				},
-				"validate": {
-					"particle_effects": [],
-					"transitions": [
-						{
-							"default": "!v.validate_hologram"
-						}
-					]
+					"transitions": []
 				}
 			}
 		}
