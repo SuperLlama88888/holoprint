@@ -1,6 +1,6 @@
-import * as THREE from "https://esm.run/three@0.147"; // @bridge-editor/model-viewer uses this version :(
 import TextureAtlas from "./TextureAtlas.js";
 
+let THREE;
 let StandaloneModelViewer;
 
 export default class PreviewRenderer {
@@ -15,6 +15,7 @@ export default class PreviewRenderer {
 	 */
 	constructor(cont, textureAtlas, geo, animations, showSkybox = true) {
 		return (async () => {
+			THREE ??= await import("https://esm.run/three@0.147"); // @bridge-editor/model-viewer uses this version :(
 			StandaloneModelViewer ??= (await import("https://esm.run/@bridge-editor/model-viewer")).StandaloneModelViewer;
 			
 			let can = document.createElement("canvas");

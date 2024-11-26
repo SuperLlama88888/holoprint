@@ -126,7 +126,7 @@ export function stringToImageData(text, textCol = "black", backgroundCol = "whit
 }
 
 export function getStackTrace() {
-	return (new Error()).stack.split("\n").slice(1);
+	return (new Error()).stack.split("\n").slice(1).removeFalsies();
 }
 
 /**

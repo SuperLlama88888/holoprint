@@ -187,6 +187,7 @@ input[type="checkbox"] {
 	left: 0;
 	width: 100vw;
 	height: 100vh;
+	box-sizing: border-box;
 	background: #0002;
 	font-size: 1.75em;
 	text-align: center;

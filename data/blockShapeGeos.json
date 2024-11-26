@@ -407,7 +407,7 @@
 				"*": "textures/entity/enchanting_table_book"
 			},
 			"uv": {
-				"*": [0, 0]
+				"*": [16, 0]
 			},
 			"texture_size": [64, 32]
 		},
@@ -420,7 +420,7 @@
 				"*": "textures/entity/enchanting_table_book"
 			},
 			"uv": {
-				"*": [16, 0]
+				"*": [0, 0]
 			},
 			"texture_size": [64, 32]
 		},

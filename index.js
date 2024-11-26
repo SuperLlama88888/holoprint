@@ -36,6 +36,7 @@ let dropFileNotice;
 
 let generatePackForm;
 let generatePackFormSubmitButton;
+let structureFilesInput;
 let logger;
 
 let supabaseLogger;
@@ -43,12 +44,14 @@ let supabaseLogger;
 document.onEvent("DOMContentLoaded", async () => {
 	document.body.appendChild = selectEl("main").appendChild.bind(selectEl("main"));
 	
+	generatePackForm = selectEl("#generatePackForm");
 	dropFileNotice = selectEl("#dropFileNotice");
+	structureFilesInput = generatePackForm.elements.namedItem("structureFiles");
 	
 	if(location.search == "?loadFile") {
 		window.launchQueue?.setConsumer(async launchParams => {
-			let files = await Promise.all(launchParams.files.map(fileHandle => fileHandle.getFile()));
-			files.forEach(handleLaunchFile);
+			let launchFiles = await Promise.all(launchParams.files.map(fileHandle => fileHandle.getFile()));
+			handleInputFiles(launchFiles);
 		});
 	}
 	
@@ -57,7 +60,7 @@ document.onEvent("DOMContentLoaded", async () => {
 		dragCounter++;
 	});
 	document.documentElement.onEvent("dragover", e => {
-		if(true || e.dataTransfer?.types?.includes("Files")) { // https://html.spec.whatwg.org/multipage/dnd.html#dom-datatransfer-types-dev
+		if(e.dataTransfer?.types?.includes("Files")) { // https://html.spec.whatwg.org/multipage/dnd.html#dom-datatransfer-types-dev
 			e.preventDefault();
 			dropFileNotice.classList.remove("hidden");
 		}
@@ -73,25 +76,7 @@ document.onEvent("DOMContentLoaded", async () => {
 		dragCounter = 0;
 		dropFileNotice.classList.add("hidden");
 		let files = [...e.dataTransfer.files]; // apparently this is a "historical accident": https://stackoverflow.com/a/74641156
-		let structureFiles = files.filter(file => file.name.endsWith(".mcstructure"));
-		let resourcePacks = files.filter(file => file.name.endsWith(".mcpack"));
-		
-		let structureFilesInput = generatePackForm.elements.namedItem("structureFiles");
-		if(structureFiles.length) {
-			let dataTransfer = new DataTransfer();
-			// [...structureFilesInput.files, ...structureFiles].forEach(file => dataTransfer.items.add(file));
-			dataTransfer.items.add(structureFiles[0]);
-			structureFilesInput.files = dataTransfer.files;
-		}
-		for(let resourcePack of resourcePacks) {
-			let structureFile = await HoloPrint.extractStructureFileFromPack(resourcePack);
-			if(structureFile) {
-				let dataTransfer = new DataTransfer();
-				dataTransfer.items.add(structureFile);
-				structureFilesInput.files = dataTransfer.files;
-				break;
-			}
-		}
+		handleInputFiles(files);
 	});
 	
 	if(!ACTUAL_CONSOLE_LOG) {
@@ -100,7 +85,6 @@ document.onEvent("DOMContentLoaded", async () => {
 		logger.patchConsoleMethods();
 	}
 	
-	generatePackForm = selectEl("#generatePackForm");
 	generatePackForm.onEvent("submit", async e => {
 		e.preventDefault();
 		
@@ -153,6 +137,23 @@ document.onEvent("DOMContentLoaded", async () => {
 	});
 });
 
+async function handleInputFiles(files) {
+	let structureFiles = files.filter(file => file.name.endsWith(".mcstructure"));
+	let resourcePacks = files.filter(file => file.name.endsWith(".mcpack"));
+	
+	for(let resourcePack of resourcePacks) {
+		let structureFile = await HoloPrint.extractStructureFileFromPack(resourcePack);
+		if(structureFile) {
+			structureFiles.push(structureFile);
+		}
+	}
+	if(structureFiles.length) {
+		let dataTransfer = new DataTransfer();
+		[...structureFilesInput.files, ...structureFiles].forEach(structureFile => dataTransfer.items.add(structureFile));
+		structureFilesInput.files = dataTransfer.files;
+	}
+}
+
 async function handleLaunchFile(file) {
 	if(!file.name.endsWith(".mcstructure")) {
 		console.error(`File is not a structure file: ${file.name}`);
@@ -197,31 +198,29 @@ async function makePack(structureFiles, localResourcePacks) {
 	let resourcePackStack = await new ResourcePackStack(localResourcePacks);
 	
 	let pack;
-	// for(let structureFile of structureFiles) {
-		logger?.setOriginTime(performance.now());
-		
-		if(ACTUAL_CONSOLE_LOG) {
-			pack = await HoloPrint.makePack(structureFiles, config, resourcePackStack, previewCont);
-		} else {
-			try {
-				pack = await HoloPrint.makePack(structureFiles, config, resourcePackStack, previewCont);
-			} catch(e) {
-				console.error(`Pack creation failed: ${e}`);
-			}
-		}
-		
-		if(IN_PRODUCTION) {
-			supabaseLogger ??= new SupabaseLogger(supabaseProjectUrl, supabaseApiKey);
-			supabaseLogger.recordPackCreation(structureFiles);
-		}
+	logger?.setOriginTime(performance.now());
 	
-		let downloadButton = document.createElement("button");
-		downloadButton.classList.add("importantButton");
-		downloadButton.innerText = `Download ${pack.name}`;
-		downloadButton.onclick = () => downloadBlob(pack, pack.name);
-		downloadButton.click();
-		document.body.appendChild(downloadButton);
-	// }
+	if(ACTUAL_CONSOLE_LOG) {
+		pack = await HoloPrint.makePack(structureFiles, config, resourcePackStack, previewCont);
+	} else {
+		try {
+			pack = await HoloPrint.makePack(structureFiles, config, resourcePackStack, previewCont);
+		} catch(e) {
+			console.error(`Pack creation failed: ${e}`);
+		}
+	}
+	
+	if(IN_PRODUCTION) {
+		supabaseLogger ??= new SupabaseLogger(supabaseProjectUrl, supabaseApiKey);
+		supabaseLogger.recordPackCreation(structureFiles);
+	}
+
+	let downloadButton = document.createElement("button");
+	downloadButton.classList.add("importantButton");
+	downloadButton.innerText = `Download ${pack.name}`;
+	downloadButton.onclick = () => downloadBlob(pack, pack.name);
+	downloadButton.click();
+	document.body.appendChild(downloadButton);
 	
 	generatePackFormSubmitButton.disabled = false;
 	

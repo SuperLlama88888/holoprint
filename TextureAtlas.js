@@ -1,4 +1,4 @@
-import { awaitAllEntries, blobToImage, ceil, closestFactorPair, floor, hexColorToClampedTriplet, JSONSet, lerp, max, range, stringToImageData } from "./essential.js";
+import { awaitAllEntries, blobToImage, ceil, floor, hexColorToClampedTriplet, JSONSet, max, range, stringToImageData } from "./essential.js";
 import TGALoader from "https://esm.run/tga-js@1.1.1"; // We could use dynamic import as this isn't used all the time but it's so small it won't matter
 import potpack from "https://esm.run/potpack@2.0.0";
 import ResourcePackStack from "./ResourcePackStack.js";

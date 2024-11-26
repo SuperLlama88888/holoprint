@@ -1,5 +1,6 @@
-import { createClient as createSupabaseClient } from "https://esm.run/@supabase/supabase-js@2";
 import { addOrdinalSuffix, concatenateFiles, sha256 } from "./essential.js";
+
+let createSupabaseClient;
 
 export default class SupabaseLogger {
 	supabase;
@@ -12,6 +13,8 @@ export default class SupabaseLogger {
 	 * @param {Array<File>} structureFiles
 	 */
 	async recordPackCreation(structureFiles) {
+		createSupabaseClient ??= (await import("https://esm.run/@supabase/supabase-js@2")).createClient;
+		
 		console.info("Hashing structure files...");
 		let fullFileHashes = await Promise.all(structureFiles.map(async structureFile => (await sha256(structureFile)).toHexadecimalString()));
 		let shortFileHashes = fullFileHashes.map(fullFileHash => fullFileHash.slice(0, 8));

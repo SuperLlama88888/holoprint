@@ -6,7 +6,7 @@ import TextureAtlas from "./TextureAtlas.js";
 import MaterialList from "./MaterialList.js";
 import PreviewRenderer from "./PreviewRenderer.js";
 
-import { abs, awaitAllEntries, blobToImage, concatenateFiles, JSONMap, JSONSet, max, min, pi, sha256, sha256text } from "./essential.js";
+import { awaitAllEntries, concatenateFiles, JSONMap, JSONSet, max, min, pi, sha256 } from "./essential.js";
 import ResourcePackStack from "./ResourcePackStack.js";
 
 export const IGNORED_BLOCKS = ["air", "piston_arm_collision", "sticky_piston_arm_collision"]; // blocks to be ignored when scanning the structure file
@@ -37,7 +37,6 @@ export async function makePack(structureFiles, config = {}, resourcePackStack, p
 	console.info("Finished reading structure NBTs!");
 	console.log("NBTs:", nbts);
 	let structureSizes = nbts.map(nbt => nbt["size"].map(x => +x)); // Stored as Number instances: https://github.com/Offroaders123/NBTify/issues/50
-	let totalLayersByStructure = structureSizes.map(structureSize => structureSize[1]);
 	let structureNames = structureFiles.map(structureFile => structureFile.name.replace(/(\.holoprint)?\.[^.]+$/, ""));
 	
 	// Make the pack
