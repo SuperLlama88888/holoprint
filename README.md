@@ -21,7 +21,7 @@ HoloPrint is a web app that converts MCBE structure files into resource packs sh
 ![Toggling rendering](assets/togglingRendering.gif)
 - Change transparency: Glass (sneak to decrease, stand to increase)  
 ![Changing transparency](assets/changingTransparency.gif)
-- Change layer: Planks (sneak to decrease, stand to increase), or changing the pose on the armor stand  
+- Change layer: Planks (sneak to decrease, stand to increase), or changing the pose on the armour stand  
 ![Changing layer](assets/changingLayer.gif)
 - Move hologram (third person only): Stick  
 ![Moving hologram](assets/movingHologram.gif)
@@ -29,8 +29,12 @@ HoloPrint is a web app that converts MCBE structure files into resource packs sh
 ![Validating structure](assets/validatingStructure.gif)
 - Material list: Tab button (keyboard), book icon (touch)  
 ![Material list](assets/materialList.gif)
+- Change structure: Arrow, or hit armour stand when holding nothing  
+![Changing structure](assets/changingStructure.gif)
 - Armour stand controls: Give item or hit  
 ![Armour stand controls](assets/armourStandControls.gif)
+- Disable player controls: Bone  
+![Disabling player controls](assets/disablingPlayerControls.gif)
 > [!WARNING]
 > Player controls may be unreliable, but armour stand controls will always work.
 
@@ -47,6 +51,7 @@ Special thanks to **kizoku246** for the house in these images!
 ### Credit
 - [Structura](https://github.com/RavinMaddHatter/Structura): Inspiration, laying the foundation for this project. Without the work of [RavinMaddHatter](https://github.com/RavinMaddHatter) and [others](https://github.com/RavinMaddHatter/Structura/graphs/contributors), this project would've taken tens of hours more to get started.
 - [Tab Key Playerlist UI](https://github.com/YuuhaLand/Tabkey_Playerlist_UI) by [YuuhaLand](https://github.com/YuuhaLand): Foundation for the material list UI
+- [Indyficcient](https://www.youtube.com/@Indyfficient): The idea of changing structure by hitting the armour stand
 - Documentation:
   - [Bedrock Wiki](https://wiki.bedrock.dev): Best resource for learning about resource/behaviour packs!
   - [Minecraft Wiki](https://minecraft.wiki): Block entity list, block states and data values, and so much more!

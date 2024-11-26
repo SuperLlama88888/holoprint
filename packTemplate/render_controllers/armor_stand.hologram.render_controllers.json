@@ -5,6 +5,9 @@
 			"arrays": {
 				"textures": {
 					"Array.textures": []
+				},
+				"geometries": {
+					"Array.geometries": []
 				}
 			},
 			"materials": [
@@ -12,7 +15,7 @@
 					"*": "Material.hologram"
 				}
 			],
-			"geometry": "Geometry.hologram",
+			"geometry": "Array.geometries[v.structure_index]",
 			"textures": [],
 			"is_hurt_color": {
 				"r": 0,
@@ -87,6 +90,17 @@
 				"a": 0
 			},
 			"ignore_lighting": true
+		},
+		"controller.render.armor_stand.hologram.particle_alignment": {
+			"materials": [
+				{
+					"*": "Material.hologram"
+				}
+			],
+			"geometry": "Geometry.hologram.particle_alignment",
+			"textures": [
+				"Texture.hologram.overlay"
+			]
 		}
 	}
 }

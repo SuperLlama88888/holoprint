@@ -1,14 +1,3 @@
-/**
- * The entry of a material list
- * @typedef {Object} MaterialListEntry
- * @property {String} itemName
- * @property {String} translationKey
- * @property {String} translatedName
- * @property {Number} count How many of this item is required
- * @property {String} partitionedCount A formatted string representing partitions of the total count
- * @property {Number} auxId The item's aux ID
- */
-
 import { floor, nanToUndefined } from "./essential.js";
 
 export default class MaterialList {
@@ -34,6 +23,7 @@ export default class MaterialList {
 		"pumpkin_stem": "pumpkin_seeds", // this one actually exists in the translation files as "Pumpkin Stem"; however, leaving it would break consistency with everything else
 		"pitcher_crop": "pitcher_pod",
 		"torchflower_crop": "torchflower_seeds",
+		"wheat": "wheat_seeds",
 		"potatoes": "potato",
 		"carrots": "carrot",
 		"wall_sign": "oak_sign",
@@ -50,7 +40,8 @@ export default class MaterialList {
 		"cherry_standing_sign": "cherry_sign",
 		"pale_oak_wall_sign": "pale_oak_sign",
 		"pale_oak_standing_sign": "pale_oak_sign",
-		"bamboo_sapling": "bamboo"
+		"bamboo_sapling": "bamboo",
+		"trip_wire": "string"
 	};
 	/** Remappings for serialization_ids mapping to the wrong things in .lang files */
 	static #serializationIdPatches = {
@@ -133,7 +124,7 @@ export default class MaterialList {
 	/**
 	 * Adds a material to the material list.
 	 * @param {String} blockName
-	 * @param {Number} count
+	 * @param {Number} [count]
 	 */
 	add(blockName, count = 1) {
 		if(MaterialList.#ignoredBlocks.includes(blockName)) {
@@ -237,3 +228,7 @@ export default class MaterialList {
 		return nanToUndefined(this.#blockMetadata.get(`minecraft:${blockName}`)?.["raw_id"] * 65536);
 	}
 }
+
+/**
+ * @typedef {import("./HoloPrint.js").MaterialListEntry} MaterialListEntry
+ */

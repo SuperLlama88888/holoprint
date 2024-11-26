@@ -50,12 +50,14 @@ export default class SimpleLogger {
 		this.#genericLogWithClass(text);
 	}
 	warn(text) {
-		this.#genericLogWithClass(text, "warning");
-		this.#warningCountNode.innerText = `\u26A0\uFE0F${++this.#warningCount}`;
+		if(this.#genericLogWithClass(text, "warning")) {
+			this.#warningCountNode.innerText = `\u26A0\uFE0F${++this.#warningCount}`;
+		}
 	}
 	error(text) {
-		this.#genericLogWithClass(text, "error");
-		this.#errorCountNode.innerText = `\u{1F6A8}${++this.#errorCount}`;
+		if(this.#genericLogWithClass(text, "error")) {
+			this.#errorCountNode.innerText = `\u{1F6A8}${++this.#errorCount}`;
+		}
 	}
 	info(text) {
 		this.#genericLogWithClass(text, "info");
@@ -65,6 +67,10 @@ export default class SimpleLogger {
 	}
 	#genericLogWithClass(text, logLevel) {
 		let stackTrace = getStackTrace().slice(2);
+		let currentURLOrigin = location.href.slice(0, location.href.lastIndexOf("/")); // location.origin is null on Firefox when on local files
+		if(stackTrace.some(loc => !loc.includes(currentURLOrigin))) {
+			return;
+		}
 		this.allLogs.push({
 			text,
 			level: logLevel,
@@ -86,6 +92,7 @@ export default class SimpleLogger {
 		if(shouldScrollToBottom) {
 			this.node.scrollTop = this.node.scrollHeight;
 		}
+		return true;
 	}
 	#createTimestamp() {
 		let el = document.createElement("span");

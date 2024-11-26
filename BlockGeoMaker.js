@@ -7,32 +7,6 @@ import { awaitAllEntries, clamp, hexColorToClampedTriplet, JSONSet } from "./ess
 // https://wiki.bedrock.dev/visuals/material-creations.html#overlay-color-in-render-controllers
 // https://wiki.bedrock.dev/documentation/materials.html#entity-alphatest
 
-/**
- * A regular 3D vector.
- * @typedef {[Number, Number, Number]} Vec3
- */
-/**
- * A block palette entry, as used in HoloPrint.
- * @typedef {Object} Block
- * @property {String} name The block's ID
- * @property {*} [states] Block states
- * @property {*} [block_entity_data] Block entity data
- */
-/**
- * An unpositioned bone for geometry files without name or parent. All units/coordinates are relative to (0, 0, 0).
- * @typedef {Object} BoneTemplate
- * @property {Vec3} [pivot] The block's center point of rotation
- * @property {Vec3} [rotation] The block's rotation
- * @property {Array} cubes
- */
-/**
- * A positioned bone for geometry files.
- * @typedef {Object} Bone
- * @augments BoneTemplate
- * @property {String} name
- * @property {String} parent
- */
-
 export default class BlockGeoMaker {
 	/** variant numbers tied to specific blocks. they will always have these variant indices. */
 	static #eigenvariants = {
@@ -773,3 +747,16 @@ export default class BlockGeoMaker {
 		return false;
 	}
 }
+
+/**
+ * @typedef {import("./HoloPrint.js").Vec3} Vec3
+ */
+/**
+ * @typedef {import("./HoloPrint.js").Block} Block
+ */
+/**
+ * @typedef {import("./HoloPrint.js").BoneTemplate} BoneTemplate
+ */
+/**
+ * @typedef {import("./HoloPrint.js").Bone} Bone
+ */

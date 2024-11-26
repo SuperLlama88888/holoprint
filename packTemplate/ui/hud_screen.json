@@ -14,6 +14,7 @@
 							"anchor_to": "top_left",
 							"offset": [0, 74],
 							"size": [29.23, 20],
+							"layer": 32,
 							"prevent_touch_input": true,
 							"bindings": [
 								{
@@ -32,7 +33,14 @@
 										"$pressed_texture": "textures/ui/button_borderless_light",
 										"$pressed_no_hover_texture": "textures/ui/button_borderless_lightpressednohover",
 										"anchor_from": "top_left",
-										"anchor_to": "top_left"
+										"anchor_to": "top_left",
+										"bindings": [
+											{
+												"binding_name": "#hud_visible",
+												"binding_name_override": "#visible",
+												"binding_type": "global"
+											}
+										]
 									}
 								}
 							]
