@@ -37,7 +37,7 @@ export async function makePack(structureFiles, config = {}, resourcePackStack, p
 	console.info("Finished reading structure NBTs!");
 	console.log("NBTs:", nbts);
 	let structureSizes = nbts.map(nbt => nbt["size"].map(x => +x)); // Stored as Number instances: https://github.com/Offroaders123/NBTify/issues/50
-	let structureNames = structureFiles.map(structureFile => structureFile.name.replace(/(\.holoprint)?\.[^.]+$/, ""));
+	let packName = config.PACK_NAME ?? getDefaultPackName(structureFiles);
 	
 	// Make the pack
 	let loadedStuff = await loadStuff({
@@ -667,9 +667,9 @@ export async function makePack(structureFiles, config = {}, resourcePackStack, p
 		}
 	})));
 	hudScreenUI["material_list"]["size"][1] = finalisedMaterialList.length * 12 + 12; // 12px for each item + 12px for the heading
-	hudScreenUI["material_list_heading"]["controls"][1]["pack_name"]["text"] += structureNames.join(", ");
+	hudScreenUI["material_list_heading"]["controls"][1]["pack_name"]["text"] += packName;
 	
-	manifest["header"]["name"] = `§uHoloPrint:§r ${structureNames.join(", ")}`;
+	manifest["header"]["name"] = packName;
 	manifest["header"]["description"] = `§u★HoloPrint§r resource pack generated on §o${(new Date()).toLocaleString()}§r\nDeveloped by §l§6SuperLlama88888§r`;
 	if(config.AUTHORS.length) {
 		manifest["header"]["description"] += `\nStructure made by ${config.AUTHORS.join(" and ")}`;
@@ -734,7 +734,7 @@ export async function makePack(structureFiles, config = {}, resourcePackStack, p
 		});
 	}
 	
-	return new File([zippedPack], `${structureNames.join("+")}.holoprint.mcpack`);
+	return new File([zippedPack], `${packName}.holoprint.mcpack`);
 }
 /**
  * Retrieves the structure file from a completed HoloPrint resource pack
@@ -765,6 +765,18 @@ export async function updatePack(resourcePack, config, resourcePackStack, previe
 	}
 	return await makePack(structureFile, config, resourcePackStack, previewCont);
 }
+/**
+ * Returns the default pack name that would be used if no pack name is specified.
+ * @param {Array<File>} structureFiles
+ * @returns {String}
+ */
+export function getDefaultPackName(structureFiles) {
+	let defaultName = structureFiles.map(structureFile => structureFile.name.replace(/(\.holoprint)?\.[^.]+$/, "")).join(", ");
+	if(defaultName.length > 40) {
+		defaultName = `${defaultName.slice(0, 19)}...${defaultName.slice(-19)}`
+	}
+	return defaultName;
+}
 
 /**
  * Adds default config options to a potentially incomplete config object.
@@ -791,6 +803,7 @@ function addDefaultConfig(config) {
 			SPAWN_ANIMATION_LENGTH: 0.4, // in seconds
 			WRONG_BLOCK_OVERLAY_COLOR: [1, 0, 0, 0.3],
 			MATERIAL_LIST_LANGUAGE: "en_US",
+			PACK_NAME: undefined,
 			PACK_ICON_BLOB: undefined,
 			AUTHORS: [],
 			DESCRIPTION: undefined,
@@ -1266,6 +1279,7 @@ function stringifyWithFixedDecimals(value) {
  * @property {Number} SPAWN_ANIMATION_LENGTH Length of each individual block's spawn animation (seconds)
  * @property {Array<Number>} WRONG_BLOCK_OVERLAY_COLOR Clamped colour quartet
  * @property {String} MATERIAL_LIST_LANGUAGE The language code, as appearing in `texts/languages.json`
+ * @property {String|undefined} PACK_NAME The name of the completed pack; will default to the structure file names
  * @property {Blob} PACK_ICON_BLOB Blob for `pack_icon.png`
  * @property {Array<String>} AUTHORS
  * @property {String|undefined} DESCRIPTION
