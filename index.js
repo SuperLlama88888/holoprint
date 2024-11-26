@@ -212,13 +212,15 @@ async function makePack(structureFiles, localResourcePacks) {
 		supabaseLogger ??= new SupabaseLogger(supabaseProjectUrl, supabaseApiKey);
 		supabaseLogger.recordPackCreation(structureFiles);
 	}
-
-	let downloadButton = document.createElement("button");
-	downloadButton.classList.add("importantButton");
-	downloadButton.innerText = `Download ${pack.name}`;
-	downloadButton.onclick = () => downloadBlob(pack, pack.name);
-	downloadButton.click();
-	document.body.appendChild(downloadButton);
+	
+	if(pack) {
+		let downloadButton = document.createElement("button");
+		downloadButton.classList.add("importantButton");
+		downloadButton.innerText = `Download ${pack.name}`;
+		downloadButton.onclick = () => downloadBlob(pack, pack.name);
+		downloadButton.click();
+		document.body.appendChild(downloadButton);
+	}
 	
 	generatePackFormSubmitButton.disabled = false;
 	
