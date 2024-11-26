@@ -37,6 +37,7 @@ let dropFileNotice;
 let generatePackForm;
 let generatePackFormSubmitButton;
 let structureFilesInput;
+let packNameInput;
 let logger;
 
 let supabaseLogger;
@@ -47,6 +48,8 @@ document.onEvent("DOMContentLoaded", async () => {
 	generatePackForm = selectEl("#generatePackForm");
 	dropFileNotice = selectEl("#dropFileNotice");
 	structureFilesInput = generatePackForm.elements.namedItem("structureFiles");
+	packNameInput = generatePackForm.elements.namedItem("packName");
+	structureFilesInput.onEventAndNow("input", updatePackNameInputPlaceholder);
 	
 	if(location.search == "?loadFile") {
 		window.launchQueue?.setConsumer(async launchParams => {
@@ -142,26 +145,20 @@ async function handleInputFiles(files) {
 	let resourcePacks = files.filter(file => file.name.endsWith(".mcpack"));
 	
 	for(let resourcePack of resourcePacks) {
-		let structureFile = await HoloPrint.extractStructureFileFromPack(resourcePack);
-		if(structureFile) {
-			structureFiles.push(structureFile);
-		}
+		let extractedStructureFiles = await HoloPrint.extractStructureFilesFromPack(resourcePack);
+		structureFiles.push(...extractedStructureFiles);
 	}
 	if(structureFiles.length) {
 		let dataTransfer = new DataTransfer();
 		[...structureFilesInput.files, ...structureFiles].forEach(structureFile => dataTransfer.items.add(structureFile));
 		structureFilesInput.files = dataTransfer.files;
 	}
+	updatePackNameInputPlaceholder();
+}
+function updatePackNameInputPlaceholder() {
+	packNameInput.setAttribute("placeholder", HoloPrint.getDefaultPackName([...structureFilesInput.files]));
 }
 
-async function handleLaunchFile(file) {
-	if(!file.name.endsWith(".mcstructure")) {
-		console.error(`File is not a structure file: ${file.name}`);
-		return;
-	}
-	let pack = await makePack([file]);
-	return pack;
-}
 async function temporarilyChangeText(el, text, duration = 2000) {
 	let originalText = el.innerText;
 	el.innerText = text;
@@ -188,6 +185,7 @@ async function makePack(structureFiles, localResourcePacks) {
 		TEXTURE_OUTLINE_ALPHA_DIFFERENCE_MODE: formData.get("textureOutlineAlphaDifferenceMode"),
 		DO_SPAWN_ANIMATION: formData.get("spawnAnimationEnabled"),
 		MATERIAL_LIST_LANGUAGE: formData.get("materialListLanguage"),
+		PACK_NAME: formData.get("packName") || undefined,
 		PACK_ICON_BLOB: formData.get("packIcon").size? formData.get("packIcon") : undefined,
 		AUTHORS: authors,
 		DESCRIPTION: formData.get("description") || undefined

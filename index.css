@@ -129,6 +129,9 @@ input[type="number"], input[type="text"], textarea {
 	outline-width: thin;
 	accent-color: auto;
 }
+input[type="text"]::placeholder {
+	text-overflow: ellipsis;
+}
 button:not(:disabled):hover, input[type="file"]:not(:disabled):hover::file-selector-button, select:not(:disabled):hover, .buttonlike:hover {
 	background: #E8C8E8;
 }
