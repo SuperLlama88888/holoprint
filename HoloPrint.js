@@ -688,10 +688,14 @@ export async function makePack(structureFiles, config = {}, resourcePackStack, p
 	
 	let pack = new JSZip();
 	if(structureFiles.length == 1) {
-		pack.file(".mcstructure", structureFiles[0]);
+		pack.file(".mcstructure", structureFiles[0], {
+			comment: structureFiles[0].name
+		});
 	} else {
 		structureFiles.forEach((structureFile, i) => {
-			pack.file(`${i}.mcstructure`, structureFile);
+			pack.file(`${i}.mcstructure`, structureFile, {
+				comment: structureFile.name
+			});
 		});
 	}
 	pack.file("manifest.json", JSON.stringify(manifest));
@@ -737,18 +741,20 @@ export async function makePack(structureFiles, config = {}, resourcePackStack, p
 	return new File([zippedPack], `${packName}.holoprint.mcpack`);
 }
 /**
- * Retrieves the structure file from a completed HoloPrint resource pack
+ * Retrieves the structure files from a completed HoloPrint resource pack.
  * @param {File} resourcePack HoloPrint resource pack (`*.mcpack)
- * @returns {Promise<File>}
+ * @returns {Promise<Array<File>>}
  */
-export async function extractStructureFileFromPack(resourcePack) {
+export async function extractStructureFilesFromPack(resourcePack) {
 	let packFolder = await JSZip.loadAsync(resourcePack);
-	let structureBlob = await packFolder.file(".mcstructure")?.async("blob");
-	if(!structureBlob) {
-		return undefined;
-	}
+	let structureZipObjects = Object.values(packFolder.files).filter(file => file.name.endsWith(".mcstructure"));
+	let structureBlobs = await Promise.all(structureZipObjects.map(async zipObject => await zipObject.async("blob")));
 	let packName = resourcePack.name.slice(0, resourcePack.name.indexOf("."));
-	return new File([structureBlob], `${packName}.mcstructure`);
+	if(structureBlobs.length == 1) {
+		return [new File([structureBlobs[0]], structureZipObjects[0].comment ?? `${packName}.mcstructure`)];
+	} else {
+		return await Promise.all(structureBlobs.map(async (structureBlob, i) => new File([structureBlob], structureZipObjects[i].comment ?? `${packName}_${i}.mcstructure`)));
+	}
 }
 /**
  * Updates a HoloPrint resource pack by remaking it.
@@ -759,11 +765,11 @@ export async function extractStructureFileFromPack(resourcePack) {
  * @returns {Promise<File>}
  */
 export async function updatePack(resourcePack, config, resourcePackStack, previewCont) {
-	let structureFile = extractStructureFileFromPack(resourcePack);
-	if(!structureFile) {
-		throw new Error(`No structure file found inside resource pack ${resourcePack.name}; cannot update pack!`);
+	let structureFiles = extractStructureFilesFromPack(resourcePack);
+	if(!structureFiles) {
+		throw new Error(`No structure files found inside resource pack ${resourcePack.name}; cannot update pack!`);
 	}
-	return await makePack(structureFile, config, resourcePackStack, previewCont);
+	return await makePack(structureFiles, config, resourcePackStack, previewCont);
 }
 /**
  * Returns the default pack name that would be used if no pack name is specified.

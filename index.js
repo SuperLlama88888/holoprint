@@ -145,10 +145,8 @@ async function handleInputFiles(files) {
 	let resourcePacks = files.filter(file => file.name.endsWith(".mcpack"));
 	
 	for(let resourcePack of resourcePacks) {
-		let structureFile = await HoloPrint.extractStructureFileFromPack(resourcePack);
-		if(structureFile) {
-			structureFiles.push(structureFile);
-		}
+		let extractedStructureFiles = await HoloPrint.extractStructureFilesFromPack(resourcePack);
+		structureFiles.push(...extractedStructureFiles);
 	}
 	if(structureFiles.length) {
 		let dataTransfer = new DataTransfer();
