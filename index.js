@@ -1,9 +1,9 @@
-import { selectEl, downloadBlob, sleep, selectEls } from "./essential.js";
+import { selectEl, downloadBlob, sleep, selectEls, htmlCodeToElement, CachingFetcher } from "./essential.js";
 import * as HoloPrint from "./HoloPrint.js";
 import SimpleLogger from "./SimpleLogger.js";
 import SupabaseLogger from "./SupabaseLogger.js";
 
-import ResourcePackStack from "./ResourcePackStack.js";
+import ResourcePackStack, { VanillaDataFetcher } from "./ResourcePackStack.js";
 import LocalResourcePack from "./LocalResourcePack.js";
 
 const IN_PRODUCTION = location.host.includes(".github.io"); // hosted on GitHub Pages
@@ -14,6 +14,7 @@ const supabaseApiKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmF
 
 window.OffscreenCanvas ?? class OffscreenCanvas {
 	constructor(w, h) {
+		console.debug("Using OffscreenCanvas polyfill");
 		this.canvas = document.createElement("canvas");
 		this.canvas.width = w;
 		this.canvas.height = h;
@@ -173,6 +174,7 @@ async function makePack(structureFiles, localResourcePacks) {
 	
 	let formData = new FormData(generatePackForm);
 	let authors = formData.get("author").split(",").map(x => x.trim()).removeFalsies();
+	/** @type {import("./HoloPrint.js").HoloPrintConfig} */
 	let config = {
 		IGNORED_BLOCKS: formData.get("ignoredBlocks").split(/\W/).removeFalsies(),
 		SCALE: formData.get("scale") / 100,
@@ -184,6 +186,16 @@ async function makePack(structureFiles, localResourcePacks) {
 		TEXTURE_OUTLINE_ALPHA_THRESHOLD: +formData.get("textureOutlineAlphaThreshold"),
 		TEXTURE_OUTLINE_ALPHA_DIFFERENCE_MODE: formData.get("textureOutlineAlphaDifferenceMode"),
 		DO_SPAWN_ANIMATION: formData.get("spawnAnimationEnabled"),
+		CONTROLS: {
+			TOGGLE_RENDERING: JSON.parse(formData.get("toggleRenderingControls")),
+			CHANGE_OPACITY: JSON.parse(formData.get("changeOpacityControls")),
+			TOGGLE_VALIDATING: JSON.parse(formData.get("toggleValidatingControls")),
+			CHANGE_LAYER: JSON.parse(formData.get("changeLayerControls")),
+			DECREASE_LAYER: JSON.parse(formData.get("decreaseLayerControls")),
+			MOVE_HOLOGRAM: JSON.parse(formData.get("moveHologramControls")),
+			CHANGE_STRUCTURE: JSON.parse(formData.get("changeStructureControls")),
+			DISABLE_PLAYER_CONTROLS: JSON.parse(formData.get("disablePlayerControlsControls"))
+		},
 		MATERIAL_LIST_LANGUAGE: formData.get("materialListLanguage"),
 		PACK_NAME: formData.get("packName") || undefined,
 		PACK_ICON_BLOB: formData.get("packIcon").size? formData.get("packIcon") : undefined,
@@ -226,3 +238,213 @@ async function makePack(structureFiles, localResourcePacks) {
 	
 	return pack;
 }
+
+customElements.define("item-criteria-input", class extends HTMLElement {
+	static formAssociated = true;
+	static observedAttributes = ["value-items", "value-tags"];
+	
+	shadowRoot;
+	internals;
+	
+	#connected;
+	#tasksPendingConnection;
+	
+	#vanillaItemsPromise;
+	#vanillaItemTagsPromise;
+	#criteriaInputsCont;
+	
+	constructor() {
+		super();
+		this.shadowRoot = this.attachShadow({
+			mode: "open"
+		});
+		this.internals = this.attachInternals();
+		
+		this.#connected = false;
+		this.#tasksPendingConnection = [];
+		
+		this.#vanillaItemsPromise = (new VanillaDataFetcher()).then(fetcher => fetcher.fetch("metadata/vanilladata_modules/mojang-items.json")).then(res => res.json()).then(data => data["data_items"].map(item => item["name"].replace(/^minecraft:/, "")));
+		this.#vanillaItemTagsPromise = (new CachingFetcher("BedrockData@2.14.1+bedrock-1.21.40", "https://raw.githubusercontent.com/pmmp/BedrockData/refs/tags/2.14.1+bedrock-1.21.40/")).then(fetcher => fetcher.fetch("item_tags.json")).then(res => res.json()).then(data => Object.keys(data).map(tag => tag.replace(/^minecraft:/, "")));
+	}
+	connectedCallback() {
+		if(this.#connected) {
+			return;
+		}
+		this.#connected = true;
+		
+		this.tabIndex = 0;
+		this.shadowRoot.innerHTML = `
+			<style>
+				:host {
+					display: block;
+					padding-left: 15px;
+					font-size: 0.8rem;
+				}
+				#criteriaInputs:empty::before {
+					content: attr(data-empty-text);
+				}
+				button {
+					background: color-mix(in srgb, var(--accent-col) 50%, white);
+					cursor: pointer;
+					font-family: inherit;
+					line-height: inherit;
+				}
+				input, button {
+					box-sizing: border-box;
+					border-style: solid;
+					border-color: var(--accent-col);
+					outline-color: var(--accent-col);
+					accent-color: var(--accent-col);
+				}
+				input {
+					font-family: monospace;
+				}
+				input.itemNameInput, #addItemButton {
+					--accent-col: #01808C;
+				}
+				input.itemTagInput, #addTagButton {
+					--accent-col: #E6BE1A;
+				}
+				/* input:valid {
+					--accent-col: #70B80B;
+				} */
+				input:invalid:not(:placeholder-shown) {
+					--accent-col: #E24436;
+				}
+			</style>
+			<label for="latestInput">Matching:</label>
+			<label id="criteriaInputs" data-empty-text="Nothing"></label>
+			<button id="addItemButton">+ Item name</button>
+			<button id="addTagButton">+ Item tag</button>
+			<datalist id="itemNamesDatalist"></datalist>
+			<datalist id="itemTagsDatalist"></datalist>
+		`;
+		this.#vanillaItemsPromise.then(itemNames => {
+			let itemNamesDatalist = this.shadowRoot.selectEl("#itemNamesDatalist");
+			itemNames.forEach(itemName => {
+				itemNamesDatalist.appendChild(new Option(itemName));
+			});
+		});
+		this.#vanillaItemTagsPromise.then(tags => {
+			let itemTagsDatalist = this.shadowRoot.selectEl("#itemTagsDatalist");
+			tags.forEach(tag => {
+				itemTagsDatalist.appendChild(new Option(tag));
+			});
+		})
+		this.#criteriaInputsCont = this.shadowRoot.selectEl("#criteriaInputs");
+		this.shadowRoot.selectEl("#addItemButton").onEvent("click", () => {
+			this.#addNewInput("item");
+		});
+		this.shadowRoot.selectEl("#addTagButton").onEvent("click", () => {
+			this.#addNewInput("tag");
+		});
+		
+		let task;
+		while(task = this.#tasksPendingConnection.shift()) {
+			task();
+		}
+		
+		this.#criteriaInputsCont.onEventAndNow("input", () => {
+			this.internals.setFormValue(this.value);
+			let allInputs = [...this.#criteriaInputsCont.selectEls("input")];
+			if(allInputs.length == 0) {
+				this.internals.setValidity({
+					tooShort: true
+				}, "Please enter item criteria");
+			} else if(allInputs.some(el => !el.validity.valid)) {
+				this.internals.setValidity({
+					patternMismatch: true
+				}, "Invalid item/tag name");
+			} else {
+				this.internals.setValidity({});
+			}
+		});
+		
+		this.onEvent("focus", e => {
+			if(e.composedPath()[0] instanceof this.constructor) { // If this event was triggered from an element in the shadow DOM being .focus()ed, we don't want to focus something else
+				(this.shadowRoot.selectEl("input:invalid") ?? this.shadowRoot.selectEl("input:last-child") ?? this.shadowRoot.selectEl("#addItemButton")).focus();
+			}
+		});
+		
+	}
+	attributeChangedCallback(...args) { // called for all attributes in the tag before connectedCallback(), so we schedule them to be handled later
+		if(this.#connected) {
+			this.#handleAttributeChange(...args);
+		} else {
+			this.#tasksPendingConnection.push(() => {
+				this.#handleAttributeChange(...args);
+			});
+		}
+	}
+	get form() {
+		return this.internals.form;
+	}
+	get name() {
+		return this.getAttribute("name");
+	}
+	get type() {
+		return this.localName;
+	}
+	get value() {
+		let itemNames = [...this.#criteriaInputsCont.selectEls(".itemNameInput")].map(input => input.value.trim());
+		let tagNames = [...this.#criteriaInputsCont.selectEls(".itemTagInput")].map(input => input.value.trim());
+		return JSON.stringify(HoloPrint.createItemCriteria(itemNames, tagNames));
+	}
+	set value(stringifiedValue) {
+		this.#criteriaInputsCont.innerHTML = "";
+		let itemCriteria = JSON.parse(stringifiedValue.replaceAll("'", `"`));
+		itemCriteria["names"]?.forEach(itemName => {
+			this.#addNewInput("item", false);
+			this.#criteriaInputsCont.selectEl("input:last-child").value = itemName;
+		});
+		itemCriteria["tags"]?.forEach(tagName => {
+			this.#addNewInput("tag", false);
+			this.#criteriaInputsCont.selectEl("input:last-child").value = tagName;
+		});
+	}
+	
+	#handleAttributeChange(attrName, oldValue, newValue) {
+		let inputValue = JSON.parse(this.value);
+		newValue = newValue.split(",");
+		switch(attrName) {
+			case "value-items": {
+				inputValue["names"] = newValue;
+			} break;
+			case "value-tags": {
+				inputValue["tags"] = newValue;
+			} break;
+		}
+		this.value = JSON.stringify(inputValue);
+	}
+	#addNewInput(type, autofocus = true) {
+		const attributesByType = {
+			"item": `placeholder="Item name" list="itemNamesDatalist" class="itemNameInput"`,
+			"tag": `placeholder="Tag name" list="itemTagsDatalist" class="itemTagInput"`
+		}
+		this.#criteriaInputsCont.selectEl(`input:last-child:placeholder-shown`)?.remove();
+		let lastNode = [...this.#criteriaInputsCont.childNodes].at(-1);
+		if(lastNode && !(lastNode instanceof Text)) {
+			this.#criteriaInputsCont.appendChild(new Text(" or "));
+		}
+		let newInput = htmlCodeToElement(`<input type="text" required pattern="^\\s*(\\w+:)?\\w+\\s*$" spellcheck="false" autocapitalize="off" ${attributesByType[type]}/>`);
+		newInput.onEvent("keydown", this.#inputKeyDownEvent);
+		this.#criteriaInputsCont.appendChild(newInput);
+		if(autofocus) {
+			newInput.focus();
+		}
+	}
+	#inputKeyDownEvent = e => { // must be arrow function to keep class scope
+		if(e.target.value != "" && (e.key == "Tab" && e.target == this.#criteriaInputsCont.selectEl("input:last-child") || e.key == "Enter" || e.key == ",")) {
+			e.preventDefault();
+			this.#addNewInput(e.target.classList.contains("itemNameInput")? "item" : "tag");
+		} else if(e.key == "Backspace" && e.target.value == "") {
+			e.target.remove();
+			this.#criteriaInputsCont.childNodes.forEach(node => {
+				if(node instanceof Text && (node.previousSibling instanceof Text || !node.previousSibling || !node.nextSibling)) {
+					node.remove();
+				}
+			});
+			this.focus();
+		}
+	};
+});

@@ -1,7 +1,11 @@
 // This solely exists so my patches of native classes like Response in essential.js have Intellisense support. Wish VSCode was smarter :/
 
 declare global {
-	interface HTMLElement {
+	interface Element {
+		selectEl(query: String): Element | null;
+		selectEls(query: String): NodeListOf<HTMLElement>;
+	}
+	interface DocumentFragment {
 		selectEl(query: String): Element | null;
 		selectEls(query: String): NodeListOf<HTMLElement>;
 	}
