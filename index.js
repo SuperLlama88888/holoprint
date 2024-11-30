@@ -107,6 +107,22 @@ document.onEvent("DOMContentLoaded", async () => {
 		generatePackForm.elements.namedItem("opacity").parentElement.classList.toggle("hidden", opacityModeSelect.value == "multiple");
 	});
 	
+	let playerControlsInputCont = selectEl("#playerControlsInputCont");
+	Object.entries(HoloPrint.DEFAULT_PLAYER_CONTROLS).forEach(([control, itemCriteria]) => {
+		let label = document.createElement("label");
+		label.innerText = `${HoloPrint.PLAYER_CONTROL_NAMES[control]}:`;
+		let input = document.createElement("item-criteria-input");
+		input.setAttribute("name", `control.${control}`);
+		if(itemCriteria["names"].length > 0) {
+			input.setAttribute("value-items", itemCriteria["names"].join(","));
+		}
+		if(itemCriteria["tags"].length > 0) {
+			input.setAttribute("value-tags", itemCriteria["tags"].join(","));
+		}
+		label.appendChild(input);
+		playerControlsInputCont.appendChild(label);
+	});
+	
 	let clearResourcePackCacheButton = selectEl("#clearResourcePackCacheButton");
 	clearResourcePackCacheButton.onEvent("click", async () => {
 		caches.clear();
@@ -186,16 +202,7 @@ async function makePack(structureFiles, localResourcePacks) {
 		TEXTURE_OUTLINE_ALPHA_THRESHOLD: +formData.get("textureOutlineAlphaThreshold"),
 		TEXTURE_OUTLINE_ALPHA_DIFFERENCE_MODE: formData.get("textureOutlineAlphaDifferenceMode"),
 		DO_SPAWN_ANIMATION: formData.get("spawnAnimationEnabled"),
-		CONTROLS: {
-			TOGGLE_RENDERING: JSON.parse(formData.get("toggleRenderingControls")),
-			CHANGE_OPACITY: JSON.parse(formData.get("changeOpacityControls")),
-			TOGGLE_VALIDATING: JSON.parse(formData.get("toggleValidatingControls")),
-			CHANGE_LAYER: JSON.parse(formData.get("changeLayerControls")),
-			DECREASE_LAYER: JSON.parse(formData.get("decreaseLayerControls")),
-			MOVE_HOLOGRAM: JSON.parse(formData.get("moveHologramControls")),
-			CHANGE_STRUCTURE: JSON.parse(formData.get("changeStructureControls")),
-			DISABLE_PLAYER_CONTROLS: JSON.parse(formData.get("disablePlayerControlsControls"))
-		},
+		CONTROLS: Object.fromEntries([...formData].filter(([key]) => key.startsWith("control.")).map(([key, value]) => [key.replace(/^control./, ""), JSON.parse(value)])),
 		MATERIAL_LIST_LANGUAGE: formData.get("materialListLanguage"),
 		PACK_NAME: formData.get("packName") || undefined,
 		PACK_ICON_BLOB: formData.get("packIcon").size? formData.get("packIcon") : undefined,

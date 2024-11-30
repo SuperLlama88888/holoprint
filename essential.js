@@ -296,7 +296,7 @@ export class CachingFetcher {
 		})();
 	}
 	/**
-	 * Fetches a file.
+	 * Fetches a file, checking first against cache.
 	 * @param {String} url
 	 * @returns {Promise<Response>}
 	 */
@@ -310,6 +310,11 @@ export class CachingFetcher {
 		}
 		return res;
 	}
+	/**
+	 * Actually load a file, for when it's not found in cache.
+	 * @param {String} url
+	 * @returns {Promise<Response>}
+	 */
 	async retrieve(url) {
 		return await fetch(url);
 	}

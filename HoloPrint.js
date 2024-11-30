@@ -12,6 +12,26 @@ import ResourcePackStack from "./ResourcePackStack.js";
 export const IGNORED_BLOCKS = ["air", "piston_arm_collision", "sticky_piston_arm_collision"]; // blocks to be ignored when scanning the structure file
 export const IGNORED_MATERIAL_LIST_BLOCKS = ["bubble_column"]; // blocks that will always be hidden on the material list
 const IGNORED_BLOCK_ENTITIES = ["Beacon", "Beehive", "Bell", "BrewingStand", "ChiseledBookshelf", "CommandBlock", "Comparator", "Conduit", "EnchantTable", "EndGateway", "JigsawBlock", "Lodestone", "SculkCatalyst", "SculkShrieker", "SculkSensor", "CalibratedSculkSensor", "StructureBlock", "BrushableBlock", "TrialSpawner", "Vault"];
+export const PLAYER_CONTROL_NAMES = {
+	TOGGLE_RENDERING: "Toggle rendering",
+	CHANGE_OPACITY: "Change opacity",
+	TOGGLE_VALIDATING: "Toggle validating",
+	CHANGE_LAYER: "Change layer",
+	DECREASE_LAYER: "Decrease layer",
+	MOVE_HOLOGRAM: "Move hologram",
+	CHANGE_STRUCTURE: "Change structure",
+	DISABLE_PLAYER_CONTROLS: "Disable player controls"
+};
+export const DEFAULT_PLAYER_CONTROLS = {
+	TOGGLE_RENDERING: createItemCriteria("stone"),
+	CHANGE_OPACITY: createItemCriteria("glass"),
+	TOGGLE_VALIDATING: createItemCriteria("iron_ingot"),
+	CHANGE_LAYER: createItemCriteria([], "planks"),
+	DECREASE_LAYER: createItemCriteria([], "logs"),
+	MOVE_HOLOGRAM: createItemCriteria("stick"),
+	CHANGE_STRUCTURE: createItemCriteria("arrow"),
+	DISABLE_PLAYER_CONTROLS: createItemCriteria("bone")
+};
 
 /**
  * Makes a HoloPrint resource pack from a structure file.
@@ -690,20 +710,31 @@ export async function makePack(structureFiles, config = {}, resourcePackStack, p
 	hudScreenUI["material_list"]["size"][1] = finalisedMaterialList.length * 12 + 12; // 12px for each item + 12px for the heading
 	hudScreenUI["material_list_heading"]["controls"][1]["pack_name"]["text"] += packName;
 	
+	manifest["header"]["uuid"] = crypto.randomUUID();
+	manifest["modules"][0]["uuid"] = crypto.randomUUID();
 	manifest["header"]["name"] = packName;
-	manifest["header"]["description"] = `§u★HoloPrint§r resource pack generated on §o${(new Date()).toLocaleString()}§r\nDeveloped by §l§6SuperLlama88888§r`;
+	let packDescription = `§u★HoloPrint§r resource pack generated on §o${(new Date()).toLocaleString()}§r\nDeveloped by §l§6SuperLlama88888§r`;
 	if(config.AUTHORS.length) {
-		manifest["header"]["description"] += `\nStructure made by ${config.AUTHORS.join(" and ")}`;
+		packDescription += `\nStructure made by ${config.AUTHORS.join(" and ")}`;
 		manifest["metadata"]["authors"].push(...config.AUTHORS);
 	}
 	if(config.DESCRIPTION) {
-		manifest["header"]["description"] += `\n${config.DESCRIPTION}`;
+		packDescription += `\n${config.DESCRIPTION}`;
 	}
-	manifest["header"]["uuid"] = crypto.randomUUID();
-	manifest["modules"][0]["uuid"] = crypto.randomUUID();
-	
-	manifest["header"]["description"] += `\n\nTotal block count: ${totalBlocks}\n`;
-	manifest["header"]["description"] += finalisedMaterialList.map(({ translatedName, count }) => `${count} ${translatedName}`).join(", ");
+	if(JSON.stringify(config.CONTROLS) != JSON.stringify(DEFAULT_PLAYER_CONTROLS)) { // add controls to pack description only if they've been changed
+		packDescription += "\n\n§lControls:§r";
+		// make a fake material list for the in-game control items
+		let controlsMaterialList = new MaterialList(blockMetadata, itemMetadata, translationFile);
+		Object.entries(config.CONTROLS).forEach(([control, itemCriteria]) => {
+			itemCriteria["names"].forEach(itemName => controlsMaterialList.addItem(itemName));
+			let itemInfo = controlsMaterialList.export();
+			controlsMaterialList.clear();
+			packDescription += `\n${PLAYER_CONTROL_NAMES[control]}: ${[itemInfo.map(item => `§3${item.translatedName}§r`).join(", "), itemCriteria.tags.map(tag => `§p${tag}§r`).join(", ")].removeFalsies().join("; ")}`;
+		});
+	}
+	packDescription += `\n\n§lTotal block count: ${totalBlocks}\n§r`;
+	packDescription += finalisedMaterialList.map(({ translatedName, count }) => `${count} ${translatedName}`).join(", ");
+	manifest["header"]["description"] = packDescription;
 	
 	console.info("Finished making all pack files!");
 	
@@ -858,14 +889,7 @@ function addDefaultConfig(config) {
 			IGNORED_BLOCKS: IGNORED_BLOCKS.concat(config.IGNORED_BLOCKS ?? []),
 			IGNORED_MATERIAL_LIST_BLOCKS: IGNORED_MATERIAL_LIST_BLOCKS.concat(config.IGNORED_MATERIAL_LIST_BLOCKS ?? []),
 			CONTROLS: {
-				TOGGLE_RENDERING: createItemCriteria("stone"),
-				CHANGE_OPACITY: createItemCriteria("glass"),
-				TOGGLE_VALIDATING: createItemCriteria("iron_ingot"),
-				CHANGE_LAYER: createItemCriteria([], "planks"),
-				DECREASE_LAYER: createItemCriteria([], "logs"),
-				MOVE_HOLOGRAM: createItemCriteria("stick"),
-				CHANGE_STRUCTURE: createItemCriteria("arrow"),
-				DISABLE_PLAYER_CONTROLS: createItemCriteria("bone"),
+				...DEFAULT_PLAYER_CONTROLS,
 				...config.CONTROLS
 			}
 		}
