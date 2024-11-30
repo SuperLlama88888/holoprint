@@ -351,22 +351,7 @@ customElements.define("item-criteria-input", class extends HTMLElement {
 			task();
 		}
 		
-		this.#criteriaInputsCont.onEventAndNow("input", () => {
-			this.internals.setFormValue(this.value);
-			let allInputs = [...this.#criteriaInputsCont.selectEls("input")];
-			if(allInputs.length == 0) {
-				this.internals.setValidity({
-					tooShort: true
-				}, "Please enter item criteria");
-			} else if(allInputs.some(el => !el.validity.valid)) {
-				this.internals.setValidity({
-					patternMismatch: true
-				}, "Invalid item/tag name");
-			} else {
-				this.internals.setValidity({});
-			}
-		});
-		
+		this.#criteriaInputsCont.onEventAndNow("input", () => this.#reportFormState());
 		this.onEvent("focus", e => {
 			if(e.composedPath()[0] instanceof this.constructor) { // If this event was triggered from an element in the shadow DOM being .focus()ed, we don't want to focus something else
 				(this.shadowRoot.selectEl("input:invalid") ?? this.shadowRoot.selectEl("input:last-child") ?? this.shadowRoot.selectEl("#addItemButton")).focus();
@@ -410,6 +395,21 @@ customElements.define("item-criteria-input", class extends HTMLElement {
 		});
 	}
 	
+	#reportFormState() {
+		this.internals.setFormValue(this.value);
+		let allInputs = [...this.#criteriaInputsCont.selectEls("input")];
+		if(allInputs.length == 0) {
+			this.internals.setValidity({
+				tooShort: true
+			}, "Please enter item criteria");
+		} else if(allInputs.some(el => !el.validity.valid)) {
+			this.internals.setValidity({
+				patternMismatch: true
+			}, "Invalid item/tag name");
+		} else {
+			this.internals.setValidity({});
+		}
+	}
 	#handleAttributeChange(attrName, oldValue, newValue) {
 		let inputValue = JSON.parse(this.value);
 		newValue = newValue.split(",");
@@ -439,11 +439,13 @@ customElements.define("item-criteria-input", class extends HTMLElement {
 		if(autofocus) {
 			newInput.focus();
 		}
+		this.#reportFormState();
 	}
 	#inputKeyDownEvent = e => { // must be arrow function to keep class scope
 		if(e.target.value != "" && (e.key == "Tab" && e.target == this.#criteriaInputsCont.selectEl("input:last-child") || e.key == "Enter" || e.key == ",")) {
 			e.preventDefault();
 			this.#addNewInput(e.target.classList.contains("itemNameInput")? "item" : "tag");
+			this.#reportFormState();
 		} else if(e.key == "Backspace" && e.target.value == "") {
 			e.target.remove();
 			this.#criteriaInputsCont.childNodes.forEach(node => {
@@ -452,6 +454,7 @@ customElements.define("item-criteria-input", class extends HTMLElement {
 				}
 			});
 			this.focus();
+			this.#reportFormState();
 		}
 	};
 });
