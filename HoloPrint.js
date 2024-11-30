@@ -12,6 +12,26 @@ import ResourcePackStack from "./ResourcePackStack.js";
 export const IGNORED_BLOCKS = ["air", "piston_arm_collision", "sticky_piston_arm_collision"]; // blocks to be ignored when scanning the structure file
 export const IGNORED_MATERIAL_LIST_BLOCKS = ["bubble_column"]; // blocks that will always be hidden on the material list
 const IGNORED_BLOCK_ENTITIES = ["Beacon", "Beehive", "Bell", "BrewingStand", "ChiseledBookshelf", "CommandBlock", "Comparator", "Conduit", "EnchantTable", "EndGateway", "JigsawBlock", "Lodestone", "SculkCatalyst", "SculkShrieker", "SculkSensor", "CalibratedSculkSensor", "StructureBlock", "BrushableBlock", "TrialSpawner", "Vault"];
+export const PLAYER_CONTROL_NAMES = {
+	TOGGLE_RENDERING: "Toggle rendering",
+	CHANGE_OPACITY: "Change opacity",
+	TOGGLE_VALIDATING: "Toggle validating",
+	CHANGE_LAYER: "Change layer",
+	DECREASE_LAYER: "Decrease layer",
+	MOVE_HOLOGRAM: "Move hologram",
+	CHANGE_STRUCTURE: "Change structure",
+	DISABLE_PLAYER_CONTROLS: "Disable player controls"
+};
+export const DEFAULT_PLAYER_CONTROLS = {
+	TOGGLE_RENDERING: createItemCriteria("stone"),
+	CHANGE_OPACITY: createItemCriteria("glass"),
+	TOGGLE_VALIDATING: createItemCriteria("iron_ingot"),
+	CHANGE_LAYER: createItemCriteria([], "planks"),
+	DECREASE_LAYER: createItemCriteria([], "logs"),
+	MOVE_HOLOGRAM: createItemCriteria("stick"),
+	CHANGE_STRUCTURE: createItemCriteria("arrow"),
+	DISABLE_PLAYER_CONTROLS: createItemCriteria("bone")
+};
 
 /**
  * Makes a HoloPrint resource pack from a structure file.
@@ -364,7 +384,7 @@ export async function makePack(structureFiles, config = {}, resourcePackStack, p
 		v.player_action_counter = 0;
 	}, { structureSize: structureSizes[0], defaultTextureIndex, structureCount: structureFiles.length }));
 	entityDescription["scripts"]["pre_animation"] ??= [];
-	entityDescription["scripts"]["pre_animation"].push(functionToMolang((v, q, t, textureBlobsCount, totalBlocksToValidate) => {
+	entityDescription["scripts"]["pre_animation"].push(functionToMolang((v, q, t, textureBlobsCount, totalBlocksToValidate, toggleRendering, changeOpacity, toggleValidating, changeLayer, decreaseLayer, changeStructure, disablePlayerControls) => {
 		v.hologram_dir = Math.floor(q.body_y_rotation / 90) + 2; // [south, west, north, east] (since it goes from -180 to 180)
 		
 		t.process_action = false; // this is the only place I'm using temp variables for their intended purpose
@@ -392,15 +412,15 @@ export async function makePack(structureFiles, config = {}, resourcePackStack, p
 		}
 		
 		if(t.process_action) {
-			if(q.is_item_name_any("slot.weapon.mainhand", "minecraft:stone")) {
+			if($[toggleRendering]) {
 				t.action = "toggle_rendering";
-			} else if(q.is_item_name_any("slot.weapon.mainhand", "minecraft:glass")) {
+			} else if($[changeOpacity]) {
 				t.action = "increase_opacity";
-			} else if(q.is_item_name_any("slot.weapon.mainhand", "minecraft:iron_ingot")) {
+			} else if($[toggleValidating]) {
 				t.action = "toggle_validating";
-			} else if(q.equipped_item_any_tag("slot.weapon.mainhand", "minecraft:planks")) {
+			} else if($[changeLayer]) {
 				t.action = "increase_layer";
-			} else if(q.equipped_item_any_tag("slot.weapon.mainhand", "minecraft:logs")) {
+			} else if($[decreaseLayer]) {
 				t.action = "decrease_layer";
 			} else if(q.is_item_name_any("slot.weapon.mainhand", "minecraft:white_wool")) { // Movement controls (I hate that I'm having to do this)
 				t.action = "move_y-";
@@ -419,7 +439,7 @@ export async function makePack(structureFiles, config = {}, resourcePackStack, p
 		t.player_action_counter ??= 0;
 		if(v.player_action_counter != t.player_action_counter && t.player_action_counter > 0 && t.player_action != "") {
 			v.player_action_counter = t.player_action_counter;
-			if(!q.is_item_name_any("slot.weapon.mainhand", "minecraft:bone")) {
+			if(!$[disablePlayerControls]) {
 				t.action = t.player_action;
 			}
 		}
@@ -524,7 +544,20 @@ export async function makePack(structureFiles, config = {}, resourcePackStack, p
 				v.wrong_block_z = t.wrong_block_z;
 			}
 		}
-	}, { textureBlobsCount: textureBlobs.length, totalBlocksToValidate: arrayToMolang(totalBlocksToValidateByStructure, "v.structure_index"), structureWMolang, structureHMolang, structureDMolang }));
+	}, {
+		textureBlobsCount: textureBlobs.length,
+		totalBlocksToValidate: arrayToMolang(totalBlocksToValidateByStructure, "v.structure_index"),
+		structureWMolang,
+		structureHMolang,
+		structureDMolang,
+		toggleRendering: itemCriteriaToMolang(config.CONTROLS.TOGGLE_RENDERING),
+		changeOpacity: itemCriteriaToMolang(config.CONTROLS.CHANGE_OPACITY),
+		toggleValidating: itemCriteriaToMolang(config.CONTROLS.TOGGLE_VALIDATING),
+		changeLayer: itemCriteriaToMolang(config.CONTROLS.CHANGE_LAYER),
+		decreaseLayer: itemCriteriaToMolang(config.CONTROLS.DECREASE_LAYER),
+		changeStructure: itemCriteriaToMolang(config.CONTROLS.CHANGE_STRUCTURE),
+		disablePlayerControls: itemCriteriaToMolang(config.CONTROLS.DISABLE_PLAYER_CONTROLS)
+	}));
 	entityDescription["geometry"]["hologram.wrong_block_overlay"] = "geometry.armor_stand.hologram.wrong_block_overlay";
 	entityDescription["geometry"]["hologram.valid_structure_overlay"] = "geometry.armor_stand.hologram.valid_structure_overlay";
 	entityDescription["geometry"]["hologram.particle_alignment"] = "geometry.armor_stand.hologram.particle_alignment";
@@ -576,25 +609,25 @@ export async function makePack(structureFiles, config = {}, resourcePackStack, p
 		v.attack = v.attack_time > 0 && (v.last_attack_time == 0 || v.attack_time < v.last_attack_time);
 		v.last_attack_time = v.attack_time;
 	});
-	let renderingControls = functionToMolang((q, v) => {
+	let renderingControls = functionToMolang((q, v, toggleRendering, changeOpacity, toggleValidating, changeLayer, changeStructure) => {
 		if(v.attack) {
-			if(q.is_item_name_any("slot.weapon.mainhand", "minecraft:stone")) {
+			if($[toggleRendering]) {
 				v.new_action = "toggle_rendering";
-			} else if(q.is_item_name_any("slot.weapon.mainhand", "minecraft:glass")) {
+			} else if($[changeOpacity]) {
 				if(q.is_sneaking) {
 					v.new_action = "decrease_opacity";
 				} else {
 					v.new_action = "increase_opacity";
 				}
-			} else if(q.is_item_name_any("slot.weapon.mainhand", "minecraft:iron_ingot")) {
+			} else if($[toggleValidating]) {
 				v.new_action = "toggle_validating";
-			} else if(q.equipped_item_any_tag("slot.weapon.mainhand", "minecraft:planks")) {
+			} else if($[changeLayer]) {
 				if(q.is_sneaking) {
 					v.new_action = "decrease_layer";
 				} else {
 					v.new_action = "increase_layer";
 				}
-			} else if(q.is_item_name_any("slot.weapon.mainhand", "minecraft:arrow")) {
+			} else if($[changeStructure]) {
 				if(q.is_sneaking) {
 					v.new_action = "previous_structure";
 				} else {
@@ -602,9 +635,15 @@ export async function makePack(structureFiles, config = {}, resourcePackStack, p
 				}
 			}
 		}
+	}, {
+		toggleRendering: itemCriteriaToMolang(config.CONTROLS.TOGGLE_RENDERING),
+		changeOpacity: itemCriteriaToMolang(config.CONTROLS.CHANGE_OPACITY),
+		toggleValidating: itemCriteriaToMolang(config.CONTROLS.TOGGLE_VALIDATING),
+		changeLayer: itemCriteriaToMolang(config.CONTROLS.CHANGE_LAYER),
+		changeStructure: itemCriteriaToMolang(config.CONTROLS.CHANGE_STRUCTURE)
 	});
-	let movementControls = functionToMolang((q, v) => {
-		if(v.attack && q.is_item_name_any("slot.weapon.mainhand", "minecraft:stick")) {
+	let movementControls = functionToMolang((q, v, moveHologram) => {
+		if(v.attack && $[moveHologram]) {
 			if(q.cardinal_player_facing == 0) { // this query unfortunately doesn't work in armour stands
 				v.new_action = "move_y-";
 			} else if(q.cardinal_player_facing == 1) {
@@ -619,6 +658,8 @@ export async function makePack(structureFiles, config = {}, resourcePackStack, p
 				v.new_action = "move_x-";
 			}
 		}
+	}, {
+		moveHologram: itemCriteriaToMolang(config.CONTROLS.MOVE_HOLOGRAM)
 	});
 	let broadcastActions = functionToMolang((v, t, q) => {
 		if(v.new_action != "") {
@@ -669,20 +710,31 @@ export async function makePack(structureFiles, config = {}, resourcePackStack, p
 	hudScreenUI["material_list"]["size"][1] = finalisedMaterialList.length * 12 + 12; // 12px for each item + 12px for the heading
 	hudScreenUI["material_list_heading"]["controls"][1]["pack_name"]["text"] += packName;
 	
+	manifest["header"]["uuid"] = crypto.randomUUID();
+	manifest["modules"][0]["uuid"] = crypto.randomUUID();
 	manifest["header"]["name"] = packName;
-	manifest["header"]["description"] = `§u★HoloPrint§r resource pack generated on §o${(new Date()).toLocaleString()}§r\nDeveloped by §l§6SuperLlama88888§r`;
+	let packDescription = `§u★HoloPrint§r resource pack generated on §o${(new Date()).toLocaleString()}§r\nDeveloped by §l§6SuperLlama88888§r`;
 	if(config.AUTHORS.length) {
-		manifest["header"]["description"] += `\nStructure made by ${config.AUTHORS.join(" and ")}`;
+		packDescription += `\nStructure made by ${config.AUTHORS.join(" and ")}`;
 		manifest["metadata"]["authors"].push(...config.AUTHORS);
 	}
 	if(config.DESCRIPTION) {
-		manifest["header"]["description"] += `\n${config.DESCRIPTION}`;
+		packDescription += `\n${config.DESCRIPTION}`;
 	}
-	manifest["header"]["uuid"] = crypto.randomUUID();
-	manifest["modules"][0]["uuid"] = crypto.randomUUID();
-	
-	manifest["header"]["description"] += `\n\nTotal block count: ${totalBlocks}\n`;
-	manifest["header"]["description"] += finalisedMaterialList.map(({ translatedName, count }) => `${count} ${translatedName}`).join(", ");
+	if(JSON.stringify(config.CONTROLS) != JSON.stringify(DEFAULT_PLAYER_CONTROLS)) { // add controls to pack description only if they've been changed
+		packDescription += "\n\n§lControls:§r";
+		// make a fake material list for the in-game control items
+		let controlsMaterialList = new MaterialList(blockMetadata, itemMetadata, translationFile);
+		Object.entries(config.CONTROLS).forEach(([control, itemCriteria]) => {
+			itemCriteria["names"].forEach(itemName => controlsMaterialList.addItem(itemName));
+			let itemInfo = controlsMaterialList.export();
+			controlsMaterialList.clear();
+			packDescription += `\n${PLAYER_CONTROL_NAMES[control]}: ${[itemInfo.map(item => `§3${item.translatedName}§r`).join(", "), itemCriteria.tags.map(tag => `§p${tag}§r`).join(", ")].removeFalsies().join("; ")}`;
+		});
+	}
+	packDescription += `\n\n§lTotal block count: ${totalBlocks}\n§r`;
+	packDescription += finalisedMaterialList.map(({ translatedName, count }) => `${count} ${translatedName}`).join(", ");
+	manifest["header"]["description"] = packDescription;
 	
 	console.info("Finished making all pack files!");
 	
@@ -783,6 +835,21 @@ export function getDefaultPackName(structureFiles) {
 	}
 	return defaultName;
 }
+/**
+ * Creates an ItemCriteria from arrays of names and tags.
+ * @param {String|Array<String>} names
+ * @param {String|Array<String>} [tags]
+ * @returns {ItemCriteria}
+ */
+export function createItemCriteria(names, tags = []) { // IDK why I haven't made this a class
+	if(!Array.isArray(names)) {
+		names = [names];
+	}
+	if(!Array.isArray(tags)) {
+		tags = [tags];
+	}
+	return { names, tags };
+}
 
 /**
  * Adds default config options to a potentially incomplete config object.
@@ -808,6 +875,7 @@ function addDefaultConfig(config) {
 			DO_SPAWN_ANIMATION: true,
 			SPAWN_ANIMATION_LENGTH: 0.4, // in seconds
 			WRONG_BLOCK_OVERLAY_COLOR: [1, 0, 0, 0.3],
+			CONTROLS: {},
 			MATERIAL_LIST_LANGUAGE: "en_US",
 			PACK_NAME: undefined,
 			PACK_ICON_BLOB: undefined,
@@ -820,6 +888,10 @@ function addDefaultConfig(config) {
 		...{ // overrides (applied after)
 			IGNORED_BLOCKS: IGNORED_BLOCKS.concat(config.IGNORED_BLOCKS ?? []),
 			IGNORED_MATERIAL_LIST_BLOCKS: IGNORED_MATERIAL_LIST_BLOCKS.concat(config.IGNORED_MATERIAL_LIST_BLOCKS ?? []),
+			CONTROLS: {
+				...DEFAULT_PLAYER_CONTROLS,
+				...config.CONTROLS
+			}
 		}
 	});
 }
@@ -1150,6 +1222,18 @@ async function makePackIcon(structureFile) {
 	return await can.convertToBlob();
 }
 /**
+ * Converts an item filter into a Molang expression representation.
+ * @param {ItemCriteria} itemCriteria
+ * @returns {String}
+ */
+function itemCriteriaToMolang(itemCriteria, slot = "slot.weapon.mainhand") {
+	let names = itemCriteria["names"].map(name => name.includes(":")? name : `minecraft:${name}`);
+	let tags = itemCriteria["tags"].map(tag => tag.includes(":")? tag : `minecraft:${tag}`);
+	let nameQuery = names.length > 0? `q.is_item_name_any('${slot}',${names.map(name => `'${name}'`).join(",")})` : undefined;
+	let tagQuery = tags.length > 0? `q.equipped_item_any_tag('${slot}',${tags.map(tag => `'${tag}'`).join(",")})` : undefined;
+	return [nameQuery, tagQuery].removeFalsies().join("||") || "false";
+}
+/**
  * Creates a Molang expression that mimics array access. Defaults to the last element if nothing is found.
  * @param {Array} array
  * @returns {String}
@@ -1284,6 +1368,7 @@ function stringifyWithFixedDecimals(value) {
  * @property {Boolean} DO_SPAWN_ANIMATION
  * @property {Number} SPAWN_ANIMATION_LENGTH Length of each individual block's spawn animation (seconds)
  * @property {Array<Number>} WRONG_BLOCK_OVERLAY_COLOR Clamped colour quartet
+ * @property {HoloPrintControlsConfig} CONTROLS
  * @property {String} MATERIAL_LIST_LANGUAGE The language code, as appearing in `texts/languages.json`
  * @property {String|undefined} PACK_NAME The name of the completed pack; will default to the structure file names
  * @property {Blob} PACK_ICON_BLOB Blob for `pack_icon.png`
@@ -1293,11 +1378,29 @@ function stringifyWithFixedDecimals(value) {
  * @property {Boolean} SHOW_PREVIEW_SKYBOX
  */
 /**
+ * Controls which items are used for in-game controls.
+ * @typedef {Object} HoloPrintControlsConfig
+ * @property {ItemCriteria} TOGGLE_RENDERING
+ * @property {ItemCriteria} CHANGE_OPACITY
+ * @property {ItemCriteria} TOGGLE_VALIDATING
+ * @property {ItemCriteria} CHANGE_LAYER Both for players and armour stands
+ * @property {ItemCriteria} DECREASE_LAYER Armour stand only
+ * @property {ItemCriteria} MOVE_HOLOGRAM For players in third-person
+ * @property {ItemCriteria} CHANGE_STRUCTURE For players only
+ * @property {ItemCriteria} DISABLE_PLAYER_CONTROLS
+ */
+/**
+ * Stores item names and tags for checking items. Leaving everything empty will check for nothing being held.
+ * @typedef {Object} ItemCriteria
+ * @property {Array<String>} names Item names the matching item could have. The `minecraft:` namespace will be used if no namespace is specified.
+ * @property {Array<String>} tags Item tags the matching item could have. The `minecraft:` namespace will be used if no namespace is specified.
+ */
+/**
  * A block palette entry, similar to how it appears in the NBT, as used in HoloPrint.
  * @typedef {Object} Block
  * @property {String} name The block's ID
- * @property {*} [states] Block states
- * @property {*} [block_entity_data] Block entity data
+ * @property {Object} [states] Block states
+ * @property {Object} [block_entity_data] Block entity data
  */
 /**
  * An unpositioned bone for geometry files without name or parent. All units/coordinates are relative to (0, 0, 0).

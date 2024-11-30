@@ -6,7 +6,9 @@ import { all as mergeObjects } from "https://esm.run/deepmerge@4.3.1";
 import "./essential.js";
 
 import LocalResourcePack from "./LocalResourcePack.js";
-import { sha256text } from "./essential.js";
+import { CachingFetcher, sha256text } from "./essential.js";
+
+const defaultVanillaDataVersion = "v1.21.40.25-preview";
 
 export default class ResourcePackStack {
 	static #JSON_FILES_TO_MERGE = ["blocks.json", "textures/terrain_texture.json", "textures/flipbook_textures.json"];
@@ -25,12 +27,12 @@ export default class ResourcePackStack {
 	 * @param {Boolean} [enableCache] Whether or not to cache files
 	 * @param {String} [vanillaDataVersion] The Minecraft version to get vanilla data from
 	 */
-	constructor(localResourcePacks = [], enableCache = true, vanillaDataVersion = "v1.21.40.25-preview") {
+	constructor(localResourcePacks = [], enableCache = true, vanillaDataVersion = defaultVanillaDataVersion) {
 		return (async () => {
 			this.hash = (await sha256text([vanillaDataVersion, ...localResourcePacks.map(lrp => lrp.hash)].join("\n"))).toHexadecimalString();
 			this.cacheName = `ResourcePackStack_${this.hash}`;
 			this.#localResourcePacks = localResourcePacks;
-			this.#vanillaDataFetcher = new VanillaDataFetcher(vanillaDataVersion);
+			this.#vanillaDataFetcher = await new VanillaDataFetcher(vanillaDataVersion);
 			this.cacheEnabled = enableCache;
 			if(enableCache) {
 				console.log("Using cache:", this.cacheName, [vanillaDataVersion, ...localResourcePacks.map(lrp => lrp.hash)])
@@ -89,36 +91,19 @@ export default class ResourcePackStack {
 	}
 }
 
-export class VanillaDataFetcher {
+export class VanillaDataFetcher extends CachingFetcher {
 	static #VANILLA_RESOURCES_LINK = "https://raw.githubusercontent.com/Mojang/bedrock-samples"; // No / at the end
 	
-	version;
-	cacheName;
-	#cache;
 	/**
-	 * Creates a vanilla data fetch to fetch data from the Mojang/bedrock-samples repository.
-	 * @param {String} version The name of the GitHub tag for a specific Minecraft version.
+	 * Creates a vanilla data fetcher to fetch data from the Mojang/bedrock-samples repository.
+	 * @param {String} [version] The name of the GitHub tag for a specific Minecraft version.
 	 */
-	constructor(version) {
-		this.version = version;
-		this.cacheName = `VanillaDataFetcher_${this.version}`;
-		this.#cache = caches.open(this.cacheName);
-	}
-	/**
-	 * Fetches vanilla data files from the Mojang/bedrock-samples repository on GitHub.
-	 * @param {String} filePath
-	 * @returns {Promise<Response>}
-	 */
-	async fetch(filePath) {
-		if(this.#cache instanceof Promise) {
-			this.#cache = await this.#cache;
-		}
-		let cacheLink = `https://holoprint-cache/${filePath}`;
-		let res = await this.#cache.match(cacheLink);
-		if(!res) {
-			res = await fetch(`${VanillaDataFetcher.#VANILLA_RESOURCES_LINK}/${this.version}/${filePath}`);
-			this.#cache.put(cacheLink, res.clone()).catch(e => console.warn(`Failed to save vanilla data to cache ${this.cacheName}:`, e));
-		}
-		return res;
+	constructor(version = defaultVanillaDataVersion) {
+		return (async () => {
+			await super(`VanillaDataFetcher_${version}`, `${VanillaDataFetcher.#VANILLA_RESOURCES_LINK}/${version}/`);
+			this.version = version;
+			
+			return this;
+		})();
 	}
 }

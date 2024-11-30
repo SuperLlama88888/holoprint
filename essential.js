@@ -7,10 +7,10 @@ export const selectEl = selector => document.querySelector(selector);
 /** @returns {NodeListOf<HTMLElement>} */
 export const selectEls = selector => document.querySelectorAll(selector);
 
-HTMLElement.prototype.selectEl = function(query) {
+HTMLElement.prototype.selectEl = DocumentFragment.prototype.selectEl = function(query) {
 	return this.querySelector(query);
 };
-HTMLElement.prototype.selectEls = function(query) {
+HTMLElement.prototype.selectEls = DocumentFragment.prototype.selectEls = function(query) {
 	return this.querySelectorAll(query);
 };
 
@@ -112,6 +112,9 @@ export function addOrdinalSuffix(num) {
 	return num + (num % 10 == 1 && num % 100 != 11? "st" : num % 10 == 2 && num % 100 != 12? "nd" : num % 10 == 3 && num % 100 != 13? "rd" : "th");
 }
 
+export function htmlCodeToElement(htmlCode) {
+	return (new DOMParser()).parseFromString(htmlCode, "text/html").body.firstElementChild;
+}
 export function stringToImageData(text, textCol = "black", backgroundCol = "white", font = "12px monospace") {
 	let can = new OffscreenCanvas(0, 20);
 	let ctx = can.getContext("2d");
@@ -277,5 +280,42 @@ export class JSONMap extends Map { // very barebones
 	}
 	#stringify(value) {
 		return JSON.stringify(value, this.#replacer);
+	}
+}
+export class CachingFetcher {
+	cacheName;
+	#baseUrl;
+	#cache;
+	constructor(cacheName, baseUrl = "") {
+		return (async () => {
+			this.#cache = await caches.open(cacheName);
+			this.#baseUrl = baseUrl;
+			this.cacheName = cacheName;
+			
+			return this;
+		})();
+	}
+	/**
+	 * Fetches a file, checking first against cache.
+	 * @param {String} url
+	 * @returns {Promise<Response>}
+	 */
+	async fetch(url) {
+		let fullUrl = this.#baseUrl + url;
+		let cacheLink = `https://cache/${url}`;
+		let res = await this.#cache.match(cacheLink);
+		if(!res) {
+			res = await this.retrieve(fullUrl);
+			this.#cache.put(cacheLink, res.clone()).catch(e => console.warn(`Failed to save response from ${fullUrl} to cache ${this.cacheName}:`, e));
+		}
+		return res;
+	}
+	/**
+	 * Actually load a file, for when it's not found in cache.
+	 * @param {String} url
+	 * @returns {Promise<Response>}
+	 */
+	async retrieve(url) {
+		return await fetch(url);
 	}
 }

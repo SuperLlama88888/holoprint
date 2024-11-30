@@ -102,7 +102,6 @@ export default class MaterialList {
 	 */
 	constructor(blockMetadata, itemMetadata, translations) {
 		this.materials = new Map();
-		
 		this.totalMaterialCount = 0;
 		
 		this.#blockMetadata = new Map(blockMetadata["data_items"].map(block => [block["name"], block]));
@@ -122,7 +121,7 @@ export default class MaterialList {
 		});
 	}
 	/**
-	 * Adds a material to the material list.
+	 * Adds a block to the material list.
 	 * @param {String} blockName
 	 * @param {Number} [count]
 	 */
@@ -135,6 +134,15 @@ export default class MaterialList {
 			itemName = itemName.replace("double_", "");
 			count *= 2;
 		}
+		this.materials.set(itemName, (this.materials.get(itemName) ?? 0) + count);
+		this.totalMaterialCount += count;
+	}
+	/**
+	 * Adds an item to the material list.
+	 * @param {String} itemName
+	 * @param {Number} [count]
+	 */
+	addItem(itemName, count = 1) {
 		this.materials.set(itemName, (this.materials.get(itemName) ?? 0) + count);
 		this.totalMaterialCount += count;
 	}
@@ -171,6 +179,13 @@ export default class MaterialList {
 				auxId: this.#findItemAuxId(itemName) ?? this.#findBlockAuxId(itemName) // this is used in the material list UI, so we prefer the item id
 			};
 		});
+	}
+	/**
+	 * Clears the material list.
+	 */
+	clear() {
+		this.materials.clear();
+		this.totalMaterialCount = 0;
 	}
 	/**
 	 * Finds an item serialization id.

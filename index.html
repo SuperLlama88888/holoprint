@@ -38,24 +38,30 @@
 								<option value="en_US" selected>English (United States)</option>
 							</select></label>
 							<label>Hologram scale: <input type="number" min="70" max="100" step="1" value="95" name="scale"/>%</label>
-							<fieldset>
-								<legend>Textures</legend>
-								<label>Texture outline width: <select name="textureOutlineWidth">
-									<option value="0">None</option>
-									<option value="0.125">0.125px</option>
-									<option value="0.25" selected>0.25px</option>
-									<option value="0.5">0.5px</option>
-									<option value="1">1px</option>
-								</select></label>
-								<label>Texture outline color: <input type="text" value="#00FA" name="textureOutlineColor"/></label>
-								<details>
-									<summary>Advanced</summary>
-									<label>Texture outline alpha threshold: <input type="number" min="0" max="255" value="0" name="textureOutlineAlphaThreshold"></label>
-									<label>Texture outline alpha comparison mode: <select name="textureOutlineAlphaDifferenceMode">
-										<option value="threshold" selected>Threshold</option>
-										<option value="difference">Difference</option>
+							<fieldset class="expandable">
+								<legend><label>Textures<input type="checkbox"/></label></legend>
+								<div>
+									<label>Texture outline width: <select name="textureOutlineWidth">
+										<option value="0">None</option>
+										<option value="0.125">0.125px</option>
+										<option value="0.25" selected>0.25px</option>
+										<option value="0.5">0.5px</option>
+										<option value="1">1px</option>
 									</select></label>
-								</details>
+									<label>Texture outline color: <input type="text" value="#00FA" name="textureOutlineColor"/></label>
+									<details>
+										<summary>Advanced</summary>
+										<label>Texture outline alpha threshold: <input type="number" min="0" max="255" value="0" name="textureOutlineAlphaThreshold"></label>
+										<label>Texture outline alpha comparison mode: <select name="textureOutlineAlphaDifferenceMode">
+											<option value="threshold" selected>Threshold</option>
+											<option value="difference">Difference</option>
+										</select></label>
+									</details>
+								</div>
+							</fieldset>
+							<fieldset class="expandable">
+								<legend><label>In-game controls<input type="checkbox"/></label></legend>
+								<div id="playerControlsInputCont"></div>
 							</fieldset>
 							<label>Spawn animation: <input type="checkbox" name="spawnAnimationEnabled" checked/></label>
 							<label>Ignored blocks: <input type="text" name="ignoredBlocks" placeholder="block_1 block_2 etc."/></label>
