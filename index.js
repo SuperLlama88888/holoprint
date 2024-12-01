@@ -319,10 +319,10 @@ customElements.define("item-criteria-input", class extends HTMLElement {
 					--accent-col: #E24436;
 				}
 			</style>
-			<label for="latestInput">Matching:</label>
-			<label id="criteriaInputs" data-empty-text="Nothing"></label>
-			<button id="addItemButton">+ Item name</button>
-			<button id="addTagButton">+ Item tag</button>
+			<label for="latestInput" data-translate="item_criteria_input.matching">Matching:</label>
+			<label id="criteriaInputs" data-empty-text="Nothing" data-translate-data-empty-text="item_criteria_input.nothing"></label>
+			<button id="addItemButton">+ <span data-translate="item_criteria_input.item_name">Item name</span></button>
+			<button id="addTagButton">+ <span data-translate="item_criteria_input.item_tag">Item tag</span></button>
 			<datalist id="itemNamesDatalist"></datalist>
 			<datalist id="itemTagsDatalist"></datalist>
 		`;
@@ -425,13 +425,16 @@ customElements.define("item-criteria-input", class extends HTMLElement {
 	}
 	#addNewInput(type, autofocus = true) {
 		const attributesByType = {
-			"item": `placeholder="Item name" list="itemNamesDatalist" class="itemNameInput"`,
-			"tag": `placeholder="Tag name" list="itemTagsDatalist" class="itemTagInput"`
+			"item": `placeholder="Item name" list="itemNamesDatalist" class="itemNameInput" data-translate-placeholder="item_criteria_input.item_name"`,
+			"tag": `placeholder="Tag name" list="itemTagsDatalist" class="itemTagInput" data-translate-placeholder="item_criteria_input.item_tag"`
 		}
 		this.#criteriaInputsCont.selectEl(`input:last-child:placeholder-shown`)?.remove();
 		let lastNode = [...this.#criteriaInputsCont.childNodes].at(-1);
-		if(lastNode && !(lastNode instanceof Text)) {
-			this.#criteriaInputsCont.appendChild(new Text(" or "));
+		if(lastNode && !(lastNode instanceof HTMLSpanElement)) {
+			let orSpan = document.createElement("span");
+			orSpan.dataset.translate = "item_criteria_input.or";
+			orSpan.innerText = " or ";
+			this.#criteriaInputsCont.appendChild(orSpan);
 		}
 		let newInput = htmlCodeToElement(`<input type="text" required pattern="^\\s*(\\w+:)?\\w+\\s*$" spellcheck="false" autocapitalize="off" ${attributesByType[type]}/>`);
 		newInput.onEvent("keydown", this.#inputKeyDownEvent);
@@ -447,9 +450,10 @@ customElements.define("item-criteria-input", class extends HTMLElement {
 			this.#addNewInput(e.target.classList.contains("itemNameInput")? "item" : "tag");
 			this.#reportFormState();
 		} else if(e.key == "Backspace" && e.target.value == "") {
+			e.preventDefault();
 			e.target.remove();
-			this.#criteriaInputsCont.childNodes.forEach(node => {
-				if(node instanceof Text && (node.previousSibling instanceof Text || !node.previousSibling || !node.nextSibling)) {
+			[...this.#criteriaInputsCont.children].forEach(node => {
+				if(node instanceof HTMLSpanElement && (node.previousSibling instanceof HTMLSpanElement || !node.previousSibling || !node.nextSibling)) {
 					node.remove();
 				}
 			});
