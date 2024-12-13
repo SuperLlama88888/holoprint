@@ -4,6 +4,7 @@ body {
 	/* animation: move-background 10s linear infinite; */
 	font-family: "Catamaran", "Trebuchet MS", sans-serif;
 	line-height: 1.2;
+	--icon-scale: 1;
 }
 @keyframes move-background {
 	from {
@@ -37,6 +38,7 @@ h1 {
 @media (min-width: 1301px) {
 	body {
 		font-size: 1.125em;
+		--icon-scale: 1.6;
 	}
 }
 form {
@@ -45,6 +47,9 @@ form {
 	width: 60%;
 }
 @media (max-width: 1300px) {
+	body {
+		--icon-scale: 1.3;
+	}
 	form {
 		width: 70%;
 	}
@@ -60,6 +65,7 @@ form {
 @media (max-width: 450px) {
 	body {
 		font-size: 0.8em;
+		--icon-scale: 1;
 	}
 	main {
 		padding: 2px;
@@ -255,7 +261,7 @@ input[type="checkbox"] {
 	display: block;
 	text-align: center;
 }
-img, canvas {
+img:not(#languageSelectorButton), canvas {
 	display: inline-block;
 	width: 400px;
 	border: 1px solid black;
@@ -270,6 +276,30 @@ img, canvas {
 #previewCont {
 	padding: 5px;
 	text-align: center;
+}
+#languageSelectorCont {
+	position: absolute;
+	top: 10px;
+	right: 10px;
+}
+#languageSelectorButton {
+	width: calc(22px * var(--icon-scale));
+	height: calc(22px * var(--icon-scale));
+	background: black;
+	mask: url("assets/globe_icon.svg") no-repeat center;
+	-webkit-mask: url("assets/globe_icon.svg") no-repeat center; /* No way Chrome didn't support this until a year ago :0 */
+	transition: transform 0.15s;
+}
+#languageSelectorCont:hover > #languageSelectorButton {
+	transform: scale(1.125);
+}
+#languageSelector {
+	opacity: 0;
+	position: absolute;
+	left: 0;
+	top: 0;
+	width: 100%;
+	height: 100%;
 }
 .hidden {
 	display: none !important;

@@ -1,4 +1,4 @@
-import { selectEl, downloadBlob, sleep, selectEls, htmlCodeToElement, CachingFetcher } from "./essential.js";
+import { selectEl, downloadBlob, sleep, selectEls, htmlCodeToElement, CachingFetcher, translate } from "./essential.js";
 import * as HoloPrint from "./HoloPrint.js";
 import SimpleLogger from "./SimpleLogger.js";
 import SupabaseLogger from "./SupabaseLogger.js";
@@ -147,7 +147,7 @@ document.onEvent("DOMContentLoaded", async () => {
 	});
 	
 	let materialListLanguageSelector = selectEl("#materialListLanguageSelector");
-	(await new ResourcePackStack()).fetchResource("texts/language_names.json").then(res => res.json()).then(languages => {
+	(new ResourcePackStack()).then(rps => rps.fetchResource("texts/language_names.json")).then(res => res.json()).then(languages => {
 		materialListLanguageSelector.firstElementChild.remove();
 		languages.forEach(([languageCode, languageName]) => {
 			materialListLanguageSelector.appendChild(new Option(languageName, languageCode, false, languageCode.replace("_", "-") == navigator.language));
@@ -155,6 +155,32 @@ document.onEvent("DOMContentLoaded", async () => {
 	}).catch(e => {
 		console.warn("Couldn't load language_names.json:", e);
 	});
+	
+	let languageSelector = selectEl("#languageSelector");
+	fetch("translations/languages.json").then(res => res.jsonc()).then(languagesAndNames => {
+		languagesAndNames = Object.fromEntries(Object.entries(languagesAndNames).sort((a, b) => a[1] > b[1])); // sort alphabeticallly
+		let availableLanguages = Object.keys(languagesAndNames);
+		if(availableLanguages.length == 1) {
+			selectEl("#languageSelectorCont").remove();
+			return;
+		}
+		let defaultLanguage = navigator.languages.find(navigatorLanguage => {
+			let navigatorBaseLanguage = navigatorLanguage.split("-")[0];
+			return availableLanguages.find(availableLanguage => availableLanguage == navigatorLanguage) ?? availableLanguages.find(availableLanguage => availableLanguage == navigatorBaseLanguage) ?? availableLanguages.find(availableLanguage => availableLanguage.split("-")[0] == navigatorBaseLanguage);
+		})?.split("-")?.[0] ?? "en";
+		languageSelector.textContent = "";
+		for(let language in languagesAndNames) {
+			languageSelector.appendChild(new Option(languagesAndNames[language], language, false, language == defaultLanguage));
+		}
+		languageSelector.onEventAndNow("change", () => {
+			translatePage(languageSelector.value);
+		});
+	});
+});
+window.onEvent("load", () => { // shadow DOMs aren't populated in the DOMContentLoaded event yet
+	if(location.search == "?generateEnglishTranslations") {
+		translatePage("en", true);
+	}
 });
 
 async function handleInputFiles(files) {
@@ -174,6 +200,43 @@ async function handleInputFiles(files) {
 }
 function updatePackNameInputPlaceholder() {
 	packNameInput.setAttribute("placeholder", HoloPrint.getDefaultPackName([...structureFilesInput.files]));
+}
+async function translatePage(language, generateTranslations = false) {
+	let translatableEls = document.documentElement.getAllChildren().filter(el => [...el.attributes].some(attr => attr.name.startsWith("data-translate")));
+	await translate(42, language); // translation file prefetch
+	let translations = generateTranslations? await fetch(`translations/${language}.json`).then(res => res.jsonc()) : {};
+	await Promise.all(translatableEls.map(async el => {
+		if("translate" in el.dataset) {
+			let translationKey = el.dataset["translate"];
+			if(generateTranslations) {
+				translations[translationKey] = el.innerHTML.replaceAll("<code>", "`").replaceAll("</code>", "`").replaceAll(/<a href="([^"]+)"[^>]*>([^<]+)<\/a>/g, "[$2]($1)");
+			} else {
+				let translation = await translate(translationKey, language);
+				if(translation != undefined) {
+					el.innerHTML = translation;
+				} else {
+					console.warn(`Couldn't find translation for ${translationKey} for language ${language}!`);
+				}
+			}
+		}
+		[...el.attributes].filter(attr => attr.name.startsWith("data-translate-")).forEach(async attr => {
+			let targetAttrName = attr.name.replace(/^data-translate-/, "");
+			if(generateTranslations) {
+				translations[attr.value] = el.getAttribute(targetAttrName);
+			} else {
+				let translation = await translate(attr.value, language);
+				if(translation != undefined) {
+					el.setAttribute(targetAttrName, translation);
+				} else {
+					console.warn(`Couldn't find translation for ${attr.value} for language ${language}!`);
+				}
+			}
+		});
+	}));
+	if(generateTranslations) {
+		translations = Object.fromEntries(Object.entries(translations).sort((a, b) => a[0] > b[0]));
+		downloadBlob(new File([JSON.stringify(translations, null, "\t")], `${language}.json`));
+	}
 }
 
 async function temporarilyChangeText(el, text, duration = 2000) {

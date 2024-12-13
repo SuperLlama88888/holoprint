@@ -4,10 +4,12 @@ declare global {
 	interface Element {
 		selectEl(query: String): Element | null;
 		selectEls(query: String): NodeListOf<HTMLElement>;
+		getAllChildren(): Array<HTMLElement>
 	}
 	interface DocumentFragment {
 		selectEl(query: String): Element | null;
 		selectEls(query: String): NodeListOf<HTMLElement>;
+		getAllChildren(): Array<HTMLElement>
 	}
 	interface EventTarget {
 		onEvent(type: String, listener: EventListenerOrEventListenerObject, options?: Boolean | AddEventListenerOptions): void;
