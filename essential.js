@@ -147,7 +147,7 @@ export function stringToImageData(text, textCol = "black", backgroundCol = "whit
  */
 export async function translate(translationKey, language) {
 	translate[language] ??= await fetch(`translations/${language}.json`).then(res => res.jsonc()).catch(() => ({}));
-	return translate[language]?.[translationKey]?.replaceAll(/`([^`]+)`/g, "<code>$1</code>")?.replaceAll(/\[([^\]]+)\]\(([^\)]+)\)/g, `<a href="$2">$1</a>`);
+	return translate[language]?.[translationKey]?.replaceAll(/`([^`]+)`/g, "<code>$1</code>")?.replaceAll(/\[([^\]]+)\]\(([^\)]+)\)/g, `<a href="$2" target="_blank">$1</a>`);
 }
 
 export function getStackTrace() {
