@@ -1,8 +1,8 @@
 {
 	"format_version": 2,
 	"header": {
-		"name": "Structure Block Button Adder",
-		"description": "Forces all Structure Block buttons to show, regardless of device.",
+		"name": "pack.name",
+		"description": "pack.description",
 		"uuid": "f26d494e-5ab1-4436-b8cb-94482ad1e6b0",
 		"version": [1, 0, 0],
 		"min_engine_version": [1, 16, 0]

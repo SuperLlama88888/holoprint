@@ -108,9 +108,10 @@ document.onEvent("DOMContentLoaded", async () => {
 	});
 	
 	let playerControlsInputCont = selectEl("#playerControlsInputCont");
-	Object.entries(HoloPrint.DEFAULT_PLAYER_CONTROLS).forEach(([control, itemCriteria]) => {
+	Object.entries(HoloPrint.DEFAULT_PLAYER_CONTROLS).forEach(async ([control, itemCriteria]) => {
 		let label = document.createElement("label");
-		label.innerText = `${HoloPrint.PLAYER_CONTROL_NAMES[control]}:`;
+		let playerControlTranslationKey = HoloPrint.PLAYER_CONTROL_NAMES[control];
+		label.innerHTML = `<span data-translate="${playerControlTranslationKey}">${await translate(playerControlTranslationKey, "en")}</span>:`;
 		let input = document.createElement("item-criteria-input");
 		input.setAttribute("name", `control.${control}`);
 		if(itemCriteria["names"].length > 0) {
@@ -174,6 +175,26 @@ document.onEvent("DOMContentLoaded", async () => {
 		}
 		languageSelector.onEventAndNow("change", () => {
 			translatePage(languageSelector.value);
+		});
+		
+		let retranslating = false;
+		let bodyObserver = new MutationObserver(mutations => {
+			if(retranslating) {
+				console.log("mutations observed when retranslating:", mutations); // should never happen!
+				return;
+			}
+			let shouldRetranslate = mutations.find(mutation => mutation.type == "childList" && [...mutation.addedNodes].some(node => node instanceof Element && [...node.attributes].some(attr => attr.name.startsWith("data-translate"))) || mutation.type == "attributes" && mutation.attributeName.startsWith("data-translate") && mutation.target.getAttribute(mutation.attributeName) != mutation.oldValue);
+			if(shouldRetranslate) {
+				retranslating = true;
+				translatePage(languageSelector.value);
+				retranslating = false;
+			}
+		});
+		bodyObserver.observe(document.body, {
+			childList: true,
+			subtree: true,
+			attributes: true,
+			attributeOldValue: true
 		});
 	});
 });

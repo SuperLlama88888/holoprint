@@ -1,6 +1,8 @@
 {
 	"format_version": 2,
 	"header": {
+		"name": "pack.name",
+		"description": "pack.description",
 		"version": [1, 0, 0],
 		"min_engine_version": [1, 16, 0]
 	},
@@ -13,7 +15,7 @@
 	"settings": [
 		{
 			"type": "input",
-			"text": "In-game instructions:",
+			"text": "In-game instructions:", // these strings can be translation keys but the translations won't be loaded until after the pack is applied. this means the first time the player enables the pack they'll see only the raw translation keys which is unideal. it's better to put these links in another UI screen somehow...
 			"default": "https://github.com/SuperLlama88888/holoprint/wiki/1.-Usage-instructions#hologram-controls",
 			"name": "instructions"
 		},
