@@ -1,4 +1,4 @@
-import { selectEl, downloadBlob, sleep, selectEls, htmlCodeToElement, CachingFetcher } from "./essential.js";
+import { selectEl, downloadBlob, sleep, selectEls, htmlCodeToElement, CachingFetcher, translate } from "./essential.js";
 import * as HoloPrint from "./HoloPrint.js";
 import SimpleLogger from "./SimpleLogger.js";
 import SupabaseLogger from "./SupabaseLogger.js";
@@ -108,9 +108,10 @@ document.onEvent("DOMContentLoaded", async () => {
 	});
 	
 	let playerControlsInputCont = selectEl("#playerControlsInputCont");
-	Object.entries(HoloPrint.DEFAULT_PLAYER_CONTROLS).forEach(([control, itemCriteria]) => {
+	Object.entries(HoloPrint.DEFAULT_PLAYER_CONTROLS).forEach(async ([control, itemCriteria]) => {
 		let label = document.createElement("label");
-		label.innerText = `${HoloPrint.PLAYER_CONTROL_NAMES[control]}:`;
+		let playerControlTranslationKey = HoloPrint.PLAYER_CONTROL_NAMES[control];
+		label.innerHTML = `<span data-translate="${playerControlTranslationKey}">${await translate(playerControlTranslationKey, "en")}</span>:`;
 		let input = document.createElement("item-criteria-input");
 		input.setAttribute("name", `control.${control}`);
 		if(itemCriteria["names"].length > 0) {
@@ -147,7 +148,7 @@ document.onEvent("DOMContentLoaded", async () => {
 	});
 	
 	let materialListLanguageSelector = selectEl("#materialListLanguageSelector");
-	(await new ResourcePackStack()).fetchResource("texts/language_names.json").then(res => res.json()).then(languages => {
+	(new ResourcePackStack()).then(rps => rps.fetchResource("texts/language_names.json")).then(res => res.json()).then(languages => {
 		materialListLanguageSelector.firstElementChild.remove();
 		languages.forEach(([languageCode, languageName]) => {
 			materialListLanguageSelector.appendChild(new Option(languageName, languageCode, false, languageCode.replace("_", "-") == navigator.language));
@@ -155,6 +156,52 @@ document.onEvent("DOMContentLoaded", async () => {
 	}).catch(e => {
 		console.warn("Couldn't load language_names.json:", e);
 	});
+	
+	let languageSelector = selectEl("#languageSelector");
+	fetch("translations/languages.json").then(res => res.jsonc()).then(languagesAndNames => {
+		languagesAndNames = Object.fromEntries(Object.entries(languagesAndNames).sort((a, b) => a[1] > b[1])); // sort alphabeticallly
+		let availableLanguages = Object.keys(languagesAndNames);
+		if(availableLanguages.length == 1) {
+			selectEl("#languageSelectorCont").remove();
+			return;
+		}
+		let defaultLanguage = navigator.languages.find(navigatorLanguage => {
+			let navigatorBaseLanguage = navigatorLanguage.split("-")[0];
+			return availableLanguages.find(availableLanguage => availableLanguage == navigatorLanguage) ?? availableLanguages.find(availableLanguage => availableLanguage == navigatorBaseLanguage) ?? availableLanguages.find(availableLanguage => availableLanguage.split("-")[0] == navigatorBaseLanguage);
+		})?.split("-")?.[0] ?? "en";
+		languageSelector.textContent = "";
+		for(let language in languagesAndNames) {
+			languageSelector.appendChild(new Option(languagesAndNames[language], language, false, language == defaultLanguage));
+		}
+		languageSelector.onEventAndNow("change", () => {
+			translatePage(languageSelector.value);
+		});
+		
+		let retranslating = false;
+		let bodyObserver = new MutationObserver(mutations => {
+			if(retranslating) {
+				console.log("mutations observed when retranslating:", mutations); // should never happen!
+				return;
+			}
+			let shouldRetranslate = mutations.find(mutation => mutation.type == "childList" && [...mutation.addedNodes].some(node => node instanceof Element && [...node.attributes].some(attr => attr.name.startsWith("data-translate"))) || mutation.type == "attributes" && mutation.attributeName.startsWith("data-translate") && mutation.target.getAttribute(mutation.attributeName) != mutation.oldValue);
+			if(shouldRetranslate) {
+				retranslating = true;
+				translatePage(languageSelector.value);
+				retranslating = false;
+			}
+		});
+		bodyObserver.observe(document.body, {
+			childList: true,
+			subtree: true,
+			attributes: true,
+			attributeOldValue: true
+		});
+	});
+});
+window.onEvent("load", () => { // shadow DOMs aren't populated in the DOMContentLoaded event yet
+	if(location.search == "?generateEnglishTranslations") {
+		translatePage("en", true);
+	}
 });
 
 async function handleInputFiles(files) {
@@ -174,6 +221,43 @@ async function handleInputFiles(files) {
 }
 function updatePackNameInputPlaceholder() {
 	packNameInput.setAttribute("placeholder", HoloPrint.getDefaultPackName([...structureFilesInput.files]));
+}
+async function translatePage(language, generateTranslations = false) {
+	let translatableEls = document.documentElement.getAllChildren().filter(el => [...el.attributes].some(attr => attr.name.startsWith("data-translate")));
+	await translate(42, language); // translation file prefetch
+	let translations = generateTranslations? await fetch(`translations/${language}.json`).then(res => res.jsonc()) : {};
+	await Promise.all(translatableEls.map(async el => {
+		if("translate" in el.dataset) {
+			let translationKey = el.dataset["translate"];
+			if(generateTranslations) {
+				translations[translationKey] = el.innerHTML.replaceAll("<code>", "`").replaceAll("</code>", "`").replaceAll(/<a href="([^"]+)"[^>]*>([^<]+)<\/a>/g, "[$2]($1)");
+			} else {
+				let translation = await translate(translationKey, language);
+				if(translation != undefined) {
+					el.innerHTML = translation;
+				} else {
+					console.warn(`Couldn't find translation for ${translationKey} for language ${language}!`);
+				}
+			}
+		}
+		[...el.attributes].filter(attr => attr.name.startsWith("data-translate-")).forEach(async attr => {
+			let targetAttrName = attr.name.replace(/^data-translate-/, "");
+			if(generateTranslations) {
+				translations[attr.value] = el.getAttribute(targetAttrName);
+			} else {
+				let translation = await translate(attr.value, language);
+				if(translation != undefined) {
+					el.setAttribute(targetAttrName, translation);
+				} else {
+					console.warn(`Couldn't find translation for ${attr.value} for language ${language}!`);
+				}
+			}
+		});
+	}));
+	if(generateTranslations) {
+		translations = Object.fromEntries(Object.entries(translations).sort((a, b) => a[0] > b[0]));
+		downloadBlob(new File([JSON.stringify(translations, null, "\t")], `${language}.json`));
+	}
 }
 
 async function temporarilyChangeText(el, text, duration = 2000) {
@@ -319,10 +403,10 @@ customElements.define("item-criteria-input", class extends HTMLElement {
 					--accent-col: #E24436;
 				}
 			</style>
-			<label for="latestInput">Matching:</label>
-			<label id="criteriaInputs" data-empty-text="Nothing"></label>
-			<button id="addItemButton">+ Item name</button>
-			<button id="addTagButton">+ Item tag</button>
+			<label for="latestInput" data-translate="item_criteria_input.matching">Matching:</label>
+			<label id="criteriaInputs" data-empty-text="Nothing" data-translate-data-empty-text="item_criteria_input.nothing"></label>
+			<button id="addItemButton">+ <span data-translate="item_criteria_input.item_name">Item name</span></button>
+			<button id="addTagButton">+ <span data-translate="item_criteria_input.item_tag">Item tag</span></button>
 			<datalist id="itemNamesDatalist"></datalist>
 			<datalist id="itemTagsDatalist"></datalist>
 		`;
@@ -425,13 +509,16 @@ customElements.define("item-criteria-input", class extends HTMLElement {
 	}
 	#addNewInput(type, autofocus = true) {
 		const attributesByType = {
-			"item": `placeholder="Item name" list="itemNamesDatalist" class="itemNameInput"`,
-			"tag": `placeholder="Tag name" list="itemTagsDatalist" class="itemTagInput"`
+			"item": `placeholder="Item name" list="itemNamesDatalist" class="itemNameInput" data-translate-placeholder="item_criteria_input.item_name"`,
+			"tag": `placeholder="Tag name" list="itemTagsDatalist" class="itemTagInput" data-translate-placeholder="item_criteria_input.item_tag"`
 		}
 		this.#criteriaInputsCont.selectEl(`input:last-child:placeholder-shown`)?.remove();
 		let lastNode = [...this.#criteriaInputsCont.childNodes].at(-1);
-		if(lastNode && !(lastNode instanceof Text)) {
-			this.#criteriaInputsCont.appendChild(new Text(" or "));
+		if(lastNode && !(lastNode instanceof HTMLSpanElement)) {
+			let orSpan = document.createElement("span");
+			orSpan.dataset.translate = "item_criteria_input.or";
+			orSpan.innerText = " or ";
+			this.#criteriaInputsCont.appendChild(orSpan);
 		}
 		let newInput = htmlCodeToElement(`<input type="text" required pattern="^\\s*(\\w+:)?\\w+\\s*$" spellcheck="false" autocapitalize="off" ${attributesByType[type]}/>`);
 		newInput.onEvent("keydown", this.#inputKeyDownEvent);
@@ -447,9 +534,10 @@ customElements.define("item-criteria-input", class extends HTMLElement {
 			this.#addNewInput(e.target.classList.contains("itemNameInput")? "item" : "tag");
 			this.#reportFormState();
 		} else if(e.key == "Backspace" && e.target.value == "") {
+			e.preventDefault();
 			e.target.remove();
-			this.#criteriaInputsCont.childNodes.forEach(node => {
-				if(node instanceof Text && (node.previousSibling instanceof Text || !node.previousSibling || !node.nextSibling)) {
+			[...this.#criteriaInputsCont.children].forEach(node => {
+				if(node instanceof HTMLSpanElement && (node.previousSibling instanceof HTMLSpanElement || !node.previousSibling || !node.nextSibling)) {
 					node.remove();
 				}
 			});

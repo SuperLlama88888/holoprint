@@ -6,21 +6,21 @@ import TextureAtlas from "./TextureAtlas.js";
 import MaterialList from "./MaterialList.js";
 import PreviewRenderer from "./PreviewRenderer.js";
 
-import { awaitAllEntries, concatenateFiles, JSONMap, JSONSet, max, min, pi, sha256 } from "./essential.js";
+import { awaitAllEntries, concatenateFiles, JSONMap, JSONSet, max, min, pi, sha256, translate } from "./essential.js";
 import ResourcePackStack from "./ResourcePackStack.js";
 
 export const IGNORED_BLOCKS = ["air", "piston_arm_collision", "sticky_piston_arm_collision"]; // blocks to be ignored when scanning the structure file
 export const IGNORED_MATERIAL_LIST_BLOCKS = ["bubble_column"]; // blocks that will always be hidden on the material list
 const IGNORED_BLOCK_ENTITIES = ["Beacon", "Beehive", "Bell", "BrewingStand", "ChiseledBookshelf", "CommandBlock", "Comparator", "Conduit", "EnchantTable", "EndGateway", "JigsawBlock", "Lodestone", "SculkCatalyst", "SculkShrieker", "SculkSensor", "CalibratedSculkSensor", "StructureBlock", "BrushableBlock", "TrialSpawner", "Vault"];
 export const PLAYER_CONTROL_NAMES = {
-	TOGGLE_RENDERING: "Toggle rendering",
-	CHANGE_OPACITY: "Change opacity",
-	TOGGLE_VALIDATING: "Toggle validating",
-	CHANGE_LAYER: "Change layer",
-	DECREASE_LAYER: "Decrease layer",
-	MOVE_HOLOGRAM: "Move hologram",
-	CHANGE_STRUCTURE: "Change structure",
-	DISABLE_PLAYER_CONTROLS: "Disable player controls"
+	TOGGLE_RENDERING: "player_controls.toggle_rendering",
+	CHANGE_OPACITY: "player_controls.change_opacity",
+	TOGGLE_VALIDATING: "player_controls.toggle_validating",
+	CHANGE_LAYER: "player_controls.change_layer",
+	DECREASE_LAYER: "player_controls.decrease_layer",
+	MOVE_HOLOGRAM: "player_controls.move_hologram",
+	CHANGE_STRUCTURE: "player_controls.change_structure",
+	DISABLE_PLAYER_CONTROLS: "player_controls.disable_player_controls"
 };
 export const DEFAULT_PLAYER_CONTROLS = {
 	TOGGLE_RENDERING: createItemCriteria("stone"),
@@ -72,6 +72,7 @@ export async function makePack(structureFiles, config = {}, resourcePackStack, p
 			blockValidationParticle: "particles/block_validation.json",
 			singleWhitePixelTexture: "textures/particle/single_white_pixel.png",
 			hudScreenUI: "ui/hud_screen.json",
+			languagesDotJson: "texts/languages.json"
 		},
 		resources: {
 			entityFile: "entity/armor_stand.entity.json",
@@ -87,7 +88,7 @@ export async function makePack(structureFiles, config = {}, resourcePackStack, p
 			itemMetadata: "metadata/vanilladata_modules/mojang-items.json"
 		}
 	}, resourcePackStack);
-	let { manifest, packIcon, entityFile, hologramRenderControllers, defaultPlayerRenderControllers, hologramGeo, armorStandGeo, hologramMaterial, hologramAnimationControllers, hologramAnimations, boundingBoxOutlineParticle, blockValidationParticle, singleWhitePixelTexture, hudScreenUI, translationFile } = loadedStuff.files;
+	let { manifest, packIcon, entityFile, hologramRenderControllers, defaultPlayerRenderControllers, hologramGeo, armorStandGeo, hologramMaterial, hologramAnimationControllers, hologramAnimations, boundingBoxOutlineParticle, blockValidationParticle, singleWhitePixelTexture, hudScreenUI, languagesDotJson, translationFile } = loadedStuff.files;
 	let { blockMetadata, itemMetadata } = loadedStuff.data;
 	
 	let structures = nbts.map(nbt => nbt["structure"]);
@@ -384,7 +385,7 @@ export async function makePack(structureFiles, config = {}, resourcePackStack, p
 		v.player_action_counter = 0;
 	}, { structureSize: structureSizes[0], defaultTextureIndex, structureCount: structureFiles.length }));
 	entityDescription["scripts"]["pre_animation"] ??= [];
-	entityDescription["scripts"]["pre_animation"].push(functionToMolang((v, q, t, textureBlobsCount, totalBlocksToValidate, toggleRendering, changeOpacity, toggleValidating, changeLayer, decreaseLayer, changeStructure, disablePlayerControls) => {
+	entityDescription["scripts"]["pre_animation"].push(functionToMolang((v, q, t, textureBlobsCount, totalBlocksToValidate, toggleRendering, changeOpacity, toggleValidating, changeLayer, decreaseLayer, disablePlayerControls) => {
 		v.hologram_dir = Math.floor(q.body_y_rotation / 90) + 2; // [south, west, north, east] (since it goes from -180 to 180)
 		
 		t.process_action = false; // this is the only place I'm using temp variables for their intended purpose
@@ -517,7 +518,7 @@ export async function makePack(structureFiles, config = {}, resourcePackStack, p
 		}
 		
 		if(v.validate_hologram) {
-			// block validation particles rely on temp variables. this code checks if the temp variables are defined; if they are, it updates the internal state; if not, it sets the temp variables to its internal state.
+			// block validation particles rely on temp variables. this code checks if the temp variables are defined; if they are, it updates the internal state; if not, it sets the temp variables to its internal state. very messy ik
 			if((t.wrong_blocks ?? -1) == -1) {
 				t.wrong_blocks = v.wrong_blocks;
 			} else {
@@ -555,7 +556,6 @@ export async function makePack(structureFiles, config = {}, resourcePackStack, p
 		toggleValidating: itemCriteriaToMolang(config.CONTROLS.TOGGLE_VALIDATING),
 		changeLayer: itemCriteriaToMolang(config.CONTROLS.CHANGE_LAYER),
 		decreaseLayer: itemCriteriaToMolang(config.CONTROLS.DECREASE_LAYER),
-		changeStructure: itemCriteriaToMolang(config.CONTROLS.CHANGE_STRUCTURE),
 		disablePlayerControls: itemCriteriaToMolang(config.CONTROLS.DISABLE_PLAYER_CONTROLS)
 	}));
 	entityDescription["geometry"]["hologram.wrong_block_overlay"] = "geometry.armor_stand.hologram.wrong_block_overlay";
@@ -590,7 +590,7 @@ export async function makePack(structureFiles, config = {}, resourcePackStack, p
 	
 	let overlayTexture = await singleWhitePixelTexture.setOpacity(config.WRONG_BLOCK_OVERLAY_COLOR[3]);
 	
-	let totalBlocks = materialList.totalMaterialCount;
+	let totalMaterialCount = materialList.totalMaterialCount;
 	
 	// add the particles' short names, and then reference them in the animation controller
 	uniqueBlocksToValidate.forEach(blockName => {
@@ -598,102 +598,9 @@ export async function makePack(structureFiles, config = {}, resourcePackStack, p
 		entityDescription["particle_effects"][particleName] = `holoprint:${particleName}`;
 	});
 	
-	// Add player controls. These are done entirely in the render controller so custom skins aren't disabled.
-	let initVariables = functionToMolang(v => {
-		v.player_action_counter ??= 0;
-		v.last_player_action_time ??= 0;
-		v.player_action ??= "";
-		v.new_action = ""; // If we want to set a new player action, we put it here first so we can update the counter and record the time.
-		
-		v.last_attack_time ??= 0;
-		v.attack = v.attack_time > 0 && (v.last_attack_time == 0 || v.attack_time < v.last_attack_time);
-		v.last_attack_time = v.attack_time;
-	});
-	let renderingControls = functionToMolang((q, v, toggleRendering, changeOpacity, toggleValidating, changeLayer, changeStructure) => {
-		if(v.attack) {
-			if($[toggleRendering]) {
-				v.new_action = "toggle_rendering";
-			} else if($[changeOpacity]) {
-				if(q.is_sneaking) {
-					v.new_action = "decrease_opacity";
-				} else {
-					v.new_action = "increase_opacity";
-				}
-			} else if($[toggleValidating]) {
-				v.new_action = "toggle_validating";
-			} else if($[changeLayer]) {
-				if(q.is_sneaking) {
-					v.new_action = "decrease_layer";
-				} else {
-					v.new_action = "increase_layer";
-				}
-			} else if($[changeStructure]) {
-				if(q.is_sneaking) {
-					v.new_action = "previous_structure";
-				} else {
-					v.new_action = "next_structure";
-				}
-			}
-		}
-	}, {
-		toggleRendering: itemCriteriaToMolang(config.CONTROLS.TOGGLE_RENDERING),
-		changeOpacity: itemCriteriaToMolang(config.CONTROLS.CHANGE_OPACITY),
-		toggleValidating: itemCriteriaToMolang(config.CONTROLS.TOGGLE_VALIDATING),
-		changeLayer: itemCriteriaToMolang(config.CONTROLS.CHANGE_LAYER),
-		changeStructure: itemCriteriaToMolang(config.CONTROLS.CHANGE_STRUCTURE)
-	});
-	let movementControls = functionToMolang((q, v, moveHologram) => {
-		if(v.attack && $[moveHologram]) {
-			if(q.cardinal_player_facing == 0) { // this query unfortunately doesn't work in armour stands
-				v.new_action = "move_y-";
-			} else if(q.cardinal_player_facing == 1) {
-				v.new_action = "move_y+";
-			} else if(q.cardinal_player_facing == 2) {
-				v.new_action = "move_z-";
-			} else if(q.cardinal_player_facing == 3) {
-				v.new_action = "move_z+";
-			} else if(q.cardinal_player_facing == 4) {
-				v.new_action = "move_x+";
-			} else if(q.cardinal_player_facing == 5) {
-				v.new_action = "move_x-";
-			}
-		}
-	}, {
-		moveHologram: itemCriteriaToMolang(config.CONTROLS.MOVE_HOLOGRAM)
-	});
-	let broadcastActions = functionToMolang((v, t, q) => {
-		if(v.new_action != "") {
-			v.player_action = v.new_action;
-			v.new_action = "";
-			v.player_action_counter++;
-			v.last_player_action_time = q.time_stamp;
-		}
-		if(q.time_stamp - v.last_player_action_time > 40) { // broadcast nothing after 2 seconds. this is so, if the player does an action a minute ago and it doesn't do anything, the armour stands don't suddenly update
-			v.player_action = "";
-		}
-		t.player_action = v.player_action;
-		t.player_action_counter = v.player_action_counter;
-	});
-	let playerRenderControllers = patchRenderControllers(defaultPlayerRenderControllers, {
-		"controller.render.player.first_person": functionToMolang((q, v) => {
-			if(!q.is_in_ui && !v.map_face_icon) {
-				$[initVariables]
-				$[renderingControls]
-				$[broadcastActions]
-			}
-		}, { initVariables, renderingControls, broadcastActions }),
-		"controller.render.player.third_person": functionToMolang(q => {
-			if(!q.is_in_ui) {
-				$[initVariables]
-				$[renderingControls]
-				$[movementControls] // in first person, since the player entity is always at the front of the screen, it's always facing south so movement controls only work in third person
-				$[broadcastActions]
-			}
-		}, { initVariables, renderingControls, movementControls, broadcastActions })
-	});
+	let playerRenderControllers = addPlayerControlsToRenderControllers(config, defaultPlayerRenderControllers);
 	
 	console.log("Block counts map:", materialList.materials);
-	
 	let finalisedMaterialList = materialList.export();
 	console.log("Finalised material list:", finalisedMaterialList);
 	
@@ -708,33 +615,46 @@ export async function makePack(structureFiles, config = {}, resourcePackStack, p
 		}
 	})));
 	hudScreenUI["material_list"]["size"][1] = finalisedMaterialList.length * 12 + 12; // 12px for each item + 12px for the heading
-	hudScreenUI["material_list_heading"]["controls"][1]["pack_name"]["text"] += packName;
 	
 	manifest["header"]["uuid"] = crypto.randomUUID();
 	manifest["modules"][0]["uuid"] = crypto.randomUUID();
-	manifest["header"]["name"] = packName;
-	let packDescription = `§u★HoloPrint§r resource pack generated on §o${(new Date()).toLocaleString()}§r\nDeveloped by §l§6SuperLlama88888§r`;
 	if(config.AUTHORS.length) {
-		packDescription += `\nStructure made by ${config.AUTHORS.join(" and ")}`;
 		manifest["metadata"]["authors"].push(...config.AUTHORS);
 	}
-	if(config.DESCRIPTION) {
-		packDescription += `\n${config.DESCRIPTION}`;
-	}
+	let inGameControls;
 	if(JSON.stringify(config.CONTROLS) != JSON.stringify(DEFAULT_PLAYER_CONTROLS)) { // add controls to pack description only if they've been changed
-		packDescription += "\n\n§lControls:§r";
 		// make a fake material list for the in-game control items
 		let controlsMaterialList = new MaterialList(blockMetadata, itemMetadata, translationFile);
-		Object.entries(config.CONTROLS).forEach(([control, itemCriteria]) => {
+		inGameControls = "";
+		for(let [control, itemCriteria] of Object.entries(config.CONTROLS)) {
 			itemCriteria["names"].forEach(itemName => controlsMaterialList.addItem(itemName));
 			let itemInfo = controlsMaterialList.export();
 			controlsMaterialList.clear();
-			packDescription += `\n${PLAYER_CONTROL_NAMES[control]}: ${[itemInfo.map(item => `§3${item.translatedName}§r`).join(", "), itemCriteria.tags.map(tag => `§p${tag}§r`).join(", ")].removeFalsies().join("; ")}`;
-		});
+			inGameControls += `\n${await translate(PLAYER_CONTROL_NAMES[control], "en")}: ${[itemInfo.map(item => `§3${item.translatedName}§r`).join(", "), itemCriteria.tags.map(tag => `§p${tag}§r`).join(", ")].removeFalsies().join("; ")}`;
+		}
 	}
-	packDescription += `\n\n§lTotal block count: ${totalBlocks}\n§r`;
-	packDescription += finalisedMaterialList.map(({ translatedName, count }) => `${count} ${translatedName}`).join(", ");
-	manifest["header"]["description"] = packDescription;
+	
+	let packGenerationTime = (new Date()).toLocaleString();
+	
+	let languageFiles = await Promise.all(languagesDotJson.map(async language => {
+		let languageFile = (await fetch(`packTemplate/texts/${language}.lang`).then(res => res.text())).replaceAll("\r\n", "\n"); // I hate windows sometimes (actually quite often now because of windows 11)
+		languageFile = languageFile.replaceAll("{PACK_NAME}", packName);
+		languageFile = languageFile.replaceAll("{PACK_GENERATION_TIME}", packGenerationTime);
+		languageFile = languageFile.replaceAll(/\{STRUCTURE_AUTHORS\[([^)]+)\]\}/g, (useless, delimiter) => config.AUTHORS.join(delimiter));
+		languageFile = languageFile.replaceAll("{DESCRIPTION}", config.DESCRIPTION?.replaceAll("\n", "\\n"));
+		languageFile = languageFile.replaceAll("{CONTROLS}", inGameControls?.replaceAll("\n", "\\n"));
+		languageFile = languageFile.replaceAll("{TOTAL_MATERIAL_COUNT}", totalMaterialCount);
+		languageFile = languageFile.replaceAll("{MATERIAL_LIST}", finalisedMaterialList.map(({ translatedName, count }) => `${count} ${translatedName}`).join(", "));
+		
+		// now substitute in the extra bits into the main description if needed
+		languageFile = languageFile.replaceAll("{AUTHORS_SECTION}", config.AUTHORS.length? languageFile.match(/pack\.description\.authors=([^\t#\n]+)/)[1] : "");
+		languageFile = languageFile.replaceAll("{DESCRIPTION_SECTION}", config.DESCRIPTION? languageFile.match(/pack\.description\.description=([^\t#\n]+)/)[1] : "");
+		languageFile = languageFile.replaceAll("{CONTROLS_SECTION}", inGameControls? languageFile.match(/pack\.description\.controls=([^\t#\n]+)/)[1] : "");
+		
+		languageFile = languageFile.replaceAll(/pack\.description\..+\s*/g, ""); // remove all the description sections
+		
+		return [language, languageFile];
+	}));
 	
 	console.info("Finished making all pack files!");
 	
@@ -774,6 +694,10 @@ export async function makePack(structureFiles, config = {}, resourcePackStack, p
 		pack.file(`textures/entity/${textureName}.png`, blob);
 	});
 	pack.file("ui/hud_screen.json", JSON.stringify(hudScreenUI));
+	pack.file("texts/languages.json", JSON.stringify(languagesDotJson));
+	languageFiles.forEach(([language, languageFile]) => {
+		pack.file(`texts/${language}.lang`, languageFile);
+	});
 	
 	let zippedPack = await pack.generateAsync({
 		type: "blob",
@@ -784,7 +708,7 @@ export async function makePack(structureFiles, config = {}, resourcePackStack, p
 	});
 	console.info(`Finished creating pack in ${(performance.now() - startTime).toFixed(0) / 1000}s!`);
 	
-	if(totalBlocks < config.PREVIEW_BLOCK_LIMIT && previewCont) {
+	if(totalMaterialCount < config.PREVIEW_BLOCK_LIMIT && previewCont) {
 		hologramGeo["minecraft:geometry"].filter(geo => geo["description"]["identifier"].startsWith("geometry.armor_stand.hologram_")).map(geo => {
 			(new PreviewRenderer(previewCont, textureAtlas, geo, hologramAnimations, config.SHOW_PREVIEW_SKYBOX)).catch(e => console.error("Preview renderer error:", e)); // is async but we won't wait for it
 		});
@@ -1116,6 +1040,107 @@ function addBlockValidationParticles(hologramAnimationControllers, structureI, b
 	hologramAnimationControllers["animation_controllers"]["controller.animation.armor_stand.hologram.block_validation"]["states"][animationStateName] = blockValidationAnimation;
 	hologramAnimationControllers["animation_controllers"]["controller.animation.armor_stand.hologram.block_validation"]["states"]["default"]["transitions"].push({
 		[animationStateName]: `v.validate_hologram && v.structure_index == ${structureI}`
+	});
+}
+
+/**
+ * Add player controls. These are done entirely in the render controller so character creator skins aren't disabled.
+ * @param {HoloPrintConfig} config
+ * @param {Object} defaultPlayerRenderControllers
+ * @returns {Object}
+ */
+function addPlayerControlsToRenderControllers(config, defaultPlayerRenderControllers) {
+	let initVariables = functionToMolang(v => {
+		v.player_action_counter ??= 0;
+		v.last_player_action_time ??= 0;
+		v.player_action ??= "";
+		v.new_action = ""; // If we want to set a new player action, we put it here first so we can update the counter and record the time.
+		
+		v.last_attack_time ??= 0;
+		v.attack = v.attack_time > 0 && (v.last_attack_time == 0 || v.attack_time < v.last_attack_time);
+		v.last_attack_time = v.attack_time;
+	});
+	let renderingControls = functionToMolang((q, v, toggleRendering, changeOpacity, toggleValidating, changeLayer, changeStructure) => {
+		if(v.attack) {
+			if($[toggleRendering]) {
+				v.new_action = "toggle_rendering";
+			} else if($[changeOpacity]) {
+				if(q.is_sneaking) {
+					v.new_action = "decrease_opacity";
+				} else {
+					v.new_action = "increase_opacity";
+				}
+			} else if($[toggleValidating]) {
+				v.new_action = "toggle_validating";
+			} else if($[changeLayer]) {
+				if(q.is_sneaking) {
+					v.new_action = "decrease_layer";
+				} else {
+					v.new_action = "increase_layer";
+				}
+			} else if($[changeStructure]) {
+				if(q.is_sneaking) {
+					v.new_action = "previous_structure";
+				} else {
+					v.new_action = "next_structure";
+				}
+			}
+		}
+	}, {
+		toggleRendering: itemCriteriaToMolang(config.CONTROLS.TOGGLE_RENDERING),
+		changeOpacity: itemCriteriaToMolang(config.CONTROLS.CHANGE_OPACITY),
+		toggleValidating: itemCriteriaToMolang(config.CONTROLS.TOGGLE_VALIDATING),
+		changeLayer: itemCriteriaToMolang(config.CONTROLS.CHANGE_LAYER),
+		changeStructure: itemCriteriaToMolang(config.CONTROLS.CHANGE_STRUCTURE)
+	});
+	let movementControls = functionToMolang((q, v, moveHologram) => {
+		if(v.attack && $[moveHologram]) {
+			if(q.cardinal_player_facing == 0) { // this query unfortunately doesn't work in armour stands
+				v.new_action = "move_y-";
+			} else if(q.cardinal_player_facing == 1) {
+				v.new_action = "move_y+";
+			} else if(q.cardinal_player_facing == 2) {
+				v.new_action = "move_z-";
+			} else if(q.cardinal_player_facing == 3) {
+				v.new_action = "move_z+";
+			} else if(q.cardinal_player_facing == 4) {
+				v.new_action = "move_x+";
+			} else if(q.cardinal_player_facing == 5) {
+				v.new_action = "move_x-";
+			}
+		}
+	}, {
+		moveHologram: itemCriteriaToMolang(config.CONTROLS.MOVE_HOLOGRAM)
+	});
+	let broadcastActions = functionToMolang((v, t, q) => {
+		if(v.new_action != "") {
+			v.player_action = v.new_action;
+			v.new_action = "";
+			v.player_action_counter++;
+			v.last_player_action_time = q.time_stamp;
+		}
+		if(q.time_stamp - v.last_player_action_time > 40) { // broadcast nothing after 2 seconds. this is so, if the player does an action a minute ago and it doesn't do anything, the armour stands don't suddenly update when it's broadcasted through temp
+			v.player_action = "";
+		}
+		t.player_action = v.player_action;
+		t.player_action_counter = v.player_action_counter;
+	});
+	return patchRenderControllers(defaultPlayerRenderControllers, {
+		"controller.render.player.first_person": functionToMolang((q, v) => {
+			if(!q.is_in_ui && !v.map_face_icon) {
+				$[initVariables]
+				$[renderingControls]
+				$[broadcastActions]
+			}
+		}, { initVariables, renderingControls, broadcastActions }),
+		"controller.render.player.third_person": functionToMolang(q => {
+			if(!q.is_in_ui) {
+				$[initVariables]
+				$[renderingControls]
+				$[movementControls] // in first person, since the player entity is always at the front of the screen, it's always facing south so movement controls only work in third person
+				$[broadcastActions]
+			}
+		}, { initVariables, renderingControls, movementControls, broadcastActions })
 	});
 }
 /**

@@ -1,4 +1,4 @@
-// Small functions that don't do anything specific to HoloPrint
+// Small functions that don't do anything specific to HoloPrint's main functionality
 
 import stripJsonComments from "https://esm.run/strip-json-comments@5.0.1";
 
@@ -7,11 +7,23 @@ export const selectEl = selector => document.querySelector(selector);
 /** @returns {NodeListOf<HTMLElement>} */
 export const selectEls = selector => document.querySelectorAll(selector);
 
-HTMLElement.prototype.selectEl = DocumentFragment.prototype.selectEl = function(query) {
+Element.prototype.selectEl = DocumentFragment.prototype.selectEl = function(query) {
 	return this.querySelector(query);
 };
-HTMLElement.prototype.selectEls = DocumentFragment.prototype.selectEls = function(query) {
+Element.prototype.selectEls = DocumentFragment.prototype.selectEls = function(query) {
 	return this.querySelectorAll(query);
+};
+Element.prototype.getAllChildren = DocumentFragment.prototype.getAllChildren = function() {
+	let children = [...this.selectEls("*")];
+	let allChildren = [];
+	while(children.length) {
+		let child = children.shift();
+		allChildren.push(child);
+		if(child.shadowRoot) {
+			allChildren.push(...child.shadowRoot.selectEls("*"));
+		}
+	}
+	return allChildren;
 };
 
 EventTarget.prototype.onEvent = EventTarget.prototype.addEventListener;
@@ -127,6 +139,16 @@ export function stringToImageData(text, textCol = "black", backgroundCol = "whit
 	ctx.fillText(text, 0, 15);
 	return ctx.getImageData(0, 0, can.width, can.height);
 }
+/**
+ * Looks up a translation from translations/`language`.json
+ * @param {String} translationKey
+ * @param {String} language
+ * @returns {Promise<String>}
+ */
+export async function translate(translationKey, language) {
+	translate[language] ??= await fetch(`translations/${language}.json`).then(res => res.jsonc()).catch(() => ({}));
+	return translate[language]?.[translationKey]?.replaceAll(/`([^`]+)`/g, "<code>$1</code>")?.replaceAll(/\[([^\]]+)\]\(([^\)]+)\)/g, `<a href="$2" target="_blank">$1</a>`);
+}
 
 export function getStackTrace() {
 	return (new Error()).stack.split("\n").slice(1).removeFalsies();
@@ -179,7 +201,7 @@ export function downloadBlob(blob, fileName) {
 	let a = document.createElement("a");
 	let objectURL = URL.createObjectURL(blob);
 	a.href = objectURL;
-	a.download = fileName;
+	a.download = fileName ?? blob.name; // blob will have a name if blob is a File
 	a.click();
 	URL.revokeObjectURL(objectURL);
 }

@@ -205,7 +205,8 @@
 				"pack_name": {
 					"type": "label",
 					"size": ["100% - 18px", 10],
-					"text": "Material List: ", // pack name gets put in here
+					"text": "holoprint.material_list.heading",
+					"localize": true,
 					"anchor_from": "right_middle",
 					"anchor_to": "right_middle"
 				}
