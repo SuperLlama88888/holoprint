@@ -594,7 +594,7 @@ export async function makePack(structureFiles, config = {}, resourcePackStack, p
 	
 	// add the particles' short names, and then reference them in the animation controller
 	uniqueBlocksToValidate.forEach(blockName => {
-		let particleName = `validate_${blockName}`;
+		let particleName = `validate_${blockName.replace(":", ".")}`;
 		entityDescription["particle_effects"][particleName] = `holoprint:${particleName}`;
 	});
 	
@@ -681,10 +681,10 @@ export async function makePack(structureFiles, config = {}, resourcePackStack, p
 	pack.file("animation_controllers/armor_stand.hologram.animation_controllers.json", JSON.stringify(hologramAnimationControllers));
 	pack.file("particles/bounding_box_outline.json", JSON.stringify(boundingBoxOutlineParticle));
 	uniqueBlocksToValidate.forEach(blockName => {
-		let particleName = `validate_${blockName}`;
+		let particleName = `validate_${blockName.replace(":", ".")}`; // file names can't have : in them
 		let particle = structuredClone(blockValidationParticle);
 		particle["particle_effect"]["description"]["identifier"] = `holoprint:${particleName}`;
-		particle["particle_effect"]["components"]["minecraft:particle_expire_if_in_blocks"] = [`minecraft:${blockName}`];
+		particle["particle_effect"]["components"]["minecraft:particle_expire_if_in_blocks"] = [blockName.includes(":")? blockName : `minecraft:${blockName}`]; // add back minecraft: namespace if it's missing
 		pack.file(`particles/${particleName}.json`, JSON.stringify(particle));
 	});
 	pack.file("textures/particle/single_white_pixel.png", await singleWhitePixelTexture.toBlob());
@@ -1027,13 +1027,13 @@ function addBlockValidationParticles(hologramAnimationControllers, structureI, b
 	};
 	blocksToValidate.forEach(blockToValidate => {
 		blockValidationAnimation["particle_effects"].push({
-			"effect": `validate_${blockToValidate["block"]}`,
+			"effect": `validate_${blockToValidate["block"].replace(":", ".")}`,
 			"locator": blockToValidate["bone_name"],
 			"pre_effect_script": `
 				v.x = ${blockToValidate["pos"][0]};
 				v.y = ${blockToValidate["pos"][1]};
 				v.z = ${blockToValidate["pos"][2]};
-			`.replaceAll(/\s/g, "") // this is only used for setting the wrong block overlay position; the particle's position is set using a locator
+			`.replaceAll(/\s/g, "") // this is only used for setting the wrong block overlay position; the particle's position is set using the locator
 		});
 	});
 	let animationStateName = `validate_${structureI}`;
