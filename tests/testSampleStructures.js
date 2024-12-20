@@ -175,7 +175,8 @@ async function setupBrowserAndPage(status) {
 	status.warnings = 0;
 	
 	let browser = await puppeteer.launch({
-		browser: browserEngine
+		browser: browserEngine,
+		args: ["--no-sandbox"]
 	});
 	
 	let page = await browser.newPage();
