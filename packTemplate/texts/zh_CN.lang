@@ -4,4 +4,4 @@ pack.description.authors=\n结构作者： {STRUCTURE_AUTHORS[ and ]}	## Authors
 pack.description.description=\n{DESCRIPTION}
 pack.description.controls=\n\n§l控制：§r{CONTROLS}
 	
-holoprint.material_list.heading=材料清单： {PACK_NAME}
+holoprint.material_list.heading={PACK_NAME} 的材料清单
