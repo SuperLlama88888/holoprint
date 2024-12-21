@@ -1,0 +1,7 @@
+pack.name={PACK_NAME}
+pack.description=§u★全息打印§r 资源包于 §o{PACK_GENERATION_TIME}§r\n由 §l§6SuperLlama88888§r{AUTHORS_SECTION}{DESCRIPTION_SECTION}{CONTROLS_SECTION} 开发\n\n§l总块数： {TOTAL_MATERIAL_COUNT}\n§r{MATERIAL_LIST}	## ★ at the start forces unicode font which makes it smaller so more text fits in
+pack.description.authors=\n结构作者： {STRUCTURE_AUTHORS[ and ]}	## Authors/Description/Controls will be substituted into the actual description by the JS
+pack.description.description=\n{DESCRIPTION}
+pack.description.controls=\n\n§l控制：§r{CONTROLS}
+	
+holoprint.material_list.heading=材料清单： {PACK_NAME}
