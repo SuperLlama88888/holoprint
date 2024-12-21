@@ -54,7 +54,7 @@
   "settings.textures.outline_width.no_outline": "无",
   "terms_of_use_notice": "通过使用[HoloPrint](https://github.com/SuperLlama88888/holoprint)生成包，即表示您同意[使用条款](https://github.com/SuperLlama88888/holoprint/blob/main/TERMS_OF_USE.md)。(真的很短！)",
   "upload": "上传结构文件（`*.mcstructure`）",
-  "upload.button": "上传一个文件",
+  "upload.button": "上传文件",
   "upload.button.drop_notice": "或者将文件拖放到此处",
   "upload.drop_file": "将您的结构文件放在此处"
 }
