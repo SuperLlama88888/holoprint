@@ -41,16 +41,18 @@ h1 {
 		--icon-scale: 1.6;
 	}
 }
-form {
+#responsiveWidthWrapper {
 	margin: auto;
-	text-align: left;
 	width: 60%;
+}
+form {
+	text-align: left;
 }
 @media (max-width: 1300px) {
 	body {
 		--icon-scale: 1.3;
 	}
-	form {
+	#responsiveWidthWrapper {
 		width: 70%;
 	}
 }
@@ -58,7 +60,7 @@ form {
 	body {
 		font-size: 0.875em;
 	}
-	form {
+	#responsiveWidthWrapper {
 		width: 95%;
 	}
 }
@@ -178,7 +180,7 @@ input[type="number"], input[type="text"], textarea {
 input[type="text"]::placeholder {
 	text-overflow: ellipsis;
 }
-button:not(:disabled):hover, input[type="file"]:not(:disabled):hover::file-selector-button, select:not(:disabled):hover, .buttonlike:hover {
+button:not(:disabled):not(.packInfoButton):hover, input[type="file"]:not(:disabled):hover::file-selector-button, select:not(:disabled):hover, .buttonlike:hover {
 	background: #E8C8E8;
 }
 button:disabled, input[type="file"]:disabled::file-selector-button, selector:disabled, .buttonlike:disabled {
@@ -187,7 +189,7 @@ button:disabled, input[type="file"]:disabled::file-selector-button, selector:dis
 input[type="number"]:hover, input[type="text"]:hover, textarea:hover {
 	background: #EAD5EA;
 }
-button:active, input[type="file"]:active::file-selector-button, select:active, .buttonlike:active {
+button:not(.packInfoButton):active, input[type="file"]:active::file-selector-button, select:active, .buttonlike:active {
 	background: #DABADA;
 }
 input[type="checkbox"] {
@@ -244,7 +246,7 @@ input[type="checkbox"] {
 	justify-content: center;
 	align-items: center;
 }
-#generatePackButton {
+#generatePackButton, .packInfoButton {
 	margin: 4px auto;
 	padding: 10px;
 	box-sizing: border-box;
@@ -256,6 +258,30 @@ input[type="checkbox"] {
 	text-align: center;
 	font-size: 1.4em;
 	font-weight: 500;
+}
+.packInfoButton {
+	--bg-col-1: #E8C8E8;
+	--bg-col-2: #D899D8;
+	background-image: repeating-linear-gradient(150deg, var(--bg-col-1) 0, var(--bg-col-1) 10px, var(--bg-col-2) 10px, var(--bg-col-2) 20px);
+	background-size: 200% !important;
+	transition: transform 0.15s;
+}
+.packInfoButton.completed {
+	animation: moveButtonBackground 1s linear infinite;
+}
+@keyframes moveButtonBackground {
+	from {
+		background-position: -40px 0;
+	}
+}
+.packInfoButton.completed:hover {
+	transform: scale(1.05);
+}
+.packInfoButton.completed:active {
+	transform: scale(1.02);
+}
+.packInfoButton:not(.completed) {
+	pointer-events: none;
 }
 #termsOfUseNotice {
 	display: block;
@@ -273,15 +299,15 @@ img:not(#languageSelectorButton), canvas {
 	color: #D899D8;
 	color: #D7B3D7; */
 }
-#previewCont {
+.previewCont {
 	padding: 5px;
 	text-align: center;
 }
-#previewCont > * {
+.previewCont > * {
 	width: 40vw;
 	height: 40vw;
 }
-#previewCont canvas {
+.previewCont canvas {
 	touch-action: none;
 }
 .previewMessage {

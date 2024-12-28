@@ -4,6 +4,7 @@
 	"download": "Download {PACK_NAME}",
 	"generate": "Generate pack",
 	"generate_heading": "Generate HoloPrint resource pack (`*.mcpack`)",
+	"generating": "Making pack...",
 	"item_criteria_input.item_name": "Item name",
 	"item_criteria_input.item_tag": "Item tag",
 	"item_criteria_input.matching": "Matching:",

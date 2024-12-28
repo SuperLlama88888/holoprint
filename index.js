@@ -39,6 +39,7 @@ let generatePackForm;
 let generatePackFormSubmitButton;
 let structureFilesInput;
 let packNameInput;
+let completedPacksCont;
 let logger;
 
 let supabaseLogger;
@@ -51,6 +52,7 @@ document.onEvent("DOMContentLoaded", async () => {
 	structureFilesInput = generatePackForm.elements.namedItem("structureFiles");
 	packNameInput = generatePackForm.elements.namedItem("packName");
 	structureFilesInput.onEventAndNow("input", updatePackNameInputPlaceholder);
+	completedPacksCont = selectEl("#completedPacksCont");
 	
 	if(location.search == "?loadFile") {
 		window.launchQueue?.setConsumer(async launchParams => {
@@ -133,12 +135,14 @@ document.onEvent("DOMContentLoaded", async () => {
 	selectEls(".resetButton").forEach(el => {
 		el.onEvent("click", () => {
 			let fieldset = el.parentElement;
-			let elementsToSave = [...generatePackForm.elements].filter(el => el.localName != "fieldset" && el.localName != "button" && !fieldset.contains(el));
-			let oldValues = elementsToSave.map(el => el.files ?? el.value);
-			generatePackForm.reset();
+			let elementsToSave = [...generatePackForm.elements].filter(el => el.localName != "fieldset" && el.localName != "button" && !fieldset.contains(el) || !el.hasAttribute("name"));
+			let oldValues = elementsToSave.map(el => el.files ?? (el.type == "checkbox"? el.checked : el.value));
+			generatePackForm.reset(); // this resets the entire form, which is why the old values must be saved
 			elementsToSave.forEach((el, i) => {
 				if(el.type == "file") {
 					el.files = oldValues[i];
+				} else if(el.type == "checkbox") {
+					el.checked = oldValues[i];
 				} else {
 					el.value = oldValues[i];
 				}
@@ -314,7 +318,13 @@ async function makePack(structureFiles, localResourcePacks) {
 		DESCRIPTION: formData.get("description") || undefined
 	};
 	
-	let previewCont = selectEl("#previewCont");
+	let previewCont = document.createElement("div");
+	previewCont.classList.add("previewCont");
+	completedPacksCont.prepend(previewCont);
+	let infoButton = document.createElement("button");
+	infoButton.classList.add("packInfoButton"); // my class naming is terrible
+	infoButton.dataset.translate = "generating";
+	completedPacksCont.prepend(infoButton);
 	
 	let resourcePackStack = await new ResourcePackStack(localResourcePacks);
 	
@@ -335,14 +345,13 @@ async function makePack(structureFiles, localResourcePacks) {
 	}
 	
 	if(pack) {
-		let downloadButton = document.createElement("button");
-		downloadButton.classList.add("importantButton");
-		downloadButton.dataset.translationSubstitutions = JSON.stringify({
+		infoButton.dataset.translationSubstitutions = JSON.stringify({
 			"{PACK_NAME}": pack.name
 		});
-		downloadButton.dataset.translate = "download";
+		infoButton.dataset.translate = "download";
+		infoButton.classList.add("completed");
 		let hasLoggedPackCreation = false;
-		downloadButton.onclick = () => {
+		infoButton.onclick = () => {
 			if(!hasLoggedPackCreation && IN_PRODUCTION) {
 				supabaseLogger ??= new SupabaseLogger(supabaseProjectUrl, supabaseApiKey);
 				supabaseLogger.recordPackCreation(structureFiles);
@@ -350,8 +359,6 @@ async function makePack(structureFiles, localResourcePacks) {
 			}
 			downloadBlob(pack, pack.name);
 		};
-		// downloadButton.click();
-		document.body.appendChild(downloadButton);
 	}
 	
 	generatePackFormSubmitButton.disabled = false;
