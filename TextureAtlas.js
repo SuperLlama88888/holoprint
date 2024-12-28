@@ -78,7 +78,7 @@ export default class TextureAtlas {
 	
 	/**
 	 * Creates a texture atlas for loading images from texture references and stitching them together.
-	 * @param {Object} config
+	 * @param {HoloprintConfig} config
 	 * @param {ResourcePackStack} resourcePackStack
 	 */
 	constructor(config, resourcePackStack) {
@@ -333,7 +333,12 @@ export default class TextureAtlas {
 				imageData = this.#setImageDataOpacity(imageData, opacity);
 			}
 			let { width: imageW, height: imageH } = imageData;
-			let image = await imageData.toImage();
+			let image = await imageData.toImage().catch(e => {
+				console.error(`Failed to decode image data from ${texturePath}: ${e}`);
+				sourceUv = [0, 0];
+				uvSize = [1, 1];
+				return stringToImageData(`Failed to decode ${texturePath}`).toImage(); // hopefully it's an issue with the image loading not the decoding
+			});
 			
 			if(this.#flipbookTexturesAndSizes.has(texturePath)) {
 				let size = this.#flipbookTexturesAndSizes.get(texturePath);
@@ -594,4 +599,7 @@ export default class TextureAtlas {
  */
 /**
  * @typedef {import("./HoloPrint.js").ImageFragment} ImageFragment
+ */
+/**
+ * @typedef {import("./HoloPrint.js").HoloPrintConfig} HoloprintConfig
  */

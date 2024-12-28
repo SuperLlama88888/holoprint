@@ -71,7 +71,7 @@ form {
 		padding: 2px;
 	}
 	fieldset {
-		padding: 5px
+		padding: 5px;
 	}
 }
 #structureFilesInput:invalid {
@@ -277,6 +277,34 @@ img:not(#languageSelectorButton), canvas {
 	padding: 5px;
 	text-align: center;
 }
+#previewCont > * {
+	width: 40vw;
+	height: 40vw;
+}
+#previewCont canvas {
+	touch-action: none;
+}
+.previewMessage {
+	margin: auto;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	font-size: 2.5vw;
+	border: 1px solid black;
+}
+@media (max-width: 768px) {
+	.previewMessage {
+		font-size: 3.5vw;
+	}
+}
+@media (max-width: 450px) {
+	.previewMessage {
+		font-size: 5vw;
+	}
+}
+.previewMessage.clickToView {
+	cursor: pointer;
+}
 #languageSelectorCont {
 	position: absolute;
 	top: 10px;
@@ -303,4 +331,59 @@ img:not(#languageSelectorButton), canvas {
 }
 .hidden {
 	display: none !important;
+}
+/* This magic is taken straight from https://css-loaders.com/flipping/#l6 */
+.loader {
+	margin: 10px auto auto;
+	width: 60px;
+	aspect-ratio: 1;
+	display: grid;
+	grid: 50% / 50%;
+	color: #D7B3D7;
+	--_g: no-repeat linear-gradient(currentColor 0 0);
+	background: var(--_g), var(--_g), var(--_g);
+	background-size: 50.1% 50.1%;
+	animation: l6-0 1.5s infinite steps(1) alternate, l6-0-0 3s infinite steps(1);
+}
+.loader::before {
+	content: "";
+	background: currentColor;
+	transform: perspective(150px) rotateY(0deg) rotateX(0deg);
+	transform-origin: bottom right; 
+	animation: l6-1 1.5s infinite linear alternate;
+}
+@keyframes l6-0 {
+	0% {
+		background-position: 0 100%, 100% 100%, 100% 0;
+	}
+	33% {
+		background-position: 100% 100%, 100% 100%, 100% 0;
+	}
+	66% {
+		background-position: 100% 0, 100% 0, 100% 0;
+	}
+}
+@keyframes l6-0-0 {
+	0% {
+		transform: scaleX(1) rotate(0deg);
+	}
+	50% {
+		transform: scaleX(-1) rotate(-90deg);
+	}
+}
+@keyframes l6-1 {
+	16.5% {
+		transform: perspective(150px) rotateX(-90deg) rotateY(0deg) rotateX(0deg);
+		filter: brightness(0.825);
+	}
+	33% {
+		transform: perspective(150px) rotateX(-180deg) rotateY(0deg) rotateX(0deg);
+	}
+	66% {
+		transform: perspective(150px) rotateX(-180deg) rotateY(-180deg) rotateX(0deg);
+	}
+	100% {
+		transform: perspective(150px) rotateX(-180deg) rotateY(-180deg) rotateX(-180deg);
+		filter: brightness(0.825);
+	}
 }

@@ -46,9 +46,6 @@ export default class SimpleLogger {
 			document.head.appendChild(l);
 		}
 	}
-	log(text) {
-		this.#genericLogWithClass(text);
-	}
 	warn(text) {
 		if(this.#genericLogWithClass(text, "warning")) {
 			this.#warningCountNode.innerText = `\u26A0\uFE0F${++this.#warningCount}`;
@@ -62,20 +59,26 @@ export default class SimpleLogger {
 	info(text) {
 		this.#genericLogWithClass(text, "info");
 	}
+	debug(text) {
+		this.#genericLogWithClass(text, "debug");
+	}
 	setOriginTime(originTime) {
 		this.#originTime = originTime;
 	}
 	#genericLogWithClass(text, logLevel) {
 		let stackTrace = getStackTrace().slice(2);
-		let currentURLOrigin = location.href.slice(0, location.href.lastIndexOf("/")); // location.origin is null on Firefox when on local files
-		if(stackTrace.some(loc => !loc.includes(currentURLOrigin))) {
-			return;
-		}
 		this.allLogs.push({
 			text,
 			level: logLevel,
 			stackTrace
 		});
+		let currentURLOrigin = location.href.slice(0, location.href.lastIndexOf("/")); // location.origin is null on Firefox when on local files
+		if(stackTrace.some(loc => !loc.includes(currentURLOrigin) && !loc.includes("<anonymous>"))) {
+			return;
+		}
+		if(logLevel == "debug") {
+			return;
+		}
 		let el = document.createElement("p");
 		el.classList.add("log");
 		if(logLevel) {
@@ -107,18 +110,22 @@ export default class SimpleLogger {
 	}
 	
 	patchConsoleMethods() {
-		[console._warn, console._error, console._info] = [console.warn, console.error, console.info];
+		[console._warn, console._error, console._info, console._debug] = [console.warn, console.error, console.info, console.debug];
 		console.warn = (...args) => {
-			this.warn(...args);
+			this.warn(args.join(" "));
 			return console._warn.apply(console, [getStackTrace()[1].match(/\/([^\/]+\.[^\.]+:\d+:\d+)/)[1] + "\n", ...args]);
 		};
 		console.error = (...args) => {
-			this.error(...args);
+			this.error(args.join(" "));
 			return console._error.apply(console, [getStackTrace()[1].match(/\/([^\/]+\.[^\.]+:\d+:\d+)/)[1] + "\n", ...args]);
 		};
 		console.info = (...args) => {
-			this.info(...args);
+			this.info(args.join(" "));
 			return console._info.apply(console, [getStackTrace()[1].match(/\/([^\/]+\.[^\.]+:\d+:\d+)/)[1] + "\n", ...args]);
+		};
+		console.debug = (...args) => {
+			this.debug(args.join(" "));
+			return console._debug.apply(console, [getStackTrace()[1].match(/\/([^\/]+\.[^\.]+:\d+:\d+)/)[1] + "\n", ...args]);
 		};
 	}
 }
