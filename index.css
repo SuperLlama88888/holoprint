@@ -358,7 +358,7 @@ img:not(#languageSelectorButton), canvas {
 .hidden {
 	display: none !important;
 }
-/* This magic is taken straight from https://css-loaders.com/flipping/#l6 */
+/* This magic is taken straight from https://css-loaders.com/bars/#l1 */
 .loader {
 	margin: 10px auto auto;
 	width: 45px;
