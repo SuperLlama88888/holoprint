@@ -171,7 +171,7 @@ document.onEvent("DOMContentLoaded", async () => {
 		}
 		let defaultLanguage = navigator.languages.find(navigatorLanguage => {
 			let navigatorBaseLanguage = navigatorLanguage.split("-")[0];
-			return availableLanguages.find(availableLanguage => availableLanguage == navigatorLanguage) ?? availableLanguages.find(availableLanguage => availableLanguage == navigatorBaseLanguage) ?? availableLanguages.find(availableLanguage => availableLanguage.split("-")[0] == navigatorBaseLanguage);
+			return availableLanguages.find(availableLanguage => availableLanguage == navigatorLanguage) ?? availableLanguages.find(availableLanguage => availableLanguage == navigatorBaseLanguage) ?? availableLanguages.find(availableLanguage => availableLanguage.split(/-|_/)[0] == navigatorBaseLanguage);
 		})?.split("-")?.[0] ?? "en";
 		languageSelector.textContent = "";
 		for(let language in languagesAndNames) {
@@ -238,37 +238,38 @@ async function translatePage(language, generateTranslations = false) {
 			} else {
 				let translation = await translate(translationKey, language);
 				if(translation != undefined) {
-					if("translationSubstitutions" in el.dataset) {
-						Object.entries(JSON.parse(el.dataset["translationSubstitutions"])).forEach(([original, substitution]) => {
-							translation = translation.replaceAll(original, substitution);
-						});
-					}
-					el.innerHTML = translation;
+					el.innerHTML = performTranslationSubstitutions(el, translation);
 				} else {
 					console.warn(`Couldn't find translation for ${translationKey} for language ${language}!`);
 					if(el.innerHTML == "") {
-						el.innerHTML = translationKey;
+						let englishTranslation = await translate(translationKey, "en");
+						if(englishTranslation) {
+							el.innerHTML = performTranslationSubstitutions(el, englishTranslation);
+						} else {
+							el.innerHTML = translationKey;
+						}
 					}
 				}
 			}
 		}
 		[...el.attributes].filter(attr => attr.name.startsWith("data-translate-")).forEach(async attr => {
 			let targetAttrName = attr.name.replace(/^data-translate-/, "");
+			let translationKey = attr.value;
 			if(generateTranslations) {
-				translations[attr.value] = el.getAttribute(targetAttrName);
+				translations[translationKey] = el.getAttribute(targetAttrName);
 			} else {
-				let translation = await translate(attr.value, language);
+				let translation = await translate(translationKey, language);
 				if(translation != undefined) {
-					if("translationSubstitutions" in el.dataset) {
-						Object.entries(JSON.parse(el.dataset["translationSubstitutions"])).forEach(([original, substitution]) => {
-							translation = translation.replaceAll(original, substitution);
-						});
-					}
-					el.setAttribute(targetAttrName, translation);
+					el.setAttribute(targetAttrName, performTranslationSubstitutions(el, translation));
 				} else {
-					console.warn(`Couldn't find translation for ${attr.value} for language ${language}!`);
+					console.warn(`Couldn't find translation for ${translationKey} for language ${language}!`);
 					if(!el.hasAttribute(targetAttrName)) {
-						el.setAttribute(targetAttrName, attr.value);
+						let englishTranslation = await translate(translationKey, "en");
+						if(englishTranslation) {
+							el.setAttribute(targetAttrName, performTranslationSubstitutions(el, englishTranslation));
+						} else {
+							el.setAttribute(targetAttrName, translationKey);
+						}
 					}
 				}
 			}
@@ -278,6 +279,14 @@ async function translatePage(language, generateTranslations = false) {
 		translations = Object.fromEntries(Object.entries(translations).sort((a, b) => a[0] > b[0]));
 		downloadBlob(new File([JSON.stringify(translations, null, "\t")], `${language}.json`));
 	}
+}
+function performTranslationSubstitutions(el, translation) {
+	if("translationSubstitutions" in el.dataset) {
+		Object.entries(JSON.parse(el.dataset["translationSubstitutions"])).forEach(([original, substitution]) => {
+			translation = translation.replaceAll(original, substitution);
+		});
+	}
+	return translation;
 }
 
 async function temporarilyChangeText(el, text, duration = 2000) {
@@ -323,7 +332,7 @@ async function makePack(structureFiles, localResourcePacks) {
 	completedPacksCont.prepend(previewCont);
 	let infoButton = document.createElement("button");
 	infoButton.classList.add("packInfoButton"); // my class naming is terrible
-	infoButton.dataset.translate = "generating";
+	infoButton.dataset.translate = "progress.generating";
 	completedPacksCont.prepend(infoButton);
 	
 	let resourcePackStack = await new ResourcePackStack(localResourcePacks);

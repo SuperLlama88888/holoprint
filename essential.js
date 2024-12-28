@@ -180,11 +180,7 @@ export async function translate(translationKey, language) {
 		console.warn(`Failed to load language ${language} for translations!`);
 		return {};
 	});
-	let translation = translate[language]?.[translationKey]?.replaceAll(/`([^`]+)`/g, "<code>$1</code>")?.replaceAll(/\[([^\]]+)\]\(([^\)]+)\)/g, `<a href="$2" target="_blank">$1</a>`);
-	if(translation == undefined && language != "en") {
-		translation = await translate(translationKey, "en");
-	}
-	return translation;
+	return translate[language]?.[translationKey]?.replaceAll(/`([^`]+)`/g, "<code>$1</code>")?.replaceAll(/\[([^\]]+)\]\(([^\)]+)\)/g, `<a href="$2" target="_blank">$1</a>`);
 }
 
 export function getStackTrace(e = new Error()) {
