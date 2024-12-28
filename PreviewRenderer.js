@@ -15,15 +15,36 @@ export default class PreviewRenderer {
 	 */
 	constructor(cont, textureAtlas, geo, animations, showSkybox = true) {
 		return (async () => {
+			let loadingMessage = document.createElement("div");
+			loadingMessage.classList.add("previewMessage");
+			let p = document.createElement("p");
+			let span = document.createElement("span");
+			span.dataset.translate = "preview.loading";
+			p.appendChild(span);
+			let loader = document.createElement("div");
+			loader.classList.add("loader");
+			p.appendChild(loader);
+			loadingMessage.appendChild(p);
+			cont.appendChild(loadingMessage);
+			
 			THREE ??= await import("https://esm.run/three@0.147"); // @bridge-editor/model-viewer uses this version :(
 			StandaloneModelViewer ??= (await import("https://esm.run/@bridge-editor/model-viewer")).StandaloneModelViewer;
 			
 			let can = document.createElement("canvas");
+			(new MutationObserver(mutations => {
+				mutations.forEach(mutation => {
+					if(mutation.attributeName == "style") {
+						can.removeAttribute("style"); // @bridge-editor/model-viewer adds the style attribute at the start, and when the viewport is resized :(
+					}
+				});
+			})).observe(can, {
+				attributes: true
+			});
 			let imageBlob = textureAtlas.imageBlobs.at(-1)[1];
 			let imageUrl = URL.createObjectURL(imageBlob);
 			this.viewer = new StandaloneModelViewer(can, geo, imageUrl, {
-				width: window.innerWidth * 0.4,
-				height: window.innerWidth * 0.4,
+				width: window.innerWidth * 0.6,
+				height: window.innerWidth * 0.6,
 				antialias: true,
 				alpha: !showSkybox
 			});
@@ -37,7 +58,7 @@ export default class PreviewRenderer {
 			URL.revokeObjectURL(imageUrl);
 			this.viewer.positionCamera(1.7);
 			this.viewer.requestRendering();
-			cont.appendChild(can);
+			loadingMessage.replaceWith(can);
 			this.viewer.controls.minDistance = 10;
 			this.viewer.controls.maxDistance = 1000;
 			

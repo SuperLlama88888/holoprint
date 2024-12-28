@@ -1,4 +1,4 @@
-import { selectEl, downloadBlob, sleep, selectEls, htmlCodeToElement, CachingFetcher, translate } from "./essential.js";
+import { selectEl, downloadBlob, sleep, selectEls, htmlCodeToElement, CachingFetcher, translate, getStackTrace } from "./essential.js";
 import * as HoloPrint from "./HoloPrint.js";
 import SimpleLogger from "./SimpleLogger.js";
 import SupabaseLogger from "./SupabaseLogger.js";
@@ -39,6 +39,7 @@ let generatePackForm;
 let generatePackFormSubmitButton;
 let structureFilesInput;
 let packNameInput;
+let completedPacksCont;
 let logger;
 
 let supabaseLogger;
@@ -51,6 +52,7 @@ document.onEvent("DOMContentLoaded", async () => {
 	structureFilesInput = generatePackForm.elements.namedItem("structureFiles");
 	packNameInput = generatePackForm.elements.namedItem("packName");
 	structureFilesInput.onEventAndNow("input", updatePackNameInputPlaceholder);
+	completedPacksCont = selectEl("#completedPacksCont");
 	
 	if(location.search == "?loadFile") {
 		window.launchQueue?.setConsumer(async launchParams => {
@@ -133,12 +135,14 @@ document.onEvent("DOMContentLoaded", async () => {
 	selectEls(".resetButton").forEach(el => {
 		el.onEvent("click", () => {
 			let fieldset = el.parentElement;
-			let elementsToSave = [...generatePackForm.elements].filter(el => el.localName != "fieldset" && el.localName != "button" && !fieldset.contains(el));
-			let oldValues = elementsToSave.map(el => el.files ?? el.value);
-			generatePackForm.reset();
+			let elementsToSave = [...generatePackForm.elements].filter(el => el.localName != "fieldset" && el.localName != "button" && !fieldset.contains(el) || !el.hasAttribute("name"));
+			let oldValues = elementsToSave.map(el => el.files ?? (el.type == "checkbox"? el.checked : el.value));
+			generatePackForm.reset(); // this resets the entire form, which is why the old values must be saved
 			elementsToSave.forEach((el, i) => {
 				if(el.type == "file") {
 					el.files = oldValues[i];
+				} else if(el.type == "checkbox") {
+					el.checked = oldValues[i];
 				} else {
 					el.value = oldValues[i];
 				}
@@ -167,7 +171,7 @@ document.onEvent("DOMContentLoaded", async () => {
 		}
 		let defaultLanguage = navigator.languages.find(navigatorLanguage => {
 			let navigatorBaseLanguage = navigatorLanguage.split("-")[0];
-			return availableLanguages.find(availableLanguage => availableLanguage == navigatorLanguage) ?? availableLanguages.find(availableLanguage => availableLanguage == navigatorBaseLanguage) ?? availableLanguages.find(availableLanguage => availableLanguage.split("-")[0] == navigatorBaseLanguage);
+			return availableLanguages.find(availableLanguage => availableLanguage == navigatorLanguage) ?? availableLanguages.find(availableLanguage => availableLanguage == navigatorBaseLanguage) ?? availableLanguages.find(availableLanguage => availableLanguage.split(/-|_/)[0] == navigatorBaseLanguage);
 		})?.split("-")?.[0] ?? "en";
 		languageSelector.textContent = "";
 		for(let language in languagesAndNames) {
@@ -183,7 +187,7 @@ document.onEvent("DOMContentLoaded", async () => {
 				console.log("mutations observed when retranslating:", mutations); // should never happen!
 				return;
 			}
-			let shouldRetranslate = mutations.find(mutation => mutation.type == "childList" && [...mutation.addedNodes].some(node => node instanceof Element && [...node.attributes].some(attr => attr.name.startsWith("data-translate"))) || mutation.type == "attributes" && mutation.attributeName.startsWith("data-translate") && mutation.target.getAttribute(mutation.attributeName) != mutation.oldValue);
+			let shouldRetranslate = mutations.find(mutation => mutation.type == "childList" && [...mutation.addedNodes].some(node => node instanceof Element && ([...node.attributes].some(attr => attr.name.startsWith("data-translate")) || node.getAllChildren().some(el => [...el.attributes].some(attr => attr.name.startsWith("data-translate"))))) || mutation.type == "attributes" && mutation.attributeName.startsWith("data-translate") && mutation.target.getAttribute(mutation.attributeName) != mutation.oldValue); // retranslate when an element with a translate dataset attribute or a child with a translate dataset attribute is added, or when a translate dataset attribute is changed
 			if(shouldRetranslate) {
 				retranslating = true;
 				translatePage(languageSelector.value);
@@ -234,22 +238,39 @@ async function translatePage(language, generateTranslations = false) {
 			} else {
 				let translation = await translate(translationKey, language);
 				if(translation != undefined) {
-					el.innerHTML = translation;
+					el.innerHTML = performTranslationSubstitutions(el, translation);
 				} else {
 					console.warn(`Couldn't find translation for ${translationKey} for language ${language}!`);
+					if(el.innerHTML == "") {
+						let englishTranslation = await translate(translationKey, "en");
+						if(englishTranslation) {
+							el.innerHTML = performTranslationSubstitutions(el, englishTranslation);
+						} else {
+							el.innerHTML = translationKey;
+						}
+					}
 				}
 			}
 		}
 		[...el.attributes].filter(attr => attr.name.startsWith("data-translate-")).forEach(async attr => {
 			let targetAttrName = attr.name.replace(/^data-translate-/, "");
+			let translationKey = attr.value;
 			if(generateTranslations) {
-				translations[attr.value] = el.getAttribute(targetAttrName);
+				translations[translationKey] = el.getAttribute(targetAttrName);
 			} else {
-				let translation = await translate(attr.value, language);
+				let translation = await translate(translationKey, language);
 				if(translation != undefined) {
-					el.setAttribute(targetAttrName, translation);
+					el.setAttribute(targetAttrName, performTranslationSubstitutions(el, translation));
 				} else {
-					console.warn(`Couldn't find translation for ${attr.value} for language ${language}!`);
+					console.warn(`Couldn't find translation for ${translationKey} for language ${language}!`);
+					if(!el.hasAttribute(targetAttrName)) {
+						let englishTranslation = await translate(translationKey, "en");
+						if(englishTranslation) {
+							el.setAttribute(targetAttrName, performTranslationSubstitutions(el, englishTranslation));
+						} else {
+							el.setAttribute(targetAttrName, translationKey);
+						}
+					}
 				}
 			}
 		});
@@ -258,6 +279,14 @@ async function translatePage(language, generateTranslations = false) {
 		translations = Object.fromEntries(Object.entries(translations).sort((a, b) => a[0] > b[0]));
 		downloadBlob(new File([JSON.stringify(translations, null, "\t")], `${language}.json`));
 	}
+}
+function performTranslationSubstitutions(el, translation) {
+	if("translationSubstitutions" in el.dataset) {
+		Object.entries(JSON.parse(el.dataset["translationSubstitutions"])).forEach(([original, substitution]) => {
+			translation = translation.replaceAll(original, substitution);
+		});
+	}
+	return translation;
 }
 
 async function temporarilyChangeText(el, text, duration = 2000) {
@@ -271,6 +300,10 @@ async function temporarilyChangeText(el, text, duration = 2000) {
 
 async function makePack(structureFiles, localResourcePacks) {
 	generatePackFormSubmitButton.disabled = true;
+	
+	if(IN_PRODUCTION) {
+		console.debug("User agent:", navigator.userAgent);
+	}
 	
 	let formData = new FormData(generatePackForm);
 	let authors = formData.get("author").split(",").map(x => x.trim()).removeFalsies();
@@ -294,7 +327,13 @@ async function makePack(structureFiles, localResourcePacks) {
 		DESCRIPTION: formData.get("description") || undefined
 	};
 	
-	let previewCont = selectEl("#previewCont");
+	let previewCont = document.createElement("div");
+	previewCont.classList.add("previewCont");
+	completedPacksCont.prepend(previewCont);
+	let infoButton = document.createElement("button");
+	infoButton.classList.add("packInfoButton"); // my class naming is terrible
+	infoButton.dataset.translate = "progress.generating";
+	completedPacksCont.prepend(infoButton);
 	
 	let resourcePackStack = await new ResourcePackStack(localResourcePacks);
 	
@@ -308,21 +347,27 @@ async function makePack(structureFiles, localResourcePacks) {
 			pack = await HoloPrint.makePack(structureFiles, config, resourcePackStack, previewCont);
 		} catch(e) {
 			console.error(`Pack creation failed: ${e}`);
+			if(e instanceof Error) { // DOMExceptions can also be thrown, which don't have stack traces and hence can't be tracked if caught.
+				console.debug(getStackTrace(e).join("\n"));
+			}
 		}
 	}
 	
-	if(IN_PRODUCTION) {
-		supabaseLogger ??= new SupabaseLogger(supabaseProjectUrl, supabaseApiKey);
-		supabaseLogger.recordPackCreation(structureFiles);
-	}
-	
 	if(pack) {
-		let downloadButton = document.createElement("button");
-		downloadButton.classList.add("importantButton");
-		downloadButton.innerText = `Download ${pack.name}`;
-		downloadButton.onclick = () => downloadBlob(pack, pack.name);
-		downloadButton.click();
-		document.body.appendChild(downloadButton);
+		infoButton.dataset.translationSubstitutions = JSON.stringify({
+			"{PACK_NAME}": pack.name
+		});
+		infoButton.dataset.translate = "download";
+		infoButton.classList.add("completed");
+		let hasLoggedPackCreation = false;
+		infoButton.onclick = () => {
+			if(!hasLoggedPackCreation && IN_PRODUCTION) {
+				supabaseLogger ??= new SupabaseLogger(supabaseProjectUrl, supabaseApiKey);
+				supabaseLogger.recordPackCreation(structureFiles);
+				hasLoggedPackCreation = true;
+			}
+			downloadBlob(pack, pack.name);
+		};
 	}
 	
 	generatePackFormSubmitButton.disabled = false;

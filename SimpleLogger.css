@@ -31,13 +31,13 @@
 	background: #334;
 }
 .warning > .logText::before {
-	content: "\26A0\FE0F";
+	content: "\26A0\FE0F ";
 }
 .error > .logText::before {
-	content: "\1F6A8";
+	content: "\1F6A8 ";
 }
 .info > .logText::before {
-	content: "\2139\FE0F";
+	content: "\2139\FE0F ";
 }
 .timestamp {
 	margin-right: 5px;

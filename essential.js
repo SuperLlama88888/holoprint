@@ -52,7 +52,22 @@ Response.prototype.toImage = async function() {
 	let imageUrl = URL.createObjectURL(imageBlob);
 	let image = new Image();
 	image.src = imageUrl;
-	await image.decode();
+	try {
+		await image.decode();
+	} catch { // Chrome puts arbitrary limits on decoding images because "an error doesn't necessarily mean that the image was invalid": https://issues.chromium.org/issues/40676514 🤦‍♂️
+		return new Promise((res, rej) => { // possibly https://github.com/chromium/chromium/blob/874a0ba26635507d1e847600fd8a512f4a10e1f8/cc/tiles/gpu_image_decode_cache.cc#L91
+			let image2 = new Image();
+			image2.onEvent("load", () => {
+				URL.revokeObjectURL(imageUrl);
+				res(image2);
+			});
+			image2.onEvent("error", e => {
+				URL.revokeObjectURL(imageUrl);
+				rej(`Failed to load image from response with status ${this.status} from URL ${this.url}: ${e}`);
+			});
+			image2.src = imageUrl;
+		});
+	}
 	URL.revokeObjectURL(imageUrl);
 	return image;
 };
@@ -70,7 +85,22 @@ ImageData.prototype.toImage = async function() {
 	let imageUrl = URL.createObjectURL(blob);
 	let image = new Image();
 	image.src = imageUrl;
-	await image.decode();
+	try {
+		await image.decode();
+	} catch {
+		return new Promise((res, rej) => {
+			let image2 = new Image();
+			image2.onEvent("load", () => {
+				URL.revokeObjectURL(imageUrl);
+				res(image2);
+			});
+			image2.onEvent("error", e => {
+				URL.revokeObjectURL(imageUrl);
+				rej(`Failed to decode ImageData with dimensions ${this.width}x${this.height}: ${e}`);
+			});
+			image2.src = imageUrl;
+		});
+	}
 	URL.revokeObjectURL(imageUrl);
 	return image;
 };
@@ -143,15 +173,18 @@ export function stringToImageData(text, textCol = "black", backgroundCol = "whit
  * Looks up a translation from translations/`language`.json
  * @param {String} translationKey
  * @param {String} language
- * @returns {Promise<String>}
+ * @returns {Promise<String|undefined>}
  */
 export async function translate(translationKey, language) {
-	translate[language] ??= await fetch(`translations/${language}.json`).then(res => res.jsonc()).catch(() => ({}));
+	translate[language] ??= await fetch(`translations/${language}.json`).then(res => res.jsonc()).catch(() => {
+		console.warn(`Failed to load language ${language} for translations!`);
+		return {};
+	});
 	return translate[language]?.[translationKey]?.replaceAll(/`([^`]+)`/g, "<code>$1</code>")?.replaceAll(/\[([^\]]+)\]\(([^\)]+)\)/g, `<a href="$2" target="_blank">$1</a>`);
 }
 
-export function getStackTrace() {
-	return (new Error()).stack.split("\n").slice(1).removeFalsies();
+export function getStackTrace(e = new Error()) {
+	return e.stack.split("\n").slice(1).removeFalsies();
 }
 
 /**

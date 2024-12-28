@@ -1,6 +1,7 @@
 {
 	"app_name": "HoloPrint",
 	"change_language": "Change language",
+	"download": "Download {PACK_NAME}",
 	"generate": "Generate pack",
 	"generate_heading": "Generate HoloPrint resource pack (`*.mcpack`)",
 	"item_criteria_input.item_name": "Item name",
@@ -23,6 +24,9 @@
 	"player_controls.move_hologram": "Move hologram",
 	"player_controls.change_structure": "Change structure",
 	"player_controls.disable_player_controls": "Disable player controls",
+	"preview.click_to_view": "View preview<br/><small>({TOTAL_BLOCK_COUNT} blocks)</small>",
+	"preview.loading": "Loading preview...",
+	"progress.generating": "Making pack...",
 	"reset": "Reset",
 	"resource_packs.clear_cache": "Clear resource pack cache",
 	"resource_packs.heading": "Resource packs",

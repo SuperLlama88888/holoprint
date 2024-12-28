@@ -103,6 +103,7 @@ export async function makePack(structureFiles, config = {}, resourcePackStack, p
 	let blockGeoMaker = await new BlockGeoMaker(config);
 	// makeBoneTemplate() is an impure function and adds texture references to the textureRefs set property.
 	let boneTemplatePalette = blockPalette.map(block => blockGeoMaker.makeBoneTemplate(block));
+	console.info("Finished making block geometry templates!");
 	console.log("Block geo maker:", blockGeoMaker);
 	console.log("Bone template palette:", structuredClone(boneTemplatePalette));
 	
@@ -205,6 +206,7 @@ export async function makePack(structureFiles, config = {}, resourcePackStack, p
 	);
 	let entityDescription = entityFile["minecraft:client_entity"]["description"];
 	
+	let totalBlockCount = 0;
 	let totalBlocksToValidateByStructure = [];
 	let uniqueBlocksToValidate = new Set();
 	
@@ -334,6 +336,7 @@ export async function makePack(structureFiles, config = {}, resourcePackStack, p
 							uniqueBlocksToValidate.add(blockName);
 						}
 						firstBoneForThisBlock = false;
+						totalBlockCount++;
 					});
 				}
 			}
@@ -708,10 +711,29 @@ export async function makePack(structureFiles, config = {}, resourcePackStack, p
 	});
 	console.info(`Finished creating pack in ${(performance.now() - startTime).toFixed(0) / 1000}s!`);
 	
-	if(totalMaterialCount < config.PREVIEW_BLOCK_LIMIT && previewCont) {
-		hologramGeo["minecraft:geometry"].filter(geo => geo["description"]["identifier"].startsWith("geometry.armor_stand.hologram_")).map(geo => {
-			(new PreviewRenderer(previewCont, textureAtlas, geo, hologramAnimations, config.SHOW_PREVIEW_SKYBOX)).catch(e => console.error("Preview renderer error:", e)); // is async but we won't wait for it
-		});
+	if(previewCont) {
+		let showPreview = () => {
+			hologramGeo["minecraft:geometry"].filter(geo => geo["description"]["identifier"].startsWith("geometry.armor_stand.hologram_")).map(geo => {
+				(new PreviewRenderer(previewCont, textureAtlas, geo, hologramAnimations, config.SHOW_PREVIEW_SKYBOX)).catch(e => console.error("Preview renderer error:", e)); // is async but we won't wait for it
+			});
+		};
+		if(totalBlockCount < config.PREVIEW_BLOCK_LIMIT) {
+			showPreview();
+		} else {
+			let message = document.createElement("div");
+			message.classList.add("previewMessage", "clickToView");
+			let p = document.createElement("p");
+			p.dataset.translationSubstitutions = JSON.stringify({
+				"{TOTAL_BLOCK_COUNT}": totalBlockCount
+			});
+			p.dataset.translate = "preview.click_to_view";
+			message.appendChild(p);
+			message.onEvent("click", () => {
+				message.remove();
+				showPreview();
+			});
+			previewCont.appendChild(message);
+		}
 	}
 	
 	return new File([zippedPack], `${packName}.holoprint.mcpack`);
