@@ -59,6 +59,7 @@ export default class TextureAtlas {
 	
 	#flipbookTexturesAndSizes;
 	
+	/** @type {HoloprintConfig} */
 	config;
 	resourcePackStack;
 	
@@ -497,6 +498,7 @@ export default class TextureAtlas {
 		let imageData = ogCan.getContext("2d").getImageData(0, 0, ogCan.width, ogCan.height);
 		
 		ctx.fillStyle = this.config.TEXTURE_OUTLINE_COLOR;
+		ctx.globalAlpha = this.config.TEXTURE_OUTLINE_OPACITY;
 		
 		const compareAlpha = (currentPixel, otherPixel) => this.config.TEXTURE_OUTLINE_ALPHA_DIFFERENCE_MODE == "difference"? currentPixel - otherPixel >= this.config.TEXTURE_OUTLINE_ALPHA_THRESHOLD : otherPixel <= this.config.TEXTURE_OUTLINE_ALPHA_THRESHOLD;
 		
