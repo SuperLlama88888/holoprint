@@ -128,6 +128,21 @@ Image.prototype.addTint = async function(col) {
 	}
 	return await imageData.toImage();
 };
+Blob.prototype.toImage = function() {
+	return new Promise((res, rej) => {
+		let img = new Image();
+		let url = URL.createObjectURL(this);
+		img.onEvent("load", () => {
+			URL.revokeObjectURL(url);
+			res(img);
+		});
+		img.onEvent("error", e => {
+			URL.revokeObjectURL(url);
+			rej(e);
+		});
+		img.src = url;
+	});
+};
 
 export const sleep = async time => new Promise(resolve => setTimeout(resolve, time));
 
@@ -144,6 +159,9 @@ export function range(a, b, c) {
 	} else {
 		return (new Array((b - a) / c + 1)).fill().map((x, i) => i * c + a);
 	}
+}
+export function random(arr) {
+	return arr[~~(Math.random() * arr.length)];
 }
 
 export function hexColorToClampedTriplet(hexColor) {
@@ -237,21 +255,6 @@ export function downloadBlob(blob, fileName) {
 	a.download = fileName ?? blob.name; // blob will have a name if blob is a File
 	a.click();
 	URL.revokeObjectURL(objectURL);
-}
-export function blobToImage(blob) {
-	return new Promise((res, rej) => {
-		let img = new Image();
-		let url = URL.createObjectURL(blob);
-		img.onEvent("load", () => {
-			URL.revokeObjectURL(url);
-			res(img);
-		});
-		img.onEvent("error", e => {
-			URL.revokeObjectURL(url);
-			rej(e);
-		});
-		img.src = url;
-	});
 }
 
 export class JSONSet extends Set {

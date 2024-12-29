@@ -53,6 +53,7 @@
 	"settings.textures": "Textures",
 	"settings.textures.tint.color": "Overlay tint:",
 	"settings.textures.tint.opacity": "Overlay tint opacity:",
+	"settings.textures.tint.toggleable_in_game": "Tint can be turned on/off in-game",
 	"settings.textures.outline_alpha_comparison_mode": "Texture outline alpha comparison mode:",
 	"settings.textures.outline_alpha_comparison_mode.difference": "Difference",
 	"settings.textures.outline_alpha_comparison_mode.threshold": "Threshold",

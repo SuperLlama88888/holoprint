@@ -1,10 +1,11 @@
-import { selectEl, downloadBlob, sleep, selectEls, htmlCodeToElement, CachingFetcher, translate, getStackTrace } from "./essential.js";
+import { selectEl, downloadBlob, sleep, selectEls, htmlCodeToElement, CachingFetcher, translate, getStackTrace, random } from "./essential.js";
 import * as HoloPrint from "./HoloPrint.js";
 import SimpleLogger from "./SimpleLogger.js";
 import SupabaseLogger from "./SupabaseLogger.js";
 
 import ResourcePackStack, { VanillaDataFetcher } from "./ResourcePackStack.js";
 import LocalResourcePack from "./LocalResourcePack.js";
+import TextureAtlas from "./TextureAtlas.js";
 
 const IN_PRODUCTION = location.host.includes(".github.io"); // hosted on GitHub Pages
 const ACTUAL_CONSOLE_LOG = false;
@@ -44,6 +45,9 @@ let logger;
 
 let supabaseLogger;
 
+let texturePreviewImageCont;
+let texturePreviewImage;
+
 document.onEvent("DOMContentLoaded", async () => {
 	document.body.appendChild = selectEl("main").appendChild.bind(selectEl("main"));
 	
@@ -53,6 +57,7 @@ document.onEvent("DOMContentLoaded", async () => {
 	packNameInput = generatePackForm.elements.namedItem("packName");
 	structureFilesInput.onEventAndNow("input", updatePackNameInputPlaceholder);
 	completedPacksCont = selectEl("#completedPacksCont");
+	texturePreviewImageCont = selectEl("#texturePreviewImageCont");
 	
 	if(location.search == "?loadFile") {
 		window.launchQueue?.setConsumer(async launchParams => {
@@ -102,6 +107,12 @@ document.onEvent("DOMContentLoaded", async () => {
 		}
 		makePack(formData.getAll("structureFiles"), resourcePacks);
 	});
+	generatePackForm.onEvent("input", e => {
+		if(e.target.closest("fieldset")?.classList?.contains("textureSettings") && e.target.hasAttribute("name")) {
+			updateTexturePreview();
+		}
+	});
+	updateTexturePreview();
 	generatePackFormSubmitButton = generatePackForm.elements.namedItem("submit");
 	
 	let opacityModeSelect = generatePackForm.elements.namedItem("opacityMode");
@@ -148,6 +159,7 @@ document.onEvent("DOMContentLoaded", async () => {
 				}
 			});
 			temporarilyChangeText(el, el.dataset.resetText ?? el.innerText);
+			updateTexturePreview();
 		});
 	});
 	
@@ -225,6 +237,32 @@ async function handleInputFiles(files) {
 }
 function updatePackNameInputPlaceholder() {
 	packNameInput.setAttribute("placeholder", HoloPrint.getDefaultPackName([...structureFilesInput.files]));
+}
+async function updateTexturePreview() {
+	texturePreviewImage ??= await (new ResourcePackStack()).then(rps => rps.fetchResource(`textures/blocks/${random(["crafting_table_front", "diamond_ore", "blast_furnace_front_off", "brick", "cherry_planks", "chiseled_copper", "cobblestone", "wool_colored_white", "stonebrick", "stone_granite_smooth"])}.png`)).then(res => res.toImage());
+	let can = new OffscreenCanvas(texturePreviewImage.width, texturePreviewImage.height);
+	let ctx = can.getContext("2d");
+	ctx.drawImage(texturePreviewImage, 0, 0);
+	let textureOutlineWidth = +generatePackForm.elements.namedItem("textureOutlineWidth").value;
+	let outlinedCan = textureOutlineWidth > 0? TextureAtlas.addTextureOutlines(can, [{
+		x: 0,
+		y: 0,
+		w: can.width,
+		h: can.height
+	}], HoloPrint.addDefaultConfig({
+		TEXTURE_OUTLINE_COLOR: generatePackForm.elements.namedItem("textureOutlineColor").value,
+		TEXTURE_OUTLINE_OPACITY: generatePackForm.elements.namedItem("textureOutlineOpacity").value / 100,
+		TEXTURE_OUTLINE_WIDTH: textureOutlineWidth
+	})) : can;
+	let tintlessImage = await outlinedCan.convertToBlob().then(blob => blob.toImage());
+	let outlinedCanCtx = outlinedCan.getContext("2d");
+	outlinedCanCtx.fillStyle = generatePackForm.elements.namedItem("tintColor").value;
+	outlinedCanCtx.globalAlpha = generatePackForm.elements.namedItem("tintOpacity").value / 100;
+	outlinedCanCtx.fillRect(0, 0, outlinedCan.width, outlinedCan.height);
+	let tintedImage = await outlinedCan.convertToBlob().then(blob => blob.toImage());
+	texturePreviewImageCont.textContent = "";
+	texturePreviewImageCont.appendChild(tintlessImage);
+	texturePreviewImageCont.appendChild(tintedImage);
 }
 async function translatePage(language, generateTranslations = false) {
 	let translatableEls = document.documentElement.getAllChildren().filter(el => [...el.attributes].some(attr => attr.name.startsWith("data-translate")));

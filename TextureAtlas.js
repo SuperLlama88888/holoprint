@@ -1,4 +1,4 @@
-import { awaitAllEntries, blobToImage, ceil, floor, hexColorToClampedTriplet, JSONSet, max, range, stringToImageData } from "./essential.js";
+import { awaitAllEntries, ceil, floor, hexColorToClampedTriplet, JSONSet, max, range, stringToImageData } from "./essential.js";
 import TGALoader from "https://esm.run/tga-js@1.1.1"; // We could use dynamic import as this isn't used all the time but it's so small it won't matter
 import potpack from "https://esm.run/potpack@2.0.0";
 import ResourcePackStack from "./ResourcePackStack.js";
@@ -438,7 +438,7 @@ export default class TextureAtlas {
 		});
 		
 		if(this.config.TEXTURE_OUTLINE_WIDTH != 0) {
-			can = this.#addTextureOutlines(can, imageFragments);
+			can = TextureAtlas.addTextureOutlines(can, imageFragments, this.config);
 		}
 		
 		if(this.config.MULTIPLE_OPACITIES) {
@@ -449,7 +449,7 @@ export default class TextureAtlas {
 			this.imageBlobs = [["hologram", await can.convertToBlob()]];
 		}
 		
-		// document.body.appendChild(await blobToImage(this.imageBlobs.at(-1)[1]));
+		// document.body.appendChild(await this.imageBlobs.at(-1)[1].toImage());
 		
 		return imageUvs;
 	}
@@ -486,9 +486,14 @@ export default class TextureAtlas {
 		maxY += startY;
 		return { minX, minY, maxX, maxY };
 	}
-	/** Add an outline around each texture */
-	#addTextureOutlines(ogCan, imagePositions) {
-		let scale = max(1 / this.config.TEXTURE_OUTLINE_WIDTH, 1);
+	/** Add an outline around each texture.
+	 * @param {CanvasImageSource} ogCan
+	 * @param {Array<{ x: Number, y: Number, w: Number, h: Number }>} imagePositions
+	 * @param {HoloprintConfig} config
+	 * @returns {OffscreenCanvas}
+	 */
+	static addTextureOutlines(ogCan, imagePositions, config) {
+		let scale = max(1 / config.TEXTURE_OUTLINE_WIDTH, 1);
 		let can = new OffscreenCanvas(ogCan.width * scale, ogCan.height * scale);
 		
 		let ctx = can.getContext("2d");
@@ -497,10 +502,10 @@ export default class TextureAtlas {
 		
 		let imageData = ogCan.getContext("2d").getImageData(0, 0, ogCan.width, ogCan.height);
 		
-		ctx.fillStyle = this.config.TEXTURE_OUTLINE_COLOR;
-		ctx.globalAlpha = this.config.TEXTURE_OUTLINE_OPACITY;
+		ctx.fillStyle = config.TEXTURE_OUTLINE_COLOR;
+		ctx.globalAlpha = config.TEXTURE_OUTLINE_OPACITY;
 		
-		const compareAlpha = (currentPixel, otherPixel) => this.config.TEXTURE_OUTLINE_ALPHA_DIFFERENCE_MODE == "difference"? currentPixel - otherPixel >= this.config.TEXTURE_OUTLINE_ALPHA_THRESHOLD : otherPixel <= this.config.TEXTURE_OUTLINE_ALPHA_THRESHOLD;
+		const compareAlpha = (currentPixel, otherPixel) => config.TEXTURE_OUTLINE_ALPHA_DIFFERENCE_MODE == "difference"? currentPixel - otherPixel >= config.TEXTURE_OUTLINE_ALPHA_THRESHOLD : otherPixel <= config.TEXTURE_OUTLINE_ALPHA_THRESHOLD;
 		
 		imagePositions.forEach(({ x: startX, y: startY, w, h }) => {
 			let endX = startX + w;

@@ -802,13 +802,12 @@ export function createItemCriteria(names, tags = []) { // IDK why I haven't made
 	}
 	return { names, tags };
 }
-
 /**
  * Adds default config options to a potentially incomplete config object.
  * @param {HoloPrintConfig} config
  * @returns {HoloPrintConfig}
  */
-function addDefaultConfig(config) {
+export function addDefaultConfig(config) {
 	return Object.freeze({
 		...{ // defaults
 			IGNORED_BLOCKS: [],
@@ -848,6 +847,7 @@ function addDefaultConfig(config) {
 		}
 	});
 }
+
 /**
  * Reads the NBT of a structure file, returning a JSON object.
  * @param {File} structureFile `*.mcstructure`

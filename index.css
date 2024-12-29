@@ -172,6 +172,13 @@ button, input[type="checkbox"], input[type="number"], input[type="text"], textar
 	cursor: pointer;
 	transition: background 0.15s;
 }
+input[type="color"] {
+	border: 2px solid #D899D8;
+	border-radius: 7px;
+	background: #EEDEEE;
+	cursor: pointer;
+	transition: background 0.15s;
+}
 input[type="number"], input[type="text"], textarea {
 	cursor: text;
 	outline-width: thin;
@@ -186,7 +193,7 @@ button:not(:disabled):not(.packInfoButton):hover, input[type="file"]:not(:disabl
 button:disabled, input[type="file"]:disabled::file-selector-button, selector:disabled, .buttonlike:disabled {
 	cursor: not-allowed;
 }
-input[type="number"]:hover, input[type="text"]:hover, textarea:hover {
+input[type="number"]:hover, input[type="text"]:hover, input[type="color"]:hover, textarea:hover {
 	background: #EAD5EA;
 }
 button:not(.packInfoButton):active, input[type="file"]:active::file-selector-button, select:active, .buttonlike:active {
@@ -384,4 +391,25 @@ img:not(#languageSelectorButton), canvas {
 	100% {
 		background-size: 20% 100%, 20% 100%, 20% 100%;
 	}
+}
+
+fieldset.textureSettings > div {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 15px 0;	
+}
+fieldset.textureSettings > div > div {
+	flex: 1 1 auto;
+}
+#texturePreviewCont {
+	text-align: center;
+	min-width: 260px;
+}
+#texturePreviewCont img {
+	margin: 5px;
+	display: inline-block;
+	border: none;
+	width: 40%;
+	max-width: 140px;
+	image-rendering: pixelated;
 }
