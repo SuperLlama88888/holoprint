@@ -163,6 +163,14 @@ export function range(a, b, c) {
 export function random(arr) {
 	return arr[~~(Math.random() * arr.length)];
 }
+/**
+ * Create a pseudo-enumeration using numbers.
+ * @param {Array<String>} keys
+ * @returns {Readonly<Record<String, Number>>}
+ */
+export function createEnum(keys) {
+	return Object.freeze(Object.fromEntries(keys.map((key, i) => [key, i])));
+}
 
 export function hexColorToClampedTriplet(hexColor) {
 	let [, r, g, b] = hexColor.match(/^#([0-9a-f]{2})([0-9a-f]{2})([0-9a-f]{2})/i);

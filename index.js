@@ -351,7 +351,6 @@ async function makePack(structureFiles, localResourcePacks) {
 		SCALE: formData.get("scale") / 100,
 		OPACITY: formData.get("opacity") / 100,
 		MULTIPLE_OPACITIES: formData.get("opacityMode") == "multiple",
-		LAYER_MODE: formData.get("layerMode"),
 		TINT_COLOR: formData.get("tintColor"),
 		TINT_OPACITY: formData.get("tintOpacity") / 100,
 		TEXTURE_OUTLINE_WIDTH: +formData.get("textureOutlineWidth"),
