@@ -208,14 +208,18 @@ export async function makePack(structureFiles, config = {}, resourcePackStack, p
 		},
 		{
 			[`l_${topLayer}`]: `v.hologram_layer == ${topLayer} && v.hologram_layer_mode == ${HOLOGRAM_LAYER_MODES.SINGLE}`
-		},
-		{
-			"l_0-": `v.hologram_layer > -1 && v.hologram_layer != ${topLayer - 1} && v.hologram_layer_mode == ${HOLOGRAM_LAYER_MODES.ALL_BELOW}`
-		},
-		{
-			[`l_${topLayer - 1}-`]: `v.hologram_layer == ${topLayer - 1} && v.hologram_layer_mode == ${HOLOGRAM_LAYER_MODES.ALL_BELOW}`
 		}
 	);
+	if(topLayer > 0) {
+		layerAnimationStates["default"]["transitions"].push(
+			{
+				"l_0-": `v.hologram_layer > -1 && v.hologram_layer != ${topLayer - 1} && v.hologram_layer_mode == ${HOLOGRAM_LAYER_MODES.ALL_BELOW}`
+			},
+			{
+				[`l_${topLayer - 1}-`]: `v.hologram_layer == ${topLayer - 1} && v.hologram_layer_mode == ${HOLOGRAM_LAYER_MODES.ALL_BELOW}`
+			}
+		);
+	}
 	let entityDescription = entityFile["minecraft:client_entity"]["description"];
 	
 	let totalBlockCount = 0;
