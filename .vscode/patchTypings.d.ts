@@ -21,6 +21,7 @@ declare global {
 	}
 	interface Blob {
 		jsonc(): Promise<Object>;
+		toImage(): Promise<Image>
 	}
 	interface Image {
 		toImageData(): ImageData;

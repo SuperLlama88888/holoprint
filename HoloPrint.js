@@ -6,7 +6,7 @@ import TextureAtlas from "./TextureAtlas.js";
 import MaterialList from "./MaterialList.js";
 import PreviewRenderer from "./PreviewRenderer.js";
 
-import { awaitAllEntries, concatenateFiles, JSONMap, JSONSet, max, min, pi, sha256, translate } from "./essential.js";
+import { awaitAllEntries, concatenateFiles, hexColorToClampedTriplet, JSONMap, JSONSet, max, min, pi, sha256, translate } from "./essential.js";
 import ResourcePackStack from "./ResourcePackStack.js";
 
 export const IGNORED_BLOCKS = ["air", "piston_arm_collision", "sticky_piston_arm_collision"]; // blocks to be ignored when scanning the structure file
@@ -15,6 +15,7 @@ const IGNORED_BLOCK_ENTITIES = ["Beacon", "Beehive", "Bell", "BrewingStand", "Ch
 export const PLAYER_CONTROL_NAMES = {
 	TOGGLE_RENDERING: "player_controls.toggle_rendering",
 	CHANGE_OPACITY: "player_controls.change_opacity",
+	TOGGLE_TINT: "player_controls.toggle_tint",
 	TOGGLE_VALIDATING: "player_controls.toggle_validating",
 	CHANGE_LAYER: "player_controls.change_layer",
 	DECREASE_LAYER: "player_controls.decrease_layer",
@@ -25,6 +26,7 @@ export const PLAYER_CONTROL_NAMES = {
 export const DEFAULT_PLAYER_CONTROLS = {
 	TOGGLE_RENDERING: createItemCriteria("stone"),
 	CHANGE_OPACITY: createItemCriteria("glass"),
+	TOGGLE_TINT: createItemCriteria("white_dye"),
 	TOGGLE_VALIDATING: createItemCriteria("iron_ingot"),
 	CHANGE_LAYER: createItemCriteria([], "planks"),
 	DECREASE_LAYER: createItemCriteria([], "logs"),
@@ -370,6 +372,7 @@ export async function makePack(structureFiles, config = {}, resourcePackStack, p
 		v.structure_d = $[structureSize[2]];
 		v.render_hologram = true;
 		v.hologram_texture_index = $[defaultTextureIndex];
+		v.show_tint = false;
 		v.hologram_layer = -1;
 		v.validate_hologram = false;
 		v.show_wrong_block_overlay = false;
@@ -388,7 +391,7 @@ export async function makePack(structureFiles, config = {}, resourcePackStack, p
 		v.player_action_counter = 0;
 	}, { structureSize: structureSizes[0], defaultTextureIndex, structureCount: structureFiles.length }));
 	entityDescription["scripts"]["pre_animation"] ??= [];
-	entityDescription["scripts"]["pre_animation"].push(functionToMolang((v, q, t, textureBlobsCount, totalBlocksToValidate, toggleRendering, changeOpacity, toggleValidating, changeLayer, decreaseLayer, disablePlayerControls) => {
+	entityDescription["scripts"]["pre_animation"].push(functionToMolang((v, q, t, textureBlobsCount, totalBlocksToValidate, toggleRendering, changeOpacity, toggleTint, toggleValidating, changeLayer, decreaseLayer, disablePlayerControls) => {
 		v.hologram_dir = Math.floor(q.body_y_rotation / 90) + 2; // [south, west, north, east] (since it goes from -180 to 180)
 		
 		t.process_action = false; // this is the only place I'm using temp variables for their intended purpose
@@ -420,6 +423,8 @@ export async function makePack(structureFiles, config = {}, resourcePackStack, p
 				t.action = "toggle_rendering";
 			} else if($[changeOpacity]) {
 				t.action = "increase_opacity";
+			} else if($[toggleTint]) {
+				t.action = "toggle_tint";
 			} else if($[toggleValidating]) {
 				t.action = "toggle_validating";
 			} else if($[changeLayer]) {
@@ -469,6 +474,8 @@ export async function makePack(structureFiles, config = {}, resourcePackStack, p
 					if(v.hologram_texture_index < 0) {
 						v.hologram_texture_index = $[textureBlobsCount - 1];
 					}
+				} else if(t.action == "toggle_tint") {
+					v.show_tint = !v.show_tint;
 				} else if(t.action == "increase_layer") {
 					v.hologram_layer++;
 					t.check_layer_validity = true;
@@ -556,6 +563,7 @@ export async function makePack(structureFiles, config = {}, resourcePackStack, p
 		structureDMolang,
 		toggleRendering: itemCriteriaToMolang(config.CONTROLS.TOGGLE_RENDERING),
 		changeOpacity: itemCriteriaToMolang(config.CONTROLS.CHANGE_OPACITY),
+		toggleTint: itemCriteriaToMolang(config.CONTROLS.TOGGLE_TINT),
 		toggleValidating: itemCriteriaToMolang(config.CONTROLS.TOGGLE_VALIDATING),
 		changeLayer: itemCriteriaToMolang(config.CONTROLS.CHANGE_LAYER),
 		decreaseLayer: itemCriteriaToMolang(config.CONTROLS.DECREASE_LAYER),
@@ -581,15 +589,13 @@ export async function makePack(structureFiles, config = {}, resourcePackStack, p
 	});
 	hologramRenderControllers["render_controllers"]["controller.render.armor_stand.hologram"]["textures"][0] = `Array.textures[v.hologram_texture_index ?? ${defaultTextureIndex}]`;
 	
-	if(config.TINT != undefined) {
-		// By putting the overlay in the render controller instead of modifying the texture, the overlay isn't applied on transparent pixels. It also saves us the work of having to manipulate the image data directly :)
-		hologramRenderControllers["render_controllers"]["controller.render.armor_stand.hologram"]["overlay_color"] = {
-			"r": config.TINT[0],
-			"g": config.TINT[1],
-			"b": config.TINT[2],
-			"a": config.TINT[3]
-		};
-	}
+	let tintColorChannels = hexColorToClampedTriplet(config.TINT_COLOR);
+	hologramRenderControllers["render_controllers"]["controller.render.armor_stand.hologram"]["overlay_color"] = {
+		"r": tintColorChannels[0],
+		"g": tintColorChannels[1],
+		"b": tintColorChannels[2],
+		"a": `v.show_tint? ${config.TINT_OPACITY} : 0`
+	};
 	
 	let overlayTexture = await singleWhitePixelTexture.setOpacity(config.WRONG_BLOCK_OVERLAY_COLOR[3]);
 	
@@ -796,13 +802,12 @@ export function createItemCriteria(names, tags = []) { // IDK why I haven't made
 	}
 	return { names, tags };
 }
-
 /**
  * Adds default config options to a potentially incomplete config object.
  * @param {HoloPrintConfig} config
  * @returns {HoloPrintConfig}
  */
-function addDefaultConfig(config) {
+export function addDefaultConfig(config) {
 	return Object.freeze({
 		...{ // defaults
 			IGNORED_BLOCKS: [],
@@ -810,12 +815,13 @@ function addDefaultConfig(config) {
 			SCALE: 0.95,
 			OPACITY: 0.9,
 			MULTIPLE_OPACITIES: true,
-			// TINT = [0.53, 0.81, 0.98, 0.2], // to convert rgba to these, type 0x__ / 255 into any JS console
-			TINT: undefined,
+			TINT_COLOR: "#579EFA",
+			TINT_OPACITY: 0.2,
 			MINI_SCALE: 0.125, // size of ghost blocks when in the mini view for layers
 			LAYER_MODE: "single", // single | all_below
 			TEXTURE_OUTLINE_WIDTH: 0.25, // pixels, x ∈ [0, 1], x ∈ 2^ℝ
-			TEXTURE_OUTLINE_COLOR: "#00F9",
+			TEXTURE_OUTLINE_COLOR: "#00F",
+			TEXTURE_OUTLINE_OPACITY: 0.65,
 			TEXTURE_OUTLINE_ALPHA_DIFFERENCE_MODE: "threshold", // difference: will compare alpha channel difference; threshold: will only look at the second pixel
 			TEXTURE_OUTLINE_ALPHA_THRESHOLD: 0, // if using difference mode, will draw outline between pixels with at least this much alpha difference; else, will draw outline on pixels next to pixels with an alpha less than or equal to this
 			DO_SPAWN_ANIMATION: true,
@@ -841,6 +847,7 @@ function addDefaultConfig(config) {
 		}
 	});
 }
+
 /**
  * Reads the NBT of a structure file, returning a JSON object.
  * @param {File} structureFile `*.mcstructure`
@@ -1082,7 +1089,7 @@ function addPlayerControlsToRenderControllers(config, defaultPlayerRenderControl
 		v.attack = v.attack_time > 0 && (v.last_attack_time == 0 || v.attack_time < v.last_attack_time);
 		v.last_attack_time = v.attack_time;
 	});
-	let renderingControls = functionToMolang((q, v, toggleRendering, changeOpacity, toggleValidating, changeLayer, changeStructure) => {
+	let renderingControls = functionToMolang((q, v, toggleRendering, changeOpacity, toggleTint, toggleValidating, changeLayer, changeStructure) => {
 		if(v.attack) {
 			if($[toggleRendering]) {
 				v.new_action = "toggle_rendering";
@@ -1092,6 +1099,8 @@ function addPlayerControlsToRenderControllers(config, defaultPlayerRenderControl
 				} else {
 					v.new_action = "increase_opacity";
 				}
+			} else if($[toggleTint]) {
+				v.new_action = "toggle_tint";
 			} else if($[toggleValidating]) {
 				v.new_action = "toggle_validating";
 			} else if($[changeLayer]) {
@@ -1111,6 +1120,7 @@ function addPlayerControlsToRenderControllers(config, defaultPlayerRenderControl
 	}, {
 		toggleRendering: itemCriteriaToMolang(config.CONTROLS.TOGGLE_RENDERING),
 		changeOpacity: itemCriteriaToMolang(config.CONTROLS.CHANGE_OPACITY),
+		toggleTint: itemCriteriaToMolang(config.CONTROLS.TOGGLE_TINT),
 		toggleValidating: itemCriteriaToMolang(config.CONTROLS.TOGGLE_VALIDATING),
 		changeLayer: itemCriteriaToMolang(config.CONTROLS.CHANGE_LAYER),
 		changeStructure: itemCriteriaToMolang(config.CONTROLS.CHANGE_STRUCTURE)
@@ -1405,11 +1415,13 @@ function stringifyWithFixedDecimals(value) {
  * @property {Number} SCALE
  * @property {Number} OPACITY
  * @property {Boolean} MULTIPLE_OPACITIES Whether to generate multiple opacity images and allow in-game switching, or have a constant opacity
- * @property {Array<Number>|undefined} TINT Clamped colour quartet
+ * @property {String} TINT_COLOR Hex RGB #xxxxxx
+ * @property {Number} TINT_OPACITY 0-1
  * @property {Number} MINI_SCALE Size of ghost blocks when in the mini view for layers
  * @property {("single"|"all_below")} LAYER_MODE
  * @property {Number} TEXTURE_OUTLINE_WIDTH Measured in pixels, x ∈ [0, 1], x ∈ 2^ℝ
  * @property {String} TEXTURE_OUTLINE_COLOR A colour string
+ * @property {Number} TEXTURE_OUTLINE_OPACITY 0-1
  * @property {("threshold"|"difference")} TEXTURE_OUTLINE_ALPHA_DIFFERENCE_MODE difference: will compare alpha channel difference; threshold: will only look at the second pixel
  * @property {Number} TEXTURE_OUTLINE_ALPHA_THRESHOLD If using difference mode, will draw outline between pixels with at least this much alpha difference; if using threshold mode, will draw outline on pixels next to pixels with an alpha less than or equal to this
  * @property {Boolean} DO_SPAWN_ANIMATION
@@ -1429,6 +1441,7 @@ function stringifyWithFixedDecimals(value) {
  * @typedef {Object} HoloPrintControlsConfig
  * @property {ItemCriteria} TOGGLE_RENDERING
  * @property {ItemCriteria} CHANGE_OPACITY
+ * @property {ItemCriteria} TOGGLE_TINT
  * @property {ItemCriteria} TOGGLE_VALIDATING
  * @property {ItemCriteria} CHANGE_LAYER Both for players and armour stands
  * @property {ItemCriteria} DECREASE_LAYER Armour stand only
