@@ -37,7 +37,7 @@
 	"resource_packs.upload_local": "Upload a local resource pack:",
 	"settings.advanced": "Advanced",
 	"settings.heading": "Settings",
-	"settings.hologram_scale": "Hologram scale:",
+	"settings.ghost_block_scale": "Ghost block scale:",
 	"settings.ignored_blocks": "Ignored blocks:",
 	"settings.ignored_blocks.placeholder": "block_1 block_2 etc.",
 	"settings.material_list_language": "Language (material list):",
