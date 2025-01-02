@@ -146,7 +146,7 @@ Blob.prototype.toImage = function() {
 
 export const sleep = async time => new Promise(resolve => setTimeout(resolve, time));
 
-export const { min, max, floor, ceil, sqrt, round, abs, PI: pi } = Math;
+export const { min, max, floor, ceil, sqrt, round, abs, PI: pi, exp } = Math;
 export const clamp = (n, lowest, highest) => min(max(n, lowest), highest);
 export const lerp = (a, b, x) => a + (b - a) * x;
 export const nanToUndefined = x => Number.isNaN(x)? undefined : x;
@@ -162,6 +162,14 @@ export function range(a, b, c) {
 }
 export function random(arr) {
 	return arr[~~(Math.random() * arr.length)];
+}
+/**
+ * Create a pseudo-enumeration using numbers.
+ * @param {Array<String>} keys
+ * @returns {Readonly<Record<String, Number>>}
+ */
+export function createEnum(keys) {
+	return Object.freeze(Object.fromEntries(keys.map((key, i) => [key, i])));
 }
 
 export function hexColorToClampedTriplet(hexColor) {
@@ -374,6 +382,23 @@ export class CachingFetcher {
 	 * @returns {Promise<Response>}
 	 */
 	async retrieve(url) {
-		return await fetch(url);
+		const maxFetchAttempts = 3;
+		const fetchRetryTimeout = 500; // ms
+		let lastError;
+		for(let i = 0; i < maxFetchAttempts; i++) {
+			try {
+				return await fetch(url);
+			} catch(e) {
+				if(navigator.onLine && e instanceof TypeError && e.message == "Failed to fetch") { // random Chrome issue when fetching many images at the same time. observed when fetching 1600 images at the same time.
+					console.debug(`Failed to fetch resource at ${url}, trying again in ${fetchRetryTimeout}ms`);
+					lastError = e;
+					await sleep(fetchRetryTimeout);
+				} else {
+					throw e;
+				}
+			}
+		}
+		console.error(`Failed to fetch resource at ${url} after ${maxFetchAttempts} attempts...`);
+		throw lastError;
 	}
 }

@@ -6,7 +6,7 @@ import TextureAtlas from "./TextureAtlas.js";
 import MaterialList from "./MaterialList.js";
 import PreviewRenderer from "./PreviewRenderer.js";
 
-import { awaitAllEntries, concatenateFiles, hexColorToClampedTriplet, JSONMap, JSONSet, max, min, pi, sha256, translate } from "./essential.js";
+import { awaitAllEntries, concatenateFiles, createEnum, exp, hexColorToClampedTriplet, JSONMap, JSONSet, max, min, pi, sha256, translate } from "./essential.js";
 import ResourcePackStack from "./ResourcePackStack.js";
 
 export const IGNORED_BLOCKS = ["air", "piston_arm_collision", "sticky_piston_arm_collision"]; // blocks to be ignored when scanning the structure file
@@ -19,6 +19,7 @@ export const PLAYER_CONTROL_NAMES = {
 	TOGGLE_VALIDATING: "player_controls.toggle_validating",
 	CHANGE_LAYER: "player_controls.change_layer",
 	DECREASE_LAYER: "player_controls.decrease_layer",
+	CHANGE_LAYER_MODE: "player_controls.change_layer_mode",
 	MOVE_HOLOGRAM: "player_controls.move_hologram",
 	CHANGE_STRUCTURE: "player_controls.change_structure",
 	DISABLE_PLAYER_CONTROLS: "player_controls.disable_player_controls"
@@ -30,10 +31,13 @@ export const DEFAULT_PLAYER_CONTROLS = {
 	TOGGLE_VALIDATING: createItemCriteria("iron_ingot"),
 	CHANGE_LAYER: createItemCriteria([], "planks"),
 	DECREASE_LAYER: createItemCriteria([], "logs"),
+	CHANGE_LAYER_MODE: createItemCriteria([], "wooden_slabs"),
 	MOVE_HOLOGRAM: createItemCriteria("stick"),
 	CHANGE_STRUCTURE: createItemCriteria("arrow"),
 	DISABLE_PLAYER_CONTROLS: createItemCriteria("bone")
 };
+
+const HOLOGRAM_LAYER_MODES = createEnum(["SINGLE", "ALL_BELOW"]);
 
 /**
  * Makes a HoloPrint resource pack from a structure file.
@@ -177,20 +181,8 @@ export async function makePack(structureFiles, config = {}, resourcePackStack, p
 	let structureWMolang = arrayToMolang(structureSizes.map(structureSize => structureSize[0]), "v.structure_index");
 	let structureHMolang = arrayToMolang(structureSizes.map(structureSize => structureSize[1]), "v.structure_index");
 	let structureDMolang = arrayToMolang(structureSizes.map(structureSize => structureSize[2]), "v.structure_index");
-	let makeHologramSpawnAnimation;
-	if(config.DO_SPAWN_ANIMATION) {
-		let totalAnimationLength = 0;
-		makeHologramSpawnAnimation = (x, y, z, structureSize) => {
-			let delay = config.SPAWN_ANIMATION_LENGTH * 0.25 * (structureSize[0] - x + y + structureSize[2] - z + Math.random() * 2) + 0.05;
-			delay = Number(delay.toFixed(2));
-			let animationEnd = Number((delay + config.SPAWN_ANIMATION_LENGTH).toFixed(2));
-			totalAnimationLength = max(totalAnimationLength, animationEnd);
-			hologramAnimations["animations"]["animation.armor_stand.hologram.spawn"]["animation_length"] = totalAnimationLength;
-			return {
-				"scale": `q.anim_time <= ${delay}? 0 : (q.anim_time >= ${animationEnd}? 1 : (1 - math.pow(1 - (q.anim_time - ${delay}) / ${config.SPAWN_ANIMATION_LENGTH}, 3)))`.replaceAll(" ", "")
-			};
-		};
-	} else {
+	
+	if(!config.DO_SPAWN_ANIMATION) {
 		// Totally empty animation
 		delete hologramAnimations["animations"]["animation.armor_stand.hologram.spawn"]["loop"];
 		delete hologramAnimations["animations"]["animation.armor_stand.hologram.spawn"]["bones"];
@@ -200,12 +192,22 @@ export async function makePack(structureFiles, config = {}, resourcePackStack, p
 	let topLayer = max(...structureSizes.map(structureSize => structureSize[1])) - 1;
 	layerAnimationStates["default"]["transitions"].push(
 		{
-			"l_0": `v.hologram_layer > -1 && v.hologram_layer != ${topLayer}`
+			"l_0": `v.hologram_layer > -1 && v.hologram_layer != ${topLayer} && v.hologram_layer_mode == ${HOLOGRAM_LAYER_MODES.SINGLE}`
 		},
 		{
-			[`l_${topLayer}`]: `v.hologram_layer == ${topLayer}`
+			[`l_${topLayer}`]: `v.hologram_layer == ${topLayer} && v.hologram_layer_mode == ${HOLOGRAM_LAYER_MODES.SINGLE}`
 		}
 	);
+	if(topLayer > 0) {
+		layerAnimationStates["default"]["transitions"].push(
+			{
+				"l_0-": `v.hologram_layer > -1 && v.hologram_layer != ${topLayer - 1} && v.hologram_layer_mode == ${HOLOGRAM_LAYER_MODES.ALL_BELOW}`
+			},
+			{
+				[`l_${topLayer - 1}-`]: `v.hologram_layer == ${topLayer - 1} && v.hologram_layer_mode == ${HOLOGRAM_LAYER_MODES.ALL_BELOW}`
+			}
+		);
+	}
 	let entityDescription = entityFile["minecraft:client_entity"]["description"];
 	
 	let totalBlockCount = 0;
@@ -222,6 +224,26 @@ export async function makePack(structureFiles, config = {}, resourcePackStack, p
 		entityDescription["geometry"][geoShortName] = geoIdentifier;
 		hologramRenderControllers["render_controllers"]["controller.render.armor_stand.hologram"]["arrays"]["geometries"]["Array.geometries"].push(`Geometry.${geoShortName}`);
 		let blocksToValidate = [];
+		
+		let getSpawnAnimationDelay;
+		let makeHologramSpawnAnimation;
+		let spawnAnimationAnimatedBones = [];
+		if(config.DO_SPAWN_ANIMATION) {
+			let totalVolume = structureSize.reduce((a, b) => a * b);
+			let totalAnimationLength = 0;
+			getSpawnAnimationDelay = (x, y, z) => {
+				let randomness = 2 - 1.9 * exp(-0.005 * totalVolume); // 100 -> ~0.85, 1000 -> ~1.99, asymptotic to 2
+				return config.SPAWN_ANIMATION_LENGTH * 0.25 * (structureSize[0] - x + y + structureSize[2] - z + Math.random() * randomness);
+			};
+			makeHologramSpawnAnimation = delay => {
+				let animationEnd = Number((delay + config.SPAWN_ANIMATION_LENGTH).toFixed(2));
+				totalAnimationLength = max(totalAnimationLength, animationEnd);
+				hologramAnimations["animations"]["animation.armor_stand.hologram.spawn"]["animation_length"] = totalAnimationLength;
+				return {
+					"scale": `q.anim_time <= ${delay}? 0 : (q.anim_time >= ${animationEnd}? 1 : (1 - math.pow(1 - (q.anim_time - ${delay}) / ${config.SPAWN_ANIMATION_LENGTH}, 3)))`.replaceAll(" ", "")
+				};
+			};
+		}
 		for(let y = 0; y < structureSize[1]; y++) {
 			let layerName = `l_${y}`;
 			geo["bones"].push({
@@ -234,6 +256,9 @@ export async function makePack(structureFiles, config = {}, resourcePackStack, p
 				"blend_transition": 0.1,
 				"blend_via_shortest_path": true,
 				"transitions": [
+					{
+						[y == topLayer? "default" : `${layerName}-`]: `v.hologram_layer_mode == ${HOLOGRAM_LAYER_MODES.ALL_BELOW}`
+					},
 					{
 						[y == 0? "default" : `l_${y - 1}`]: `v.hologram_layer < ${y}${y == topLayer? " && v.hologram_layer != -1" : ""}`
 					},
@@ -249,7 +274,7 @@ export async function makePack(structureFiles, config = {}, resourcePackStack, p
 			layerAnimation["loop"] = "hold_on_last_frame";
 			layerAnimation["bones"] ??= {};
 			for(let otherLayerY = 0; otherLayerY < structureSize[1]; otherLayerY++) {
-				if(otherLayerY == y || config.LAYER_MODE == "all_below" && otherLayerY < y) {
+				if(otherLayerY == y) {
 					continue;
 				}
 				layerAnimation["bones"][`l_${otherLayerY}`] = {
@@ -260,6 +285,42 @@ export async function makePack(structureFiles, config = {}, resourcePackStack, p
 				delete layerAnimation["bones"];
 			}
 			entityDescription["animations"][`hologram.l_${y}`] = `animation.armor_stand.hologram.l_${y}`;
+			if(y < topLayer) { // top layer with all layers below is the default view, so the animation + animation controller state doesn't need to be made for it
+				layerAnimationStates[`${layerName}-`] = {
+					"animations": [`hologram.l_${y}-`],
+					"blend_transition": 0.1,
+					"blend_via_shortest_path": true,
+					"transitions": [
+						{
+							[layerName]: `v.hologram_layer_mode == ${HOLOGRAM_LAYER_MODES.SINGLE}`
+						},
+						{
+							[y == 0? "default" : `l_${y - 1}-`]: `v.hologram_layer < ${y}${y == topLayer - 1? " && v.hologram_layer != -1" : ""}`
+						},
+						(y >= topLayer - 1? {
+							"default": "v.hologram_layer == -1"
+						} : {
+							[`l_${y + 1}-`]: `v.hologram_layer > ${y}`
+						})
+					]
+				};
+				hologramAnimations["animations"][`animation.armor_stand.hologram.l_${y}-`] ??= {};
+				let layerAnimationAllBelow = hologramAnimations["animations"][`animation.armor_stand.hologram.l_${y}-`];
+				layerAnimationAllBelow["loop"] = "hold_on_last_frame";
+				layerAnimationAllBelow["bones"] ??= {};
+				for(let otherLayerY = 0; otherLayerY < structureSize[1]; otherLayerY++) {
+					if(otherLayerY <= y) {
+						continue;
+					}
+					layerAnimationAllBelow["bones"][`l_${otherLayerY}`] = {
+						"scale": config.MINI_SCALE
+					};
+				}
+				if(Object.entries(layerAnimationAllBelow["bones"]).length == 0) {
+					delete layerAnimationAllBelow["bones"];
+				}
+				entityDescription["animations"][`hologram.l_${y}-`] = `animation.armor_stand.hologram.l_${y}-`;
+			}
 			
 			for(let x = 0; x < structureSize[0]; x++) {
 				for(let z = 0; z < structureSize[2]; z++) {
@@ -279,6 +340,9 @@ export async function makePack(structureFiles, config = {}, resourcePackStack, p
 						let boneName = `b_${x}_${y}_${z}`;
 						if(!firstBoneForThisBlock) {
 							boneName += `_${layerI}`;
+						}
+						if(config.DO_SPAWN_ANIMATION && structureI == 0) {
+							boneName += "_a"; // different bone name in order for the animation to not affect blocks in the same position in other structures
 						}
 						let bonePos = [-16 * x - 8, 16 * y, 16 * z - 8]; // I got these values from trial and error with blockbench (which makes the x negative I think. it's weird.)
 						let positionedBoneTemplate = blockGeoMaker.positionBoneTemplate(boneTemplate, bonePos);
@@ -321,8 +385,8 @@ export async function makePack(structureFiles, config = {}, resourcePackStack, p
 						if(firstBoneForThisBlock) { // we only need 1 locator for each block position, even though there may be 2 bones in this position because of the 2nd layer
 							hologramGeo["minecraft:geometry"][2]["bones"][1]["locators"][boneName] ??= bonePos.map(x => x + 8);
 						}
-						if(config.DO_SPAWN_ANIMATION) {
-							hologramAnimations["animations"]["animation.armor_stand.hologram.spawn"]["bones"][boneName] = makeHologramSpawnAnimation(x, y, z, structureSize);
+						if(config.DO_SPAWN_ANIMATION && structureI == 0) {
+							spawnAnimationAnimatedBones.push([boneName, getSpawnAnimationDelay(x, y, z)]);
 						}
 						
 						let blockName = blockPalette[paletteI]["name"];
@@ -345,6 +409,15 @@ export async function makePack(structureFiles, config = {}, resourcePackStack, p
 		}
 		hologramGeo["minecraft:geometry"].push(geo);
 		
+		if(config.DO_SPAWN_ANIMATION && structureI == 0) {
+			let minDelay = min(...spawnAnimationAnimatedBones.map(([, delay]) => delay));
+			spawnAnimationAnimatedBones.forEach(([boneName, delay]) => {
+				delay -= minDelay - 0.05;
+				delay = Number(delay.toFixed(2));
+				hologramAnimations["animations"]["animation.armor_stand.hologram.spawn"]["bones"][boneName] = makeHologramSpawnAnimation(delay);
+			});
+		}
+		
 		addBoundingBoxParticles(hologramAnimationControllers, structureI, structureSize);
 		addBlockValidationParticles(hologramAnimationControllers, structureI, blocksToValidate);
 		totalBlocksToValidateByStructure.push(blocksToValidate.length);
@@ -363,7 +436,7 @@ export async function makePack(structureFiles, config = {}, resourcePackStack, p
 	entityDescription["scripts"]["animate"] ??= [];
 	entityDescription["scripts"]["animate"].push("hologram.align", "hologram.offset", "hologram.spawn", "hologram.wrong_block_overlay", "controller.hologram.layers", "controller.hologram.bounding_box", "controller.hologram.block_validation");
 	entityDescription["scripts"]["initialize"] ??= [];
-	entityDescription["scripts"]["initialize"].push(functionToMolang((v, structureSize, structureCount) => {
+	entityDescription["scripts"]["initialize"].push(functionToMolang((v, structureSize, singleLayerMode, structureCount) => {
 		v.hologram_offset_x = 0;
 		v.hologram_offset_y = 0;
 		v.hologram_offset_z = 0;
@@ -374,6 +447,7 @@ export async function makePack(structureFiles, config = {}, resourcePackStack, p
 		v.hologram_texture_index = $[defaultTextureIndex];
 		v.show_tint = false;
 		v.hologram_layer = -1;
+		v.hologram_layer_mode = $[singleLayerMode];
 		v.validate_hologram = false;
 		v.show_wrong_block_overlay = false;
 		v.wrong_blocks = -1;
@@ -389,9 +463,14 @@ export async function makePack(structureFiles, config = {}, resourcePackStack, p
 		v.last_hurt_direction = 1;
 		// v.player_action_counter = t.player_action_counter ?? 0;
 		v.player_action_counter = 0;
-	}, { structureSize: structureSizes[0], defaultTextureIndex, structureCount: structureFiles.length }));
+	}, {
+		structureSize: structureSizes[0],
+		defaultTextureIndex,
+		singleLayerMode: HOLOGRAM_LAYER_MODES.SINGLE,
+		structureCount: structureFiles.length
+	}));
 	entityDescription["scripts"]["pre_animation"] ??= [];
-	entityDescription["scripts"]["pre_animation"].push(functionToMolang((v, q, t, textureBlobsCount, totalBlocksToValidate, toggleRendering, changeOpacity, toggleTint, toggleValidating, changeLayer, decreaseLayer, disablePlayerControls) => {
+	entityDescription["scripts"]["pre_animation"].push(functionToMolang((v, q, t, textureBlobsCount, totalBlocksToValidate, toggleRendering, changeOpacity, toggleTint, toggleValidating, changeLayer, decreaseLayer, changeLayerMode, disablePlayerControls, singleLayerMode) => {
 		v.hologram_dir = Math.floor(q.body_y_rotation / 90) + 2; // [south, west, north, east] (since it goes from -180 to 180)
 		
 		t.process_action = false; // this is the only place I'm using temp variables for their intended purpose
@@ -431,6 +510,8 @@ export async function makePack(structureFiles, config = {}, resourcePackStack, p
 				t.action = "increase_layer";
 			} else if($[decreaseLayer]) {
 				t.action = "decrease_layer";
+			} else if($[changeLayerMode]) {
+				t.action = "change_layer_mode";
 			} else if(q.is_item_name_any("slot.weapon.mainhand", "minecraft:white_wool")) { // Movement controls (I hate that I'm having to do this)
 				t.action = "move_y-";
 			} else if(q.is_item_name_any("slot.weapon.mainhand", "minecraft:red_wool")) {
@@ -482,6 +563,9 @@ export async function makePack(structureFiles, config = {}, resourcePackStack, p
 				} else if(t.action == "decrease_layer") {
 					v.hologram_layer--;
 					t.check_layer_validity = true;
+				} else if(t.action == "change_layer_mode") {
+					v.hologram_layer_mode = 1 - v.hologram_layer_mode; // ez
+					t.check_layer_validity = true;
 				} else if(t.action == "move_x-") {
 					v.hologram_offset_x--;
 				} else if(t.action == "move_x+") {
@@ -506,9 +590,9 @@ export async function makePack(structureFiles, config = {}, resourcePackStack, p
 		
 		if(t.check_layer_validity) {
 			if(v.hologram_layer < -1) {
-				v.hologram_layer = v.structure_h - 1;
+				v.hologram_layer = v.structure_h - (v.hologram_layer_mode == $[singleLayerMode]? 1 : 2);
 			}
-			if(v.hologram_layer >= v.structure_h) {
+			if(v.hologram_layer >= (v.hologram_layer_mode == $[singleLayerMode]? v.structure_h : v.structure_h - 1)) {
 				v.hologram_layer = -1;
 			}
 		}
@@ -567,7 +651,9 @@ export async function makePack(structureFiles, config = {}, resourcePackStack, p
 		toggleValidating: itemCriteriaToMolang(config.CONTROLS.TOGGLE_VALIDATING),
 		changeLayer: itemCriteriaToMolang(config.CONTROLS.CHANGE_LAYER),
 		decreaseLayer: itemCriteriaToMolang(config.CONTROLS.DECREASE_LAYER),
-		disablePlayerControls: itemCriteriaToMolang(config.CONTROLS.DISABLE_PLAYER_CONTROLS)
+		changeLayerMode: itemCriteriaToMolang(config.CONTROLS.CHANGE_LAYER_MODE),
+		disablePlayerControls: itemCriteriaToMolang(config.CONTROLS.DISABLE_PLAYER_CONTROLS),
+		singleLayerMode: HOLOGRAM_LAYER_MODES.SINGLE
 	}));
 	entityDescription["geometry"]["hologram.wrong_block_overlay"] = "geometry.armor_stand.hologram.wrong_block_overlay";
 	entityDescription["geometry"]["hologram.valid_structure_overlay"] = "geometry.armor_stand.hologram.valid_structure_overlay";
@@ -818,7 +904,6 @@ export function addDefaultConfig(config) {
 			TINT_COLOR: "#579EFA",
 			TINT_OPACITY: 0.2,
 			MINI_SCALE: 0.125, // size of ghost blocks when in the mini view for layers
-			LAYER_MODE: "single", // single | all_below
 			TEXTURE_OUTLINE_WIDTH: 0.25, // pixels, x ∈ [0, 1], x ∈ 2^ℝ
 			TEXTURE_OUTLINE_COLOR: "#00F",
 			TEXTURE_OUTLINE_OPACITY: 0.65,
@@ -1089,7 +1174,7 @@ function addPlayerControlsToRenderControllers(config, defaultPlayerRenderControl
 		v.attack = v.attack_time > 0 && (v.last_attack_time == 0 || v.attack_time < v.last_attack_time);
 		v.last_attack_time = v.attack_time;
 	});
-	let renderingControls = functionToMolang((q, v, toggleRendering, changeOpacity, toggleTint, toggleValidating, changeLayer, changeStructure) => {
+	let renderingControls = functionToMolang((q, v, toggleRendering, changeOpacity, toggleTint, toggleValidating, changeLayer, decreaseLayer, changeLayerMode, changeStructure) => {
 		if(v.attack) {
 			if($[toggleRendering]) {
 				v.new_action = "toggle_rendering";
@@ -1109,6 +1194,14 @@ function addPlayerControlsToRenderControllers(config, defaultPlayerRenderControl
 				} else {
 					v.new_action = "increase_layer";
 				}
+			} else if($[decreaseLayer]) { // saw some confusion about this, it was meant to be for decreasing layer at the armour stand not remotely by the player, but more options can never hurt. ig it makes it more accessible for players who can't sneak...?
+				if(q.is_sneaking) {
+					v.new_action = "increase_layer";
+				} else {
+					v.new_action = "decrease_layer";
+				}
+			} else if($[changeLayerMode]) {
+				v.new_action = "change_layer_mode";
 			} else if($[changeStructure]) {
 				if(q.is_sneaking) {
 					v.new_action = "previous_structure";
@@ -1123,6 +1216,8 @@ function addPlayerControlsToRenderControllers(config, defaultPlayerRenderControl
 		toggleTint: itemCriteriaToMolang(config.CONTROLS.TOGGLE_TINT),
 		toggleValidating: itemCriteriaToMolang(config.CONTROLS.TOGGLE_VALIDATING),
 		changeLayer: itemCriteriaToMolang(config.CONTROLS.CHANGE_LAYER),
+		decreaseLayer: itemCriteriaToMolang(config.CONTROLS.DECREASE_LAYER),
+		changeLayerMode: itemCriteriaToMolang(config.CONTROLS.CHANGE_LAYER_MODE),
 		changeStructure: itemCriteriaToMolang(config.CONTROLS.CHANGE_STRUCTURE)
 	});
 	let movementControls = functionToMolang((q, v, moveHologram) => {
@@ -1418,7 +1513,6 @@ function stringifyWithFixedDecimals(value) {
  * @property {String} TINT_COLOR Hex RGB #xxxxxx
  * @property {Number} TINT_OPACITY 0-1
  * @property {Number} MINI_SCALE Size of ghost blocks when in the mini view for layers
- * @property {("single"|"all_below")} LAYER_MODE
  * @property {Number} TEXTURE_OUTLINE_WIDTH Measured in pixels, x ∈ [0, 1], x ∈ 2^ℝ
  * @property {String} TEXTURE_OUTLINE_COLOR A colour string
  * @property {Number} TEXTURE_OUTLINE_OPACITY 0-1
@@ -1444,7 +1538,8 @@ function stringifyWithFixedDecimals(value) {
  * @property {ItemCriteria} TOGGLE_TINT
  * @property {ItemCriteria} TOGGLE_VALIDATING
  * @property {ItemCriteria} CHANGE_LAYER Both for players and armour stands
- * @property {ItemCriteria} DECREASE_LAYER Armour stand only
+ * @property {ItemCriteria} DECREASE_LAYER
+ * @property {ItemCriteria} CHANGE_LAYER_MODE Single layer or all layers below
  * @property {ItemCriteria} MOVE_HOLOGRAM For players in third-person
  * @property {ItemCriteria} CHANGE_STRUCTURE For players only
  * @property {ItemCriteria} DISABLE_PLAYER_CONTROLS

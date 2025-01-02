@@ -305,10 +305,13 @@ export default class TextureAtlas {
 	 */
 	async #loadImages(textureFragments) {
 		let tgaLoader = new TGALoader();
-		return await Promise.all([...textureFragments].map(async ({ texturePath, tint, tint_like_png: tintLikePng, opacity, uv: sourceUv, uv_size: uvSize, croppable }) => {
+		let allTexturePaths = [...new Set([...textureFragments].map(textureFragment => textureFragment.texturePath))];
+		console.log(`Loading ${allTexturePaths.length} images for ${textureFragments.size} texture fragments`);
+		let allImageData = await Promise.all(allTexturePaths.map(async texturePath => {
 			let imageRes = await this.resourcePackStack.fetchResource(`${texturePath}.png`);
 			let imageData;
 			let imageIsTga = false;
+			let imageNotFound = false;
 			if(imageRes.ok) {
 				let image = await imageRes.toImage();
 				imageData = image.toImageData(); // defined in essential.js; just draws the image onto a canvas then gets the image data from there.
@@ -322,9 +325,17 @@ export default class TextureAtlas {
 				} else {
 					console.warn(`No texture found at ${texturePath}`);
 					imageData = stringToImageData(texturePath);
-					sourceUv = [0, 0];
-					uvSize = [1, 1];
+					imageNotFound = true;
 				}
+			}
+			return { imageData, imageIsTga, imageNotFound };
+		}));
+		let imageDataByTexturePath = new Map(allTexturePaths.map((texturePath, i) => [texturePath, allImageData[i]]));
+		return await Promise.all([...textureFragments].map(async ({ texturePath, tint, tint_like_png: tintLikePng, opacity, uv: sourceUv, uv_size: uvSize, croppable }) => {
+			let { imageData, imageIsTga, imageNotFound } = imageDataByTexturePath.get(texturePath);
+			if(imageNotFound) {
+				sourceUv = [0, 0];
+				uvSize = [1, 1];
 			}
 			if(tint) {
 				imageData = this.#tintImageData(imageData, tint, imageIsTga && !tintLikePng); // with tinted TGA images, only full-opacity pixels are tinted, and transparent pixels are made opaque.

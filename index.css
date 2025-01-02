@@ -272,6 +272,7 @@ input[type="checkbox"] {
 	background-image: repeating-linear-gradient(150deg, var(--bg-col-1) 0, var(--bg-col-1) 10px, var(--bg-col-2) 10px, var(--bg-col-2) 20px);
 	background-size: 200% !important;
 	transition: transform 0.15s;
+	min-width: min-content;
 }
 .packInfoButton.completed {
 	animation: moveButtonBackground 1s linear infinite;
