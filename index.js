@@ -135,6 +135,7 @@ document.onEvent("DOMContentLoaded", async () => {
 		}
 		label.appendChild(input);
 		playerControlsInputCont.appendChild(label);
+		input.setAttribute("default", input.value); // has to be called after being added to the DOM
 	});
 	
 	let clearResourcePackCacheButton = selectEl("#clearResourcePackCacheButton");
@@ -206,11 +207,15 @@ document.onEvent("DOMContentLoaded", async () => {
 				retranslating = false;
 			}
 		});
-		bodyObserver.observe(document.body, {
+		let observerConfig = {
 			childList: true,
 			subtree: true,
 			attributes: true,
 			attributeOldValue: true
+		};
+		bodyObserver.observe(document.body, observerConfig);
+		document.body.getAllChildren().filter(el => el.shadowRoot).forEach(el => {
+			bodyObserver.observe(el.shadowRoot, observerConfig);
 		});
 	});
 });
@@ -534,6 +539,9 @@ customElements.define("item-criteria-input", class extends HTMLElement {
 				this.#handleAttributeChange(...args);
 			});
 		}
+	}
+	formResetCallback() {
+		this.value = this.getAttribute("default") ?? "{}";
 	}
 	get form() {
 		return this.internals.form;
