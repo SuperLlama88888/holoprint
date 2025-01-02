@@ -382,6 +382,23 @@ export class CachingFetcher {
 	 * @returns {Promise<Response>}
 	 */
 	async retrieve(url) {
-		return await fetch(url);
+		const maxFetchAttempts = 3;
+		const fetchRetryTimeout = 500; // ms
+		let lastError;
+		for(let i = 0; i < maxFetchAttempts; i++) {
+			try {
+				return await fetch(url);
+			} catch(e) {
+				if(navigator.onLine && e instanceof TypeError && e.message == "Failed to fetch") { // random Chrome issue when fetching many images at the same time. observed when fetching 1600 images at the same time.
+					console.debug(`Failed to fetch resource at ${url}, trying again in ${fetchRetryTimeout}ms`);
+					lastError = e;
+					await sleep(fetchRetryTimeout);
+				} else {
+					throw e;
+				}
+			}
+		}
+		console.error(`Failed to fetch resource at ${url} after ${maxFetchAttempts} attempts...`);
+		throw lastError;
 	}
 }
