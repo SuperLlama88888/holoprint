@@ -1154,7 +1154,7 @@ function addPlayerControlsToRenderControllers(config, defaultPlayerRenderControl
 		v.attack = v.attack_time > 0 && (v.last_attack_time == 0 || v.attack_time < v.last_attack_time);
 		v.last_attack_time = v.attack_time;
 	});
-	let renderingControls = functionToMolang((q, v, toggleRendering, changeOpacity, toggleTint, toggleValidating, changeLayer, changeLayerMode, changeStructure) => {
+	let renderingControls = functionToMolang((q, v, toggleRendering, changeOpacity, toggleTint, toggleValidating, changeLayer, decreaseLayer, changeLayerMode, changeStructure) => {
 		if(v.attack) {
 			if($[toggleRendering]) {
 				v.new_action = "toggle_rendering";
@@ -1174,6 +1174,12 @@ function addPlayerControlsToRenderControllers(config, defaultPlayerRenderControl
 				} else {
 					v.new_action = "increase_layer";
 				}
+			} else if($[decreaseLayer]) { // saw some confusion about this, it was meant to be for decreasing layer at the armour stand not remotely by the player, but more options can never hurt. ig it makes it more accessible for players who can't sneak...?
+				if(q.is_sneaking) {
+					v.new_action = "increase_layer";
+				} else {
+					v.new_action = "decrease_layer";
+				}
 			} else if($[changeLayerMode]) {
 				v.new_action = "change_layer_mode";
 			} else if($[changeStructure]) {
@@ -1190,6 +1196,7 @@ function addPlayerControlsToRenderControllers(config, defaultPlayerRenderControl
 		toggleTint: itemCriteriaToMolang(config.CONTROLS.TOGGLE_TINT),
 		toggleValidating: itemCriteriaToMolang(config.CONTROLS.TOGGLE_VALIDATING),
 		changeLayer: itemCriteriaToMolang(config.CONTROLS.CHANGE_LAYER),
+		decreaseLayer: itemCriteriaToMolang(config.CONTROLS.DECREASE_LAYER),
 		changeLayerMode: itemCriteriaToMolang(config.CONTROLS.CHANGE_LAYER_MODE),
 		changeStructure: itemCriteriaToMolang(config.CONTROLS.CHANGE_STRUCTURE)
 	});
@@ -1511,7 +1518,7 @@ function stringifyWithFixedDecimals(value) {
  * @property {ItemCriteria} TOGGLE_TINT
  * @property {ItemCriteria} TOGGLE_VALIDATING
  * @property {ItemCriteria} CHANGE_LAYER Both for players and armour stands
- * @property {ItemCriteria} DECREASE_LAYER Armour stand only
+ * @property {ItemCriteria} DECREASE_LAYER
  * @property {ItemCriteria} CHANGE_LAYER_MODE Single layer or all layers below
  * @property {ItemCriteria} MOVE_HOLOGRAM For players in third-person
  * @property {ItemCriteria} CHANGE_STRUCTURE For players only
