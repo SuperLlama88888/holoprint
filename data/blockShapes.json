@@ -146,7 +146,7 @@
 		"daylight_detector": "daylight_detector",
 		"daylight_detector_inverted": "daylight_detector",
 		"portal": "nether_portal",
-		"iron_bars": "glass_pane",
+		"iron_bars": "iron_bars",
 		"piston_arm_collision": "piston_arm",
 		"sticky_piston_arm_collision": "piston_arm",
 		"end_portal_frame": "end_portal_frame",
