@@ -6,7 +6,7 @@ import TextureAtlas from "./TextureAtlas.js";
 import MaterialList from "./MaterialList.js";
 import PreviewRenderer from "./PreviewRenderer.js";
 
-import { awaitAllEntries, concatenateFiles, createEnum, hexColorToClampedTriplet, JSONMap, JSONSet, max, min, pi, sha256, translate } from "./essential.js";
+import { awaitAllEntries, concatenateFiles, createEnum, exp, hexColorToClampedTriplet, JSONMap, JSONSet, max, min, pi, sha256, translate } from "./essential.js";
 import ResourcePackStack from "./ResourcePackStack.js";
 
 export const IGNORED_BLOCKS = ["air", "piston_arm_collision", "sticky_piston_arm_collision"]; // blocks to be ignored when scanning the structure file
@@ -181,20 +181,8 @@ export async function makePack(structureFiles, config = {}, resourcePackStack, p
 	let structureWMolang = arrayToMolang(structureSizes.map(structureSize => structureSize[0]), "v.structure_index");
 	let structureHMolang = arrayToMolang(structureSizes.map(structureSize => structureSize[1]), "v.structure_index");
 	let structureDMolang = arrayToMolang(structureSizes.map(structureSize => structureSize[2]), "v.structure_index");
-	let makeHologramSpawnAnimation;
-	if(config.DO_SPAWN_ANIMATION) {
-		let totalAnimationLength = 0;
-		makeHologramSpawnAnimation = (x, y, z, structureSize) => {
-			let delay = config.SPAWN_ANIMATION_LENGTH * 0.25 * (structureSize[0] - x + y + structureSize[2] - z + Math.random() * 2) + 0.05;
-			delay = Number(delay.toFixed(2));
-			let animationEnd = Number((delay + config.SPAWN_ANIMATION_LENGTH).toFixed(2));
-			totalAnimationLength = max(totalAnimationLength, animationEnd);
-			hologramAnimations["animations"]["animation.armor_stand.hologram.spawn"]["animation_length"] = totalAnimationLength;
-			return {
-				"scale": `q.anim_time <= ${delay}? 0 : (q.anim_time >= ${animationEnd}? 1 : (1 - math.pow(1 - (q.anim_time - ${delay}) / ${config.SPAWN_ANIMATION_LENGTH}, 3)))`.replaceAll(" ", "")
-			};
-		};
-	} else {
+	
+	if(!config.DO_SPAWN_ANIMATION) {
 		// Totally empty animation
 		delete hologramAnimations["animations"]["animation.armor_stand.hologram.spawn"]["loop"];
 		delete hologramAnimations["animations"]["animation.armor_stand.hologram.spawn"]["bones"];
@@ -236,6 +224,26 @@ export async function makePack(structureFiles, config = {}, resourcePackStack, p
 		entityDescription["geometry"][geoShortName] = geoIdentifier;
 		hologramRenderControllers["render_controllers"]["controller.render.armor_stand.hologram"]["arrays"]["geometries"]["Array.geometries"].push(`Geometry.${geoShortName}`);
 		let blocksToValidate = [];
+		
+		let getSpawnAnimationDelay;
+		let makeHologramSpawnAnimation;
+		let spawnAnimationAnimatedBones = [];
+		if(config.DO_SPAWN_ANIMATION) {
+			let totalVolume = structureSize.reduce((a, b) => a * b);
+			let totalAnimationLength = 0;
+			getSpawnAnimationDelay = (x, y, z) => {
+				let randomness = 2 - 1.9 * exp(-0.005 * totalVolume); // 100 -> ~0.85, 1000 -> ~1.99, asymptotic to 2
+				return config.SPAWN_ANIMATION_LENGTH * 0.25 * (structureSize[0] - x + y + structureSize[2] - z + Math.random() * randomness);
+			};
+			makeHologramSpawnAnimation = delay => {
+				let animationEnd = Number((delay + config.SPAWN_ANIMATION_LENGTH).toFixed(2));
+				totalAnimationLength = max(totalAnimationLength, animationEnd);
+				hologramAnimations["animations"]["animation.armor_stand.hologram.spawn"]["animation_length"] = totalAnimationLength;
+				return {
+					"scale": `q.anim_time <= ${delay}? 0 : (q.anim_time >= ${animationEnd}? 1 : (1 - math.pow(1 - (q.anim_time - ${delay}) / ${config.SPAWN_ANIMATION_LENGTH}, 3)))`.replaceAll(" ", "")
+				};
+			};
+		}
 		for(let y = 0; y < structureSize[1]; y++) {
 			let layerName = `l_${y}`;
 			geo["bones"].push({
@@ -333,6 +341,9 @@ export async function makePack(structureFiles, config = {}, resourcePackStack, p
 						if(!firstBoneForThisBlock) {
 							boneName += `_${layerI}`;
 						}
+						if(config.DO_SPAWN_ANIMATION && structureI == 0) {
+							boneName += "_a"; // different bone name in order for the animation to not affect blocks in the same position in other structures
+						}
 						let bonePos = [-16 * x - 8, 16 * y, 16 * z - 8]; // I got these values from trial and error with blockbench (which makes the x negative I think. it's weird.)
 						let positionedBoneTemplate = blockGeoMaker.positionBoneTemplate(boneTemplate, bonePos);
 						let bonesToAdd = [{
@@ -374,8 +385,8 @@ export async function makePack(structureFiles, config = {}, resourcePackStack, p
 						if(firstBoneForThisBlock) { // we only need 1 locator for each block position, even though there may be 2 bones in this position because of the 2nd layer
 							hologramGeo["minecraft:geometry"][2]["bones"][1]["locators"][boneName] ??= bonePos.map(x => x + 8);
 						}
-						if(config.DO_SPAWN_ANIMATION) {
-							hologramAnimations["animations"]["animation.armor_stand.hologram.spawn"]["bones"][boneName] = makeHologramSpawnAnimation(x, y, z, structureSize);
+						if(config.DO_SPAWN_ANIMATION && structureI == 0) {
+							spawnAnimationAnimatedBones.push([boneName, getSpawnAnimationDelay(x, y, z)]);
 						}
 						
 						let blockName = blockPalette[paletteI]["name"];
@@ -397,6 +408,15 @@ export async function makePack(structureFiles, config = {}, resourcePackStack, p
 			}
 		}
 		hologramGeo["minecraft:geometry"].push(geo);
+		
+		if(config.DO_SPAWN_ANIMATION && structureI == 0) {
+			let minDelay = min(...spawnAnimationAnimatedBones.map(([, delay]) => delay));
+			spawnAnimationAnimatedBones.forEach(([boneName, delay]) => {
+				delay -= minDelay - 0.05;
+				delay = Number(delay.toFixed(2));
+				hologramAnimations["animations"]["animation.armor_stand.hologram.spawn"]["bones"][boneName] = makeHologramSpawnAnimation(delay);
+			});
+		}
 		
 		addBoundingBoxParticles(hologramAnimationControllers, structureI, structureSize);
 		addBlockValidationParticles(hologramAnimationControllers, structureI, blocksToValidate);
