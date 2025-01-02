@@ -9,6 +9,8 @@
 	"item_criteria_input.matching": "Matching:",
 	"item_criteria_input.nothing": "Nothing",
 	"item_criteria_input.or": " or ",
+	"item_criteria_input.error.empty": "Please enter item criteria",
+	"item_criteria_input.error.invalid": "Invalid item/tag name",
 	"metadata.description": "Description:",
 	"metadata.description.placeholder": "This is my epic house!",
 	"metadata.heading": "Metadata",

@@ -42,6 +42,7 @@ let structureFilesInput;
 let packNameInput;
 let completedPacksCont;
 let logger;
+let languageSelector;
 
 let supabaseLogger;
 
@@ -174,7 +175,7 @@ document.onEvent("DOMContentLoaded", async () => {
 		console.warn("Couldn't load language_names.json:", e);
 	});
 	
-	let languageSelector = selectEl("#languageSelector");
+	languageSelector = selectEl("#languageSelector");
 	fetch("translations/languages.json").then(res => res.jsonc()).then(languagesAndNames => {
 		languagesAndNames = Object.fromEntries(Object.entries(languagesAndNames).sort((a, b) => a[1] > b[1])); // sort alphabeticallly
 		let availableLanguages = Object.keys(languagesAndNames);
@@ -328,6 +329,19 @@ function performTranslationSubstitutions(el, translation) {
 		Object.entries(JSON.parse(el.dataset["translationSubstitutions"])).forEach(([original, substitution]) => {
 			translation = translation.replaceAll(original, substitution);
 		});
+	}
+	return translation;
+}
+async function translateCurrentLanguage(translationKey) {
+	let translation = await translate(translationKey, languageSelector.value);
+	if(!translation) {
+		translation = await translate(translationKey, "en");
+		if(translation) {
+			console.warn(`Couldn't find translation for ${translationKey} for language ${languageSelector.value}!`);
+		} else {
+			console.warn(`Couldn't find translation for ${translationKey} for language ${languageSelector.value} or English!`);
+			translation = translationKey;
+		}
 	}
 	return translation;
 }
@@ -529,7 +543,12 @@ customElements.define("item-criteria-input", class extends HTMLElement {
 				(this.shadowRoot.selectEl("input:invalid") ?? this.shadowRoot.selectEl("input:last-child") ?? this.shadowRoot.selectEl("#addItemButton")).focus();
 			}
 		});
-		
+		this.onEvent("blur", () => { // remove empty inputs when focus is lost
+			if([...this.#criteriaInputsCont.selectEls("input")].filter(input => input.value.trim() == "").map(input => input.remove()).length) {
+				this.#reportFormState();
+				this.#removeConsecutiveOrSpacers();
+			}
+		});
 	}
 	attributeChangedCallback(...args) { // called for all attributes in the tag before connectedCallback(), so we schedule them to be handled later
 		if(this.#connected) {
@@ -561,26 +580,24 @@ customElements.define("item-criteria-input", class extends HTMLElement {
 		this.#criteriaInputsCont.innerHTML = "";
 		let itemCriteria = JSON.parse(stringifiedValue.replaceAll("'", `"`));
 		itemCriteria["names"]?.forEach(itemName => {
-			this.#addNewInput("item", false);
-			this.#criteriaInputsCont.selectEl("input:last-child").value = itemName;
+			this.#addNewInput("item", false, itemName);
 		});
 		itemCriteria["tags"]?.forEach(tagName => {
-			this.#addNewInput("tag", false);
-			this.#criteriaInputsCont.selectEl("input:last-child").value = tagName;
+			this.#addNewInput("tag", false, tagName);
 		});
 	}
 	
-	#reportFormState() {
+	async #reportFormState() {
 		this.internals.setFormValue(this.value);
 		let allInputs = [...this.#criteriaInputsCont.selectEls("input")];
 		if(allInputs.length == 0) {
 			this.internals.setValidity({
 				tooShort: true
-			}, "Please enter item criteria");
+			}, await translateCurrentLanguage("item_criteria_input.error.empty"));
 		} else if(allInputs.some(el => !el.validity.valid)) {
 			this.internals.setValidity({
 				patternMismatch: true
-			}, "Invalid item/tag name");
+			}, await translateCurrentLanguage("item_criteria_input.error.invalid"));
 		} else {
 			this.internals.setValidity({});
 		}
@@ -598,7 +615,7 @@ customElements.define("item-criteria-input", class extends HTMLElement {
 		}
 		this.value = JSON.stringify(inputValue);
 	}
-	#addNewInput(type, autofocus = true) {
+	#addNewInput(type, autofocus = true, initialValue) {
 		const attributesByType = {
 			"item": `placeholder="Item name" list="itemNamesDatalist" class="itemNameInput" data-translate-placeholder="item_criteria_input.item_name"`,
 			"tag": `placeholder="Tag name" list="itemTagsDatalist" class="itemTagInput" data-translate-placeholder="item_criteria_input.item_tag"`
@@ -613,6 +630,9 @@ customElements.define("item-criteria-input", class extends HTMLElement {
 		}
 		let newInput = htmlCodeToElement(`<input type="text" required pattern="^\\s*(\\w+:)?\\w+\\s*$" spellcheck="false" autocapitalize="off" ${attributesByType[type]}/>`);
 		newInput.onEvent("keydown", this.#inputKeyDownEvent);
+		if(initialValue != undefined) {
+			newInput.value = initialValue;
+		}
 		this.#criteriaInputsCont.appendChild(newInput);
 		if(autofocus) {
 			newInput.focus();
@@ -620,20 +640,23 @@ customElements.define("item-criteria-input", class extends HTMLElement {
 		this.#reportFormState();
 	}
 	#inputKeyDownEvent = e => { // must be arrow function to keep class scope
-		if(e.target.value != "" && (e.key == "Tab" && e.target == this.#criteriaInputsCont.selectEl("input:last-child") || e.key == "Enter" || e.key == ",")) {
+		if(e.target.value != "" && (e.key == "Tab" && !e.shiftKey && e.target == this.#criteriaInputsCont.selectEl("input:last-child") || e.key == "Enter" || e.key == ",")) {
 			e.preventDefault();
 			this.#addNewInput(e.target.classList.contains("itemNameInput")? "item" : "tag");
 			this.#reportFormState();
 		} else if(e.key == "Backspace" && e.target.value == "") {
 			e.preventDefault();
 			e.target.remove();
-			[...this.#criteriaInputsCont.children].forEach(node => {
-				if(node instanceof HTMLSpanElement && (node.previousSibling instanceof HTMLSpanElement || !node.previousSibling || !node.nextSibling)) {
-					node.remove();
-				}
-			});
+			this.#removeConsecutiveOrSpacers();
 			this.focus();
 			this.#reportFormState();
 		}
 	};
+	#removeConsecutiveOrSpacers() {
+		[...this.#criteriaInputsCont.children].forEach(node => {
+			if(node instanceof HTMLSpanElement && (node.previousSibling instanceof HTMLSpanElement || !node.previousSibling || !node.nextSibling)) {
+				node.remove();
+			}
+		});
+	}
 });
