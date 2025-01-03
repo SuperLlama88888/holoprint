@@ -8,7 +8,7 @@ import "./essential.js";
 import LocalResourcePack from "./LocalResourcePack.js";
 import { CachingFetcher, sha256text } from "./essential.js";
 
-const defaultVanillaDataVersion = "v1.21.40.25-preview";
+const defaultVanillaDataVersion = "v1.21.50.29-preview";
 
 export default class ResourcePackStack {
 	static #JSON_FILES_TO_MERGE = ["blocks.json", "textures/terrain_texture.json", "textures/flipbook_textures.json"];

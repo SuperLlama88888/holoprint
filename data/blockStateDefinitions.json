@@ -25,7 +25,8 @@
 			},
 			"composter_fill_level": [42, 1, 1, 1, 1, 1, 1, 1, 2], // first is never used
 			"honey_level": [0, 0, 0, 0, 0, 1],
-			"moisturized_amount": [1, 0, 0, 0, 0, 0, 0, 0] // farmland
+			"moisturized_amount": [1, 0, 0, 0, 0, 0, 0, 0], // farmland
+			"tip": [0, 1] // pale hanging moss
 		},
 		"block_shapes": {
 			"cake": {
@@ -77,6 +78,9 @@
 			},
 			"nether_wart": {
 				"age": [0, 1, 2, 3]
+			},
+			"creaking_heart": {
+				"active": [0, 1]
 			}
 		}
 	},
