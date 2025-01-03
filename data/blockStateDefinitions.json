@@ -53,6 +53,11 @@
 			},
 			"chorus_flower": {
 				"age": [0, 0, 0, 0, 0, 1]
+			},
+			"hopper": {
+				"#exclusive_add": true,
+				"facing_direction": [0, 42, 2, 2, 2, 2], // since the entire hopper model is rotated, the side textures stay the same (hence 2, 2, 2, 2 instead of 2, 3, 4, 5)
+				"toggle_bit": [0, 8]
 			}
 		},
 		"block_names": {
@@ -188,8 +193,8 @@
 			"coral_direction": [[0, 90, 0], [0, -90, 0], [0, 180, 0], [0, 0, 0]]
 		},
 		"block_shapes": {
-			"button,lightning_rod": {
-				"facing_direction": { // button and lightning rod orientation for north/south/east/west is mirrored to that of pistons, which also use facing_direction
+			"button,lightning_rod,command_block": {
+				"facing_direction": { // button/lightning rod/command block orientation for north/south/east/west is mirrored to that of pistons, which also use facing_direction
 					"0": [180, 0, 0], // down
 					"1": [0, 0, 0], // up
 					"2": [90, 0, 0], // north

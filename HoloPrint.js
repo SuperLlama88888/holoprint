@@ -818,7 +818,11 @@ export async function makePack(structureFiles, config = {}, resourcePackStack, p
 			p.dataset.translationSubstitutions = JSON.stringify({
 				"{TOTAL_BLOCK_COUNT}": totalBlockCount
 			});
-			p.dataset.translate = "preview.click_to_view";
+			if(structureFiles.length == 1) {
+				p.dataset.translate = "preview.click_to_view";
+			} else {
+				p.dataset.translate = "preview.click_to_view_multiple";
+			}
 			message.appendChild(p);
 			message.onEvent("click", () => {
 				message.remove();
@@ -1131,7 +1135,7 @@ function addBoundingBoxParticles(hologramAnimationControllers, structureI, struc
  * @param {Array<Object>} blocksToValidate
  */
 function addBlockValidationParticles(hologramAnimationControllers, structureI, blocksToValidate) {
-	let blockValidationAnimation = {
+	let validateAllState = {
 		"particle_effects": [],
 		"transitions": [
 			{
@@ -1139,21 +1143,51 @@ function addBlockValidationParticles(hologramAnimationControllers, structureI, b
 			}
 		]
 	};
+	let validateAllStateName = `validate_${structureI}`;
+	let validationStates = hologramAnimationControllers["animation_controllers"]["controller.animation.armor_stand.hologram.block_validation"]["states"];
+	validationStates[validateAllStateName] = validateAllState;
+	let validateAllStateTransition = {
+		[validateAllStateName]: `v.validate_hologram && v.structure_index == ${structureI} && v.hologram_layer == -1`
+	};
+	validationStates["default"]["transitions"].push(validateAllStateTransition);
+	let layersWithBlocksToValidate = [];
 	blocksToValidate.forEach(blockToValidate => {
-		blockValidationAnimation["particle_effects"].push({
+		let [x, y, z] = blockToValidate["pos"];
+		let animationStateName = `validate_${structureI}_l_${y}`;
+		if(!(animationStateName in validationStates)) {
+			let layerAnimationState = {
+				"particle_effects": [],
+				"transitions": [
+					{
+						"default": "!v.validate_hologram"
+					},
+					validateAllStateTransition
+				]
+			};
+			layersWithBlocksToValidate.forEach(layerY => { // add transitions from this layer state to others
+				layerAnimationState["transitions"].push({
+					[`validate_${structureI}_l_${layerY}`]: `v.validate_hologram && v.structure_index == ${structureI} && v.hologram_layer == ${layerY}`
+				});
+			});
+			Object.values(validationStates).forEach(state => { // add transitions from other layer states (+ default/all layers) to this layer
+				state["transitions"].push({
+					[animationStateName]: `v.validate_hologram && v.structure_index == ${structureI} && v.hologram_layer == ${y}`
+				});
+			});
+			validationStates[animationStateName] = layerAnimationState;
+			layersWithBlocksToValidate.push(y);
+		}
+		let particleEffect = {
 			"effect": `validate_${blockToValidate["block"].replace(":", ".")}`,
 			"locator": blockToValidate["bone_name"],
 			"pre_effect_script": `
-				v.x = ${blockToValidate["pos"][0]};
-				v.y = ${blockToValidate["pos"][1]};
-				v.z = ${blockToValidate["pos"][2]};
+				v.x = ${x};
+				v.y = ${y};
+				v.z = ${z};
 			`.replaceAll(/\s/g, "") // this is only used for setting the wrong block overlay position; the particle's position is set using the locator
-		});
-	});
-	let animationStateName = `validate_${structureI}`;
-	hologramAnimationControllers["animation_controllers"]["controller.animation.armor_stand.hologram.block_validation"]["states"][animationStateName] = blockValidationAnimation;
-	hologramAnimationControllers["animation_controllers"]["controller.animation.armor_stand.hologram.block_validation"]["states"]["default"]["transitions"].push({
-		[animationStateName]: `v.validate_hologram && v.structure_index == ${structureI}`
+		};
+		validateAllState["particle_effects"].push(particleEffect);
+		validationStates[animationStateName]["particle_effects"].push(particleEffect);
 	});
 }
 

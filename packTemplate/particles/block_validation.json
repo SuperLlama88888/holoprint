@@ -50,7 +50,7 @@
 				"expression": "t.show_wrong_block_overlay = true; t.wrong_block_x = v.x; t.wrong_block_y = v.y; t.wrong_block_z = v.z;"
 			},
 			"clear_wrong_block_overlay": {
-				"expression": "v.x == t.wrong_block_x && v.y == t.wrong_block_y && v.z == t.wrong_block_z? { t.show_wrong_block_overlay = false; }; t.wrong_blocks = (t.wrong_blocks ?? 0) - 1;"
+				"expression": "v.x == t.wrong_block_x && v.y == t.wrong_block_y && v.z == t.wrong_block_z? { t.show_wrong_block_overlay = false; }; !v.kill_particles? { t.wrong_blocks = (t.wrong_blocks ?? 0) - 1; };" // remove wrong block overlay if the overlay is at this particle's position, and decrease wrong blocks counter if it expired by the block being placed (v.kill_particles will be true if the animation controller state changes)
 			}
 		}
 	}

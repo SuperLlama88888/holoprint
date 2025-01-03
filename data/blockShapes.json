@@ -26,7 +26,8 @@
 		"candle$": "candles",
 		"candle_cake$": "candle_cake",
 		"_tulip$": "cross_texture",
-		"anvil$": "anvil"
+		"anvil$": "anvil",
+		"command_block$": "command_block"
 	},
 	"individual_blocks": {
 		"bamboo": "bamboo",
