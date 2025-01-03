@@ -404,7 +404,7 @@ async function makePack(structureFiles, localResourcePacks) {
 			pack = await HoloPrint.makePack(structureFiles, config, resourcePackStack, previewCont);
 		} catch(e) {
 			console.error(`Pack creation failed: ${e}`);
-			if(e instanceof Error) { // DOMExceptions can also be thrown, which don't have stack traces and hence can't be tracked if caught.
+			if(!(e instanceof DOMException)) { // DOMExceptions can also be thrown, which don't have stack traces and hence can't be tracked if caught. HOWEVER they extend Error...
 				console.debug(getStackTrace(e).join("\n"));
 			}
 		}

@@ -46,7 +46,8 @@ export default class BlockGeoMaker {
 		"dark_oak_leaves": 0,
 		"carved_pumpkin": 0,
 		"lit_pumpkin": 1,
-		"pumpkin": 2
+		"pumpkin": 2,
+		"pale_oak_leaves": 0
 	};
 	
 	static #REDSTONE_DUST_TINTS = function() {

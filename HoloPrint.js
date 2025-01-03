@@ -700,7 +700,7 @@ export async function makePack(structureFiles, config = {}, resourcePackStack, p
 	console.log("Finalised material list:", finalisedMaterialList);
 	
 	// console.log(partitionedBlockCounts);
-	let missingItemAux = blockMetadata["data_items"].find(block => block.name == "minecraft:reserved6")["raw_id"];
+	let missingItemAux = blockMetadata["data_items"].find(block => block.name == "minecraft:reserved6")?.["raw_id"] ?? 0;
 	hudScreenUI["material_list_entries"]["controls"].push(...finalisedMaterialList.map(({ translationKey, partitionedCount, auxId }, i) => ({
 		[`material_list_${i}@hud.material_list_entry`]: {
 			"$item_translation_key": translationKey,

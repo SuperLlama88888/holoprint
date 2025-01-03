@@ -1416,6 +1416,40 @@
 			"size": [10, 6, 16]
 		}
 	],
+	"template_candle_flame": [
+		{
+			"pos": [-0.75, 0, 0],
+			"size": [1.5, 2, 0],
+			"rot": [0, 45, 0],
+			"pivot": [0, 0, 0],
+			"textures": {
+				"*": "textures/particle/particles"
+			},
+			"texture_size": [128, 128],
+			"uv": {
+				"*": [0, 24]
+			},
+			"uv_sizes": {
+				"*": [8, 8]
+			}
+		},
+		{
+			"pos": [-0.75, 0, 0],
+			"size": [1.5, 2, 0],
+			"rot": [0, -45, 0],
+			"pivot": [0, 0, 0],
+			"textures": {
+				"*": "textures/particle/particles"
+			},
+			"texture_size": [128, 128],
+			"uv": {
+				"*": [0, 24]
+			},
+			"uv_sizes": {
+				"*": [8, 8]
+			}
+		}
+	],
 	"template_candle_tall": [ // at origin
 		{
 			"pos": [0, 0, 0],
@@ -1443,6 +1477,11 @@
 			"uv": {
 				"*": [0, 5]
 			}
+		},
+		{
+			"if": "lit == 1",
+			"copy": "template_candle_flame",
+			"translate": [1, 7, 1]
 		}
 	],
 	"template_candle_medium": [
@@ -1472,6 +1511,11 @@
 			"uv": {
 				"*": [0, 5]
 			}
+		},
+		{
+			"if": "lit == 1",
+			"copy": "template_candle_flame",
+			"translate": [1, 6, 1]
 		}
 	],
 	"template_candle_short": [
@@ -1501,6 +1545,11 @@
 			"uv": {
 				"*": [0, 5]
 			}
+		},
+		{
+			"if": "lit == 1",
+			"copy": "template_candle_flame",
+			"translate": [1, 4, 1]
 		}
 	],
 	"candles": [
@@ -3659,6 +3708,86 @@
 				"side": "up",
 				"up": "north"
 			}
+		}
+	],
+	"pale_moss_carpet": [
+		{
+			"if": "upper_block_bit == 0",
+			"copy": "carpet"
+		},
+		{
+			"if": "pale_moss_carpet_side_west == tall",
+			"pos": [15.875, 0, 0],
+			"size": [0, 16, 16],
+			"textures": {
+				"*": "carried"
+			},
+			"variant": 0
+		},
+		{
+			"if": "pale_moss_carpet_side_west == short",
+			"pos": [15.875, 0, 0],
+			"size": [0, 16, 16],
+			"textures": {
+				"*": "carried"
+			},
+			"variant": 1
+		},
+		{
+			"if": "pale_moss_carpet_side_east == tall",
+			"pos": [0.125, 0, 0],
+			"size": [0, 16, 16],
+			"textures": {
+				"*": "carried"
+			},
+			"variant": 0
+		},
+		{
+			"if": "pale_moss_carpet_side_east == short",
+			"pos": [0.125, 0, 0],
+			"size": [0, 16, 16],
+			"textures": {
+				"*": "carried"
+			},
+			"variant": 1
+		},
+		{
+			"if": "pale_moss_carpet_side_north == tall",
+			"pos": [0, 0, 0.125],
+			"size": [16, 16, 0],
+			"textures": {
+				"*": "carried"
+			},
+			"variant": 0,
+			"flip_textures_horizontally": ["*"]
+		},
+		{
+			"if": "pale_moss_carpet_side_north == short",
+			"pos": [0, 0, 0.125],
+			"size": [16, 16, 0],
+			"textures": {
+				"*": "carried"
+			},
+			"variant": 1,
+			"flip_textures_horizontally": ["*"]
+		},
+		{
+			"if": "pale_moss_carpet_side_south == tall",
+			"pos": [0, 0, 15.875],
+			"size": [16, 16, 0],
+			"textures": {
+				"*": "carried"
+			},
+			"variant": 0
+		},
+		{
+			"if": "pale_moss_carpet_side_south == short",
+			"pos": [0, 0, 15.875],
+			"size": [16, 16, 0],
+			"textures": {
+				"*": "carried"
+			},
+			"variant": 1
 		}
 	],
 	"debug_auto_uv_4": [{"pos":[0,0,0],"size":[4,4,4]},{"pos":[0,0,4],"size":[4,4,4]},{"pos":[0,0,8],"size":[4,4,4]},{"pos":[0,0,12],"size":[4,4,4]},{"pos":[0,4,0],"size":[4,4,4]},{"pos":[0,4,4],"size":[4,4,4]},{"pos":[0,4,8],"size":[4,4,4]},{"pos":[0,4,12],"size":[4,4,4]},{"pos":[0,8,0],"size":[4,4,4]},{"pos":[0,8,4],"size":[4,4,4]},{"pos":[0,8,8],"size":[4,4,4]},{"pos":[0,8,12],"size":[4,4,4]},{"pos":[0,12,0],"size":[4,4,4]},{"pos":[0,12,4],"size":[4,4,4]},{"pos":[0,12,8],"size":[4,4,4]},{"pos":[0,12,12],"size":[4,4,4]},{"pos":[4,0,0],"size":[4,4,4]},{"pos":[4,0,4],"size":[4,4,4]},{"pos":[4,0,8],"size":[4,4,4]},{"pos":[4,0,12],"size":[4,4,4]},{"pos":[4,4,0],"size":[4,4,4]},{"pos":[4,4,12],"size":[4,4,4]},{"pos":[4,8,0],"size":[4,4,4]},{"pos":[4,8,12],"size":[4,4,4]},{"pos":[4,12,0],"size":[4,4,4]},{"pos":[4,12,4],"size":[4,4,4]},{"pos":[4,12,8],"size":[4,4,4]},{"pos":[4,12,12],"size":[4,4,4]},{"pos":[8,0,0],"size":[4,4,4]},{"pos":[8,0,4],"size":[4,4,4]},{"pos":[8,0,8],"size":[4,4,4]},{"pos":[8,0,12],"size":[4,4,4]},{"pos":[8,4,0],"size":[4,4,4]},{"pos":[8,4,12],"size":[4,4,4]},{"pos":[8,8,0],"size":[4,4,4]},{"pos":[8,8,12],"size":[4,4,4]},{"pos":[8,12,0],"size":[4,4,4]},{"pos":[8,12,4],"size":[4,4,4]},{"pos":[8,12,8],"size":[4,4,4]},{"pos":[8,12,12],"size":[4,4,4]},{"pos":[12,0,0],"size":[4,4,4]},{"pos":[12,0,4],"size":[4,4,4]},{"pos":[12,0,8],"size":[4,4,4]},{"pos":[12,0,12],"size":[4,4,4]},{"pos":[12,4,0],"size":[4,4,4]},{"pos":[12,4,4],"size":[4,4,4]},{"pos":[12,4,8],"size":[4,4,4]},{"pos":[12,4,12],"size":[4,4,4]},{"pos":[12,8,0],"size":[4,4,4]},{"pos":[12,8,4],"size":[4,4,4]},{"pos":[12,8,8],"size":[4,4,4]},{"pos":[12,8,12],"size":[4,4,4]},{"pos":[12,12,0],"size":[4,4,4]},{"pos":[12,12,4],"size":[4,4,4]},{"pos":[12,12,8],"size":[4,4,4]},{"pos":[12,12,12],"size":[4,4,4]}] // function genDebugGeo(step) {let boneCubes = [];for(let x = 0; x < 16; x += step) {for(let y = 0; y < 16; y += step) {for(let z = 0; z < 16; z += step) {if(!x || !y || !z || x == 16 - step || y == 16 - step || z == 16 - step) {boneCubes.push({ pos: [x, y, z], size: [step, step, step] });}}}}return JSON.stringify(boneCubes);}
