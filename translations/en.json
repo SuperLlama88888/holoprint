@@ -30,6 +30,7 @@
 	"player_controls.change_structure": "Change structure",
 	"player_controls.disable_player_controls": "Disable player controls",
 	"preview.click_to_view": "View preview<br/><small>({TOTAL_BLOCK_COUNT} blocks)</small>",
+	"preview.click_to_view_multiple": "View previews<br/><small>({TOTAL_BLOCK_COUNT} blocks)</small>", // "previews" is plural here
 	"preview.loading": "Loading preview...",
 	"progress.generating": "Making pack...",
 	"reset": "Reset",

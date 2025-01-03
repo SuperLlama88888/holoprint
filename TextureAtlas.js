@@ -376,7 +376,9 @@ export default class TextureAtlas {
 					"w": w / old.w,
 					"h": h / old.h
 				};
-				console.debug(`Cropped part of image ${texturePath} to`, crop);
+				if(crop["x"] != 0 && crop["y"] != 0 && crop["w"] != 1 && crop["h"] != 1) {
+					console.debug(`Cropped part of image ${texturePath} to`, crop);
+				}
 			}
 			let imageFragment = {
 				"image": image,
@@ -581,7 +583,8 @@ export default class TextureAtlas {
 	 * @returns {ImageData}
 	 */
 	#tintImageData(imageData, tint, onlyAlpha = false) {
-		let data = imageData.data;
+		let newImageData = new ImageData(new Uint8ClampedArray(imageData.data), imageData.width, imageData.height);
+		let data = newImageData.data;
 		for(let i = 0; i < data.length; i += 4) {
 			if(!onlyAlpha || data[i + 3] == 255) { // only tint pixels with full opacity. this happens with grass block side, where the top has full opacity and the bottom has 0 opacity.
 				data[i] *= tint[0];
@@ -592,7 +595,7 @@ export default class TextureAtlas {
 				data[i + 3] = 255;
 			}
 		}
-		return imageData;
+		return newImageData;
 	}
 	/**
 	 * Sets the opacity of pixels in some image data.
@@ -601,11 +604,12 @@ export default class TextureAtlas {
 	 * @returns {ImageData}
 	 */
 	#setImageDataOpacity(imageData, opacity) {
-		let data = imageData.data;
+		let newImageData = new ImageData(new Uint8ClampedArray(imageData.data), imageData.width, imageData.height);
+		let data = newImageData.data;
 		for(let i = 0; i < data.length; i += 4) {
 			data[i + 3] *= opacity;
 		}
-		return imageData;
+		return newImageData;
 	}
 }
 
