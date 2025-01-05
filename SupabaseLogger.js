@@ -4,7 +4,7 @@ export default class SupabaseLogger {
 	supabase;
 	
 	constructor(projectUrl, apiKey) {
-		this.supabase = import("@supabase/supabase-js@2").then(supabaseLib => supabaseLib.createClient(projectUrl, apiKey));
+		this.supabase = import("@supabase/supabase-js").then(supabaseLib => supabaseLib.createClient(projectUrl, apiKey));
 	}
 	/**
 	 * Records the creation of a pack from structure files in a Supabase server, based on file hashes.

@@ -1,6 +1,6 @@
 import { awaitAllEntries, ceil, floor, hexColorToClampedTriplet, JSONSet, max, range, stringToImageData } from "./essential.js";
-import TGALoader from "tga-js@1.1.1"; // We could use dynamic import as this isn't used all the time but it's so small it won't matter
-import potpack from "potpack@2.0.0";
+import TGALoader from "tga-js"; // We could use dynamic import as this isn't used all the time but it's so small it won't matter
+import potpack from "potpack";
 import ResourcePackStack from "./ResourcePackStack.js";
 
 const foliageTint = hexColorToClampedTriplet("#79C05A");

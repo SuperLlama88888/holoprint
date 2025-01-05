@@ -1,5 +1,5 @@
-import * as NBT from "nbtify@2.0.0";
-import JSZip from "jszip@3.10.1";
+import * as NBT from "nbtify";
+import JSZip from "jszip";
 
 import BlockGeoMaker from "./BlockGeoMaker.js";
 import TextureAtlas from "./TextureAtlas.js";
