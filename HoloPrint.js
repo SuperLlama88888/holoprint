@@ -1646,7 +1646,7 @@ function stringifyWithFixedDecimals(value) {
  * @property {String} translatedName
  * @property {Number} count How many of this item is required
  * @property {String} partitionedCount A formatted string representing partitions of the total count
- * @property {Number} auxId The item's aux ID
+ * @property {Number|undefined} auxId The item's aux ID
  */
 /**
  * 2D vector.
