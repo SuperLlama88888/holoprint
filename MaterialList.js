@@ -79,7 +79,10 @@ export default class MaterialList {
 		"item.player_head": "item.skull.player",
 		"item.skeleton_skull": "item.skull.skeleton",
 		"item.wither_skeleton_skull": "item.skull.wither",
-		"item.zombie_head": "item.skull.zombie",
+		"item.zombie_head": "item.skull.zombie"
+	};
+	static #blockSerializationIdPatches = {
+		"end_gateway": "tile.end_gateway" // despite still existing, end gateways were removed from mojang-blocks.json in 1.21.50...
 	};
 	/** Translations that JUST DON'T EXIST because Bugrock :/ */
 	static #translationPatches = {
@@ -153,7 +156,7 @@ export default class MaterialList {
 	export() {
 		return [...this.materials].sort((a, b) => b[1] - a[1]).map(([itemName, count]) => {
 			// try item translation key; if that doesn't work, try block translation key
-			let serializationId = this.#findItemSerializationId(itemName);
+			let serializationId = MaterialList.#blockSerializationIdPatches[itemName] ?? this.#findItemSerializationId(itemName);
 			let translatedName = serializationId && this.#translate(serializationId);
 			if(!translatedName) {
 				let blockSerializationId = this.#findBlockSerializationId(itemName);

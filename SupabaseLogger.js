@@ -4,7 +4,7 @@ export default class SupabaseLogger {
 	supabase;
 	
 	constructor(projectUrl, apiKey) {
-		this.supabase = import("https://esm.run/@supabase/supabase-js@2").then(supabaseLib => supabaseLib.createClient(projectUrl, apiKey));
+		this.supabase = import("@supabase/supabase-js").then(supabaseLib => supabaseLib.createClient(projectUrl, apiKey));
 	}
 	/**
 	 * Records the creation of a pack from structure files in a Supabase server, based on file hashes.
@@ -20,7 +20,7 @@ export default class SupabaseLogger {
 		let shortFileHashes = fullFileHashes.map(fullFileHash => fullFileHash.slice(0, 8));
 		// console.log(`Full file hashes: ${fullFileHashes}`);
 		let combinedFileHash = (await sha256(concatenateFiles(structureFiles))).toHexadecimalString().slice(0, 8);
-		console.log(`Finished hashing structure files! Together: ${combinedFileHash}, individually:`, shortFileHashes);
+		console.debug(`Finished hashing structure files! Together: ${combinedFileHash}, individually:`, shortFileHashes);
 		
 		let res = await this.supabase.rpc("record_structure_usage_v2", {
 			"file_hashes": shortFileHashes,

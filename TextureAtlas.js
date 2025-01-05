@@ -1,6 +1,6 @@
 import { awaitAllEntries, ceil, floor, hexColorToClampedTriplet, JSONSet, max, range, stringToImageData } from "./essential.js";
-import TGALoader from "https://esm.run/tga-js@1.1.1"; // We could use dynamic import as this isn't used all the time but it's so small it won't matter
-import potpack from "https://esm.run/potpack@2.0.0";
+import TGALoader from "tga-js"; // We could use dynamic import as this isn't used all the time but it's so small it won't matter
+import potpack from "potpack";
 import ResourcePackStack from "./ResourcePackStack.js";
 
 const foliageTint = hexColorToClampedTriplet("#79C05A");
@@ -22,7 +22,7 @@ export default class TextureAtlas {
 	
 	// All the blocks in blocks.json that should use carried textures
 	// to check: calibrated_sculk_sensor, sculk_sensor, sculk_shrieker
-	static #blocksDotJsonCarriedTextures = ["acacia_leaves", "birch_leaves", "dark_oak_leaves", "fern", "jungle_leaves", "leaves", "leaves2", "light_block", "light_block_0", "light_block_1", "light_block_2", "light_block_3", "light_block_4", "light_block_5", "light_block_6", "light_block_7", "light_block_8", "light_block_9", "light_block_10", "light_block_11", "light_block_12", "light_block_13", "light_block_14", "light_block_15", "mangrove_leaves", "oak_leaves", "short_grass", "spruce_leaves", "vine", "waterlily"];
+	static #blocksDotJsonCarriedTextures = ["acacia_leaves", "birch_leaves", "dark_oak_leaves", "fern", "jungle_leaves", "leaves", "leaves2", "light_block", "light_block_0", "light_block_1", "light_block_2", "light_block_3", "light_block_4", "light_block_5", "light_block_6", "light_block_7", "light_block_8", "light_block_9", "light_block_10", "light_block_11", "light_block_12", "light_block_13", "light_block_14", "light_block_15", "mangrove_leaves", "oak_leaves", "open_eyeblossom", "short_grass", "spruce_leaves", "vine", "waterlily"];
 	
 	/** Blocks that are transparent and need a certain opacity applied to them */
 	static #transparentBlocks = {
@@ -376,7 +376,7 @@ export default class TextureAtlas {
 					"w": w / old.w,
 					"h": h / old.h
 				};
-				if(crop["x"] != 0 && crop["y"] != 0 && crop["w"] != 1 && crop["h"] != 1) {
+				if(crop["x"] != 0 || crop["y"] != 0 || crop["w"] != 1 || crop["h"] != 1) {
 					console.debug(`Cropped part of image ${texturePath} to`, crop);
 				}
 			}

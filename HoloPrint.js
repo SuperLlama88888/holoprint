@@ -1,5 +1,5 @@
-import * as NBT from "https://esm.run/nbtify@2.0.0";
-import JSZip from "https://esm.run/jszip@3.10.1";
+import * as NBT from "nbtify";
+import JSZip from "jszip";
 
 import BlockGeoMaker from "./BlockGeoMaker.js";
 import TextureAtlas from "./TextureAtlas.js";
@@ -700,7 +700,7 @@ export async function makePack(structureFiles, config = {}, resourcePackStack, p
 	console.log("Finalised material list:", finalisedMaterialList);
 	
 	// console.log(partitionedBlockCounts);
-	let missingItemAux = blockMetadata["data_items"].find(block => block.name == "minecraft:reserved6")["raw_id"];
+	let missingItemAux = blockMetadata["data_items"].find(block => block.name == "minecraft:reserved6")?.["raw_id"] ?? 0;
 	hudScreenUI["material_list_entries"]["controls"].push(...finalisedMaterialList.map(({ translationKey, partitionedCount, auxId }, i) => ({
 		[`material_list_${i}@hud.material_list_entry`]: {
 			"$item_translation_key": translationKey,
@@ -1646,7 +1646,7 @@ function stringifyWithFixedDecimals(value) {
  * @property {String} translatedName
  * @property {Number} count How many of this item is required
  * @property {String} partitionedCount A formatted string representing partitions of the total count
- * @property {Number} auxId The item's aux ID
+ * @property {Number|undefined} auxId The item's aux ID
  */
 /**
  * 2D vector.

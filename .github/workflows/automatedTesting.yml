@@ -46,3 +46,13 @@ jobs:
         with:
           name: screenshots_${{ matrix.browser }}
           path: tests/screenshots
+  check-block-translation-coverage:
+    name: Check Block Translation Coverage
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4.1.1
+      - name: Check block translation coverage
+        run: |
+          npm install @actions/core puppeteer mime-types
+          node tests/checkBlockTranslationCoverage.js

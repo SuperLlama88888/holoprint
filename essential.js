@@ -1,6 +1,6 @@
 // Small functions that don't do anything specific to HoloPrint's main functionality
 
-import stripJsonComments from "https://esm.run/strip-json-comments@5.0.1";
+import stripJsonComments from "strip-json-comments";
 
 /** @returns {Element|null} */
 export const selectEl = selector => document.querySelector(selector);
