@@ -1,7 +1,7 @@
 // Allows us to stack multiple resource packs on top of each other and get a singular resource, much like Minecraft would do.
 // Currently this just grabs the vanilla resources.
 
-import { all as mergeObjects } from "https://esm.run/deepmerge@4.3.1";
+import { all as mergeObjects } from "deepmerge@4.3.1";
 
 import "./essential.js";
 

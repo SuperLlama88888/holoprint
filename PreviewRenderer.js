@@ -27,8 +27,8 @@ export default class PreviewRenderer {
 			loadingMessage.appendChild(p);
 			cont.appendChild(loadingMessage);
 			
-			THREE ??= await import("https://esm.run/three@0.147"); // @bridge-editor/model-viewer uses this version :(
-			StandaloneModelViewer ??= (await import("https://esm.run/@bridge-editor/model-viewer")).StandaloneModelViewer;
+			THREE ??= await import("three@0.147"); // @bridge-editor/model-viewer uses this version :(
+			StandaloneModelViewer ??= (await import("@bridge-editor/model-viewer@0.8.1")).StandaloneModelViewer;
 			
 			let can = document.createElement("canvas");
 			(new MutationObserver(mutations => {
