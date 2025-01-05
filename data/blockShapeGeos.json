@@ -4112,5 +4112,141 @@
 			"translate": [3, 0, 2.5]
 		}
 	],
+	"bamboo": [
+		{
+			"if": "bamboo_stalk_thickness == thin",
+			"pos": [7, 0, 7],
+			"size": [2, 16, 2],
+			"textures": {
+				"*": "north"
+			},
+			"uv": {
+				"side": [9, 0],
+				"up": [13, 0],
+				"down": [13, 0]
+			}
+		},
+		{
+			"if": "bamboo_stalk_thickness == thick",
+			"pos": [7, 0, 7],
+			"size": [3, 16, 3],
+			"textures": {
+				"*": "north"
+			},
+			"uv": {
+				"side": [9, 0],
+				"up": [13, 0],
+				"down": [13, 0]
+			}
+		},
+		{
+			"if": "bamboo_leaf_size == small_leaves && bamboo_stalk_thickness == thin",
+			"pos": [0, 0, 8],
+			"size": [16, 16, 0],
+			"textures": {
+				"*": "south"
+			}
+		},
+		{
+			"if": "bamboo_leaf_size == small_leaves && bamboo_stalk_thickness == thin",
+			"pos": [8, 0, 0],
+			"size": [0, 16, 16],
+			"textures": {
+				"*": "south"
+			}
+		},
+		{
+			"if": "bamboo_leaf_size == small_leaves && bamboo_stalk_thickness == thick",
+			"pos": [2, 0, 8],
+			"size": [5, 16, 0],
+			"textures": {
+				"*": "south"
+			}
+		},
+		{
+			"if": "bamboo_leaf_size == small_leaves && bamboo_stalk_thickness == thick",
+			"pos": [10, 0, 8],
+			"size": [6, 16, 0],
+			"textures": {
+				"*": "south"
+			},
+			"uv": {
+				"*": [9, 0]
+			}
+		},
+		{
+			"if": "bamboo_leaf_size == small_leaves && bamboo_stalk_thickness == thick",
+			"pos": [8, 0, 2],
+			"size": [0, 16, 5],
+			"textures": {
+				"*": "south"
+			}
+		},
+		{
+			"if": "bamboo_leaf_size == small_leaves && bamboo_stalk_thickness == thick",
+			"pos": [8, 0, 10],
+			"size": [0, 16, 6],
+			"textures": {
+				"*": "south"
+			},
+			"uv": {
+				"*": [9, 0]
+			}
+		},
+		{
+			"if": "bamboo_leaf_size == large_leaves",
+			"pos": [0, 0, 8.5],
+			"size": [16, 16, 0],
+			"textures": {
+				"*": "up"
+			}
+		},
+		{
+			"if": "bamboo_leaf_size == large_leaves",
+			"pos": [8.5, 0, 0],
+			"size": [0, 16, 16],
+			"textures": {
+				"*": "up"
+			}
+		}
+	],
+	"azalea": [
+		{
+			"pos": [0, 5, 0],
+			"size": [16, 11, 16],
+			"textures": {
+				"down": "none",
+				"side": "side" // azalea in blocks.json has textures for each side as well as "side", so I need to specify here that all sides should use "side" and not north/south/whatever
+			}
+		},
+		{
+			"pos": [-2, 0, 8],
+			"size": [20, 16, 0],
+			"rot": [0, 45, 0],
+			"textures": {
+				"*": "east"
+			},
+			"uv": {
+				"*": [0, 0]
+			},
+			"uv_sizes": {
+				"*": [16, 16]
+			}
+		},
+		{
+			"pos": [-2, 0, 8],
+			"size": [20, 16, 0],
+			"rot": [0, -45, 0],
+			"textures": {
+				"*": "east"
+			},
+			"uv": {
+				"*": [0, 0]
+			},
+			"uv_sizes": {
+				"*": [16, 16]
+			}
+		}
+	],
 	"debug_auto_uv_4": [{"pos":[0,0,0],"size":[4,4,4]},{"pos":[0,0,4],"size":[4,4,4]},{"pos":[0,0,8],"size":[4,4,4]},{"pos":[0,0,12],"size":[4,4,4]},{"pos":[0,4,0],"size":[4,4,4]},{"pos":[0,4,4],"size":[4,4,4]},{"pos":[0,4,8],"size":[4,4,4]},{"pos":[0,4,12],"size":[4,4,4]},{"pos":[0,8,0],"size":[4,4,4]},{"pos":[0,8,4],"size":[4,4,4]},{"pos":[0,8,8],"size":[4,4,4]},{"pos":[0,8,12],"size":[4,4,4]},{"pos":[0,12,0],"size":[4,4,4]},{"pos":[0,12,4],"size":[4,4,4]},{"pos":[0,12,8],"size":[4,4,4]},{"pos":[0,12,12],"size":[4,4,4]},{"pos":[4,0,0],"size":[4,4,4]},{"pos":[4,0,4],"size":[4,4,4]},{"pos":[4,0,8],"size":[4,4,4]},{"pos":[4,0,12],"size":[4,4,4]},{"pos":[4,4,0],"size":[4,4,4]},{"pos":[4,4,12],"size":[4,4,4]},{"pos":[4,8,0],"size":[4,4,4]},{"pos":[4,8,12],"size":[4,4,4]},{"pos":[4,12,0],"size":[4,4,4]},{"pos":[4,12,4],"size":[4,4,4]},{"pos":[4,12,8],"size":[4,4,4]},{"pos":[4,12,12],"size":[4,4,4]},{"pos":[8,0,0],"size":[4,4,4]},{"pos":[8,0,4],"size":[4,4,4]},{"pos":[8,0,8],"size":[4,4,4]},{"pos":[8,0,12],"size":[4,4,4]},{"pos":[8,4,0],"size":[4,4,4]},{"pos":[8,4,12],"size":[4,4,4]},{"pos":[8,8,0],"size":[4,4,4]},{"pos":[8,8,12],"size":[4,4,4]},{"pos":[8,12,0],"size":[4,4,4]},{"pos":[8,12,4],"size":[4,4,4]},{"pos":[8,12,8],"size":[4,4,4]},{"pos":[8,12,12],"size":[4,4,4]},{"pos":[12,0,0],"size":[4,4,4]},{"pos":[12,0,4],"size":[4,4,4]},{"pos":[12,0,8],"size":[4,4,4]},{"pos":[12,0,12],"size":[4,4,4]},{"pos":[12,4,0],"size":[4,4,4]},{"pos":[12,4,4],"size":[4,4,4]},{"pos":[12,4,8],"size":[4,4,4]},{"pos":[12,4,12],"size":[4,4,4]},{"pos":[12,8,0],"size":[4,4,4]},{"pos":[12,8,4],"size":[4,4,4]},{"pos":[12,8,8],"size":[4,4,4]},{"pos":[12,8,12],"size":[4,4,4]},{"pos":[12,12,0],"size":[4,4,4]},{"pos":[12,12,4],"size":[4,4,4]},{"pos":[12,12,8],"size":[4,4,4]},{"pos":[12,12,12],"size":[4,4,4]}] // function genDebugGeo(step) {let boneCubes = [];for(let x = 0; x < 16; x += step) {for(let y = 0; y < 16; y += step) {for(let z = 0; z < 16; z += step) {if(!x || !y || !z || x == 16 - step || y == 16 - step || z == 16 - step) {boneCubes.push({ pos: [x, y, z], size: [step, step, step] });}}}}return JSON.stringify(boneCubes);}
 }

@@ -30,6 +30,7 @@
 		"command_block$": "command_block"
 	},
 	"individual_blocks": {
+		"bamboo_sapling": "cross_texture",
 		"bamboo": "bamboo",
 		"beacon": "beacon",
 		"bed": "bed",
