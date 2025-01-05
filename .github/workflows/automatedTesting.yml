@@ -52,7 +52,7 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4.1.1
-      - name: Validate JSON Data
+      - name: Check block translation coverage
         run: |
           npm install @actions/core
           echo '{ "type": "module" }' > package.json
