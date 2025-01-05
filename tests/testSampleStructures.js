@@ -28,21 +28,22 @@ test();
 async function test() {
 	let uploadedPackFilePaths = [];
 	
+	let indexPage = await fs.promises.readFile(path.join(__dirname, "../index.html"), "utf-8");
+	let headImportMap = indexPage.match(/<script type="importmap">[^]+?<\/script>/)[0];
+	indexPage = indexPage.replace(/<head>[^]+<\/body>/, `
+		<head>${headImportMap}</head>
+		<body style="background: transparent;">
+			<div id="previewCont"></div>
+		</body>
+	`);
+	
 	let server = http.createServer((req, res) => {
 		if(req.method == "GET") {
-			if(req.url == "/") { // tests will be run on this
+			if(req.url == "/") {
 				res.writeHead(200, {
 					"Content-Type": "text/html"
 				});
-				res.write(`
-					<!DOCTYPE html>
-					<html>
-						<head></head>
-						<body style="background: transparent;">
-							<div id="previewCont"></div>
-						</body>
-					</html>
-				`);
+				res.write(indexPage);
 				res.end();
 				return;
 			}
@@ -160,7 +161,7 @@ async function test() {
 	
 	await browser.close();
 	
-	if(status.passedTest) {
+	if(packsCreated == testStructurePaths.length && status.passedTest) {
 		console.log("Passed test!");
 		process.exit(0);
 	} else {
