@@ -4248,5 +4248,72 @@
 			}
 		}
 	],
+	"cocoa": [
+		{
+			"if": "age == 0",
+			"pos": [6, 7, 11],
+			"size": [4, 5, 4],
+			"uv": {
+				"side": [11, 4],
+				"up": [0, 0],
+				"down": [0, 0]
+			}
+		},
+		{
+			"if": "age == 1",
+			"pos": [5, 5, 9],
+			"size": [6, 7, 6],
+			"uv": {
+				"side": [9, 4],
+				"up": [0, 0],
+				"down": [0, 0]
+			}
+		},
+		{
+			"if": "age == 2",
+			"pos": [4, 3, 7],
+			"size": [8, 9, 8],
+			"uv": {
+				"side": [7, 4],
+				"up": [0, 0],
+				"down": [0, 0]
+			},
+			"uv_sizes": { // top/bottom texture is streched from 7x7 to 8x8 on fully grown cocoa beans
+				"up": [7, 7],
+				"down": [7, 7]
+			}
+		},
+		{
+			"pos": [8, 12, 12],
+			"size": [0, 4, 4],
+			"uv": {
+				"*": [12, 0]
+			}
+		}
+	],
+	"beacon": [
+		{
+			"pos": [0, 0, 0],
+			"size": [16, 16, 16],
+			"textures": {
+				"down": "side",
+				"*": "none" // the other glass shell culls the rest of the beacon, so I had to  remove it except for at the bottom :(
+			}
+		},
+		{
+			"pos": [2, 0, 2],
+			"size": [12, 3, 12],
+			"textures": {
+				"*": "down"
+			}
+		},
+		{
+			"pos": [3, 3, 3],
+			"size": [10, 11, 10],
+			"textures": {
+				"*": "up"
+			}
+		}
+	],
 	"debug_auto_uv_4": [{"pos":[0,0,0],"size":[4,4,4]},{"pos":[0,0,4],"size":[4,4,4]},{"pos":[0,0,8],"size":[4,4,4]},{"pos":[0,0,12],"size":[4,4,4]},{"pos":[0,4,0],"size":[4,4,4]},{"pos":[0,4,4],"size":[4,4,4]},{"pos":[0,4,8],"size":[4,4,4]},{"pos":[0,4,12],"size":[4,4,4]},{"pos":[0,8,0],"size":[4,4,4]},{"pos":[0,8,4],"size":[4,4,4]},{"pos":[0,8,8],"size":[4,4,4]},{"pos":[0,8,12],"size":[4,4,4]},{"pos":[0,12,0],"size":[4,4,4]},{"pos":[0,12,4],"size":[4,4,4]},{"pos":[0,12,8],"size":[4,4,4]},{"pos":[0,12,12],"size":[4,4,4]},{"pos":[4,0,0],"size":[4,4,4]},{"pos":[4,0,4],"size":[4,4,4]},{"pos":[4,0,8],"size":[4,4,4]},{"pos":[4,0,12],"size":[4,4,4]},{"pos":[4,4,0],"size":[4,4,4]},{"pos":[4,4,12],"size":[4,4,4]},{"pos":[4,8,0],"size":[4,4,4]},{"pos":[4,8,12],"size":[4,4,4]},{"pos":[4,12,0],"size":[4,4,4]},{"pos":[4,12,4],"size":[4,4,4]},{"pos":[4,12,8],"size":[4,4,4]},{"pos":[4,12,12],"size":[4,4,4]},{"pos":[8,0,0],"size":[4,4,4]},{"pos":[8,0,4],"size":[4,4,4]},{"pos":[8,0,8],"size":[4,4,4]},{"pos":[8,0,12],"size":[4,4,4]},{"pos":[8,4,0],"size":[4,4,4]},{"pos":[8,4,12],"size":[4,4,4]},{"pos":[8,8,0],"size":[4,4,4]},{"pos":[8,8,12],"size":[4,4,4]},{"pos":[8,12,0],"size":[4,4,4]},{"pos":[8,12,4],"size":[4,4,4]},{"pos":[8,12,8],"size":[4,4,4]},{"pos":[8,12,12],"size":[4,4,4]},{"pos":[12,0,0],"size":[4,4,4]},{"pos":[12,0,4],"size":[4,4,4]},{"pos":[12,0,8],"size":[4,4,4]},{"pos":[12,0,12],"size":[4,4,4]},{"pos":[12,4,0],"size":[4,4,4]},{"pos":[12,4,4],"size":[4,4,4]},{"pos":[12,4,8],"size":[4,4,4]},{"pos":[12,4,12],"size":[4,4,4]},{"pos":[12,8,0],"size":[4,4,4]},{"pos":[12,8,4],"size":[4,4,4]},{"pos":[12,8,8],"size":[4,4,4]},{"pos":[12,8,12],"size":[4,4,4]},{"pos":[12,12,0],"size":[4,4,4]},{"pos":[12,12,4],"size":[4,4,4]},{"pos":[12,12,8],"size":[4,4,4]},{"pos":[12,12,12],"size":[4,4,4]}] // function genDebugGeo(step) {let boneCubes = [];for(let x = 0; x < 16; x += step) {for(let y = 0; y < 16; y += step) {for(let z = 0; z < 16; z += step) {if(!x || !y || !z || x == 16 - step || y == 16 - step || z == 16 - step) {boneCubes.push({ pos: [x, y, z], size: [step, step, step] });}}}}return JSON.stringify(boneCubes);}
 }

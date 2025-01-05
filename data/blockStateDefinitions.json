@@ -61,6 +61,9 @@
 				"#exclusive_add": true,
 				"facing_direction": [0, 42, 2, 2, 2, 2], // since the entire hopper model is rotated, the side textures stay the same (hence 2, 2, 2, 2 instead of 2, 3, 4, 5)
 				"toggle_bit": [0, 8]
+			},
+			"cocoa": {
+				"age": [0, 1, 2]
 			}
 		},
 		"block_names": {
