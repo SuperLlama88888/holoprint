@@ -216,6 +216,9 @@ export default class TextureAtlas {
 				} else {
 					let carriedFace = textureFace.slice(8);
 					let terrainTextureKey = blockEntry["carried_textures"][carriedFace];
+					if(["west", "east", "north", "south"].includes(carriedFace)) {
+						terrainTextureKey ??= blockEntry["carried_textures"]["side"];
+					}
 					if(carriedFace == undefined) {
 						console.error(`Could not find carried texture face ${carriedFace}!`);
 					} else {

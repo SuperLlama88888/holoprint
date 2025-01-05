@@ -3790,5 +3790,97 @@
 			"variant": 1
 		}
 	],
+	"sculk_shrieker": [
+		{
+			"pos": [0, 0, 0],
+			"size": [16, 8, 16],
+			"textures": {
+				"up": "carried"
+			}
+		},
+		{
+			"pos": [1, 8, 1],
+			"size": [14, 7, 14],
+			"textures": {
+				"down": "none"
+			}
+		}
+	],
+	"template_sculk_sensor_tendril": [
+		{
+			"if": "sculk_sensor_phase == 0",
+			"pos": [-1, 8, 3],
+			"size": [8, 8, 0],
+			"rot": [0, 45, 0],
+			"pivot": [3, 12, 3],
+			"textures": {
+				"*": "carried.down"
+			},
+			"uv": {
+				"*": [4, 8]
+			}
+		},
+		{
+			"if": "sculk_sensor_phase > 0",
+			"pos": [-1, 8, 3],
+			"size": [8, 8, 0],
+			"rot": [0, 45, 0],
+			"pivot": [3, 12, 3],
+			"textures": {
+				"*": "carried.north"
+			},
+			"uv": {
+				"*": [4, 8]
+			}
+		}
+	],
+	"sculk_sensor": [
+		{
+			"pos": [0, 0, 0],
+			"size": [16, 8, 16]
+		},
+		{
+			"copy": "template_sculk_sensor_tendril"
+		},
+		{
+			"copy": "template_sculk_sensor_tendril",
+			"rot": [0, 90, 0]
+		},
+		{
+			"copy": "template_sculk_sensor_tendril",
+			"rot": [0, 180, 0]
+		},
+		{
+			"copy": "template_sculk_sensor_tendril",
+			"rot": [0, -90, 0]
+		}
+	],
+	"calibrated_sculk_sensor": [
+		{
+			"copy": "sculk_sensor"
+		},
+		{
+			"pos": [8, 8, 0],
+			"size": [0, 12, 16],
+			"rot": [0, 45, 0],
+			"textures": {
+				"*": "carried.south"
+			},
+			"uv": {
+				"*": [0, 4]
+			}
+		},
+		{
+			"pos": [8, 8, 0],
+			"size": [0, 12, 16],
+			"rot": [0, -45, 0],
+			"textures": {
+				"*": "carried.south"
+			},
+			"uv": {
+				"*": [0, 4]
+			}
+		}
+	],
 	"debug_auto_uv_4": [{"pos":[0,0,0],"size":[4,4,4]},{"pos":[0,0,4],"size":[4,4,4]},{"pos":[0,0,8],"size":[4,4,4]},{"pos":[0,0,12],"size":[4,4,4]},{"pos":[0,4,0],"size":[4,4,4]},{"pos":[0,4,4],"size":[4,4,4]},{"pos":[0,4,8],"size":[4,4,4]},{"pos":[0,4,12],"size":[4,4,4]},{"pos":[0,8,0],"size":[4,4,4]},{"pos":[0,8,4],"size":[4,4,4]},{"pos":[0,8,8],"size":[4,4,4]},{"pos":[0,8,12],"size":[4,4,4]},{"pos":[0,12,0],"size":[4,4,4]},{"pos":[0,12,4],"size":[4,4,4]},{"pos":[0,12,8],"size":[4,4,4]},{"pos":[0,12,12],"size":[4,4,4]},{"pos":[4,0,0],"size":[4,4,4]},{"pos":[4,0,4],"size":[4,4,4]},{"pos":[4,0,8],"size":[4,4,4]},{"pos":[4,0,12],"size":[4,4,4]},{"pos":[4,4,0],"size":[4,4,4]},{"pos":[4,4,12],"size":[4,4,4]},{"pos":[4,8,0],"size":[4,4,4]},{"pos":[4,8,12],"size":[4,4,4]},{"pos":[4,12,0],"size":[4,4,4]},{"pos":[4,12,4],"size":[4,4,4]},{"pos":[4,12,8],"size":[4,4,4]},{"pos":[4,12,12],"size":[4,4,4]},{"pos":[8,0,0],"size":[4,4,4]},{"pos":[8,0,4],"size":[4,4,4]},{"pos":[8,0,8],"size":[4,4,4]},{"pos":[8,0,12],"size":[4,4,4]},{"pos":[8,4,0],"size":[4,4,4]},{"pos":[8,4,12],"size":[4,4,4]},{"pos":[8,8,0],"size":[4,4,4]},{"pos":[8,8,12],"size":[4,4,4]},{"pos":[8,12,0],"size":[4,4,4]},{"pos":[8,12,4],"size":[4,4,4]},{"pos":[8,12,8],"size":[4,4,4]},{"pos":[8,12,12],"size":[4,4,4]},{"pos":[12,0,0],"size":[4,4,4]},{"pos":[12,0,4],"size":[4,4,4]},{"pos":[12,0,8],"size":[4,4,4]},{"pos":[12,0,12],"size":[4,4,4]},{"pos":[12,4,0],"size":[4,4,4]},{"pos":[12,4,4],"size":[4,4,4]},{"pos":[12,4,8],"size":[4,4,4]},{"pos":[12,4,12],"size":[4,4,4]},{"pos":[12,8,0],"size":[4,4,4]},{"pos":[12,8,4],"size":[4,4,4]},{"pos":[12,8,8],"size":[4,4,4]},{"pos":[12,8,12],"size":[4,4,4]},{"pos":[12,12,0],"size":[4,4,4]},{"pos":[12,12,4],"size":[4,4,4]},{"pos":[12,12,8],"size":[4,4,4]},{"pos":[12,12,12],"size":[4,4,4]}] // function genDebugGeo(step) {let boneCubes = [];for(let x = 0; x < 16; x += step) {for(let y = 0; y < 16; y += step) {for(let z = 0; z < 16; z += step) {if(!x || !y || !z || x == 16 - step || y == 16 - step || z == 16 - step) {boneCubes.push({ pos: [x, y, z], size: [step, step, step] });}}}}return JSON.stringify(boneCubes);}
 }

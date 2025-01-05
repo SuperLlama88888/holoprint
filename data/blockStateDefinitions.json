@@ -26,7 +26,9 @@
 			"composter_fill_level": [42, 1, 1, 1, 1, 1, 1, 1, 2], // first is never used
 			"honey_level": [0, 0, 0, 0, 0, 1],
 			"moisturized_amount": [1, 0, 0, 0, 0, 0, 0, 0], // farmland
-			"tip": [0, 1] // pale hanging moss
+			"tip": [0, 1], // pale hanging moss
+			"bloom": [0, 1], // sculk catalyst (hardly noticeable in-game)
+			"can_summon": [0, 1] // sculk shrieker
 		},
 		"block_shapes": {
 			"cake": {
