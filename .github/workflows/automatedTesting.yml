@@ -46,3 +46,14 @@ jobs:
         with:
           name: screenshots_${{ matrix.browser }}
           path: tests/screenshots
+  check-block-translation-coverage:
+    name: Check Block Translation Coverage
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4.1.1
+      - name: Validate JSON Data
+        run: |
+          npm install @actions/core
+          echo '{ "type": "module" }' > package.json
+          node tests/checkBlockTranslationCoverage.js
