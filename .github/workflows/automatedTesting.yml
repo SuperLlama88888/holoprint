@@ -55,5 +55,4 @@ jobs:
       - name: Check block translation coverage
         run: |
           npm install @actions/core
-          echo '{ "type": "module" }' > package.json
           node tests/checkBlockTranslationCoverage.js
