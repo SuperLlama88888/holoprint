@@ -2462,6 +2462,7 @@
 	],
 	"cactus": [
 		{
+			"if": "!#copied_via_copy_block",
 			"pos": [0, 0, 1],
 			"size": [16, 16, 14],
 			"textures": {
@@ -2472,6 +2473,7 @@
 			}
 		},
 		{
+			"if": "!#copied_via_copy_block",
 			"pos": [1, 0, 0],
 			"size": [14, 16, 16],
 			"textures": {
@@ -2482,11 +2484,17 @@
 			}
 		},
 		{
+			"if": "!#copied_via_copy_block",
 			"pos": [1, 0, 1],
 			"size": [14, 16, 14],
 			"textures": {
 				"side": "none"
 			}
+		},
+		{
+			"if": "#copied_via_copy_block",
+			"pos": [6, 0, 6],
+			"size": [4, 12, 4]
 		}
 	],
 	"double_plant": [
@@ -4114,7 +4122,7 @@
 	],
 	"bamboo": [
 		{
-			"if": "bamboo_stalk_thickness == thin",
+			"if": "bamboo_stalk_thickness == thin && !#copied_via_copy_block",
 			"pos": [7, 0, 7],
 			"size": [2, 16, 2],
 			"textures": {
@@ -4208,10 +4216,33 @@
 			"textures": {
 				"*": "up"
 			}
+		},
+		{
+			"if": "#copied_via_copy_block",
+			"pos": [7, 0, 7],
+			"size": [2, 12, 2],
+			"textures": {
+				"*": "north"
+			},
+			"uv": {
+				"side": [9, 0],
+				"up": [13, 0],
+				"down": [13, 0]
+			}
+		},
+		{
+			"if": "#copied_via_copy_block",
+			"pos": [0, 0, 8],
+			"translate": [0, -2, 0],
+			"size": [16, 16, 0],
+			"textures": {
+				"*": "east"
+			}
 		}
 	],
 	"azalea": [
 		{
+			"if": "!#copied_via_copy_block",
 			"pos": [0, 5, 0],
 			"size": [16, 11, 16],
 			"textures": {
@@ -4220,6 +4251,7 @@
 			}
 		},
 		{
+			"if": "!#copied_via_copy_block",
 			"pos": [-2, 0, 8],
 			"size": [20, 16, 0],
 			"rot": [0, 45, 0],
@@ -4234,6 +4266,7 @@
 			}
 		},
 		{
+			"if": "!#copied_via_copy_block",
 			"pos": [-2, 0, 8],
 			"size": [20, 16, 0],
 			"rot": [0, -45, 0],
@@ -4245,6 +4278,34 @@
 			},
 			"uv_sizes": {
 				"*": [16, 16]
+			}
+		},
+		{
+			"if": "#copied_via_copy_block",
+			"pos": [4, 4, 4],
+			"size": [8, 8, 8],
+			"textures": {
+				"down": "none",
+				"side": "south",
+				"up": "down"
+			}
+		},
+		{
+			"if": "#copied_via_copy_block",
+			"pos": [0.5, 0, 8],
+			"size": [15, 12, 0],
+			"rot": [0, 45, 0],
+			"textures": {
+				"*": "west"
+			}
+		},
+		{
+			"if": "#copied_via_copy_block",
+			"pos": [0.5, 0, 8],
+			"size": [15, 12, 0],
+			"rot": [0, -45, 0],
+			"textures": {
+				"*": "west"
 			}
 		}
 	],
@@ -4313,6 +4374,46 @@
 			"textures": {
 				"*": "up"
 			}
+		}
+	],
+	"flower_pot": [
+		{
+			"pos": [5, 0, 5],
+			"size": [6, 6, 6],
+			"textures": {
+				"up": "none" // it culls the dirt inside :(
+			},
+			"uv": {
+				"down": [5, 10] // flower pots in-game use the top texture for the bottom but it looks better with the side texture
+			}
+		},
+		{
+			"pos": [5, 6, 5],
+			"size": [6, 0, 1]
+		},
+		{
+			"pos": [5, 6, 10],
+			"size": [6, 0, 1]
+		},
+		{
+			"pos": [5, 6, 6],
+			"size": [1, 0, 4]
+		},
+		{
+			"pos": [10, 6, 6],
+			"size": [1, 0, 4]
+		},
+		{
+			"pos": [5, 4, 5],
+			"size": [6, 0, 6],
+			"textures": {
+				"*": "textures/blocks/dirt"
+			}
+		},
+		{
+			"if": "update_bit == 1",
+			"copy_block": "entity.PlantBlock", // I know this is inconsistent with other syntax in this file but this property is only used for flower pots so I couldn't care less
+			"translate": [0, 4, 0]
 		}
 	],
 	"debug_auto_uv_4": [{"pos":[0,0,0],"size":[4,4,4]},{"pos":[0,0,4],"size":[4,4,4]},{"pos":[0,0,8],"size":[4,4,4]},{"pos":[0,0,12],"size":[4,4,4]},{"pos":[0,4,0],"size":[4,4,4]},{"pos":[0,4,4],"size":[4,4,4]},{"pos":[0,4,8],"size":[4,4,4]},{"pos":[0,4,12],"size":[4,4,4]},{"pos":[0,8,0],"size":[4,4,4]},{"pos":[0,8,4],"size":[4,4,4]},{"pos":[0,8,8],"size":[4,4,4]},{"pos":[0,8,12],"size":[4,4,4]},{"pos":[0,12,0],"size":[4,4,4]},{"pos":[0,12,4],"size":[4,4,4]},{"pos":[0,12,8],"size":[4,4,4]},{"pos":[0,12,12],"size":[4,4,4]},{"pos":[4,0,0],"size":[4,4,4]},{"pos":[4,0,4],"size":[4,4,4]},{"pos":[4,0,8],"size":[4,4,4]},{"pos":[4,0,12],"size":[4,4,4]},{"pos":[4,4,0],"size":[4,4,4]},{"pos":[4,4,12],"size":[4,4,4]},{"pos":[4,8,0],"size":[4,4,4]},{"pos":[4,8,12],"size":[4,4,4]},{"pos":[4,12,0],"size":[4,4,4]},{"pos":[4,12,4],"size":[4,4,4]},{"pos":[4,12,8],"size":[4,4,4]},{"pos":[4,12,12],"size":[4,4,4]},{"pos":[8,0,0],"size":[4,4,4]},{"pos":[8,0,4],"size":[4,4,4]},{"pos":[8,0,8],"size":[4,4,4]},{"pos":[8,0,12],"size":[4,4,4]},{"pos":[8,4,0],"size":[4,4,4]},{"pos":[8,4,12],"size":[4,4,4]},{"pos":[8,8,0],"size":[4,4,4]},{"pos":[8,8,12],"size":[4,4,4]},{"pos":[8,12,0],"size":[4,4,4]},{"pos":[8,12,4],"size":[4,4,4]},{"pos":[8,12,8],"size":[4,4,4]},{"pos":[8,12,12],"size":[4,4,4]},{"pos":[12,0,0],"size":[4,4,4]},{"pos":[12,0,4],"size":[4,4,4]},{"pos":[12,0,8],"size":[4,4,4]},{"pos":[12,0,12],"size":[4,4,4]},{"pos":[12,4,0],"size":[4,4,4]},{"pos":[12,4,4],"size":[4,4,4]},{"pos":[12,4,8],"size":[4,4,4]},{"pos":[12,4,12],"size":[4,4,4]},{"pos":[12,8,0],"size":[4,4,4]},{"pos":[12,8,4],"size":[4,4,4]},{"pos":[12,8,8],"size":[4,4,4]},{"pos":[12,8,12],"size":[4,4,4]},{"pos":[12,12,0],"size":[4,4,4]},{"pos":[12,12,4],"size":[4,4,4]},{"pos":[12,12,8],"size":[4,4,4]},{"pos":[12,12,12],"size":[4,4,4]}] // function genDebugGeo(step) {let boneCubes = [];for(let x = 0; x < 16; x += step) {for(let y = 0; y < 16; y += step) {for(let z = 0; z < 16; z += step) {if(!x || !y || !z || x == 16 - step || y == 16 - step || z == 16 - step) {boneCubes.push({ pos: [x, y, z], size: [step, step, step] });}}}}return JSON.stringify(boneCubes);}

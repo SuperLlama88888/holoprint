@@ -62,6 +62,7 @@ export default class BlockGeoMaker {
 		return cols;
 	}();
 	
+	/** @type {HoloPrintConfig} */
 	config;
 	textureRefs;
 	
@@ -237,6 +238,7 @@ export default class BlockGeoMaker {
 			unfilteredCubes = structuredClone(this.#blockShapeGeos["block"]);
 		}
 		let filteredCubes = [];
+		let boneCubes = [];
 		while(unfilteredCubes.length) {
 			// For each unfiltered cube, we add it to filteredCubes if we've checked the "if" flag. If there are copies, we then add them back to unfilteredCubes.
 			let cube = unfilteredCubes.shift();
@@ -293,6 +295,34 @@ export default class BlockGeoMaker {
 					}
 				});
 				unfilteredCubes.push(...copiedCubes);
+			} else if("copy_block" in cube) {
+				let match = cube["copy_block"].match(/^entity\.(.+)$/);
+				if(!match) {
+					console.error(`Incorrect formated copy_block property: ${match}`);
+					continue;
+				}
+				let blockEntityProperty = match[1];
+				let blockToCopy = block["block_entity_data"]?.[blockEntityProperty];
+				if(!blockToCopy) {
+					console.error(`Cannot find block entity property ${blockEntityProperty} on block ${block["name"]}:`, block);
+					continue;
+				}
+				blockToCopy["name"] = blockToCopy["name"].replace(/^minecraft:/, "");
+				if(this.config.IGNORED_BLOCKS.includes(blockToCopy["name"])) {
+					continue;
+				}
+				blockToCopy["#copied_via_copy_block"] = true; // I will learn rust if mojang adds this to the structure NBT
+				let newBlockShape = this.#getBlockShape(blockToCopy["name"]);
+				let newBoneCubes = this.#makeBoneCubes(blockToCopy, newBlockShape);
+				if("translate" in cube) {
+					newBoneCubes.forEach(boneCube => {
+						boneCube["origin"] = boneCube["origin"].map((x, i) => x + cube["translate"][i]);
+						if("pivot" in boneCube) {
+							boneCube["pivot"] = boneCube["pivot"].map((x, i) => x + cube["translate"][i]);
+						}
+					});
+				}
+				boneCubes.push(...newBoneCubes);
 			} else {
 				filteredCubes.push(cube);
 			}
@@ -314,7 +344,6 @@ export default class BlockGeoMaker {
 		let variant = this.#getTextureVariant(block);
 		let variantWithoutEigenvariant;
 		
-		let boneCubes = [];
 		cubes.forEach(cube => {
 			// In MCBE most non-full-block textures look at where the part that is being rendered is in relation to the entire cube space it's in - like it's being projected onto a full face then cut out. Kinda hard to explain sorry, I recommend messing around with fence textures so you understand how it works.
 			let westUvOffset = [cube.z, 16 - cube.y - cube.h];
@@ -608,6 +637,11 @@ export default class BlockGeoMaker {
 		let trimmedConditional = conditional.replaceAll(/\s/g, "");
 		let booleanOperations = trimmedConditional.match(/&&|\|\|/g) ?? []; // can have multiple separated by ?? or ||
 		let booleanValues = trimmedConditional.split(/&&|\|\|/).map(booleanExpression => {
+			if(booleanExpression == "#copied_via_copy_block") {
+				return block["#copied_via_copy_block"] === true;
+			} else if(booleanExpression == "!#copied_via_copy_block") {
+				return block["#copied_via_copy_block"] !== true;
+			}
 			let match = booleanExpression.match(/^((?:entity\.)?[\w:&-?]+)(==|>|<|>=|<=|!=)(-?\w+)$/); // Despite the Minecraft Wiki and Microsoft creator documentation saying there can be boolean block states, they're stored as bytes in NBT
 			if(!match) {
 				console.error(`Incorrectly formatted block state expression "${booleanExpression}" from conditional "${conditional}"\n(Match: ${JSON.stringify(match)})`);
@@ -760,4 +794,7 @@ export default class BlockGeoMaker {
  */
 /**
  * @typedef {import("./HoloPrint.js").Bone} Bone
+ */
+/**
+ * @typedef {import("./HoloPrint.js").HoloPrintConfig} HoloPrintConfig
  */
