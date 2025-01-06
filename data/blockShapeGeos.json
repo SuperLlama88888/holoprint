@@ -4492,5 +4492,99 @@
 			}
 		}
 	],
+	"chiseled_bookshelf": [
+		{
+			"if": "books_stored == 0",
+			"pos": [0, 0, 0],
+			"size": [16, 16, 16],
+			"variant": 0
+		},
+		{
+			"if": "books_stored == 63",
+			"pos": [0, 0, 0],
+			"size": [16, 16, 16],
+			"variant": 1
+		},
+		{
+			"if": "books_stored != 0 && books_stored != 63",
+			"pos": [0, 0, 0],
+			"size": [16, 16, 16],
+			"textures": {
+				"north": "none"
+			}
+		},
+		{
+			"if": "books_stored != 0 && books_stored & 1 == 0",
+			"pos": [0, 8, 0],
+			"size": [5, 8, 0],
+			"variant": 0
+		},
+		{
+			"if": "books_stored != 63 && books_stored & 1 > 0",
+			"pos": [0, 8, 0],
+			"size": [5, 8, 0],
+			"variant": 1
+		},
+		{
+			"if": "books_stored != 0 && books_stored & 2 == 0",
+			"pos": [5, 8, 0],
+			"size": [6, 8, 0],
+			"variant": 0
+		},
+		{
+			"if": "books_stored != 63 && books_stored & 2 > 0",
+			"pos": [5, 8, 0],
+			"size": [6, 8, 0],
+			"variant": 1
+		},
+		{
+			"if": "books_stored != 0 && books_stored & 4 == 0",
+			"pos": [11, 8, 0],
+			"size": [5, 8, 0],
+			"variant": 0
+		},
+		{
+			"if": "books_stored != 63 && books_stored & 4 > 0",
+			"pos": [11, 8, 0],
+			"size": [5, 8, 0],
+			"variant": 1
+		},
+		{
+			"if": "books_stored != 0 && books_stored & 8 == 0",
+			"pos": [0, 0, 0],
+			"size": [5, 8, 0],
+			"variant": 0
+		},
+		{
+			"if": "books_stored != 63 && books_stored & 8 > 0",
+			"pos": [0, 0, 0],
+			"size": [5, 8, 0],
+			"variant": 1
+		},
+		{
+			"if": "books_stored != 0 && books_stored & 16 == 0",
+			"pos": [5, 0, 0],
+			"size": [6, 8, 0],
+			"variant": 0
+		},
+		{
+			"if": "books_stored != 63 && books_stored & 16 > 0",
+			"pos": [5, 0, 0],
+			"size": [6, 8, 0],
+			"variant": 1
+		},
+		{
+			"if": "books_stored != 0 && books_stored & 32 == 0",
+			"pos": [11, 0, 0],
+			"size": [5, 8, 0],
+			"variant": 0
+		},
+		{
+			"if": "books_stored != 63 && books_stored & 32 > 0",
+			"pos": [11, 0, 0],
+			"size": [5, 8, 0],
+			"variant": 1
+		}
+	],
 	"debug_auto_uv_4": [{"pos":[0,0,0],"size":[4,4,4]},{"pos":[0,0,4],"size":[4,4,4]},{"pos":[0,0,8],"size":[4,4,4]},{"pos":[0,0,12],"size":[4,4,4]},{"pos":[0,4,0],"size":[4,4,4]},{"pos":[0,4,4],"size":[4,4,4]},{"pos":[0,4,8],"size":[4,4,4]},{"pos":[0,4,12],"size":[4,4,4]},{"pos":[0,8,0],"size":[4,4,4]},{"pos":[0,8,4],"size":[4,4,4]},{"pos":[0,8,8],"size":[4,4,4]},{"pos":[0,8,12],"size":[4,4,4]},{"pos":[0,12,0],"size":[4,4,4]},{"pos":[0,12,4],"size":[4,4,4]},{"pos":[0,12,8],"size":[4,4,4]},{"pos":[0,12,12],"size":[4,4,4]},{"pos":[4,0,0],"size":[4,4,4]},{"pos":[4,0,4],"size":[4,4,4]},{"pos":[4,0,8],"size":[4,4,4]},{"pos":[4,0,12],"size":[4,4,4]},{"pos":[4,4,0],"size":[4,4,4]},{"pos":[4,4,12],"size":[4,4,4]},{"pos":[4,8,0],"size":[4,4,4]},{"pos":[4,8,12],"size":[4,4,4]},{"pos":[4,12,0],"size":[4,4,4]},{"pos":[4,12,4],"size":[4,4,4]},{"pos":[4,12,8],"size":[4,4,4]},{"pos":[4,12,12],"size":[4,4,4]},{"pos":[8,0,0],"size":[4,4,4]},{"pos":[8,0,4],"size":[4,4,4]},{"pos":[8,0,8],"size":[4,4,4]},{"pos":[8,0,12],"size":[4,4,4]},{"pos":[8,4,0],"size":[4,4,4]},{"pos":[8,4,12],"size":[4,4,4]},{"pos":[8,8,0],"size":[4,4,4]},{"pos":[8,8,12],"size":[4,4,4]},{"pos":[8,12,0],"size":[4,4,4]},{"pos":[8,12,4],"size":[4,4,4]},{"pos":[8,12,8],"size":[4,4,4]},{"pos":[8,12,12],"size":[4,4,4]},{"pos":[12,0,0],"size":[4,4,4]},{"pos":[12,0,4],"size":[4,4,4]},{"pos":[12,0,8],"size":[4,4,4]},{"pos":[12,0,12],"size":[4,4,4]},{"pos":[12,4,0],"size":[4,4,4]},{"pos":[12,4,4],"size":[4,4,4]},{"pos":[12,4,8],"size":[4,4,4]},{"pos":[12,4,12],"size":[4,4,4]},{"pos":[12,8,0],"size":[4,4,4]},{"pos":[12,8,4],"size":[4,4,4]},{"pos":[12,8,8],"size":[4,4,4]},{"pos":[12,8,12],"size":[4,4,4]},{"pos":[12,12,0],"size":[4,4,4]},{"pos":[12,12,4],"size":[4,4,4]},{"pos":[12,12,8],"size":[4,4,4]},{"pos":[12,12,12],"size":[4,4,4]}] // function genDebugGeo(step) {let boneCubes = [];for(let x = 0; x < 16; x += step) {for(let y = 0; y < 16; y += step) {for(let z = 0; z < 16; z += step) {if(!x || !y || !z || x == 16 - step || y == 16 - step || z == 16 - step) {boneCubes.push({ pos: [x, y, z], size: [step, step, step] });}}}}return JSON.stringify(boneCubes);}
 }

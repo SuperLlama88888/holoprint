@@ -167,7 +167,7 @@ export default class BlockGeoMaker {
 			}
 			
 			if(!(blockStateValue in rotations)) {
-				console.error(`Block state value ${blockStateValue} for rotation block state ${blockStateName} not found...`);
+				console.error(`Block state value ${blockStateValue} for rotation block state ${blockStateName} not found on ${blockName}...`, block);
 				return;
 			}
 			if(bone["rotation"]) {
@@ -539,7 +539,7 @@ export default class BlockGeoMaker {
 						continue tryMerging; // boneCube2 has been mutated, so we removed it from mergedCubes and swap it out for boneCube1, then restart trying to merge it.
 					}
 				}
-				break; // we'll only get to here when it's checked all combinations between the already merged cubes and
+				break; // we'll only get to here when it's checked all combinations between the already merged cubes and the new cube (cube1)
 			}
 			mergedCubes.push(cube1);
 		});
@@ -574,7 +574,7 @@ export default class BlockGeoMaker {
 				if(blockStateName in blockShapeSpecificVariants) {
 					let blockStateVariants = blockShapeSpecificVariants[blockStateName];
 					if(!(blockStateValue in blockStateVariants)) {
-						console.error(`Block state value ${blockStateValue} for texture-variating block state ${blockStateName} not found...`);
+						console.error(`Block state value ${blockStateValue} for texture-variating block state ${blockStateName} not found on ${blockName}...`, block);
 						return;
 					}
 					variant += blockStateVariants[blockStateValue];
@@ -757,7 +757,7 @@ export default class BlockGeoMaker {
 		return wholeStringValue ?? substitutedExpression;
 	}
 	/**
-	 * Unpurely tries to merge the cube into the first if the second is more positive than the first.
+	 * Unpurely tries to merge the second cube into the first if the second is more positive than the first.
 	 * @param {Object} cube1
 	 * @param {Object} cube2
 	 * @returns {Boolean} If the second cube was merged into the first.
