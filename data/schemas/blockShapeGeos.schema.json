@@ -144,6 +144,11 @@
 						"type": "string",
 						"pattern": "^\\w+$"
 					},
+					"copy_block": {
+						"description": "Copies an entire block. Must resolve to an object with the same structure as a block palette entry.",
+						"type": "string",
+						"minLength": 1
+					},
 					"block_states": {
 						"description": "Block states to be passed to the block shape copy specified in the \"copy\" property.",
 						"type": "object",
@@ -202,6 +207,9 @@
 					},
 					{
 						"required": ["copy"]
+					},
+					{
+						"required": ["copy_block"]
 					}
 				],
 				"default": {

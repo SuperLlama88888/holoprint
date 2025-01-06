@@ -41,7 +41,8 @@ export default class MaterialList {
 		"pale_oak_wall_sign": "pale_oak_sign",
 		"pale_oak_standing_sign": "pale_oak_sign",
 		"bamboo_sapling": "bamboo",
-		"trip_wire": "string"
+		"trip_wire": "string",
+		"cocoa": "cocoa_beans"
 	};
 	/** Remappings for serialization_ids mapping to the wrong things in .lang files */
 	static #serializationIdPatches = {
@@ -79,7 +80,8 @@ export default class MaterialList {
 		"item.player_head": "item.skull.player",
 		"item.skeleton_skull": "item.skull.skeleton",
 		"item.wither_skeleton_skull": "item.skull.wither",
-		"item.zombie_head": "item.skull.zombie"
+		"item.zombie_head": "item.skull.zombie",
+		"item.cocoa_beans": "item.dye.brown"
 	};
 	static #blockSerializationIdPatches = {
 		"end_gateway": "tile.end_gateway" // despite still existing, end gateways were removed from mojang-blocks.json in 1.21.50...

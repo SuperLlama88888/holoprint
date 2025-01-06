@@ -26,7 +26,9 @@
 			"composter_fill_level": [42, 1, 1, 1, 1, 1, 1, 1, 2], // first is never used
 			"honey_level": [0, 0, 0, 0, 0, 1],
 			"moisturized_amount": [1, 0, 0, 0, 0, 0, 0, 0], // farmland
-			"tip": [0, 1] // pale hanging moss
+			"tip": [0, 1], // pale hanging moss
+			"bloom": [0, 1], // sculk catalyst (hardly noticeable in-game)
+			"can_summon": [0, 1] // sculk shrieker
 		},
 		"block_shapes": {
 			"cake": {
@@ -59,6 +61,9 @@
 				"#exclusive_add": true,
 				"facing_direction": [0, 42, 2, 2, 2, 2], // since the entire hopper model is rotated, the side textures stay the same (hence 2, 2, 2, 2 instead of 2, 3, 4, 5)
 				"toggle_bit": [0, 8]
+			},
+			"cocoa": {
+				"age": [0, 1, 2]
 			}
 		},
 		"block_names": {
@@ -224,7 +229,7 @@
 					"3": [0, -90, 0] // south
 				}
 			},
-			"wall_sign": { // todo: merge with hopper defs maybe
+			"wall_sign,glazed_terracotta": { // todo: merge with hopper defs maybe
 				"facing_direction": {
 					"2": [0, 0, 0], // north
 					"3": [0, 180, 0], // south

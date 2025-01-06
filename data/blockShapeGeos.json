@@ -2462,6 +2462,7 @@
 	],
 	"cactus": [
 		{
+			"if": "!#copied_via_copy_block",
 			"pos": [0, 0, 1],
 			"size": [16, 16, 14],
 			"textures": {
@@ -2472,6 +2473,7 @@
 			}
 		},
 		{
+			"if": "!#copied_via_copy_block",
 			"pos": [1, 0, 0],
 			"size": [14, 16, 16],
 			"textures": {
@@ -2482,11 +2484,17 @@
 			}
 		},
 		{
+			"if": "!#copied_via_copy_block",
 			"pos": [1, 0, 1],
 			"size": [14, 16, 14],
 			"textures": {
 				"side": "none"
 			}
+		},
+		{
+			"if": "#copied_via_copy_block",
+			"pos": [6, 0, 6],
+			"size": [4, 12, 4]
 		}
 	],
 	"double_plant": [
@@ -3787,6 +3795,794 @@
 			"textures": {
 				"*": "carried"
 			},
+			"variant": 1
+		}
+	],
+	"sculk_shrieker": [
+		{
+			"pos": [0, 0, 0],
+			"size": [16, 8, 16],
+			"textures": {
+				"up": "carried"
+			}
+		},
+		{
+			"pos": [1, 8, 1],
+			"size": [14, 7, 14],
+			"textures": {
+				"down": "none"
+			}
+		}
+	],
+	"template_sculk_sensor_tendril": [
+		{
+			"if": "sculk_sensor_phase == 0",
+			"pos": [-1, 8, 3],
+			"size": [8, 8, 0],
+			"rot": [0, 45, 0],
+			"pivot": [3, 12, 3],
+			"textures": {
+				"*": "carried.down"
+			},
+			"uv": {
+				"*": [4, 8]
+			}
+		},
+		{
+			"if": "sculk_sensor_phase > 0",
+			"pos": [-1, 8, 3],
+			"size": [8, 8, 0],
+			"rot": [0, 45, 0],
+			"pivot": [3, 12, 3],
+			"textures": {
+				"*": "carried.north"
+			},
+			"uv": {
+				"*": [4, 8]
+			}
+		}
+	],
+	"sculk_sensor": [
+		{
+			"pos": [0, 0, 0],
+			"size": [16, 8, 16]
+		},
+		{
+			"copy": "template_sculk_sensor_tendril"
+		},
+		{
+			"copy": "template_sculk_sensor_tendril",
+			"rot": [0, 90, 0]
+		},
+		{
+			"copy": "template_sculk_sensor_tendril",
+			"rot": [0, 180, 0]
+		},
+		{
+			"copy": "template_sculk_sensor_tendril",
+			"rot": [0, -90, 0]
+		}
+	],
+	"calibrated_sculk_sensor": [
+		{
+			"copy": "sculk_sensor"
+		},
+		{
+			"pos": [8, 8, 0],
+			"size": [0, 12, 16],
+			"rot": [0, 45, 0],
+			"textures": {
+				"*": "carried.south"
+			},
+			"uv": {
+				"*": [0, 4]
+			}
+		},
+		{
+			"pos": [8, 8, 0],
+			"size": [0, 12, 16],
+			"rot": [0, -45, 0],
+			"textures": {
+				"*": "carried.south"
+			},
+			"uv": {
+				"*": [0, 4]
+			}
+		}
+	],
+	"lilypad": [
+		{
+			"pos": [0, 0.125, 0],
+			"size": [16, 0, 16]
+		}
+	],
+	"seagrass": [
+		{
+			"if": "sea_grass_type == default",
+			"copy": "rows",
+			"translate": [0, 1, 0], // rows is for crops and is 1px down by default
+			"textures": {
+				"*": "up"
+			}
+		},
+		{
+			"if": "sea_grass_type == double_bot",
+			"copy": "rows",
+			"translate": [0, 1, 0],
+			"textures": {
+				"*": "down"
+			}
+		},
+		{
+			"if": "sea_grass_type == double_top",
+			"copy": "rows",
+			"translate": [0, 1, 0],
+			"textures": {
+				"*": "east"
+			}
+		}
+	],
+	"kelp": [
+		{
+			"if": "kelp_age < 25", // todo: look if block above is also kelp to determine correct texture
+			"copy": "cross_texture",
+			"textures": {
+				"*": "north"
+			}
+		},
+		{
+			"if": "kelp_age == 25",
+			"copy": "cross_texture",
+			"textures": {
+				"*": "west"
+			}
+		}
+	],
+	"template_sea_pickle_top": [
+		{
+			"pos": [1.5, 0, 2],
+			"size": [1, 3, 0],
+			"rot": [0, -135, 0],
+			"pivot": [2, 0, 2],
+			"uv": {
+				"*": [1, 0]
+			},
+			"uv_sizes": {
+				"*": [2, 5]
+			}
+		},
+		{
+			"pos": [1.5, 0, 2],
+			"size": [1, 3, 0],
+			"rot": [0, 135, 0],
+			"pivot": [2, 0, 2],
+			"uv": {
+				"*": [13, 0]
+			},
+			"uv_sizes": {
+				"*": [2, 5]
+			}
+		}
+	],
+	"template_sea_pickle_opening": [ // this is the top face of the main cube, it's split up so it doesn't cull the face below
+		{
+			"pos": [0, 0, 0],
+			"size": [4, 0, 1],
+			"uv": {
+				"*": [4, 1]
+			}
+		},
+		{
+			"pos": [0, 0, 3],
+			"size": [4, 0, 1],
+			"uv": {
+				"*": [4, 4]
+			}
+		},
+		{
+			"pos": [0, 0, 1],
+			"size": [1, 0, 2],
+			"uv": {
+				"*": [4, 2]
+			}
+		},
+		{
+			"pos": [3, 0, 1],
+			"size": [1, 0, 2],
+			"uv": {
+				"*": [7, 2]
+			}
+		}
+	],
+	"template_sea_pickle_4px": [
+		{
+			"pos": [0, 0, 0],
+			"size": [4, 4, 4],
+			"textures": {
+				"up": "none"
+			},
+			"uv": {
+				"down": [8, 1],
+				"north": [0, 12],
+				"east": [4, 12],
+				"south": [8, 12],
+				"west": [12, 12]
+			}
+		},
+		{
+			"copy": "template_sea_pickle_opening",
+			"translate": [0, 4, 0]
+		},
+		{
+			"pos": [0, 3.125, 0],
+			"size": [4, 0, 4],
+			"textures": {
+				"*": "down"
+			}
+		},
+		{
+			"if": "dead_bit == 0",
+			"copy": "template_sea_pickle_top",
+			"translate": [0, 3.125, 0]
+		}
+	],
+	"template_sea_pickle_5px": [
+		{
+			"pos": [0, 0, 0],
+			"size": [4, 5, 4],
+			"textures": {
+				"up": "none"
+			},
+			"uv": {
+				"down": [8, 1],
+				"north": [0, 11],
+				"east": [4, 11],
+				"south": [8, 11],
+				"west": [12, 11]
+			}
+		},
+		{
+			"copy": "template_sea_pickle_opening",
+			"translate": [0, 5, 0]
+		},
+		{
+			"pos": [0, 4.125, 0],
+			"size": [4, 0, 4],
+			"textures": {
+				"*": "down"
+			}
+		},
+		{
+			"if": "dead_bit == 0",
+			"copy": "template_sea_pickle_top",
+			"translate": [0, 4.125, 0]
+		}
+	],
+	"template_sea_pickle_6px": [
+		{
+			"pos": [0, 0, 0],
+			"size": [4, 6, 4],
+			"textures": {
+				"up": "none"
+			},
+			"uv": {
+				"down": [8, 1],
+				"north": [0, 10],
+				"east": [4, 10],
+				"south": [8, 10],
+				"west": [12, 10]
+			}
+		},
+		{
+			"copy": "template_sea_pickle_opening",
+			"translate": [0, 6, 0]
+		},
+		{
+			"pos": [0, 5.125, 0],
+			"size": [4, 0, 4],
+			"textures": {
+				"*": "down"
+			}
+		},
+		{
+			"if": "dead_bit == 0",
+			"copy": "template_sea_pickle_top",
+			"translate": [0, 5.125, 0]
+		}
+	],
+	"template_sea_pickle_7px": [
+		{
+			"pos": [0, 0, 0],
+			"size": [4, 7, 4],
+			"textures": {
+				"up": "none"
+			},
+			"uv": {
+				"down": [8, 1],
+				"north": [0, 9],
+				"east": [4, 9],
+				"south": [8, 9],
+				"west": [12, 9]
+			}
+		},
+		{
+			"copy": "template_sea_pickle_opening",
+			"translate": [0, 7, 0]
+		},
+		{
+			"pos": [0, 6.125, 0],
+			"size": [4, 0, 4],
+			"textures": {
+				"*": "down"
+			}
+		},
+		{
+			"if": "dead_bit == 0",
+			"copy": "template_sea_pickle_top",
+			"translate": [0, 6.125, 0]
+		}
+	],
+	"sea_pickle": [
+		{
+			"if": "cluster_count == 0",
+			"copy": "template_sea_pickle_6px",
+			"translate": [6, 0, 6]
+		},
+		{
+			"if": "cluster_count == 1",
+			"copy": "template_sea_pickle_6px",
+			"translate": [8.5, 0, 3.5]
+		},
+		{
+			"if": "cluster_count == 1",
+			"copy": "template_sea_pickle_4px",
+			"translate": [3.5, 0, 8.5]
+		},
+		{
+			"if": "cluster_count == 2",
+			"copy": "template_sea_pickle_6px",
+			"translate": [4.5, 0, 3.5]
+		},
+		{
+			"if": "cluster_count == 2",
+			"copy": "template_sea_pickle_4px",
+			"translate": [6, 0, 9.25]
+		},
+		{
+			"if": "cluster_count == 2",
+			"copy": "template_sea_pickle_7px",
+			"translate": [9.25, 0, 2.75]
+		},
+		{
+			"if": "cluster_count == 3",
+			"copy": "template_sea_pickle_6px",
+			"translate": [9.5, 0, 3]
+		},
+		{
+			"if": "cluster_count == 3",
+			"copy": "template_sea_pickle_4px",
+			"translate": [2.5, 0, 10]
+		},
+		{
+			"if": "cluster_count == 3",
+			"copy": "template_sea_pickle_7px",
+			"translate": [10, 0, 8.75]
+		},
+		{
+			"if": "cluster_count == 3",
+			"copy": "template_sea_pickle_5px",
+			"translate": [3, 0, 2.5]
+		}
+	],
+	"bamboo": [
+		{
+			"if": "bamboo_stalk_thickness == thin && !#copied_via_copy_block",
+			"pos": [7, 0, 7],
+			"size": [2, 16, 2],
+			"textures": {
+				"*": "north"
+			},
+			"uv": {
+				"side": [9, 0],
+				"up": [13, 0],
+				"down": [13, 0]
+			}
+		},
+		{
+			"if": "bamboo_stalk_thickness == thick",
+			"pos": [7, 0, 7],
+			"size": [3, 16, 3],
+			"textures": {
+				"*": "north"
+			},
+			"uv": {
+				"side": [9, 0],
+				"up": [13, 0],
+				"down": [13, 0]
+			}
+		},
+		{
+			"if": "bamboo_leaf_size == small_leaves && bamboo_stalk_thickness == thin",
+			"pos": [0, 0, 8],
+			"size": [16, 16, 0],
+			"textures": {
+				"*": "south"
+			}
+		},
+		{
+			"if": "bamboo_leaf_size == small_leaves && bamboo_stalk_thickness == thin",
+			"pos": [8, 0, 0],
+			"size": [0, 16, 16],
+			"textures": {
+				"*": "south"
+			}
+		},
+		{
+			"if": "bamboo_leaf_size == small_leaves && bamboo_stalk_thickness == thick",
+			"pos": [2, 0, 8],
+			"size": [5, 16, 0],
+			"textures": {
+				"*": "south"
+			}
+		},
+		{
+			"if": "bamboo_leaf_size == small_leaves && bamboo_stalk_thickness == thick",
+			"pos": [10, 0, 8],
+			"size": [6, 16, 0],
+			"textures": {
+				"*": "south"
+			},
+			"uv": {
+				"*": [9, 0]
+			}
+		},
+		{
+			"if": "bamboo_leaf_size == small_leaves && bamboo_stalk_thickness == thick",
+			"pos": [8, 0, 2],
+			"size": [0, 16, 5],
+			"textures": {
+				"*": "south"
+			}
+		},
+		{
+			"if": "bamboo_leaf_size == small_leaves && bamboo_stalk_thickness == thick",
+			"pos": [8, 0, 10],
+			"size": [0, 16, 6],
+			"textures": {
+				"*": "south"
+			},
+			"uv": {
+				"*": [9, 0]
+			}
+		},
+		{
+			"if": "bamboo_leaf_size == large_leaves",
+			"pos": [0, 0, 8.5],
+			"size": [16, 16, 0],
+			"textures": {
+				"*": "up"
+			}
+		},
+		{
+			"if": "bamboo_leaf_size == large_leaves",
+			"pos": [8.5, 0, 0],
+			"size": [0, 16, 16],
+			"textures": {
+				"*": "up"
+			}
+		},
+		{
+			"if": "#copied_via_copy_block",
+			"pos": [7, 0, 7],
+			"size": [2, 12, 2],
+			"textures": {
+				"*": "north"
+			},
+			"uv": {
+				"side": [9, 0],
+				"up": [13, 0],
+				"down": [13, 0]
+			}
+		},
+		{
+			"if": "#copied_via_copy_block",
+			"pos": [0, 0, 8],
+			"translate": [0, -2, 0],
+			"size": [16, 16, 0],
+			"textures": {
+				"*": "east"
+			}
+		}
+	],
+	"azalea": [
+		{
+			"if": "!#copied_via_copy_block",
+			"pos": [0, 5, 0],
+			"size": [16, 11, 16],
+			"textures": {
+				"down": "none",
+				"side": "side" // azalea in blocks.json has textures for each side as well as "side", so I need to specify here that all sides should use "side" and not north/south/whatever
+			}
+		},
+		{
+			"if": "!#copied_via_copy_block",
+			"pos": [-2, 0, 8],
+			"size": [20, 16, 0],
+			"rot": [0, 45, 0],
+			"textures": {
+				"*": "east"
+			},
+			"uv": {
+				"*": [0, 0]
+			},
+			"uv_sizes": {
+				"*": [16, 16]
+			}
+		},
+		{
+			"if": "!#copied_via_copy_block",
+			"pos": [-2, 0, 8],
+			"size": [20, 16, 0],
+			"rot": [0, -45, 0],
+			"textures": {
+				"*": "east"
+			},
+			"uv": {
+				"*": [0, 0]
+			},
+			"uv_sizes": {
+				"*": [16, 16]
+			}
+		},
+		{
+			"if": "#copied_via_copy_block",
+			"pos": [4, 4, 4],
+			"size": [8, 8, 8],
+			"textures": {
+				"down": "none",
+				"side": "south",
+				"up": "down"
+			}
+		},
+		{
+			"if": "#copied_via_copy_block",
+			"pos": [0.5, 0, 8],
+			"size": [15, 12, 0],
+			"rot": [0, 45, 0],
+			"textures": {
+				"*": "west"
+			}
+		},
+		{
+			"if": "#copied_via_copy_block",
+			"pos": [0.5, 0, 8],
+			"size": [15, 12, 0],
+			"rot": [0, -45, 0],
+			"textures": {
+				"*": "west"
+			}
+		}
+	],
+	"cocoa": [
+		{
+			"if": "age == 0",
+			"pos": [6, 7, 11],
+			"size": [4, 5, 4],
+			"uv": {
+				"side": [11, 4],
+				"up": [0, 0],
+				"down": [0, 0]
+			}
+		},
+		{
+			"if": "age == 1",
+			"pos": [5, 5, 9],
+			"size": [6, 7, 6],
+			"uv": {
+				"side": [9, 4],
+				"up": [0, 0],
+				"down": [0, 0]
+			}
+		},
+		{
+			"if": "age == 2",
+			"pos": [4, 3, 7],
+			"size": [8, 9, 8],
+			"uv": {
+				"side": [7, 4],
+				"up": [0, 0],
+				"down": [0, 0]
+			},
+			"uv_sizes": { // top/bottom texture is streched from 7x7 to 8x8 on fully grown cocoa beans
+				"up": [7, 7],
+				"down": [7, 7]
+			}
+		},
+		{
+			"pos": [8, 12, 12],
+			"size": [0, 4, 4],
+			"uv": {
+				"*": [12, 0]
+			}
+		}
+	],
+	"beacon": [
+		{
+			"pos": [0, 0, 0],
+			"size": [16, 16, 16],
+			"textures": {
+				"down": "side",
+				"*": "none" // the other glass shell culls the rest of the beacon, so I had to  remove it except for at the bottom :(
+			}
+		},
+		{
+			"pos": [2, 0, 2],
+			"size": [12, 3, 12],
+			"textures": {
+				"*": "down"
+			}
+		},
+		{
+			"pos": [3, 3, 3],
+			"size": [10, 11, 10],
+			"textures": {
+				"*": "up"
+			}
+		}
+	],
+	"flower_pot": [
+		{
+			"pos": [5, 0, 5],
+			"size": [6, 6, 6],
+			"textures": {
+				"up": "none" // it culls the dirt inside :(
+			},
+			"uv": {
+				"down": [5, 10] // flower pots in-game use the top texture for the bottom but it looks better with the side texture
+			}
+		},
+		{
+			"pos": [5, 6, 5],
+			"size": [6, 0, 1]
+		},
+		{
+			"pos": [5, 6, 10],
+			"size": [6, 0, 1]
+		},
+		{
+			"pos": [5, 6, 6],
+			"size": [1, 0, 4]
+		},
+		{
+			"pos": [10, 6, 6],
+			"size": [1, 0, 4]
+		},
+		{
+			"pos": [5, 4, 5],
+			"size": [6, 0, 6],
+			"textures": {
+				"*": "textures/blocks/dirt"
+			}
+		},
+		{
+			"if": "update_bit == 1",
+			"copy_block": "entity.PlantBlock", // I know this is inconsistent with other syntax in this file but this property is only used for flower pots so I couldn't care less
+			"translate": [0, 4, 0]
+		}
+	],
+	"glazed_terracotta": [
+		{
+			"pos": [0, 0, 0],
+			"size": [16, 16, 16],
+			"textures": {
+				"north": "none",
+				"south": "none"
+			},
+			"flip_textures_horizontally": ["up", "down", "west"],
+			"flip_textures_vertically": ["up", "down", "west"]
+		},
+		{
+			"pos": [0, 0, 0],
+			"size": [16, 16, 16],
+			"rot": [0, 0, -90],
+			"textures": {
+				"*": "none",
+				"north": "north",
+				"south": "south"
+			}
+		}
+	],
+	"chiseled_bookshelf": [
+		{
+			"if": "books_stored == 0",
+			"pos": [0, 0, 0],
+			"size": [16, 16, 16],
+			"variant": 0
+		},
+		{
+			"if": "books_stored == 63",
+			"pos": [0, 0, 0],
+			"size": [16, 16, 16],
+			"variant": 1
+		},
+		{
+			"if": "books_stored != 0 && books_stored != 63",
+			"pos": [0, 0, 0],
+			"size": [16, 16, 16],
+			"textures": {
+				"north": "none"
+			}
+		},
+		{
+			"if": "books_stored != 0 && books_stored & 1 == 0",
+			"pos": [0, 8, 0],
+			"size": [5, 8, 0],
+			"variant": 0
+		},
+		{
+			"if": "books_stored != 63 && books_stored & 1 > 0",
+			"pos": [0, 8, 0],
+			"size": [5, 8, 0],
+			"variant": 1
+		},
+		{
+			"if": "books_stored != 0 && books_stored & 2 == 0",
+			"pos": [5, 8, 0],
+			"size": [6, 8, 0],
+			"variant": 0
+		},
+		{
+			"if": "books_stored != 63 && books_stored & 2 > 0",
+			"pos": [5, 8, 0],
+			"size": [6, 8, 0],
+			"variant": 1
+		},
+		{
+			"if": "books_stored != 0 && books_stored & 4 == 0",
+			"pos": [11, 8, 0],
+			"size": [5, 8, 0],
+			"variant": 0
+		},
+		{
+			"if": "books_stored != 63 && books_stored & 4 > 0",
+			"pos": [11, 8, 0],
+			"size": [5, 8, 0],
+			"variant": 1
+		},
+		{
+			"if": "books_stored != 0 && books_stored & 8 == 0",
+			"pos": [0, 0, 0],
+			"size": [5, 8, 0],
+			"variant": 0
+		},
+		{
+			"if": "books_stored != 63 && books_stored & 8 > 0",
+			"pos": [0, 0, 0],
+			"size": [5, 8, 0],
+			"variant": 1
+		},
+		{
+			"if": "books_stored != 0 && books_stored & 16 == 0",
+			"pos": [5, 0, 0],
+			"size": [6, 8, 0],
+			"variant": 0
+		},
+		{
+			"if": "books_stored != 63 && books_stored & 16 > 0",
+			"pos": [5, 0, 0],
+			"size": [6, 8, 0],
+			"variant": 1
+		},
+		{
+			"if": "books_stored != 0 && books_stored & 32 == 0",
+			"pos": [11, 0, 0],
+			"size": [5, 8, 0],
+			"variant": 0
+		},
+		{
+			"if": "books_stored != 63 && books_stored & 32 > 0",
+			"pos": [11, 0, 0],
+			"size": [5, 8, 0],
 			"variant": 1
 		}
 	],
