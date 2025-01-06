@@ -4586,5 +4586,89 @@
 			"variant": 1
 		}
 	],
+	"template_hanging_sign_vertical_chain": [
+		{
+			"pos": [1.5, 10, 8],
+			"size": [3, 6, 0],
+			"rot": [0, 45, 0],
+			"pivot": [3, 10, 8],
+			"textures": {
+				"*": "textures/entity/${#block_name}"
+			},
+			"texture_size": [64, 32],
+			"uv": {
+				"*": [0, 6]
+			}
+		},
+		{
+			"pos": [1.5, 10, 8],
+			"size": [3, 6, 0],
+			"rot": [0, -45, 0],
+			"pivot": [3, 10, 8],
+			"textures": {
+				"*": "textures/entity/${#block_name}"
+			},
+			"texture_size": [64, 32],
+			"uv": {
+				"*": [6, 6]
+			}
+		}
+	],
+	"hanging_sign": [
+		{
+			"pos": [1, 0, 7],
+			"size": [14, 10, 2],
+			"textures": {
+				"*": "textures/entity/${#block_name}"
+			},
+			"texture_size": [64, 32],
+			"uv": {
+				"north": [2, 14],
+				"south": [2, 14],
+				"east": [0, 14],
+				"west": [0, 14],
+				"up": [2, 12],
+				"down": [16, 12]
+			}
+		},
+		{
+			"if": "attached_bit == 0",
+			"copy": "template_hanging_sign_vertical_chain"
+		},
+		{
+			"if": "attached_bit == 0",
+			"copy": "template_hanging_sign_vertical_chain",
+			"translate": [10, 0, 0]
+		},
+		{
+			"if": "hanging == 0",
+			"pos": [0, 14, 6],
+			"size": [16, 2, 4],
+			"textures": {
+				"*": "textures/entity/${#block_name}"
+			},
+			"texture_size": [64, 32],
+			"uv": {
+				"north": [4, 4],
+				"south": [4, 4],
+				"east": [0, 4],
+				"west": [0, 4],
+				"up": [4, 0],
+				"down": [20, 0]
+			}
+		},
+		{
+			"if": "attached_bit == 1",
+			"pos": [0, 10, 8],
+			"size": [16, 6, 0],
+			"textures": {
+				"*": "textures/entity/${#block_name}"
+			},
+			"texture_size": [64, 32],
+			"uv": {
+				"*": [12, 6]
+			}
+		}
+	],
 	"debug_auto_uv_4": [{"pos":[0,0,0],"size":[4,4,4]},{"pos":[0,0,4],"size":[4,4,4]},{"pos":[0,0,8],"size":[4,4,4]},{"pos":[0,0,12],"size":[4,4,4]},{"pos":[0,4,0],"size":[4,4,4]},{"pos":[0,4,4],"size":[4,4,4]},{"pos":[0,4,8],"size":[4,4,4]},{"pos":[0,4,12],"size":[4,4,4]},{"pos":[0,8,0],"size":[4,4,4]},{"pos":[0,8,4],"size":[4,4,4]},{"pos":[0,8,8],"size":[4,4,4]},{"pos":[0,8,12],"size":[4,4,4]},{"pos":[0,12,0],"size":[4,4,4]},{"pos":[0,12,4],"size":[4,4,4]},{"pos":[0,12,8],"size":[4,4,4]},{"pos":[0,12,12],"size":[4,4,4]},{"pos":[4,0,0],"size":[4,4,4]},{"pos":[4,0,4],"size":[4,4,4]},{"pos":[4,0,8],"size":[4,4,4]},{"pos":[4,0,12],"size":[4,4,4]},{"pos":[4,4,0],"size":[4,4,4]},{"pos":[4,4,12],"size":[4,4,4]},{"pos":[4,8,0],"size":[4,4,4]},{"pos":[4,8,12],"size":[4,4,4]},{"pos":[4,12,0],"size":[4,4,4]},{"pos":[4,12,4],"size":[4,4,4]},{"pos":[4,12,8],"size":[4,4,4]},{"pos":[4,12,12],"size":[4,4,4]},{"pos":[8,0,0],"size":[4,4,4]},{"pos":[8,0,4],"size":[4,4,4]},{"pos":[8,0,8],"size":[4,4,4]},{"pos":[8,0,12],"size":[4,4,4]},{"pos":[8,4,0],"size":[4,4,4]},{"pos":[8,4,12],"size":[4,4,4]},{"pos":[8,8,0],"size":[4,4,4]},{"pos":[8,8,12],"size":[4,4,4]},{"pos":[8,12,0],"size":[4,4,4]},{"pos":[8,12,4],"size":[4,4,4]},{"pos":[8,12,8],"size":[4,4,4]},{"pos":[8,12,12],"size":[4,4,4]},{"pos":[12,0,0],"size":[4,4,4]},{"pos":[12,0,4],"size":[4,4,4]},{"pos":[12,0,8],"size":[4,4,4]},{"pos":[12,0,12],"size":[4,4,4]},{"pos":[12,4,0],"size":[4,4,4]},{"pos":[12,4,4],"size":[4,4,4]},{"pos":[12,4,8],"size":[4,4,4]},{"pos":[12,4,12],"size":[4,4,4]},{"pos":[12,8,0],"size":[4,4,4]},{"pos":[12,8,4],"size":[4,4,4]},{"pos":[12,8,8],"size":[4,4,4]},{"pos":[12,8,12],"size":[4,4,4]},{"pos":[12,12,0],"size":[4,4,4]},{"pos":[12,12,4],"size":[4,4,4]},{"pos":[12,12,8],"size":[4,4,4]},{"pos":[12,12,12],"size":[4,4,4]}] // function genDebugGeo(step) {let boneCubes = [];for(let x = 0; x < 16; x += step) {for(let y = 0; y < 16; y += step) {for(let z = 0; z < 16; z += step) {if(!x || !y || !z || x == 16 - step || y == 16 - step || z == 16 - step) {boneCubes.push({ pos: [x, y, z], size: [step, step, step] });}}}}return JSON.stringify(boneCubes);}
 }

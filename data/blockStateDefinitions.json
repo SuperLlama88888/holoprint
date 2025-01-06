@@ -212,7 +212,7 @@
 					"5": [90, 90, 0] // east
 				}
 			},
-			"hopper": {
+			"hopper,hanging_sign": {
 				"facing_direction": { // really wish they split these generic states up, into seperate ones - like already done with lever_direction, torch_facing_direction, etc.
 					"0": [0, 0, 0], // down
 					"2": [0, 0, 0], // north

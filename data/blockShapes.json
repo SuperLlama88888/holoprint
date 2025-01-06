@@ -12,7 +12,7 @@
 		"_fence$": "fence",
 		"fence_gate$": "fence_gate",
 		"_stairs$": "stairs",
-		// "_hanging_sign$": "hanging_sign",
+		"_hanging_sign$": "hanging_sign",
 		"wall_sign$": "wall_sign",
 		"standing_sign$": "standing_sign",
 		"_wall$": "wall",
