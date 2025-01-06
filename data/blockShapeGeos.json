@@ -1334,20 +1334,72 @@
 			}
 		}
 	],
-	"wall_sign": [ // todo: make signs more accurate, use proper texture
+	"wall_sign": [
 		{
-			"pos": [0, 4, 14],
-			"size": [16, 8, 2]
+			"pos": [0.25, 4.25, 14.25],
+			"size": [15.5, 7.75, 1.5],
+			"textures": {
+				"*": "#tex"
+			},
+			"texture_size": [64, 32],
+			"uv": {
+				"north": [2, 2],
+				"south": [2, 2],
+				"east": [0, 2],
+				"west": [0, 2],
+				"up": [2, 0],
+				"down": [2, 0]
+			},
+			"uv_sizes": {
+				"north": [24, 12],
+				"south": [24, 12],
+				"east": [2, 12],
+				"west": [2, 12],
+				"up": [24, 2],
+				"down": [24, 2]
+			}
 		}
 	],
-	"standing_sign": [ // todo: fix scaling since sign pixels are smaller than regular pixels
+	"standing_sign": [
 		{
-			"pos": [7, 0, 7],
-			"size": [2, 8, 2]
+			"pos": [7.25, 0, 7.25],
+			"size": [1.5, 8.25, 1.5],
+			"textures": {
+				"*": "#tex"
+			},
+			"texture_size": [64, 32],
+			"uv": {
+				"*": [2, 16]
+			},
+			"uv_sizes": {
+				"side": [2, 12],
+				"up": [2, 2],
+				"down": [2, 2]
+			}
 		},
 		{
-			"pos": [0, 8, 7],
-			"size": [16, 8, 2]
+			"pos": [0.25, 8.25, 7.25],
+			"size": [15.5, 7.75, 1.5],
+			"textures": {
+				"*": "#tex"
+			},
+			"texture_size": [64, 32],
+			"uv": {
+				"north": [2, 2],
+				"south": [2, 2],
+				"east": [0, 2],
+				"west": [0, 2],
+				"up": [2, 0],
+				"down": [2, 0]
+			},
+			"uv_sizes": {
+				"north": [24, 12],
+				"south": [24, 12],
+				"east": [2, 12],
+				"west": [2, 12],
+				"up": [24, 2],
+				"down": [24, 2]
+			}
 		}
 	],
 	"top_snow": [

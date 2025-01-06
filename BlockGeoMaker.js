@@ -158,6 +158,9 @@ export default class BlockGeoMaker {
 		let bone = {
 			"cubes": boneCubes
 		};
+		if(blockShape.includes("{")) {
+			blockShape = blockShape.slice(0, blockShape.indexOf("{"));
+		}
 		let blockShapeSpecificRotations = this.#blockShapeBlockStateRotations[blockShape];
 		let blockNameSpecificRotations = this.#blockNameBlockStateRotations[blockName];
 		Object.entries(block["states"] ?? {}).forEach(([blockStateName, blockStateValue]) => {
