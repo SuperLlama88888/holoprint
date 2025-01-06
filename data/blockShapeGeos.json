@@ -3964,18 +3964,54 @@
 			}
 		}
 	],
+	"template_sea_pickle_opening": [ // this is the top face of the main cube, it's split up so it doesn't cull the face below
+		{
+			"pos": [0, 0, 0],
+			"size": [4, 0, 1],
+			"uv": {
+				"*": [4, 1]
+			}
+		},
+		{
+			"pos": [0, 0, 3],
+			"size": [4, 0, 1],
+			"uv": {
+				"*": [4, 4]
+			}
+		},
+		{
+			"pos": [0, 0, 1],
+			"size": [1, 0, 2],
+			"uv": {
+				"*": [4, 2]
+			}
+		},
+		{
+			"pos": [3, 0, 1],
+			"size": [1, 0, 2],
+			"uv": {
+				"*": [7, 2]
+			}
+		}
+	],
 	"template_sea_pickle_4px": [
 		{
 			"pos": [0, 0, 0],
 			"size": [4, 4, 4],
+			"textures": {
+				"up": "none"
+			},
 			"uv": {
 				"down": [8, 1],
-				"up": [4, 1],
 				"north": [0, 12],
 				"east": [4, 12],
 				"south": [8, 12],
 				"west": [12, 12]
 			}
+		},
+		{
+			"copy": "template_sea_pickle_opening",
+			"translate": [0, 4, 0]
 		},
 		{
 			"pos": [0, 3.125, 0],
@@ -3994,14 +4030,20 @@
 		{
 			"pos": [0, 0, 0],
 			"size": [4, 5, 4],
+			"textures": {
+				"up": "none"
+			},
 			"uv": {
 				"down": [8, 1],
-				"up": [4, 1],
 				"north": [0, 11],
 				"east": [4, 11],
 				"south": [8, 11],
 				"west": [12, 11]
 			}
+		},
+		{
+			"copy": "template_sea_pickle_opening",
+			"translate": [0, 5, 0]
 		},
 		{
 			"pos": [0, 4.125, 0],
@@ -4020,14 +4062,20 @@
 		{
 			"pos": [0, 0, 0],
 			"size": [4, 6, 4],
+			"textures": {
+				"up": "none"
+			},
 			"uv": {
 				"down": [8, 1],
-				"up": [4, 1],
 				"north": [0, 10],
 				"east": [4, 10],
 				"south": [8, 10],
 				"west": [12, 10]
 			}
+		},
+		{
+			"copy": "template_sea_pickle_opening",
+			"translate": [0, 6, 0]
 		},
 		{
 			"pos": [0, 5.125, 0],
@@ -4046,14 +4094,20 @@
 		{
 			"pos": [0, 0, 0],
 			"size": [4, 7, 4],
+			"textures": {
+				"up": "none"
+			},
 			"uv": {
 				"down": [8, 1],
-				"up": [4, 1],
 				"north": [0, 9],
 				"east": [4, 9],
 				"south": [8, 9],
 				"west": [12, 9]
 			}
+		},
+		{
+			"copy": "template_sea_pickle_opening",
+			"translate": [0, 7, 0]
 		},
 		{
 			"pos": [0, 6.125, 0],

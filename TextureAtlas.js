@@ -59,7 +59,7 @@ export default class TextureAtlas {
 	
 	#flipbookTexturesAndSizes;
 	
-	/** @type {HoloprintConfig} */
+	/** @type {HoloPrintConfig} */
 	config;
 	resourcePackStack;
 	
@@ -79,7 +79,7 @@ export default class TextureAtlas {
 	
 	/**
 	 * Creates a texture atlas for loading images from texture references and stitching them together.
-	 * @param {HoloprintConfig} config
+	 * @param {HoloPrintConfig} config
 	 * @param {ResourcePackStack} resourcePackStack
 	 */
 	constructor(config, resourcePackStack) {
@@ -505,7 +505,7 @@ export default class TextureAtlas {
 	/** Add an outline around each texture.
 	 * @param {CanvasImageSource} ogCan
 	 * @param {Array<{ x: Number, y: Number, w: Number, h: Number }>} imagePositions
-	 * @param {HoloprintConfig} config
+	 * @param {HoloPrintConfig} config
 	 * @returns {OffscreenCanvas}
 	 */
 	static addTextureOutlines(ogCan, imagePositions, config) {
@@ -626,5 +626,5 @@ export default class TextureAtlas {
  * @typedef {import("./HoloPrint.js").ImageFragment} ImageFragment
  */
 /**
- * @typedef {import("./HoloPrint.js").HoloPrintConfig} HoloprintConfig
+ * @typedef {import("./HoloPrint.js").HoloPrintConfig} HoloPrintConfig
  */
