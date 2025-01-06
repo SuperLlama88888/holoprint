@@ -162,6 +162,17 @@
 			"size": [4, 16, 4]
 		}
 	],
+	"bamboo_fence": [
+		{
+			"pos": [6, 0, 6],
+			"size": [4, 16, 4],
+			"uv": {
+				"side": [0, 0],
+				"up": [4, 0],
+				"down": [4, 0]
+			}
+		}
+	],
 	"template_fence_gate": [
 		{
 			"pos": [0, 5, 7],
