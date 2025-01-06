@@ -199,6 +199,16 @@
 							"type": "string",
 							"enum": ["west", "east", "down", "up", "north", "south", "side", "*"]
 						}
+					},
+					"arrays": {
+						"description": "Named arrays that can be used by other properties. Currently, only \"tint\" supports accessing arrays.",
+						"type": "object",
+						"patternProperties": {
+							"^\\w+$": {
+								"description": "Array name"
+							}
+						},
+						"additionalProperties": false
 					}
 				},
 				"oneOf": [

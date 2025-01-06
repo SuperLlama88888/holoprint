@@ -4722,5 +4722,97 @@
 			}
 		}
 	],
+	"template_banner": [
+		{
+			"pos": [1.5, -13, 13.55],
+			"size": [13, 26, 0.65],
+			"rot": [-1.5, 0, 0],
+			"pivot": [8, 13, 14.75],
+			"texture_size": [64, 64],
+			"uv": {
+				"north": [1, 1],
+				"south": [22, 1],
+				"east": [0, 1],
+				"west": [0, 1],
+				"up": [1, 0],
+				"down": [21, 0]
+			},
+			"uv_sizes": {
+				"north": [20, 40],
+				"south": [20, 40],
+				"east": [1, 20],
+				"west": [1, 20],
+				"up": [20, 1],
+				"down": [20, 1]
+			},
+			"tint": "${Array.banner_colors[entity.Base]}",
+			"arrays": {
+				"banner_colors": ["#202025", "#C5332A", "#698A19", "#925E38", "#434CBE", "#9938CD", "#19AEAE", "#AFAFA9", "#4F585C", "#FC9BBE", "#8FDE23", "#FCF144", "#41C8F3", "#DE57D3", "#FC8F20", "#FCFCFC"]
+			}
+		},
+		{
+			"pos": [1.5, 11.7, 14.2],
+			"size": [13, 1.3, 1.3],
+			"texture_size": [64, 64],
+			"uv": {
+				"north": [2, 44],
+				"south": [2, 44],
+				"east": [0, 44],
+				"west": [0, 44],
+				"up": [2, 42],
+				"down": [2, 42]
+			},
+			"uv_sizes": {
+				"north": [20, 2],
+				"south": [20, 2],
+				"east": [2, 2],
+				"west": [2, 2],
+				"up": [20, 1],
+				"down": [20, 1]
+			}
+		}
+	],
+	"wall_banner": [
+		{
+			"if": "entity.Type == 0",
+			"copy": "template_banner",
+			"textures": {
+				"*": "textures/entity/banner/banner_base"
+			}
+		},
+		{
+			"if": "entity.Type == 1",
+			"copy": "template_banner",
+			"textures": {
+				"*": "textures/entity/banner/banner_illager"
+			}
+		}
+	],
+	"standing_banner": [
+		{
+			"copy": "wall_banner",
+			"translate": [0, 15, -6.85],
+			"rot": [0, 180, 0],
+			"pivot": [8, 13, 14.75]
+		},
+		{
+			"pos": [7.35, 0, 7.35],
+			"size": [1.3, 26.7, 1.3],
+			"textures": {
+				"*": "textures/entity/banner/banner_base"
+			},
+			"texture_size": [64, 64],
+			"uv": {
+				"side": [50, 2],
+				"up": [46, 0],
+				"down": [48, 0]
+			},
+			"uv_sizes": {
+				"side": [2, 42],
+				"up": [2, 2],
+				"down": [2, 2]
+			}
+		}
+	],
 	"debug_auto_uv_4": [{"pos":[0,0,0],"size":[4,4,4]},{"pos":[0,0,4],"size":[4,4,4]},{"pos":[0,0,8],"size":[4,4,4]},{"pos":[0,0,12],"size":[4,4,4]},{"pos":[0,4,0],"size":[4,4,4]},{"pos":[0,4,4],"size":[4,4,4]},{"pos":[0,4,8],"size":[4,4,4]},{"pos":[0,4,12],"size":[4,4,4]},{"pos":[0,8,0],"size":[4,4,4]},{"pos":[0,8,4],"size":[4,4,4]},{"pos":[0,8,8],"size":[4,4,4]},{"pos":[0,8,12],"size":[4,4,4]},{"pos":[0,12,0],"size":[4,4,4]},{"pos":[0,12,4],"size":[4,4,4]},{"pos":[0,12,8],"size":[4,4,4]},{"pos":[0,12,12],"size":[4,4,4]},{"pos":[4,0,0],"size":[4,4,4]},{"pos":[4,0,4],"size":[4,4,4]},{"pos":[4,0,8],"size":[4,4,4]},{"pos":[4,0,12],"size":[4,4,4]},{"pos":[4,4,0],"size":[4,4,4]},{"pos":[4,4,12],"size":[4,4,4]},{"pos":[4,8,0],"size":[4,4,4]},{"pos":[4,8,12],"size":[4,4,4]},{"pos":[4,12,0],"size":[4,4,4]},{"pos":[4,12,4],"size":[4,4,4]},{"pos":[4,12,8],"size":[4,4,4]},{"pos":[4,12,12],"size":[4,4,4]},{"pos":[8,0,0],"size":[4,4,4]},{"pos":[8,0,4],"size":[4,4,4]},{"pos":[8,0,8],"size":[4,4,4]},{"pos":[8,0,12],"size":[4,4,4]},{"pos":[8,4,0],"size":[4,4,4]},{"pos":[8,4,12],"size":[4,4,4]},{"pos":[8,8,0],"size":[4,4,4]},{"pos":[8,8,12],"size":[4,4,4]},{"pos":[8,12,0],"size":[4,4,4]},{"pos":[8,12,4],"size":[4,4,4]},{"pos":[8,12,8],"size":[4,4,4]},{"pos":[8,12,12],"size":[4,4,4]},{"pos":[12,0,0],"size":[4,4,4]},{"pos":[12,0,4],"size":[4,4,4]},{"pos":[12,0,8],"size":[4,4,4]},{"pos":[12,0,12],"size":[4,4,4]},{"pos":[12,4,0],"size":[4,4,4]},{"pos":[12,4,4],"size":[4,4,4]},{"pos":[12,4,8],"size":[4,4,4]},{"pos":[12,4,12],"size":[4,4,4]},{"pos":[12,8,0],"size":[4,4,4]},{"pos":[12,8,4],"size":[4,4,4]},{"pos":[12,8,8],"size":[4,4,4]},{"pos":[12,8,12],"size":[4,4,4]},{"pos":[12,12,0],"size":[4,4,4]},{"pos":[12,12,4],"size":[4,4,4]},{"pos":[12,12,8],"size":[4,4,4]},{"pos":[12,12,12],"size":[4,4,4]}] // function genDebugGeo(step) {let boneCubes = [];for(let x = 0; x < 16; x += step) {for(let y = 0; y < 16; y += step) {for(let z = 0; z < 16; z += step) {if(!x || !y || !z || x == 16 - step || y == 16 - step || z == 16 - step) {boneCubes.push({ pos: [x, y, z], size: [step, step, step] });}}}}return JSON.stringify(boneCubes);}
 }

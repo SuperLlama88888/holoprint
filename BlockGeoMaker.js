@@ -465,7 +465,7 @@ export default class BlockGeoMaker {
 				}
 				if("tint" in cube) {
 					let tint = cube["tint"];
-					tint = this.#interpolateInBlockValues(cube["block_override"] ?? block, tint);
+					tint = this.#interpolateInBlockValues(cube["block_override"] ?? block, tint, cube);
 					if(tint[0] == "#") {
 						textureRef["tint"] = hexColorToClampedTriplet(tint);
 					} else {
@@ -713,12 +713,41 @@ export default class BlockGeoMaker {
 	 * Substitutes values from a block into a particular expression.
 	 * @param {Block} block
 	 * @param {String} fullExpression
+	 * @param {Object} [cube]
 	 * @returns {String}
 	 */
-	#interpolateInBlockValues(block, fullExpression) {
+	#interpolateInBlockValues(block, fullExpression, cube) {
 		let wholeStringValue;
 		let substitutedExpression = fullExpression.replaceAll(/\${([^}]+)}/g, (bracketedExpression, expression) => {
 			if(wholeStringValue != undefined) return;
+			if(/^Array\.\w+\[[^\[]+\]$/.test(expression)) {
+				let [, arrayName, arrayIndexVar] = expression.match(/^Array\.(\w+)\[([^\[]+)\]$/);
+				let array = cube["arrays"]?.[arrayName];
+				if(!array) {
+					console.error(`Couldn't find array ${arrayName} in cube:`, cube);
+					return "";
+				}
+				let arrayIndex;
+				if(arrayIndexVar.startsWith("entity.")) {
+					let blockEntityProperty = arrayIndexVar.slice(7);
+					if(!("block_entity_data" in block) || !(blockEntityProperty in block["block_entity_data"])) {
+						console.error(`Cannot find block entity property ${blockEntityProperty} in ${block["name"]}:`, block);
+						return "";
+					}
+					arrayIndex = block["block_entity_data"][blockEntityProperty];
+				} else {
+					if(!("states" in block) || !(arrayIndexVar in block["states"])) {
+						console.error(`Cannot find block state ${arrayIndexVar} in ${block["name"]}:`, block);
+						return "";
+					}
+					arrayIndex = block["states"][arrayIndexVar];
+				}
+				if(!(arrayIndex in array)) {
+					console.error(`Array index out of bounds: ${JSON.stringify(array)}[${arrayIndex}]`);
+					return "";
+				}
+				return array[arrayIndex];
+			}
 			let match = expression.replaceAll(/\s/g, "").match(/^(#block_name|#block_states|#block_entity_data)((?:\.\w+|\[-?\d+\])*)(\[(-?\d+):(-?\d*)\]|\[:(-?\d+)\])?(?:\?\?(.+))?$/);
 			if(!match) {
 				console.error(`Wrongly formatted expression: ${bracketedExpression}`);

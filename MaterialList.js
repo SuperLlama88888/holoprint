@@ -42,7 +42,8 @@ export default class MaterialList {
 		"pale_oak_standing_sign": "pale_oak_sign",
 		"bamboo_sapling": "bamboo",
 		"trip_wire": "string",
-		"cocoa": "cocoa_beans"
+		"cocoa": "cocoa_beans",
+		"wall_banner": "standing_banner"
 	};
 	/** Remappings for serialization_ids mapping to the wrong things in .lang files */
 	static #serializationIdPatches = {

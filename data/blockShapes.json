@@ -144,8 +144,10 @@
 		"tall_grass": "double_plant",
 		"lilac": "double_plant",
 		"peony": "double_plant",
-		"double_plant": "double_plant", // legcay
+		"double_plant": "double_plant", // legacy
 		
+		"wall_banner": "wall_banner",
+		"standing_banner": "standing_banner",
 		"bamboo_fence_gate": "bamboo_fence_gate", // has special texture so requires special UV mapping. other fence gates don't have any UV mapping so they need separate block shapes :(
 		"stonecutter_block": "stonecutter",
 		"enchanting_table": "enchanting_table",
