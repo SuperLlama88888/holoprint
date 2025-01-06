@@ -229,7 +229,7 @@
 					"3": [0, -90, 0] // south
 				}
 			},
-			"wall_sign": { // todo: merge with hopper defs maybe
+			"wall_sign,glazed_terracotta": { // todo: merge with hopper defs maybe
 				"facing_direction": {
 					"2": [0, 0, 0], // north
 					"3": [0, 180, 0], // south

@@ -27,7 +27,8 @@
 		"candle_cake$": "candle_cake",
 		"_tulip$": "cross_texture",
 		"anvil$": "anvil",
-		"command_block$": "command_block"
+		"command_block$": "command_block",
+		"_glazed_terracotta$": "glazed_terracotta"
 	},
 	"individual_blocks": {
 		"bamboo_sapling": "cross_texture",
