@@ -370,25 +370,47 @@
 			"translate": [0, -3, 0]
 		}
 	],
-	"door": [ // upper door blocks don't contain all the block states, and I think that MCBE relies on the lower door to do everything. e.g. look at the nbt of a structure with door tops only, and you'll see why we need to do it this way.
+	"template_door": [ // upper door blocks don't contain all the block states, and I think that MCBE relies on the lower door to do everything. e.g. look at the nbt of a structure with door tops only, and you'll see why we need to do it this way.
 		{
 			"if": "upper_block_bit == 0",
-			"pos": [13, 0, 0],
-			"size": [3, 16, 16],
+			"pos": [0, 0, 0],
+			"size": [16, 16, 3],
 			"textures": {
-				"*": "down"
-			}
+				"*": "down",
+				"up": "none"
+			},
+			"uv": {
+				"*": [0, 0],
+				"down": [0, 13],
+				"west": [13, 0]
+			},
+			"flip_textures_horizontally": ["south", "west"]
 		},
 		{
 			"if": "upper_block_bit == 0",
-			"pos": [13, 16, 0], // upper half
-			"size": [3, 16, 16],
+			"pos": [0, 16, 0], // upper half
+			"size": [16, 16, 3],
 			"textures": {
-				"*": "side"
+				"*": "side",
+				"down": "none"
 			},
 			"uv": {
-				"*": [0, 0]
-			}
+				"*": [0, 0],
+				"west": [13, 0]
+			},
+			"flip_textures_horizontally": ["south", "west", "up"]
+		}
+	],
+	"door": [
+		{
+			"if": "open_bit == 0",
+			"copy": "template_door"
+		},
+		{
+			"if": "open_bit == 1",
+			"copy": "template_door",
+			"rot": [0, -90, 0],
+			"pivot": [1.5, 0, 1.5]
 		}
 	],
 	"trapdoor": [ // direction 1 = east hinge, 2 = north hinge, 0 = west hinge, 3 = south hinge [west, east, north, south]
