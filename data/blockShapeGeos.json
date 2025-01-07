@@ -156,6 +156,48 @@
 			"pivot": [0, 3.5, 8]
 		}
 	],
+	"template_redstone_torch": [
+		{
+			"pos": [7, 0, 7],
+			"size": [2, 10, 2],
+			"textures": {
+				"side": "none"
+			},
+			"uv": {
+				"up": [7, 6],
+				"down": [7, 14]
+			}
+		},
+		{
+			"pos": [0, 0, 7],
+			"size": [16, 16, 0]
+		},
+		{
+			"pos": [0, 0, 9],
+			"size": [16, 16, 0]
+		},
+		{
+			"pos": [7, 0, 0],
+			"size": [0, 16, 16]
+		},
+		{
+			"pos": [9, 0, 0],
+			"size": [0, 16, 16]
+		}
+	],
+	"redstone_torch": [
+		{
+			"if": "torch_facing_direction == top",
+			"copy": "template_redstone_torch"
+		},
+		{
+			"if": "torch_facing_direction != top", // the rest of the rotations are handled in blockStateDefinitions.json
+			"copy": "template_redstone_torch",
+			"translate": [-8, 3.5, 0],
+			"rot": [0, 0, 22.5],
+			"pivot": [8, 0, 8]
+		}
+	],
 	"fence": [ // fences don't have block states, we'll have to read blocks next to each other :((
 		{
 			"pos": [6, 0, 6],
@@ -1162,13 +1204,31 @@
 	],
 	"template_small_redstone_torch": [ // only used in repeaters and comparators
 		{
-			"pos": [0, 0, 0],
-			"size": [2, 5, 2],
+			"pos": [0, 5, 0],
+			"size": [2, 0, 2],
 			"uv": {
-				"up": [7, 6],
-				"down": [7, 14],
-				"side": [7, 6]
+				"*": [7, 6]
 			}
+		},
+		{
+			"pos": [0, 5, 7],
+			"size": [16, 16, 0],
+			"translate": [-7, -5, -7]
+		},
+		{
+			"pos": [0, 5, 9],
+			"size": [16, 16, 0],
+			"translate": [-7, -5, -7]
+		},
+		{
+			"pos": [7, 5, 0],
+			"size": [0, 16, 16],
+			"translate": [-7, -5, -7]
+		},
+		{
+			"pos": [9, 5, 0],
+			"size": [0, 16, 16],
+			"translate": [-7, -5, -7]
 		}
 	],
 	"repeater": [
@@ -1233,13 +1293,45 @@
 		},
 		{
 			"if": "output_subtract_bit == 1",
-			"pos": [7, 2, 2],
-			"size": [2, 3, 2],
+			"pos": [7, 5, 2],
+			"size": [2, 0, 2],
 			"terrain_texture": "comparator_torch",
 			"ignore_eigenvariant": true,
 			"uv": {
 				"*": [7, 6]
 			}
+		},
+		{
+			"if": "output_subtract_bit == 1",
+			"pos": [0, 7, 7],
+			"size": [16, 16, 0],
+			"translate": [0, -5, -5],
+			"terrain_texture": "comparator_torch",
+			"ignore_eigenvariant": true
+		},
+		{
+			"if": "output_subtract_bit == 1",
+			"pos": [0, 7, 9],
+			"size": [16, 16, 0],
+			"translate": [0, -5, -5],
+			"terrain_texture": "comparator_torch",
+			"ignore_eigenvariant": true
+		},
+		{
+			"if": "output_subtract_bit == 1",
+			"pos": [7, 7, 0],
+			"size": [0, 16, 16],
+			"translate": [0, -5, -5],
+			"terrain_texture": "comparator_torch",
+			"ignore_eigenvariant": true
+		},
+		{
+			"if": "output_subtract_bit == 1",
+			"pos": [9, 7, 0],
+			"size": [0, 16, 16],
+			"translate": [0, -5, -5],
+			"terrain_texture": "comparator_torch",
+			"ignore_eigenvariant": true
 		}
 	],
 	"liquid": [

@@ -108,8 +108,7 @@
 		"torch": "torch",
 		"soul_torch": "torch",
 		"unlit_redstone_torch": "torch",
-		// "redstone_torch": "redstone_torch", // a different block shape is needed for the "glow" outline.
-		"redstone_torch": "torch",
+		"redstone_torch": "redstone_torch", // a different block shape is needed for the "glow" outline.
 		
 		// flowers
 		"red_flower": "cross_texture", // legacy
@@ -232,7 +231,8 @@
 		"pale_hanging_moss": "cross_texture",
 		"pale_moss_carpet": "pale_moss_carpet",
 		"closed_eyeblossom": "cross_texture",
-		"open_eyeblossom": "cross_texture"
+		"open_eyeblossom": "cross_texture",
+		"resin_clump": "multi_face"
 		
 		// "dirt": "debug_auto_uv_4" // must disable geometry merging
 	}
