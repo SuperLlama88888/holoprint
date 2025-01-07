@@ -672,7 +672,11 @@
 			// "pos": [0.125, 0.125, 0.125],
 			// "size": [15.75, 15.75, 15.75]
 			"pos": [0, 0.125, 0],
-			"size": [16, 0, 16]
+			"size": [16, 0, 16],
+			"tint": "${Array.redstone_dust_tints[redstone_signal]}",
+			"arrays": {
+				"redstone_dust_tints": ["#4D0000", "#700000", "#7A0000", "#850000", "#8F0000", "#990000", "#A30000", "#AD0000", "#B80000", "#C20000", "#CC0000", "#D60000", "#E00000", "#EB0700", "#F51C00", "#FF3300"] // Generated with code adapted from net.minecraft.world.level.block.RedStoneWireBlock
+			}
 		}
 	],
 	"rail": [

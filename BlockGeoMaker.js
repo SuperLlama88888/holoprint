@@ -487,9 +487,6 @@ export default class BlockGeoMaker {
 						textureRef["tint"] = [colorCode >> 16 & 0xFF, colorCode >> 8 & 0xFF, colorCode & 0xFF].map(x => x / 255);
 					}
 				}
-				if(blockName == "redstone_wire") {
-					textureRef["tint"] = BlockGeoMaker.#REDSTONE_DUST_TINTS[block["states"]["redstone_signal"]];
-				}
 				
 				this.textureRefs.add(textureRef);
 				let flipTextureHorizontally = cube["flip_textures_horizontally"]?.includes(faceName) ^ (isSideFace && cube["flip_textures_horizontally"]?.includes("side")) ^ cube["flip_textures_horizontally"]?.includes("*");

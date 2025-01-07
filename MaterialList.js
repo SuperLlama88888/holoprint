@@ -48,6 +48,12 @@ export default class MaterialList {
 		"cave_vines_body_with_berries": "glow_berries",
 		"cave_vines_head_with_berries": "glow_berries"
 	};
+	/** @type {Array<[String|RegExp, Number, [String]]>} If item names match, item counts will be multiplied (and optionally, parts of the item name will be removed). */
+	static #itemCountMultipliers = [
+		[/double_.*slab$/, 2, "double_"],
+		[/_door$/, 0.5],
+		["peony,rose_bush,sunflower,lilac,large_fern,tall_grass", 0.5]
+	];
 	/** Remappings for serialization_ids mapping to the wrong things in .lang files */
 	static #serializationIdPatches = {
 		"tile.oak_planks": "tile.planks.oak",
@@ -139,10 +145,14 @@ export default class MaterialList {
 			return;
 		}
 		let itemName = MaterialList.#blockToItemIDS[blockName] ?? blockName;
-		if(/double_.*slab$/.test(itemName)) {
-			itemName = itemName.replace("double_", "");
-			count *= 2;
-		}
+		MaterialList.#itemCountMultipliers.forEach(([pattern, multiplier, replacement]) => {
+			if(pattern instanceof RegExp && pattern.test(itemName) || typeof pattern == "string" && pattern.split(",").includes(itemName)) {
+				count *= multiplier;
+				if(replacement) {
+					itemName = itemName.replaceAll(replacement, "");
+				}
+			}
+		});
 		this.materials.set(itemName, (this.materials.get(itemName) ?? 0) + count);
 		this.totalMaterialCount += count;
 	}
