@@ -413,21 +413,57 @@
 			"pivot": [1.5, 0, 1.5]
 		}
 	],
-	"trapdoor": [ // direction 1 = east hinge, 2 = north hinge, 0 = west hinge, 3 = south hinge [west, east, north, south]
+	"template_trapdoor": [ // direction 1 = east hinge, 2 = north hinge, 0 = west hinge, 3 = south hinge [west, east, north, south]
 		{
-			"if": "open_bit == 0 && upside_down_bit == 0",
-			"pos": [0, 0, 0],
-			"size": [16, 3, 16]
-		},
-		{
-			"if": "open_bit == 0 && upside_down_bit == 1",
+			"if": "open_bit == 0 && direction >= 2",
 			"pos": [0, 13, 0],
-			"size": [16, 3, 16]
+			"size": [16, 3, 16],
+			"uv": {
+				"side": [0, 0]
+			}
 		},
 		{
-			"if": "open_bit == 1",
-			"pos": [13, 0, 0],
-			"size": [3, 16, 16]
+			"if": "open_bit == 1 || direction < 2",
+			"pos": [0, 13, 0],
+			"size": [16, 3, 16],
+			"uv": {
+				"side": [0, 0]
+			},
+			"flip_textures_horizontally": ["down"], // when facing east/west the hinges are on the same side on the bottom + top, but when facing north/south they're on different sides
+			"flip_textures_vertically": ["down"]
+		}
+	],
+	"trapdoor": [ // textures are wacky hence the long definition, but in the end it's pixel-perfect!
+		{
+			"if": "upside_down_bit == 0 && direction >= 2 && open_bit == 0",
+			"copy": "template_trapdoor",
+			"rot": [180, 0, 0]
+		},
+		{
+			"if": "upside_down_bit == 0 && direction < 2 && open_bit == 0",
+			"copy": "template_trapdoor",
+			"rot": [180, 0, 0],
+			"flip_textures_horizontally": ["down", "up"], // side changing for the bottom has to be negated here for the down face and added for the up face
+			"flip_textures_vertically": ["down", "up"]
+		},
+		{
+			"if": "upside_down_bit == 1 && open_bit == 0",
+			"copy": "template_trapdoor"
+		},
+		{
+			"if": "upside_down_bit == 0 && open_bit == 1",
+			"copy": "template_trapdoor",
+			"rot": [90, 0, 0], // would be fun to animate these
+			"pivot": [8, 14.5, 1.5],
+			"translate": [0, -13, 0]
+		},
+		{
+			"if": "upside_down_bit == 1 && open_bit == 1",
+			"copy": "template_trapdoor",
+			"rot": [-90, 0, 0], // would be fun to animate these
+			"pivot": [8, 14.5, 1.5],
+			"flip_textures_horizontally": ["side"],
+			"flip_textures_vertically": ["side"]
 		}
 	],
 	"template_book": [

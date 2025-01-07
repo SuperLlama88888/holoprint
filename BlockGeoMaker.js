@@ -276,7 +276,17 @@ export default class BlockGeoMaker {
 						copiedCube["translate"] = (copiedCube["translate"] ?? [0, 0, 0]).map((x, i) => x + cube["translate"][i]);
 					}
 					fieldsToCopy.forEach(field => { // copy all fields from this cube onto the new ones
-						if(typeof copiedCube[field] == "object") {
+						if(field == "flip_textures_horizontally" || field == "flip_textures_vertically") { // these ones are arrays but are supposed to represent sets, so we take the XOR/symmetric difference (ik there's a native method but it's very new)
+							let facesInCopiedCube = new Set(copiedCube[field] ?? []);
+							cube[field].forEach(face => {
+								if(facesInCopiedCube.has(face)) {
+									facesInCopiedCube.delete(face);
+								} else {
+									facesInCopiedCube.add(face);
+								}
+							});
+							copiedCube[field] = [...facesInCopiedCube];
+						} else if(typeof copiedCube[field] == "object") {
 							copiedCube[field] = { ...cube[field], ...copiedCube[field] }; // fields on the copied cubes still take priority over the "parent" cube (the one that's copying it)
 						} else {
 							copiedCube[field] ??= cube[field];
@@ -479,8 +489,8 @@ export default class BlockGeoMaker {
 				}
 				
 				this.textureRefs.add(textureRef);
-				let flipTextureHorizontally = cube["flip_textures_horizontally"]?.includes(faceName) || (isSideFace && cube["flip_textures_horizontally"]?.includes("side")) || cube["flip_textures_horizontally"]?.includes("*");
-				let flipTextureVertically = cube["flip_textures_vertically"]?.includes(faceName) || (isSideFace && cube["flip_textures_vertically"]?.includes("side")) || cube["flip_textures_vertically"]?.includes("*");
+				let flipTextureHorizontally = cube["flip_textures_horizontally"]?.includes(faceName) ^ (isSideFace && cube["flip_textures_horizontally"]?.includes("side")) ^ cube["flip_textures_horizontally"]?.includes("*");
+				let flipTextureVertically = cube["flip_textures_vertically"]?.includes(faceName) ^ (isSideFace && cube["flip_textures_vertically"]?.includes("side")) ^ cube["flip_textures_vertically"]?.includes("*");
 				boneCube["uv"][faceName] = {
 					"index": this.textureRefs.indexOf(textureRef),
 					"flip_horizontally": (faceName == "down" || faceName == "up") ^ flipTextureHorizontally, // in MC the down/up faces are rotated 180 degrees compared to how they are in geometry; this can be faked by flipping both axes. I don't want to use uv_rotation since that's a 1.21 thing and I want support back to 1.16.

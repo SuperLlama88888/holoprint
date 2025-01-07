@@ -236,12 +236,12 @@
 					"5": [0, 90, 0] // east
 				}
 			},
-			"trapdoor": { // TODO: fix hinge position being wrong - look at birch trapdoors with trapdoors.mcstructure
+			"trapdoor": {
 				"direction": {
-					"0": [0, 0, 0], // west
-					"1": [0, 180, 0], // east
-					"2": [0, 90, 0], // north
-					"3": [0, -90, 0] // south
+					"0": [0, -90, 0],
+					"1": [0, 90, 0],
+					"2": [0, 0, 0],
+					"3": [0, 180, 0]
 				}
 			},
 			"wall_sign,glazed_terracotta,wall_banner": { // todo: merge with hopper defs maybe
