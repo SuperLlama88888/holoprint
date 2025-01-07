@@ -86,6 +86,21 @@
 			},
 			"creaking_heart": {
 				"active": [0, 1]
+			},
+			"vault": {
+				"#exclusive_add": true,
+				"vault_state": {
+					"inactive": 0,
+					"active": 1,
+					"unlocking": 2,
+					"ejecting": 3
+				},
+				"ominous": [0, 4]
+			},
+			"trial_spawner": {
+				"#exclusive_add": true,
+				"trial_spawner_state": [0, 1, 2, 3, 4, 5],
+				"ominous": [0, 6]
 			}
 		}
 	},
