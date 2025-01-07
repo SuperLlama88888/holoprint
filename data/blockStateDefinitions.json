@@ -28,7 +28,8 @@
 			"moisturized_amount": [1, 0, 0, 0, 0, 0, 0, 0], // farmland
 			"tip": [0, 1], // pale hanging moss
 			"bloom": [0, 1], // sculk catalyst (hardly noticeable in-game)
-			"can_summon": [0, 1] // sculk shrieker
+			"can_summon": [0, 1], // sculk shrieker
+			"respawn_anchor_charge": [0, 1, 2, 3, 4]
 		},
 		"block_shapes": {
 			"cake": {

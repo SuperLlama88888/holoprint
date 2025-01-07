@@ -214,7 +214,8 @@
 		"sculk_sensor": "sculk_sensor",
 		"calibrated_sculk_sensor": "calibrated_sculk_sensor",
 		"sculk_vein": "multi_face",
-		"frog_spawn": "carpet", // hmm
+		"frog_spawn": "lilypad", // hmm
+		"mangrove_roots": "mangrove_roots",
 		"sniffer_egg": "sniffer_egg",
 		"pink_petals": "pink_petals",
 		"slime": "slime_block",
