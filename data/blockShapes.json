@@ -202,7 +202,7 @@
 		"medium_amethyst_bud": "cross_texture",
 		"large_amethyst_bud": "cross_texture",
 		"amethyst_cluster": "cross_texture",
-		"cave_vines": "cross_texture",
+		"cave_vines": "cross_texture", // todo: check block below to determine if "head" texture should be used
 		"cave_vines_body_with_berries": "cross_texture",
 		"cave_vines_head_with_berries": "cross_texture",
 		"glow_lichen": "multi_face",

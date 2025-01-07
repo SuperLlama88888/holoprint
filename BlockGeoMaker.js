@@ -47,7 +47,10 @@ export default class BlockGeoMaker {
 		"carved_pumpkin": 0,
 		"lit_pumpkin": 1,
 		"pumpkin": 2,
-		"pale_oak_leaves": 0
+		"pale_oak_leaves": 0,
+		"cave_vines": 0,
+		"cave_vines_body_with_berries": 1,
+		"cave_vines_head_with_berries": 1
 	};
 	
 	static #REDSTONE_DUST_TINTS = function() {

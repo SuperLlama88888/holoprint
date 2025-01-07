@@ -43,7 +43,10 @@ export default class MaterialList {
 		"bamboo_sapling": "bamboo",
 		"trip_wire": "string",
 		"cocoa": "cocoa_beans",
-		"wall_banner": "standing_banner"
+		"wall_banner": "standing_banner",
+		"cave_vines": "glow_berries",
+		"cave_vines_body_with_berries": "glow_berries",
+		"cave_vines_head_with_berries": "glow_berries"
 	};
 	/** Remappings for serialization_ids mapping to the wrong things in .lang files */
 	static #serializationIdPatches = {
