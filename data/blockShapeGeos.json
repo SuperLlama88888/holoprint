@@ -156,10 +156,63 @@
 			"pivot": [0, 3.5, 8]
 		}
 	],
+	"template_redstone_torch": [
+		{
+			"pos": [7, 0, 7],
+			"size": [2, 10, 2],
+			"textures": {
+				"side": "none"
+			},
+			"uv": {
+				"up": [7, 6],
+				"down": [7, 14]
+			}
+		},
+		{
+			"pos": [0, 0, 7],
+			"size": [16, 16, 0]
+		},
+		{
+			"pos": [0, 0, 9],
+			"size": [16, 16, 0]
+		},
+		{
+			"pos": [7, 0, 0],
+			"size": [0, 16, 16]
+		},
+		{
+			"pos": [9, 0, 0],
+			"size": [0, 16, 16]
+		}
+	],
+	"redstone_torch": [
+		{
+			"if": "torch_facing_direction == top",
+			"copy": "template_redstone_torch"
+		},
+		{
+			"if": "torch_facing_direction != top", // the rest of the rotations are handled in blockStateDefinitions.json
+			"copy": "template_redstone_torch",
+			"translate": [-8, 3.5, 0],
+			"rot": [0, 0, 22.5],
+			"pivot": [8, 0, 8]
+		}
+	],
 	"fence": [ // fences don't have block states, we'll have to read blocks next to each other :((
 		{
 			"pos": [6, 0, 6],
 			"size": [4, 16, 4]
+		}
+	],
+	"bamboo_fence": [
+		{
+			"pos": [6, 0, 6],
+			"size": [4, 16, 4],
+			"uv": {
+				"side": [0, 0],
+				"up": [4, 0],
+				"down": [4, 0]
+			}
 		}
 	],
 	"template_fence_gate": [
@@ -359,42 +412,100 @@
 			"translate": [0, -3, 0]
 		}
 	],
-	"door": [ // upper door blocks don't contain all the block states, and I think that MCBE relies on the lower door to do everything. e.g. look at the nbt of a structure with door tops only, and you'll see why we need to do it this way.
+	"template_door": [ // upper door blocks don't contain all the block states, and I think that MCBE relies on the lower door to do everything. e.g. look at the nbt of a structure with door tops only, and you'll see why we need to do it this way.
 		{
 			"if": "upper_block_bit == 0",
-			"pos": [13, 0, 0],
-			"size": [3, 16, 16],
+			"pos": [0, 0, 0],
+			"size": [16, 16, 3],
 			"textures": {
-				"*": "down"
-			}
-		},
-		{
-			"if": "upper_block_bit == 0",
-			"pos": [13, 16, 0], // upper half
-			"size": [3, 16, 16],
-			"textures": {
-				"*": "side"
+				"*": "down",
+				"up": "none"
 			},
 			"uv": {
-				"*": [0, 0]
-			}
-		}
-	],
-	"trapdoor": [ // direction 1 = east hinge, 2 = north hinge, 0 = west hinge, 3 = south hinge [west, east, north, south]
-		{
-			"if": "open_bit == 0 && upside_down_bit == 0",
-			"pos": [0, 0, 0],
-			"size": [16, 3, 16]
+				"*": [0, 0],
+				"down": [0, 13],
+				"west": [13, 0]
+			},
+			"flip_textures_horizontally": ["south", "west"]
 		},
 		{
-			"if": "open_bit == 0 && upside_down_bit == 1",
-			"pos": [0, 13, 0],
-			"size": [16, 3, 16]
+			"if": "upper_block_bit == 0",
+			"pos": [0, 16, 0], // upper half
+			"size": [16, 16, 3],
+			"textures": {
+				"*": "side",
+				"down": "none"
+			},
+			"uv": {
+				"*": [0, 0],
+				"west": [13, 0]
+			},
+			"flip_textures_horizontally": ["south", "west", "up"]
+		}
+	],
+	"door": [
+		{
+			"if": "open_bit == 0",
+			"copy": "template_door"
 		},
 		{
 			"if": "open_bit == 1",
-			"pos": [13, 0, 0],
-			"size": [3, 16, 16]
+			"copy": "template_door",
+			"rot": [0, -90, 0],
+			"pivot": [1.5, 0, 1.5]
+		}
+	],
+	"template_trapdoor": [ // direction 1 = east hinge, 2 = north hinge, 0 = west hinge, 3 = south hinge [west, east, north, south]
+		{
+			"if": "open_bit == 0 && direction >= 2",
+			"pos": [0, 13, 0],
+			"size": [16, 3, 16],
+			"uv": {
+				"side": [0, 0]
+			}
+		},
+		{
+			"if": "open_bit == 1 || direction < 2",
+			"pos": [0, 13, 0],
+			"size": [16, 3, 16],
+			"uv": {
+				"side": [0, 0]
+			},
+			"flip_textures_horizontally": ["down"], // when facing east/west the hinges are on the same side on the bottom + top, but when facing north/south they're on different sides
+			"flip_textures_vertically": ["down"]
+		}
+	],
+	"trapdoor": [ // textures are wacky hence the long definition, but in the end it's pixel-perfect!
+		{
+			"if": "upside_down_bit == 0 && direction >= 2 && open_bit == 0",
+			"copy": "template_trapdoor",
+			"rot": [180, 0, 0]
+		},
+		{
+			"if": "upside_down_bit == 0 && direction < 2 && open_bit == 0",
+			"copy": "template_trapdoor",
+			"rot": [180, 0, 0],
+			"flip_textures_horizontally": ["down", "up"], // side changing for the bottom has to be negated here for the down face and added for the up face
+			"flip_textures_vertically": ["down", "up"]
+		},
+		{
+			"if": "upside_down_bit == 1 && open_bit == 0",
+			"copy": "template_trapdoor"
+		},
+		{
+			"if": "upside_down_bit == 0 && open_bit == 1",
+			"copy": "template_trapdoor",
+			"rot": [90, 0, 0], // would be fun to animate these
+			"pivot": [8, 14.5, 1.5],
+			"translate": [0, -13, 0]
+		},
+		{
+			"if": "upside_down_bit == 1 && open_bit == 1",
+			"copy": "template_trapdoor",
+			"rot": [-90, 0, 0], // would be fun to animate these
+			"pivot": [8, 14.5, 1.5],
+			"flip_textures_horizontally": ["side"],
+			"flip_textures_vertically": ["side"]
 		}
 	],
 	"template_book": [
@@ -561,7 +672,11 @@
 			// "pos": [0.125, 0.125, 0.125],
 			// "size": [15.75, 15.75, 15.75]
 			"pos": [0, 0.125, 0],
-			"size": [16, 0, 16]
+			"size": [16, 0, 16],
+			"tint": "${Array.redstone_dust_tints[redstone_signal]}",
+			"arrays": {
+				"redstone_dust_tints": ["#4D0000", "#700000", "#7A0000", "#850000", "#8F0000", "#990000", "#A30000", "#AD0000", "#B80000", "#C20000", "#CC0000", "#D60000", "#E00000", "#EB0700", "#F51C00", "#FF3300"] // Generated with code adapted from net.minecraft.world.level.block.RedStoneWireBlock
+			}
 		}
 	],
 	"rail": [
@@ -1093,13 +1208,31 @@
 	],
 	"template_small_redstone_torch": [ // only used in repeaters and comparators
 		{
-			"pos": [0, 0, 0],
-			"size": [2, 5, 2],
+			"pos": [0, 5, 0],
+			"size": [2, 0, 2],
 			"uv": {
-				"up": [7, 6],
-				"down": [7, 14],
-				"side": [7, 6]
+				"*": [7, 6]
 			}
+		},
+		{
+			"pos": [0, 5, 7],
+			"size": [16, 16, 0],
+			"translate": [-7, -5, -7]
+		},
+		{
+			"pos": [0, 5, 9],
+			"size": [16, 16, 0],
+			"translate": [-7, -5, -7]
+		},
+		{
+			"pos": [7, 5, 0],
+			"size": [0, 16, 16],
+			"translate": [-7, -5, -7]
+		},
+		{
+			"pos": [9, 5, 0],
+			"size": [0, 16, 16],
+			"translate": [-7, -5, -7]
 		}
 	],
 	"repeater": [
@@ -1164,13 +1297,45 @@
 		},
 		{
 			"if": "output_subtract_bit == 1",
-			"pos": [7, 2, 2],
-			"size": [2, 3, 2],
+			"pos": [7, 5, 2],
+			"size": [2, 0, 2],
 			"terrain_texture": "comparator_torch",
 			"ignore_eigenvariant": true,
 			"uv": {
 				"*": [7, 6]
 			}
+		},
+		{
+			"if": "output_subtract_bit == 1",
+			"pos": [0, 7, 7],
+			"size": [16, 16, 0],
+			"translate": [0, -5, -5],
+			"terrain_texture": "comparator_torch",
+			"ignore_eigenvariant": true
+		},
+		{
+			"if": "output_subtract_bit == 1",
+			"pos": [0, 7, 9],
+			"size": [16, 16, 0],
+			"translate": [0, -5, -5],
+			"terrain_texture": "comparator_torch",
+			"ignore_eigenvariant": true
+		},
+		{
+			"if": "output_subtract_bit == 1",
+			"pos": [7, 7, 0],
+			"size": [0, 16, 16],
+			"translate": [0, -5, -5],
+			"terrain_texture": "comparator_torch",
+			"ignore_eigenvariant": true
+		},
+		{
+			"if": "output_subtract_bit == 1",
+			"pos": [9, 7, 0],
+			"size": [0, 16, 16],
+			"translate": [0, -5, -5],
+			"terrain_texture": "comparator_torch",
+			"ignore_eigenvariant": true
 		}
 	],
 	"liquid": [
@@ -1334,20 +1499,72 @@
 			}
 		}
 	],
-	"wall_sign": [ // todo: make signs more accurate, use proper texture
+	"wall_sign": [
 		{
-			"pos": [0, 4, 14],
-			"size": [16, 8, 2]
+			"pos": [0.25, 4.25, 14.25],
+			"size": [15.5, 7.75, 1.5],
+			"textures": {
+				"*": "#tex"
+			},
+			"texture_size": [64, 32],
+			"uv": {
+				"north": [2, 2],
+				"south": [2, 2],
+				"east": [0, 2],
+				"west": [0, 2],
+				"up": [2, 0],
+				"down": [2, 0]
+			},
+			"uv_sizes": {
+				"north": [24, 12],
+				"south": [24, 12],
+				"east": [2, 12],
+				"west": [2, 12],
+				"up": [24, 2],
+				"down": [24, 2]
+			}
 		}
 	],
-	"standing_sign": [ // todo: fix scaling since sign pixels are smaller than regular pixels
+	"standing_sign": [
 		{
-			"pos": [7, 0, 7],
-			"size": [2, 8, 2]
+			"pos": [7.25, 0, 7.25],
+			"size": [1.5, 8.25, 1.5],
+			"textures": {
+				"*": "#tex"
+			},
+			"texture_size": [64, 32],
+			"uv": {
+				"*": [2, 16]
+			},
+			"uv_sizes": {
+				"side": [2, 12],
+				"up": [2, 2],
+				"down": [2, 2]
+			}
 		},
 		{
-			"pos": [0, 8, 7],
-			"size": [16, 8, 2]
+			"pos": [0.25, 8.25, 7.25],
+			"size": [15.5, 7.75, 1.5],
+			"textures": {
+				"*": "#tex"
+			},
+			"texture_size": [64, 32],
+			"uv": {
+				"north": [2, 2],
+				"south": [2, 2],
+				"east": [0, 2],
+				"west": [0, 2],
+				"up": [2, 0],
+				"down": [2, 0]
+			},
+			"uv_sizes": {
+				"north": [24, 12],
+				"south": [24, 12],
+				"east": [2, 12],
+				"west": [2, 12],
+				"up": [24, 2],
+				"down": [24, 2]
+			}
 		}
 	],
 	"top_snow": [
@@ -4584,6 +4801,196 @@
 			"pos": [11, 0, 0],
 			"size": [5, 8, 0],
 			"variant": 1
+		}
+	],
+	"template_hanging_sign_vertical_chain": [
+		{
+			"pos": [1.5, 10, 8],
+			"size": [3, 6, 0],
+			"rot": [0, 45, 0],
+			"pivot": [3, 10, 8],
+			"textures": {
+				"*": "textures/entity/${#block_name}"
+			},
+			"texture_size": [64, 32],
+			"uv": {
+				"*": [0, 6]
+			}
+		},
+		{
+			"pos": [1.5, 10, 8],
+			"size": [3, 6, 0],
+			"rot": [0, -45, 0],
+			"pivot": [3, 10, 8],
+			"textures": {
+				"*": "textures/entity/${#block_name}"
+			},
+			"texture_size": [64, 32],
+			"uv": {
+				"*": [6, 6]
+			}
+		}
+	],
+	"hanging_sign": [
+		{
+			"pos": [1, 0, 7],
+			"size": [14, 10, 2],
+			"textures": {
+				"*": "textures/entity/${#block_name}"
+			},
+			"texture_size": [64, 32],
+			"uv": {
+				"north": [2, 14],
+				"south": [2, 14],
+				"east": [0, 14],
+				"west": [0, 14],
+				"up": [2, 12],
+				"down": [16, 12]
+			}
+		},
+		{
+			"if": "attached_bit == 0",
+			"copy": "template_hanging_sign_vertical_chain"
+		},
+		{
+			"if": "attached_bit == 0",
+			"copy": "template_hanging_sign_vertical_chain",
+			"translate": [10, 0, 0]
+		},
+		{
+			"if": "hanging == 0",
+			"pos": [0, 14, 6],
+			"size": [16, 2, 4],
+			"textures": {
+				"*": "textures/entity/${#block_name}"
+			},
+			"texture_size": [64, 32],
+			"uv": {
+				"north": [4, 4],
+				"south": [4, 4],
+				"east": [0, 4],
+				"west": [0, 4],
+				"up": [4, 0],
+				"down": [20, 0]
+			}
+		},
+		{
+			"if": "attached_bit == 1",
+			"pos": [0, 10, 8],
+			"size": [16, 6, 0],
+			"textures": {
+				"*": "textures/entity/${#block_name}"
+			},
+			"texture_size": [64, 32],
+			"uv": {
+				"*": [12, 6]
+			}
+		}
+	],
+	"template_banner": [
+		{
+			"pos": [1.5, -13, 13.55],
+			"size": [13, 26, 0.65],
+			"rot": [-1.5, 0, 0],
+			"pivot": [8, 13, 14.75],
+			"texture_size": [64, 64],
+			"uv": {
+				"north": [1, 1],
+				"south": [22, 1],
+				"east": [0, 1],
+				"west": [0, 1],
+				"up": [1, 0],
+				"down": [21, 0]
+			},
+			"uv_sizes": {
+				"north": [20, 40],
+				"south": [20, 40],
+				"east": [1, 20],
+				"west": [1, 20],
+				"up": [20, 1],
+				"down": [20, 1]
+			},
+			"tint": "${Array.banner_colors[entity.Base]}",
+			"arrays": {
+				"banner_colors": ["#202025", "#C5332A", "#698A19", "#925E38", "#434CBE", "#9938CD", "#19AEAE", "#AFAFA9", "#4F585C", "#FC9BBE", "#8FDE23", "#FCF144", "#41C8F3", "#DE57D3", "#FC8F20", "#FCFCFC"]
+			}
+		},
+		{
+			"pos": [1.5, 11.7, 14.2],
+			"size": [13, 1.3, 1.3],
+			"texture_size": [64, 64],
+			"uv": {
+				"north": [2, 44],
+				"south": [2, 44],
+				"east": [0, 44],
+				"west": [0, 44],
+				"up": [2, 42],
+				"down": [2, 42]
+			},
+			"uv_sizes": {
+				"north": [20, 2],
+				"south": [20, 2],
+				"east": [2, 2],
+				"west": [2, 2],
+				"up": [20, 1],
+				"down": [20, 1]
+			}
+		}
+	],
+	"wall_banner": [
+		{
+			"if": "entity.Type == 0",
+			"copy": "template_banner",
+			"textures": {
+				"*": "textures/entity/banner/banner_base"
+			}
+		},
+		{
+			"if": "entity.Type == 1",
+			"copy": "template_banner",
+			"textures": {
+				"*": "textures/entity/banner/banner_illager"
+			}
+		}
+	],
+	"standing_banner": [
+		{
+			"copy": "wall_banner",
+			"translate": [0, 15, -6.85],
+			"rot": [0, 180, 0],
+			"pivot": [8, 13, 14.75]
+		},
+		{
+			"pos": [7.35, 0, 7.35],
+			"size": [1.3, 26.7, 1.3],
+			"textures": {
+				"*": "textures/entity/banner/banner_base"
+			},
+			"texture_size": [64, 64],
+			"uv": {
+				"side": [50, 2],
+				"up": [46, 0],
+				"down": [48, 0]
+			},
+			"uv_sizes": {
+				"side": [2, 42],
+				"up": [2, 2],
+				"down": [2, 2]
+			}
+		}
+	],
+	"mangrove_roots": [
+		{
+			"pos": [0, 0, 0],
+			"size": [16, 16, 16]
+		},
+		{
+			"pos": [8, 0, 0],
+			"size": [0, 16, 16]
+		},
+		{
+			"pos": [0, 0, 8],
+			"size": [16, 16, 0]
 		}
 	],
 	"debug_auto_uv_4": [{"pos":[0,0,0],"size":[4,4,4]},{"pos":[0,0,4],"size":[4,4,4]},{"pos":[0,0,8],"size":[4,4,4]},{"pos":[0,0,12],"size":[4,4,4]},{"pos":[0,4,0],"size":[4,4,4]},{"pos":[0,4,4],"size":[4,4,4]},{"pos":[0,4,8],"size":[4,4,4]},{"pos":[0,4,12],"size":[4,4,4]},{"pos":[0,8,0],"size":[4,4,4]},{"pos":[0,8,4],"size":[4,4,4]},{"pos":[0,8,8],"size":[4,4,4]},{"pos":[0,8,12],"size":[4,4,4]},{"pos":[0,12,0],"size":[4,4,4]},{"pos":[0,12,4],"size":[4,4,4]},{"pos":[0,12,8],"size":[4,4,4]},{"pos":[0,12,12],"size":[4,4,4]},{"pos":[4,0,0],"size":[4,4,4]},{"pos":[4,0,4],"size":[4,4,4]},{"pos":[4,0,8],"size":[4,4,4]},{"pos":[4,0,12],"size":[4,4,4]},{"pos":[4,4,0],"size":[4,4,4]},{"pos":[4,4,12],"size":[4,4,4]},{"pos":[4,8,0],"size":[4,4,4]},{"pos":[4,8,12],"size":[4,4,4]},{"pos":[4,12,0],"size":[4,4,4]},{"pos":[4,12,4],"size":[4,4,4]},{"pos":[4,12,8],"size":[4,4,4]},{"pos":[4,12,12],"size":[4,4,4]},{"pos":[8,0,0],"size":[4,4,4]},{"pos":[8,0,4],"size":[4,4,4]},{"pos":[8,0,8],"size":[4,4,4]},{"pos":[8,0,12],"size":[4,4,4]},{"pos":[8,4,0],"size":[4,4,4]},{"pos":[8,4,12],"size":[4,4,4]},{"pos":[8,8,0],"size":[4,4,4]},{"pos":[8,8,12],"size":[4,4,4]},{"pos":[8,12,0],"size":[4,4,4]},{"pos":[8,12,4],"size":[4,4,4]},{"pos":[8,12,8],"size":[4,4,4]},{"pos":[8,12,12],"size":[4,4,4]},{"pos":[12,0,0],"size":[4,4,4]},{"pos":[12,0,4],"size":[4,4,4]},{"pos":[12,0,8],"size":[4,4,4]},{"pos":[12,0,12],"size":[4,4,4]},{"pos":[12,4,0],"size":[4,4,4]},{"pos":[12,4,4],"size":[4,4,4]},{"pos":[12,4,8],"size":[4,4,4]},{"pos":[12,4,12],"size":[4,4,4]},{"pos":[12,8,0],"size":[4,4,4]},{"pos":[12,8,4],"size":[4,4,4]},{"pos":[12,8,8],"size":[4,4,4]},{"pos":[12,8,12],"size":[4,4,4]},{"pos":[12,12,0],"size":[4,4,4]},{"pos":[12,12,4],"size":[4,4,4]},{"pos":[12,12,8],"size":[4,4,4]},{"pos":[12,12,12],"size":[4,4,4]}] // function genDebugGeo(step) {let boneCubes = [];for(let x = 0; x < 16; x += step) {for(let y = 0; y < 16; y += step) {for(let z = 0; z < 16; z += step) {if(!x || !y || !z || x == 16 - step || y == 16 - step || z == 16 - step) {boneCubes.push({ pos: [x, y, z], size: [step, step, step] });}}}}return JSON.stringify(boneCubes);}

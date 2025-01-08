@@ -142,25 +142,39 @@ document.onEvent("DOMContentLoaded", async () => {
 	let clearResourcePackCacheButton = selectEl("#clearResourcePackCacheButton");
 	clearResourcePackCacheButton.onEvent("click", async () => {
 		caches.clear();
-		temporarilyChangeText(clearResourcePackCacheButton, "Resource pack cache cleared!");
+		temporarilyChangeText(clearResourcePackCacheButton, clearResourcePackCacheButton.dataset.resetTranslation);
 	});
 	
 	selectEls(".resetButton").forEach(el => {
 		el.onEvent("click", () => {
 			let fieldset = el.parentElement;
-			let elementsToSave = [...generatePackForm.elements].filter(el => el.localName != "fieldset" && el.localName != "button" && !fieldset.contains(el) || !el.hasAttribute("name"));
-			let oldValues = elementsToSave.map(el => el.files ?? (el.type == "checkbox"? el.checked : el.value));
-			generatePackForm.reset(); // this resets the entire form, which is why the old values must be saved
-			elementsToSave.forEach((el, i) => {
-				if(el.type == "file") {
-					el.files = oldValues[i];
-				} else if(el.type == "checkbox") {
-					el.checked = oldValues[i];
-				} else {
-					el.value = oldValues[i];
+			let elementsToSave = [...generatePackForm.elements].filter(el => el.localName != "fieldset" && el.localName != "button" && (!fieldset.contains(el) || !el.hasAttribute("name")));
+			let oldValues = elementsToSave.map(el => {
+				switch(el.type) {
+					case "file": {
+						let dataTransfer = new DataTransfer(); // Simply copying el.files wouldn't work since that's a FormData object, and resetting the form will reset the files in there as well. To work around this, we just copy all files to a DataTransfer, which is the only other thing that uses FormData. (Using structuredClone() is laggy on Chrome.)
+						[...el.files].forEach(file => dataTransfer.items.add(file));
+						return dataTransfer.files;
+					}
+					case "checkbox": return el.checked;
+					default: return el.value;
 				}
 			});
-			temporarilyChangeText(el, el.dataset.resetText ?? el.innerText);
+			generatePackForm.reset(); // this resets the entire form, which is why the old values must be saved
+			elementsToSave.forEach((el, i) => {
+				switch(el.type) {
+					case "file": {
+						el.files = oldValues[i];
+					} break;
+					case "checkbox": {
+						el.checked = oldValues[i];
+					} break;
+					default: {
+						el.value = oldValues[i];
+					}
+				}
+			});
+			temporarilyChangeText(el, el.dataset.resetTranslation);
 			updateTexturePreview();
 		});
 	});
@@ -346,12 +360,12 @@ async function translateCurrentLanguage(translationKey) {
 	return translation;
 }
 
-async function temporarilyChangeText(el, text, duration = 2000) {
-	let originalText = el.innerText;
-	el.innerText = text;
+async function temporarilyChangeText(el, translationKey, duration = 2000) {
+	let originalTranslationKey = el.dataset.translate;
+	el.dataset.translate = translationKey;
 	el.setAttribute("disabled", "");
 	await sleep(duration);
-	el.innerText = originalText;
+	el.dataset.translate = originalTranslationKey;
 	el.removeAttribute("disabled");
 }
 

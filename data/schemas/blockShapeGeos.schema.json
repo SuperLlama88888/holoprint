@@ -190,7 +190,8 @@
 						"items": {
 							"type": "string",
 							"enum": ["west", "east", "down", "up", "north", "south", "side", "*"]
-						}
+						},
+						"uniqueItems": true
 					},
 					"flip_textures_vertically": {
 						"description": "An array of faces that will have their textures vertically flipped.",
@@ -198,7 +199,18 @@
 						"items": {
 							"type": "string",
 							"enum": ["west", "east", "down", "up", "north", "south", "side", "*"]
-						}
+						},
+						"uniqueItems": true
+					},
+					"arrays": {
+						"description": "Named arrays that can be used by other properties. Currently, only \"tint\" supports accessing arrays.",
+						"type": "object",
+						"patternProperties": {
+							"^\\w+$": {
+								"description": "Array name"
+							}
+						},
+						"additionalProperties": false
 					}
 				},
 				"oneOf": [

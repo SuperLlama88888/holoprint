@@ -47,7 +47,10 @@ export default class BlockGeoMaker {
 		"carved_pumpkin": 0,
 		"lit_pumpkin": 1,
 		"pumpkin": 2,
-		"pale_oak_leaves": 0
+		"pale_oak_leaves": 0,
+		"cave_vines": 0,
+		"cave_vines_body_with_berries": 1,
+		"cave_vines_head_with_berries": 1
 	};
 	
 	static #REDSTONE_DUST_TINTS = function() {
@@ -158,6 +161,9 @@ export default class BlockGeoMaker {
 		let bone = {
 			"cubes": boneCubes
 		};
+		if(blockShape.includes("{")) {
+			blockShape = blockShape.slice(0, blockShape.indexOf("{"));
+		}
 		let blockShapeSpecificRotations = this.#blockShapeBlockStateRotations[blockShape];
 		let blockNameSpecificRotations = this.#blockNameBlockStateRotations[blockName];
 		Object.entries(block["states"] ?? {}).forEach(([blockStateName, blockStateValue]) => {
@@ -273,7 +279,17 @@ export default class BlockGeoMaker {
 						copiedCube["translate"] = (copiedCube["translate"] ?? [0, 0, 0]).map((x, i) => x + cube["translate"][i]);
 					}
 					fieldsToCopy.forEach(field => { // copy all fields from this cube onto the new ones
-						if(typeof copiedCube[field] == "object") {
+						if(field == "flip_textures_horizontally" || field == "flip_textures_vertically") { // these ones are arrays but are supposed to represent sets, so we take the XOR/symmetric difference (ik there's a native method but it's very new)
+							let facesInCopiedCube = new Set(copiedCube[field] ?? []);
+							cube[field].forEach(face => {
+								if(facesInCopiedCube.has(face)) {
+									facesInCopiedCube.delete(face);
+								} else {
+									facesInCopiedCube.add(face);
+								}
+							});
+							copiedCube[field] = [...facesInCopiedCube];
+						} else if(typeof copiedCube[field] == "object") {
 							copiedCube[field] = { ...cube[field], ...copiedCube[field] }; // fields on the copied cubes still take priority over the "parent" cube (the one that's copying it)
 						} else {
 							copiedCube[field] ??= cube[field];
@@ -462,7 +478,7 @@ export default class BlockGeoMaker {
 				}
 				if("tint" in cube) {
 					let tint = cube["tint"];
-					tint = this.#interpolateInBlockValues(cube["block_override"] ?? block, tint);
+					tint = this.#interpolateInBlockValues(cube["block_override"] ?? block, tint, cube);
 					if(tint[0] == "#") {
 						textureRef["tint"] = hexColorToClampedTriplet(tint);
 					} else {
@@ -471,13 +487,10 @@ export default class BlockGeoMaker {
 						textureRef["tint"] = [colorCode >> 16 & 0xFF, colorCode >> 8 & 0xFF, colorCode & 0xFF].map(x => x / 255);
 					}
 				}
-				if(blockName == "redstone_wire") {
-					textureRef["tint"] = BlockGeoMaker.#REDSTONE_DUST_TINTS[block["states"]["redstone_signal"]];
-				}
 				
 				this.textureRefs.add(textureRef);
-				let flipTextureHorizontally = cube["flip_textures_horizontally"]?.includes(faceName) || (isSideFace && cube["flip_textures_horizontally"]?.includes("side")) || cube["flip_textures_horizontally"]?.includes("*");
-				let flipTextureVertically = cube["flip_textures_vertically"]?.includes(faceName) || (isSideFace && cube["flip_textures_vertically"]?.includes("side")) || cube["flip_textures_vertically"]?.includes("*");
+				let flipTextureHorizontally = cube["flip_textures_horizontally"]?.includes(faceName) ^ (isSideFace && cube["flip_textures_horizontally"]?.includes("side")) ^ cube["flip_textures_horizontally"]?.includes("*");
+				let flipTextureVertically = cube["flip_textures_vertically"]?.includes(faceName) ^ (isSideFace && cube["flip_textures_vertically"]?.includes("side")) ^ cube["flip_textures_vertically"]?.includes("*");
 				boneCube["uv"][faceName] = {
 					"index": this.textureRefs.indexOf(textureRef),
 					"flip_horizontally": (faceName == "down" || faceName == "up") ^ flipTextureHorizontally, // in MC the down/up faces are rotated 180 degrees compared to how they are in geometry; this can be faked by flipping both axes. I don't want to use uv_rotation since that's a 1.21 thing and I want support back to 1.16.
@@ -710,12 +723,41 @@ export default class BlockGeoMaker {
 	 * Substitutes values from a block into a particular expression.
 	 * @param {Block} block
 	 * @param {String} fullExpression
+	 * @param {Object} [cube]
 	 * @returns {String}
 	 */
-	#interpolateInBlockValues(block, fullExpression) {
+	#interpolateInBlockValues(block, fullExpression, cube) {
 		let wholeStringValue;
 		let substitutedExpression = fullExpression.replaceAll(/\${([^}]+)}/g, (bracketedExpression, expression) => {
 			if(wholeStringValue != undefined) return;
+			if(/^Array\.\w+\[[^\[]+\]$/.test(expression)) {
+				let [, arrayName, arrayIndexVar] = expression.match(/^Array\.(\w+)\[([^\[]+)\]$/);
+				let array = cube["arrays"]?.[arrayName];
+				if(!array) {
+					console.error(`Couldn't find array ${arrayName} in cube:`, cube);
+					return "";
+				}
+				let arrayIndex;
+				if(arrayIndexVar.startsWith("entity.")) {
+					let blockEntityProperty = arrayIndexVar.slice(7);
+					if(!("block_entity_data" in block) || !(blockEntityProperty in block["block_entity_data"])) {
+						console.error(`Cannot find block entity property ${blockEntityProperty} in ${block["name"]}:`, block);
+						return "";
+					}
+					arrayIndex = block["block_entity_data"][blockEntityProperty];
+				} else {
+					if(!("states" in block) || !(arrayIndexVar in block["states"])) {
+						console.error(`Cannot find block state ${arrayIndexVar} in ${block["name"]}:`, block);
+						return "";
+					}
+					arrayIndex = block["states"][arrayIndexVar];
+				}
+				if(!(arrayIndex in array)) {
+					console.error(`Array index out of bounds: ${JSON.stringify(array)}[${arrayIndex}]`);
+					return "";
+				}
+				return array[arrayIndex];
+			}
 			let match = expression.replaceAll(/\s/g, "").match(/^(#block_name|#block_states|#block_entity_data)((?:\.\w+|\[-?\d+\])*)(\[(-?\d+):(-?\d*)\]|\[:(-?\d+)\])?(?:\?\?(.+))?$/);
 			if(!match) {
 				console.error(`Wrongly formatted expression: ${bracketedExpression}`);

@@ -28,7 +28,8 @@ export default class TextureAtlas {
 	static #transparentBlocks = {
 		"water": 0.65,
 		"flowing_water": 0.65,
-		"slime": 0.8
+		"slime": 0.8,
+		"respawn_anchor": 2 // the nether portal in the top of respawn anchors is slightly transparent in the image for some reason; this just makes it fully opaque
 	};
 	
 	/** Terrain texture keys that should lead to a texture path always, instead of what's in terrain_texture.json */

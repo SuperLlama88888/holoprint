@@ -12,9 +12,7 @@
 		"_fence$": "fence",
 		"fence_gate$": "fence_gate",
 		"_stairs$": "stairs",
-		// "_hanging_sign$": "hanging_sign",
-		"wall_sign$": "wall_sign",
-		"standing_sign$": "standing_sign",
+		"_hanging_sign$": "hanging_sign",
 		"_wall$": "wall",
 		"_carpet$": "carpet",
 		"glass_pane$": "glass_pane",
@@ -73,6 +71,32 @@
 		"lit_blast_furnace": "lit_furnace",
 		"lit_smoker": "lit_furnace",
 		
+		// unlike hanging signs, texture locations for regular signs are messy so I have to use #tex
+		"wall_sign": "wall_sign{textures/entity/sign}",
+		"spruce_wall_sign": "wall_sign{textures/entity/sign_spruce}",
+		"birch_wall_sign": "wall_sign{textures/entity/sign_birch}",
+		"jungle_wall_sign": "wall_sign{textures/entity/sign_jungle}",
+		"acacia_wall_sign": "wall_sign{textures/entity/sign_acacia}",
+		"darkoak_wall_sign": "wall_sign{textures/entity/sign_darkoak}",
+		"mangrove_wall_sign": "wall_sign{textures/entity/mangrove_sign}",
+		"cherry_wall_sign": "wall_sign{textures/entity/cherry_sign}",
+		"pale_oak_wall_sign": "wall_sign{textures/entity/pale_oak_sign}",
+		"bamboo_wall_sign": "wall_sign{textures/entity/bamboo_sign}",
+		"crimson_wall_sign": "wall_sign{textures/entity/sign_crimson}",
+		"warped_wall_sign": "wall_sign{textures/entity/sign_warped}",
+		"standing_sign": "standing_sign{textures/entity/sign}",
+		"spruce_standing_sign": "standing_sign{textures/entity/sign_spruce}",
+		"birch_standing_sign": "standing_sign{textures/entity/sign_birch}",
+		"jungle_standing_sign": "standing_sign{textures/entity/sign_jungle}",
+		"acacia_standing_sign": "standing_sign{textures/entity/sign_acacia}",
+		"darkoak_standing_sign": "standing_sign{textures/entity/sign_darkoak}",
+		"mangrove_standing_sign": "standing_sign{textures/entity/mangrove_sign}",
+		"cherry_standing_sign": "standing_sign{textures/entity/cherry_sign}",
+		"pale_oak_standing_sign": "standing_sign{textures/entity/pale_oak_sign}",
+		"bamboo_standing_sign": "standing_sign{textures/entity/bamboo_sign}",
+		"crimson_standing_sign": "standing_sign{textures/entity/sign_crimson}",
+		"warped_standing_sign": "standing_sign{textures/entity/sign_warped}",
+		
 		"conduit": "conduit",
 		"brown_mushroom": "cross_texture",
 		"crimson_fungus": "cross_texture",
@@ -84,8 +108,7 @@
 		"torch": "torch",
 		"soul_torch": "torch",
 		"unlit_redstone_torch": "torch",
-		// "redstone_torch": "redstone_torch", // a different block shape is needed for the "glow" outline.
-		"redstone_torch": "torch",
+		"redstone_torch": "redstone_torch", // a different block shape is needed for the "glow" outline.
 		
 		// flowers
 		"red_flower": "cross_texture", // legacy
@@ -120,8 +143,11 @@
 		"tall_grass": "double_plant",
 		"lilac": "double_plant",
 		"peony": "double_plant",
-		"double_plant": "double_plant", // legcay
+		"double_plant": "double_plant", // legacy
 		
+		"wall_banner": "wall_banner",
+		"standing_banner": "standing_banner",
+		"bamboo_fence": "bamboo_fence",
 		"bamboo_fence_gate": "bamboo_fence_gate", // has special texture so requires special UV mapping. other fence gates don't have any UV mapping so they need separate block shapes :(
 		"stonecutter_block": "stonecutter",
 		"enchanting_table": "enchanting_table",
@@ -176,7 +202,7 @@
 		"medium_amethyst_bud": "cross_texture",
 		"large_amethyst_bud": "cross_texture",
 		"amethyst_cluster": "cross_texture",
-		"cave_vines": "cross_texture",
+		"cave_vines": "cross_texture", // todo: check block below to determine if "head" texture should be used
 		"cave_vines_body_with_berries": "cross_texture",
 		"cave_vines_head_with_berries": "cross_texture",
 		"glow_lichen": "multi_face",
@@ -188,7 +214,8 @@
 		"sculk_sensor": "sculk_sensor",
 		"calibrated_sculk_sensor": "calibrated_sculk_sensor",
 		"sculk_vein": "multi_face",
-		"frog_spawn": "carpet", // hmm
+		"frog_spawn": "lilypad", // hmm
+		"mangrove_roots": "mangrove_roots",
 		"sniffer_egg": "sniffer_egg",
 		"pink_petals": "pink_petals",
 		"slime": "slime_block",
@@ -205,7 +232,8 @@
 		"pale_hanging_moss": "cross_texture",
 		"pale_moss_carpet": "pale_moss_carpet",
 		"closed_eyeblossom": "cross_texture",
-		"open_eyeblossom": "cross_texture"
+		"open_eyeblossom": "cross_texture",
+		"resin_clump": "multi_face"
 		
 		// "dirt": "debug_auto_uv_4" // must disable geometry merging
 	}

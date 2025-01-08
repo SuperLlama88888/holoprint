@@ -35,6 +35,7 @@
 	"progress.generating": "Making pack...",
 	"reset": "Reset",
 	"resource_packs.clear_cache": "Clear resource pack cache",
+	"resource_packs.cache_reset": "Resource pack cache cleared!",
 	"resource_packs.heading": "Resource packs",
 	"resource_packs.reset": "Resource packs reset!",
 	"resource_packs.upload_local": "Upload a local resource pack:",
