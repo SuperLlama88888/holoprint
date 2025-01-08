@@ -1,7 +1,6 @@
 {
 	"format_version": 2,
 	"header": {
-		"name": "pack.name",
 		"description": "pack.description",
 		"version": [1, 0, 0],
 		"min_engine_version": [1, 16, 0]
@@ -10,6 +9,18 @@
 		{
 			"type": "resources",
 			"version": [1, 0, 0]
+		}
+	],
+	"subpacks": [
+		{
+			"folder_name": "punch_to_activate",
+			"name": "Punch to activate", // like below, translations for these won't be loaded until after the pack is enabled...
+			"memory_tier": 0
+		},
+		{
+			"folder_name": "default",
+			"name": "Default",
+			"memory_tier": 0
 		}
 	],
 	"settings": [

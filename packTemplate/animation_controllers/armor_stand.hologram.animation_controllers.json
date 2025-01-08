@@ -1,6 +1,21 @@
 {
 	"format_version": "1.10.0",
 	"animation_controllers": {
+		"controller.animation.armor_stand.hologram.spawn_animation": {
+			"initial_state": "default",
+			"states": {
+				"default": {
+					"transitions": [
+						{
+							"animate": "v.hologram_activated"
+						}
+					]
+				},
+				"animate": {
+					"animations": ["hologram.spawn"]
+				}
+			}
+		},
 		"controller.animation.armor_stand.hologram.layers": {
 			"initial_state": "default",
 			"states": {

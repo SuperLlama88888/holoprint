@@ -83,7 +83,7 @@ export async function makePack(structureFiles, config = {}, resourcePackStack, p
 		resources: {
 			entityFile: "entity/armor_stand.entity.json",
 			defaultPlayerRenderControllers: "render_controllers/player.render_controllers.json",
-			armorStandGeo: "models/entity/armor_stand.geo.json", // for visible bounds. I don't think we need this
+			armorStandGeo: "models/entity/armor_stand.geo.json", // for visible bounds. we need this even though the hologram geometry has a different identifier.
 			translationFile: `texts/${config.MATERIAL_LIST_LANGUAGE}.lang`
 		},
 		otherFiles: {
@@ -430,20 +430,22 @@ export async function makePack(structureFiles, config = {}, resourcePackStack, p
 	entityDescription["animations"]["hologram.offset"] = "animation.armor_stand.hologram.offset";
 	entityDescription["animations"]["hologram.spawn"] = "animation.armor_stand.hologram.spawn";
 	entityDescription["animations"]["hologram.wrong_block_overlay"] = "animation.armor_stand.hologram.wrong_block_overlay";
+	entityDescription["animations"]["controller.hologram.spawn_animation"] = "controller.animation.armor_stand.hologram.spawn_animation";
 	entityDescription["animations"]["controller.hologram.layers"] = "controller.animation.armor_stand.hologram.layers";
 	entityDescription["animations"]["controller.hologram.bounding_box"] = "controller.animation.armor_stand.hologram.bounding_box";
 	entityDescription["animations"]["controller.hologram.block_validation"] = "controller.animation.armor_stand.hologram.block_validation";
 	entityDescription["scripts"]["animate"] ??= [];
-	entityDescription["scripts"]["animate"].push("hologram.align", "hologram.offset", "hologram.spawn", "hologram.wrong_block_overlay", "controller.hologram.layers", "controller.hologram.bounding_box", "controller.hologram.block_validation");
+	entityDescription["scripts"]["animate"].push("hologram.align", "hologram.offset", "hologram.wrong_block_overlay", "controller.hologram.spawn_animation", "controller.hologram.layers", "controller.hologram.bounding_box", "controller.hologram.block_validation");
 	entityDescription["scripts"]["initialize"] ??= [];
-	entityDescription["scripts"]["initialize"].push(functionToMolang((v, structureSize, singleLayerMode, structureCount) => {
+	entityDescription["scripts"]["initialize"].push(functionToMolang((v, structureSize, singleLayerMode, structureCount, HOLOGRAM_INITIAL_ACTIVATION) => {
+		v.hologram_activated = HOLOGRAM_INITIAL_ACTIVATION; // true/false are substituted in here for the different subpacks
 		v.hologram_offset_x = 0;
 		v.hologram_offset_y = 0;
 		v.hologram_offset_z = 0;
 		v.structure_w = $[structureSize[0]];
 		v.structure_h = $[structureSize[1]];
 		v.structure_d = $[structureSize[2]];
-		v.render_hologram = true;
+		v.render_hologram = HOLOGRAM_INITIAL_ACTIVATION;
 		v.hologram_texture_index = $[defaultTextureIndex];
 		v.show_tint = false;
 		v.hologram_layer = -1;
@@ -471,7 +473,27 @@ export async function makePack(structureFiles, config = {}, resourcePackStack, p
 	}));
 	entityDescription["scripts"]["pre_animation"] ??= [];
 	entityDescription["scripts"]["pre_animation"].push(functionToMolang((v, q, t, textureBlobsCount, totalBlocksToValidate, toggleRendering, changeOpacity, toggleTint, toggleValidating, changeLayer, decreaseLayer, changeLayerMode, disablePlayerControls, singleLayerMode) => {
+		v.last_pose ??= v.armor_stand.pose_index;
 		v.hologram_dir = Math.floor(q.body_y_rotation / 90) + 2; // [south, west, north, east] (since it goes from -180 to 180)
+		if(!v.hologram_activated) { // even though the subpack is called "punch to activate", changing the pose or giving an item will work as well
+			t.activate_hologram = false;
+			if(v.last_hurt_direction != q.hurt_direction) {
+				v.last_hurt_direction = q.hurt_direction;
+				t.activate_hologram = true;
+			} else if(v.last_pose != v.armor_stand.pose_index) {
+				v.last_pose = v.armor_stand.pose_index;
+				t.activate_hologram = true;
+			} else if(v.last_held_item != q.get_equipped_item_name) {
+				v.last_held_item = q.get_equipped_item_name;
+				t.activate_hologram = true;
+			}
+			if(t.activate_hologram) {
+				v.hologram_activated = true;
+				v.render_hologram = true;
+			} else {
+				return 0;
+			}
+		}
 		
 		t.process_action = false; // this is the only place I'm using temp variables for their intended purpose
 		t.action = "";
@@ -489,7 +511,6 @@ export async function makePack(structureFiles, config = {}, resourcePackStack, p
 			}
 		}
 		
-		v.last_pose ??= v.armor_stand.pose_index;
 		if(v.last_pose != v.armor_stand.pose_index) {
 			v.last_pose = v.armor_stand.pose_index;
 			if(v.render_hologram) {
@@ -711,6 +732,7 @@ export async function makePack(structureFiles, config = {}, resourcePackStack, p
 	})));
 	hudScreenUI["material_list"]["size"][1] = finalisedMaterialList.length * 12 + 12; // 12px for each item + 12px for the heading
 	
+	manifest["header"]["name"] = packName;
 	manifest["header"]["uuid"] = crypto.randomUUID();
 	manifest["modules"][0]["uuid"] = crypto.randomUUID();
 	if(config.AUTHORS.length) {
@@ -767,7 +789,8 @@ export async function makePack(structureFiles, config = {}, resourcePackStack, p
 	}
 	pack.file("manifest.json", JSON.stringify(manifest));
 	pack.file("pack_icon.png", packIcon);
-	pack.file("entity/armor_stand.entity.json", JSON.stringify(entityFile));
+	pack.file("entity/armor_stand.entity.json", JSON.stringify(entityFile).replaceAll("HOLOGRAM_INITIAL_ACTIVATION", true));
+	pack.file("subpacks/punch_to_activate/entity/armor_stand.entity.json", JSON.stringify(entityFile).replaceAll("HOLOGRAM_INITIAL_ACTIVATION", false));
 	pack.file("render_controllers/armor_stand.hologram.render_controllers.json", JSON.stringify(hologramRenderControllers));
 	pack.file("render_controllers/player.render_controllers.json", JSON.stringify(playerRenderControllers));
 	pack.file("models/entity/armor_stand.geo.json", JSON.stringify(armorStandGeo));
