@@ -708,7 +708,7 @@ export async function makePack(structureFiles, config = {}, resourcePackStack, p
 		if(q.distance_from_camera > 60 || q.time_stamp - v.hologram_backup_requested_time <= 600) { // 10 blocks leeway for automatic backups, and 30s after players request a backup
 			// one by one, check each backup slot. if it's empty, we take that spot; if not, try to find which backup slot was set the earliest.
 			if(v.hologram_backup_index == -1) {
-				if((t.hologram_backup_0_empty ?? true)) {
+				if(t.hologram_backup_0_empty ?? true) {
 					v.hologram_backup_index = 0;
 				} else {
 					t.earliest_backup_time_stamp = t.hologram_backup_0.backup_time_stamp;
@@ -716,7 +716,7 @@ export async function makePack(structureFiles, config = {}, resourcePackStack, p
 				}
 			}
 			if(v.hologram_backup_index == -1) {
-				if((t.hologram_backup_1_empty ?? true)) {
+				if(t.hologram_backup_1_empty ?? true) {
 					v.hologram_backup_index = 1;
 				} else if(t.hologram_backup_1.backup_time_stamp < t.earliest_backup_time_stamp) {
 					t.earliest_backup_time_stamp = t.hologram_backup_1.backup_time_stamp;
@@ -724,7 +724,7 @@ export async function makePack(structureFiles, config = {}, resourcePackStack, p
 				}
 			}
 			if(v.hologram_backup_index == -1) {
-				if((t.hologram_backup_2_empty ?? true)) {
+				if(t.hologram_backup_2_empty ?? true) {
 					v.hologram_backup_index = 2;
 				} else if(t.hologram_backup_2.backup_time_stamp < t.earliest_backup_time_stamp) {
 					t.earliest_backup_time_stamp = t.hologram_backup_2.backup_time_stamp;
@@ -732,7 +732,7 @@ export async function makePack(structureFiles, config = {}, resourcePackStack, p
 				}
 			}
 			if(v.hologram_backup_index == -1) {
-				if((t.hologram_backup_3_empty ?? true)) {
+				if(t.hologram_backup_3_empty ?? true) {
 					v.hologram_backup_index = 3;
 				} else if(t.hologram_backup_3.backup_time_stamp < t.earliest_backup_time_stamp) {
 					t.earliest_backup_time_stamp = t.hologram_backup_3.backup_time_stamp;
@@ -740,7 +740,7 @@ export async function makePack(structureFiles, config = {}, resourcePackStack, p
 				}
 			}
 			if(v.hologram_backup_index == -1) {
-				if((t.hologram_backup_4_empty ?? true)) {
+				if(t.hologram_backup_4_empty ?? true) {
 					v.hologram_backup_index = 4;
 				} else if(t.hologram_backup_4.backup_time_stamp < t.earliest_backup_time_stamp) {
 					t.earliest_backup_time_stamp = t.hologram_backup_4.backup_time_stamp;
@@ -1683,11 +1683,16 @@ function functionToMolang(func, vars = {}) {
 	let conditionedCode = "";
 	let parenthesisCounter = 0;
 	let inIfCondition = false;
+	let needsExtraBracketAtEndOfIfCondition = false; // short variable names are for slow typers :)
 	for(let i = 0; i < mathedCode.length; i++) {
 		let char = mathedCode[i];
 		if(mathedCode.slice(i, i + 3) == "if(") {
 			inIfCondition = true;
 			parenthesisCounter++;
+			needsExtraBracketAtEndOfIfCondition = /^if\([^()]+\?\?/.test(mathedCode.slice(i)); // null coalescing operator is the only operator with lower precedence than the ternary conditional operator, so if a conditional expression in if() has ?? without any brackets around it, brackets are needed around the entire conditional expression
+			if(needsExtraBracketAtEndOfIfCondition) {
+				conditionedCode += "(";
+			}
 			i += 2;
 			continue;
 		} else if(mathedCode.slice(i, i + 4) == "else") {
@@ -1700,6 +1705,9 @@ function functionToMolang(func, vars = {}) {
 			parenthesisCounter--;
 			if(parenthesisCounter == 0 && inIfCondition) {
 				inIfCondition = false;
+				if(needsExtraBracketAtEndOfIfCondition) {
+					conditionedCode += ")";
+				}
 				conditionedCode += "?";
 				continue;
 			}
