@@ -48,7 +48,7 @@ export default class MaterialList {
 		"cave_vines_body_with_berries": "glow_berries",
 		"cave_vines_head_with_berries": "glow_berries"
 	};
-	/** @type {Array<[String|RegExp, Number, [String]]>} If item names match, item counts will be multiplied (and optionally, parts of the item name will be removed). */
+	/** @type {Array<[String|RegExp, Number, String|undefined]>} If item names match, item counts will be multiplied (and optionally, parts of the item name will be removed). */
 	static #itemCountMultipliers = [
 		[/double_.*slab$/, 2, "double_"],
 		[/_door$/, 0.5],

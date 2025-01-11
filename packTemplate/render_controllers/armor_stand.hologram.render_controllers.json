@@ -15,8 +15,8 @@
 					"*": "Material.hologram"
 				}
 			],
-			"geometry": "Array.geometries[v.structure_index]",
-			"textures": [],
+			"geometry": "Array.geometries[v.hologram.structure_index]",
+			"textures": ["Array.textures[v.hologram.texture_index]"],
 			"is_hurt_color": {
 				"r": 0,
 				"g": 0,
@@ -38,9 +38,7 @@
 				}
 			],
 			"geometry": "Geometry.hologram.wrong_block_overlay",
-			"textures": [
-				"Texture.hologram.overlay"
-			],
+			"textures": ["Texture.hologram.overlay"],
 			"overlay_color": {
 				"r": 1,
 				"g": 0,
@@ -68,9 +66,7 @@
 				}
 			],
 			"geometry": "Geometry.hologram.valid_structure_overlay",
-			"textures": [
-				"Texture.hologram.overlay"
-			],
+			"textures": ["Texture.hologram.overlay"],
 			"overlay_color": {
 				"r": 0,
 				"g": 1,

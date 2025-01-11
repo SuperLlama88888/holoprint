@@ -7,13 +7,22 @@
 				"default": {
 					"transitions": [
 						{
+							"skip_spawn_animation": "v.skip_spawn_animation"
+						},
+						{
 							"animate": "v.hologram_activated"
 						}
 					]
 				},
 				"animate": {
+					"transitions": [
+						{
+							"skip_spawn_animation": "v.skip_spawn_animation"
+						}
+					],
 					"animations": ["hologram.spawn"]
-				}
+				},
+				"skip_spawn_animation": {}
 			}
 		},
 		"controller.animation.armor_stand.hologram.layers": {

@@ -49,7 +49,7 @@ let supabaseLogger;
 let texturePreviewImageCont;
 let texturePreviewImage;
 
-document.onEvent("DOMContentLoaded", async () => {
+document.onEvent("DOMContentLoaded", () => {
 	document.body.appendChild = selectEl("main").appendChild.bind(selectEl("main"));
 	
 	generatePackForm = selectEl("#generatePackForm");
@@ -122,7 +122,7 @@ document.onEvent("DOMContentLoaded", async () => {
 	});
 	
 	let playerControlsInputCont = selectEl("#playerControlsInputCont");
-	Object.entries(HoloPrint.DEFAULT_PLAYER_CONTROLS).forEach(async ([control, itemCriteria]) => {
+	Promise.all(Object.entries(HoloPrint.DEFAULT_PLAYER_CONTROLS).map(async ([control, itemCriteria]) => {
 		let label = document.createElement("label");
 		let playerControlTranslationKey = HoloPrint.PLAYER_CONTROL_NAMES[control];
 		label.innerHTML = `<span data-translate="${playerControlTranslationKey}">${await translate(playerControlTranslationKey, "en")}</span>:`;
@@ -135,9 +135,11 @@ document.onEvent("DOMContentLoaded", async () => {
 			input.setAttribute("value-tags", itemCriteria["tags"].join(","));
 		}
 		label.appendChild(input);
+		return [label, input];
+	})).then(els => els.forEach(([label, input]) => {
 		playerControlsInputCont.appendChild(label);
 		input.setAttribute("default", input.value); // has to be called after being added to the DOM
-	});
+	}));
 	
 	let clearResourcePackCacheButton = selectEl("#clearResourcePackCacheButton");
 	clearResourcePackCacheButton.onEvent("click", async () => {
