@@ -487,25 +487,25 @@ export async function makePack(structureFiles, config = {}, resourcePackStack, p
 		
 		if(q.time_stamp - v.spawn_time < 200 && !v.player_has_interacted) { // if it's less than 10 seconds after being spawned and the player hasn't interacted yet...
 			t.just_recovered_backup = false;
-			if(!(t.hologram_backup_0_empty ?? true) && t.hologram_backup_0.x == q.position(0) && t.hologram_backup_0.y == q.position(1) && t.hologram_backup_0.z == q.position(2)) { // if the position of the backup matches...
+			if(!(t.hologram_backup_empty_0 ?? true) && t.hologram_backup_0.x == q.position(0) && t.hologram_backup_0.y == q.position(1) && t.hologram_backup_0.z == q.position(2)) { // if the position of the backup matches...
 				v.hologram = t.hologram_backup_0; // take the backup!
-				t.hologram_backup_0_empty = true;
+				t.hologram_backup_empty_0 = true;
 				t.just_recovered_backup = true;
-			} else if(!(t.hologram_backup_1_empty ?? true) && t.hologram_backup_1.x == q.position(0) && t.hologram_backup_1.y == q.position(1) && t.hologram_backup_1.z == q.position(2)) {
+			} else if(!(t.hologram_backup_empty_1 ?? true) && t.hologram_backup_1.x == q.position(0) && t.hologram_backup_1.y == q.position(1) && t.hologram_backup_1.z == q.position(2)) {
 				v.hologram = t.hologram_backup_1;
-				t.hologram_backup_1_empty = true;
+				t.hologram_backup_empty_1 = true;
 				t.just_recovered_backup = true;
-			} else if(!(t.hologram_backup_2_empty ?? true) && t.hologram_backup_2.x == q.position(0) && t.hologram_backup_2.y == q.position(1) && t.hologram_backup_2.z == q.position(2)) {
+			} else if(!(t.hologram_backup_empty_2 ?? true) && t.hologram_backup_2.x == q.position(0) && t.hologram_backup_2.y == q.position(1) && t.hologram_backup_2.z == q.position(2)) {
 				v.hologram = t.hologram_backup_2;
-				t.hologram_backup_2_empty = true;
+				t.hologram_backup_empty_2 = true;
 				t.just_recovered_backup = true;
-			} else if(!(t.hologram_backup_3_empty ?? true) && t.hologram_backup_3.x == q.position(0) && t.hologram_backup_3.y == q.position(1) && t.hologram_backup_3.z == q.position(2)) {
+			} else if(!(t.hologram_backup_empty_3 ?? true) && t.hologram_backup_3.x == q.position(0) && t.hologram_backup_3.y == q.position(1) && t.hologram_backup_3.z == q.position(2)) {
 				v.hologram = t.hologram_backup_3;
-				t.hologram_backup_3_empty = true;
+				t.hologram_backup_empty_3 = true;
 				t.just_recovered_backup = true;
-			} else if(!(t.hologram_backup_4_empty ?? true) && t.hologram_backup_4.x == q.position(0) && t.hologram_backup_4.y == q.position(1) && t.hologram_backup_4.z == q.position(2)) {
+			} else if(!(t.hologram_backup_empty_4 ?? true) && t.hologram_backup_4.x == q.position(0) && t.hologram_backup_4.y == q.position(1) && t.hologram_backup_4.z == q.position(2)) {
 				v.hologram = t.hologram_backup_4;
-				t.hologram_backup_4_empty = true;
+				t.hologram_backup_empty_4 = true;
 				t.just_recovered_backup = true;
 			}
 			if(t.just_recovered_backup) {
@@ -708,7 +708,7 @@ export async function makePack(structureFiles, config = {}, resourcePackStack, p
 		if(q.distance_from_camera > 60 || q.time_stamp - v.hologram_backup_requested_time <= 600) { // 10 blocks leeway for automatic backups, and 30s after players request a backup
 			// one by one, check each backup slot. if it's empty, we take that spot; if not, try to find which backup slot was set the earliest.
 			if(v.hologram_backup_index == -1) {
-				if(t.hologram_backup_0_empty ?? true) {
+				if(t.hologram_backup_empty_0 ?? true) {
 					v.hologram_backup_index = 0;
 				} else {
 					t.earliest_backup_time_stamp = t.hologram_backup_0.backup_time_stamp;
@@ -716,7 +716,7 @@ export async function makePack(structureFiles, config = {}, resourcePackStack, p
 				}
 			}
 			if(v.hologram_backup_index == -1) {
-				if(t.hologram_backup_1_empty ?? true) {
+				if(t.hologram_backup_empty_1 ?? true) {
 					v.hologram_backup_index = 1;
 				} else if(t.hologram_backup_1.backup_time_stamp < t.earliest_backup_time_stamp) {
 					t.earliest_backup_time_stamp = t.hologram_backup_1.backup_time_stamp;
@@ -724,7 +724,7 @@ export async function makePack(structureFiles, config = {}, resourcePackStack, p
 				}
 			}
 			if(v.hologram_backup_index == -1) {
-				if(t.hologram_backup_2_empty ?? true) {
+				if(t.hologram_backup_empty_2 ?? true) {
 					v.hologram_backup_index = 2;
 				} else if(t.hologram_backup_2.backup_time_stamp < t.earliest_backup_time_stamp) {
 					t.earliest_backup_time_stamp = t.hologram_backup_2.backup_time_stamp;
@@ -732,7 +732,7 @@ export async function makePack(structureFiles, config = {}, resourcePackStack, p
 				}
 			}
 			if(v.hologram_backup_index == -1) {
-				if(t.hologram_backup_3_empty ?? true) {
+				if(t.hologram_backup_empty_3 ?? true) {
 					v.hologram_backup_index = 3;
 				} else if(t.hologram_backup_3.backup_time_stamp < t.earliest_backup_time_stamp) {
 					t.earliest_backup_time_stamp = t.hologram_backup_3.backup_time_stamp;
@@ -740,7 +740,7 @@ export async function makePack(structureFiles, config = {}, resourcePackStack, p
 				}
 			}
 			if(v.hologram_backup_index == -1) {
-				if(t.hologram_backup_4_empty ?? true) {
+				if(t.hologram_backup_empty_4 ?? true) {
 					v.hologram_backup_index = 4;
 				} else if(t.hologram_backup_4.backup_time_stamp < t.earliest_backup_time_stamp) {
 					t.earliest_backup_time_stamp = t.hologram_backup_4.backup_time_stamp;
@@ -757,31 +757,31 @@ export async function makePack(structureFiles, config = {}, resourcePackStack, p
 			v.hologram.backup_time_stamp = q.time_stamp;
 			if(v.hologram_backup_index == 0) {
 				t.hologram_backup_0 = v.hologram;
-				t.hologram_backup_0_empty = false;
+				t.hologram_backup_empty_0 = false;
 			} else if(v.hologram_backup_index == 1) {
 				t.hologram_backup_1 = v.hologram;
-				t.hologram_backup_1_empty = false;
+				t.hologram_backup_empty_1 = false;
 			} else if(v.hologram_backup_index == 2) {
 				t.hologram_backup_2 = v.hologram;
-				t.hologram_backup_2_empty = false;
+				t.hologram_backup_empty_2 = false;
 			} else if(v.hologram_backup_index == 3) {
 				t.hologram_backup_3 = v.hologram;
-				t.hologram_backup_3_empty = false;
+				t.hologram_backup_empty_3 = false;
 			} else if(v.hologram_backup_index == 4) {
 				t.hologram_backup_4 = v.hologram;
-				t.hologram_backup_4_empty = false;
+				t.hologram_backup_empty_4 = false;
 			}
 		} else if(v.hologram_backup_index != -1) {
 			if(v.hologram_backup_index == 0) {
-				t.hologram_backup_0_empty = true;
+				t.hologram_backup_empty_0 = true;
 			} else if(v.hologram_backup_index == 1) {
-				t.hologram_backup_1_empty = true;
+				t.hologram_backup_empty_1 = true;
 			} else if(v.hologram_backup_index == 2) {
-				t.hologram_backup_2_empty = true;
+				t.hologram_backup_empty_2 = true;
 			} else if(v.hologram_backup_index == 3) {
-				t.hologram_backup_3_empty = true;
+				t.hologram_backup_empty_3 = true;
 			} else if(v.hologram_backup_index == 4) {
-				t.hologram_backup_4_empty = true;
+				t.hologram_backup_empty_4 = true;
 			}
 			v.hologram_backup_index = -1;
 		}
@@ -823,9 +823,9 @@ export async function makePack(structureFiles, config = {}, resourcePackStack, p
 	
 	let tintColorChannels = hexColorToClampedTriplet(config.TINT_COLOR);
 	hologramRenderControllers["render_controllers"]["controller.render.armor_stand.hologram"]["overlay_color"] = {
-		// "r": "t.hologram_backup_0_empty ?? Math.random(0,1)",
-		// "g": "t.hologram_backup_1_empty ?? Math.random(0,1)",
-		// "b": "t.hologram_backup_2_empty ?? Math.random(0,1)",
+		// "r": "t.hologram_backup_empty_0 ?? Math.random(0,1)",
+		// "g": "t.hologram_backup_empty_1 ?? Math.random(0,1)",
+		// "b": "t.hologram_backup_empty_2 ?? Math.random(0,1)",
 		// "a": "1"
 		"r": +tintColorChannels[0].toFixed(4),
 		"g": +tintColorChannels[1].toFixed(4),
@@ -1441,63 +1441,63 @@ function addPlayerControlsToRenderControllers(config, defaultPlayerRenderControl
 		t.player_action = v.player_action;
 		t.player_action_counter = v.player_action_counter;
 		
-		v.hologram_backup_0_empty ??= true;
-		if((t.hologram_backup_0_empty ?? -1) == -1) {
-			t.hologram_backup_0_empty = v.hologram_backup_0_empty;
-			if(!v.hologram_backup_0_empty) {
+		v.hologram_backup_empty_0 ??= true;
+		if((t.hologram_backup_empty_0 ?? -1) == -1) {
+			t.hologram_backup_empty_0 = v.hologram_backup_empty_0;
+			if(!v.hologram_backup_empty_0) {
 				t.hologram_backup_0 = v.hologram_backup_0;
 			}
 		} else {
-			v.hologram_backup_0_empty = t.hologram_backup_0_empty;
-			if(!t.hologram_backup_0_empty) {
+			v.hologram_backup_empty_0 = t.hologram_backup_empty_0;
+			if(!t.hologram_backup_empty_0) {
 				v.hologram_backup_0 = t.hologram_backup_0;
 			}
 		}
-		v.hologram_backup_1_empty ??= true;
-		if((t.hologram_backup_1_empty ?? -1) == -1) {
-			t.hologram_backup_1_empty = v.hologram_backup_1_empty;
-			if(!v.hologram_backup_1_empty) {
+		v.hologram_backup_empty_1 ??= true;
+		if((t.hologram_backup_empty_1 ?? -1) == -1) {
+			t.hologram_backup_empty_1 = v.hologram_backup_empty_1;
+			if(!v.hologram_backup_empty_1) {
 				t.hologram_backup_1 = v.hologram_backup_1;
 			}
 		} else {
-			v.hologram_backup_1_empty = t.hologram_backup_1_empty;
-			if(!t.hologram_backup_1_empty) {
+			v.hologram_backup_empty_1 = t.hologram_backup_empty_1;
+			if(!t.hologram_backup_empty_1) {
 				v.hologram_backup_1 = t.hologram_backup_1;
 			}
 		}
-		v.hologram_backup_2_empty ??= true;
-		if((t.hologram_backup_2_empty ?? -1) == -1) {
-			t.hologram_backup_2_empty = v.hologram_backup_2_empty;
-			if(!v.hologram_backup_2_empty) {
+		v.hologram_backup_empty_2 ??= true;
+		if((t.hologram_backup_empty_2 ?? -1) == -1) {
+			t.hologram_backup_empty_2 = v.hologram_backup_empty_2;
+			if(!v.hologram_backup_empty_2) {
 				t.hologram_backup_2 = v.hologram_backup_2;
 			}
 		} else {
-			v.hologram_backup_2_empty = t.hologram_backup_2_empty;
-			if(!t.hologram_backup_2_empty) {
+			v.hologram_backup_empty_2 = t.hologram_backup_empty_2;
+			if(!t.hologram_backup_empty_2) {
 				v.hologram_backup_2 = t.hologram_backup_2;
 			}
 		}
-		v.hologram_backup_3_empty ??= true;
-		if((t.hologram_backup_3_empty ?? -1) == -1) {
-			t.hologram_backup_3_empty = v.hologram_backup_3_empty;
-			if(!v.hologram_backup_3_empty) {
+		v.hologram_backup_empty_3 ??= true;
+		if((t.hologram_backup_empty_3 ?? -1) == -1) {
+			t.hologram_backup_empty_3 = v.hologram_backup_empty_3;
+			if(!v.hologram_backup_empty_3) {
 				t.hologram_backup_3 = v.hologram_backup_3;
 			}
 		} else {
-			v.hologram_backup_3_empty = t.hologram_backup_3_empty;
-			if(!t.hologram_backup_3_empty) {
+			v.hologram_backup_empty_3 = t.hologram_backup_empty_3;
+			if(!t.hologram_backup_empty_3) {
 				v.hologram_backup_3 = t.hologram_backup_3;
 			}
 		}
-		v.hologram_backup_4_empty ??= true;
-		if((t.hologram_backup_4_empty ?? -1) == -1) {
-			t.hologram_backup_4_empty = v.hologram_backup_4_empty;
-			if(!v.hologram_backup_4_empty) {
+		v.hologram_backup_empty_4 ??= true;
+		if((t.hologram_backup_empty_4 ?? -1) == -1) {
+			t.hologram_backup_empty_4 = v.hologram_backup_empty_4;
+			if(!v.hologram_backup_empty_4) {
 				t.hologram_backup_4 = v.hologram_backup_4;
 			}
 		} else {
-			v.hologram_backup_4_empty = t.hologram_backup_4_empty;
-			if(!t.hologram_backup_4_empty) {
+			v.hologram_backup_empty_4 = t.hologram_backup_empty_4;
+			if(!t.hologram_backup_empty_4) {
 				v.hologram_backup_4 = t.hologram_backup_4;
 			}
 		}
