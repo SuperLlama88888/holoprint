@@ -85,7 +85,6 @@ export async function makePack(structureFiles, config = {}, resourcePackStack, p
 		resources: {
 			entityFile: "entity/armor_stand.entity.json",
 			defaultPlayerRenderControllers: "render_controllers/player.render_controllers.json",
-			armorStandGeo: "models/entity/armor_stand.geo.json", // for visible bounds. we need this even though the hologram geometry has a different identifier.
 			translationFile: `texts/${config.MATERIAL_LIST_LANGUAGE}.lang`
 		},
 		otherFiles: {
@@ -96,7 +95,7 @@ export async function makePack(structureFiles, config = {}, resourcePackStack, p
 			itemMetadata: "metadata/vanilladata_modules/mojang-items.json"
 		}
 	}, resourcePackStack);
-	let { manifest, packIcon, entityFile, hologramRenderControllers, defaultPlayerRenderControllers, hologramGeo, armorStandGeo, hologramMaterial, hologramAnimationControllers, hologramAnimations, boundingBoxOutlineParticle, blockValidationParticle, singleWhitePixelTexture, hudScreenUI, languagesDotJson, translationFile } = loadedStuff.files;
+	let { manifest, packIcon, entityFile, hologramRenderControllers, defaultPlayerRenderControllers, hologramGeo, hologramMaterial, hologramAnimationControllers, hologramAnimations, boundingBoxOutlineParticle, blockValidationParticle, singleWhitePixelTexture, hudScreenUI, languagesDotJson, translationFile } = loadedStuff.files;
 	let { blockMetadata, itemMetadata } = loadedStuff.data;
 	
 	let structures = nbts.map(nbt => nbt["structure"]);
@@ -167,15 +166,8 @@ export async function makePack(structureFiles, config = {}, resourcePackStack, p
 	});
 	console.log("Bone template palette with resolved UVs:", boneTemplatePalette);
 	
-	// I have no idea if these visible bounds actually influence anything...
-	let visibleBoundsWidth = 16 * max(...structureSizes.map(structureSize => max(structureSize[0], structureSize[2])));
-	let visibleBoundsHeight = 16 * max(...structureSizes.map(structureSize => structureSize[1]));
-	armorStandGeo["minecraft:geometry"][0]["description"]["visible_bounds_width"] = visibleBoundsWidth;
-	armorStandGeo["minecraft:geometry"][0]["description"]["visible_bounds_height"] = visibleBoundsHeight;
 	let structureGeoTemplate = hologramGeo["minecraft:geometry"][0];
 	hologramGeo["minecraft:geometry"].splice(0, 1);
-	structureGeoTemplate["description"]["visible_bounds_width"] = visibleBoundsWidth;
-	structureGeoTemplate["description"]["visible_bounds_height"] = visibleBoundsHeight;
 	
 	structureGeoTemplate["description"]["texture_width"] = textureAtlas.atlasWidth;
 	structureGeoTemplate["description"]["texture_height"] = textureAtlas.atlasHeight;
@@ -438,7 +430,7 @@ export async function makePack(structureFiles, config = {}, resourcePackStack, p
 	entityDescription["animations"]["controller.hologram.block_validation"] = "controller.animation.armor_stand.hologram.block_validation";
 	entityDescription["scripts"]["animate"] ??= [];
 	entityDescription["scripts"]["animate"].push("hologram.align", "hologram.offset", "hologram.wrong_block_overlay", "controller.hologram.spawn_animation", "controller.hologram.layers", "controller.hologram.bounding_box", "controller.hologram.block_validation");
-	entityDescription["scripts"]["should_update_effects_offscreen"] = true; // makes backups work when offscreen (from my testing it helps a bit)
+	entityDescription["scripts"]["should_update_bones_and_effects_offscreen"] = true; // makes backups work when offscreen (from my testing it helps a bit). this also makes it render when you're facing away, removing the need for visible_bounds_width/visible_bounds_height in the geometry file. (when should_update_effects_offscreen is set, it renders when facing away, but doesn't seem to have access to v. variables.)
 	entityDescription["scripts"]["initialize"] ??= [];
 	entityDescription["scripts"]["initialize"].push(functionToMolang((v, q, structureSize, singleLayerMode, structureCount, HOLOGRAM_INITIAL_ACTIVATION) => {
 		v.hologram_activated = HOLOGRAM_INITIAL_ACTIVATION; // true/false are substituted in here for the different subpacks
@@ -481,36 +473,22 @@ export async function makePack(structureFiles, config = {}, resourcePackStack, p
 		structureCount: structureFiles.length
 	}));
 	entityDescription["scripts"]["pre_animation"] ??= [];
-	entityDescription["scripts"]["pre_animation"].push(functionToMolang((v, q, t, textureBlobsCount, totalBlocksToValidate, toggleRendering, changeOpacity, toggleTint, toggleValidating, changeLayer, decreaseLayer, changeLayerMode, disablePlayerControls, backupHologram, singleLayerMode) => {
+	entityDescription["scripts"]["pre_animation"].push(functionToMolang((v, q, t, textureBlobsCount, totalBlocksToValidate, backupSlotCount, toggleRendering, changeOpacity, toggleTint, toggleValidating, changeLayer, decreaseLayer, changeLayerMode, disablePlayerControls, backupHologram, singleLayerMode) => {
 		v.last_pose ??= v.armor_stand.pose_index;
 		v.hologram_dir = Math.floor(q.body_y_rotation / 90) + 2; // [south, west, north, east] (since it goes from -180 to 180)
 		
 		if(q.time_stamp - v.spawn_time < 200 && !v.player_has_interacted) { // if it's less than 10 seconds after being spawned and the player hasn't interacted yet...
 			t.just_recovered_backup = false;
-			if(!(t.hologram_backup_empty_0 ?? true) && t.hologram_backup_0.x == q.position(0) && t.hologram_backup_0.y == q.position(1) && t.hologram_backup_0.z == q.position(2)) { // if the position of the backup matches...
-				v.hologram = t.hologram_backup_0; // take the backup!
-				t.hologram_backup_empty_0 = true;
-				t.just_recovered_backup = true;
-			} else if(!(t.hologram_backup_empty_1 ?? true) && t.hologram_backup_1.x == q.position(0) && t.hologram_backup_1.y == q.position(1) && t.hologram_backup_1.z == q.position(2)) {
-				v.hologram = t.hologram_backup_1;
-				t.hologram_backup_empty_1 = true;
-				t.just_recovered_backup = true;
-			} else if(!(t.hologram_backup_empty_2 ?? true) && t.hologram_backup_2.x == q.position(0) && t.hologram_backup_2.y == q.position(1) && t.hologram_backup_2.z == q.position(2)) {
-				v.hologram = t.hologram_backup_2;
-				t.hologram_backup_empty_2 = true;
-				t.just_recovered_backup = true;
-			} else if(!(t.hologram_backup_empty_3 ?? true) && t.hologram_backup_3.x == q.position(0) && t.hologram_backup_3.y == q.position(1) && t.hologram_backup_3.z == q.position(2)) {
-				v.hologram = t.hologram_backup_3;
-				t.hologram_backup_empty_3 = true;
-				t.just_recovered_backup = true;
-			} else if(!(t.hologram_backup_empty_4 ?? true) && t.hologram_backup_4.x == q.position(0) && t.hologram_backup_4.y == q.position(1) && t.hologram_backup_4.z == q.position(2)) {
-				v.hologram = t.hologram_backup_4;
-				t.hologram_backup_empty_4 = true;
-				t.just_recovered_backup = true;
+			for(let i = 0; i < $[backupSlotCount]; i++) {
+				if(!t.just_recovered_backup && !(t.hologram_backup_empty_$[i] ?? true) && t.hologram_backup_$[i].x == q.position(0) && t.hologram_backup_$[i].y == q.position(1) && t.hologram_backup_$[i].z == q.position(2)) {
+					v.hologram = t.hologram_backup_$[i];
+					t.hologram_backup_empty_$[i] = true;
+					t.just_recovered_backup = true;
+				}
 			}
 			if(t.just_recovered_backup) {
 				v.player_has_interacted = true;
-				t.hologram_activated = true;
+				v.hologram_activated = true;
 				v.skip_spawn_animation = true;
 			}
 		}
@@ -707,44 +685,15 @@ export async function makePack(structureFiles, config = {}, resourcePackStack, p
 		
 		if(q.distance_from_camera > 60 || q.time_stamp - v.hologram_backup_requested_time <= 600) { // 10 blocks leeway for automatic backups, and 30s after players request a backup
 			// one by one, check each backup slot. if it's empty, we take that spot; if not, try to find which backup slot was set the earliest.
-			if(v.hologram_backup_index == -1) {
-				if(t.hologram_backup_empty_0 ?? true) {
-					v.hologram_backup_index = 0;
-				} else {
-					t.earliest_backup_time_stamp = t.hologram_backup_0.backup_time_stamp;
-					t.earliest_backup_index = 0;
-				}
-			}
-			if(v.hologram_backup_index == -1) {
-				if(t.hologram_backup_empty_1 ?? true) {
-					v.hologram_backup_index = 1;
-				} else if(t.hologram_backup_1.backup_time_stamp < t.earliest_backup_time_stamp) {
-					t.earliest_backup_time_stamp = t.hologram_backup_1.backup_time_stamp;
-					t.earliest_backup_index = 1;
-				}
-			}
-			if(v.hologram_backup_index == -1) {
-				if(t.hologram_backup_empty_2 ?? true) {
-					v.hologram_backup_index = 2;
-				} else if(t.hologram_backup_2.backup_time_stamp < t.earliest_backup_time_stamp) {
-					t.earliest_backup_time_stamp = t.hologram_backup_2.backup_time_stamp;
-					t.earliest_backup_index = 2;
-				}
-			}
-			if(v.hologram_backup_index == -1) {
-				if(t.hologram_backup_empty_3 ?? true) {
-					v.hologram_backup_index = 3;
-				} else if(t.hologram_backup_3.backup_time_stamp < t.earliest_backup_time_stamp) {
-					t.earliest_backup_time_stamp = t.hologram_backup_3.backup_time_stamp;
-					t.earliest_backup_index = 3;
-				}
-			}
-			if(v.hologram_backup_index == -1) {
-				if(t.hologram_backup_empty_4 ?? true) {
-					v.hologram_backup_index = 4;
-				} else if(t.hologram_backup_4.backup_time_stamp < t.earliest_backup_time_stamp) {
-					t.earliest_backup_time_stamp = t.hologram_backup_4.backup_time_stamp;
-					t.earliest_backup_index = 4;
+			t.earliest_backup_time_stamp = q.time_stamp + 9999; // all backups should be less than this
+			for(let i = 0; i < $[backupSlotCount]; i++) {
+				if(v.hologram_backup_index == -1) {
+					if(t.hologram_backup_empty_$[i] ?? true) {
+						v.hologram_backup_index = $[i];
+					} else if(t.hologram_backup_$[i].backup_time_stamp < t.earliest_backup_time_stamp) {
+						t.earliest_backup_time_stamp = t.hologram_backup_$[i].backup_time_stamp;
+						t.earliest_backup_index = $[i];
+					}
 				}
 			}
 			if(v.hologram_backup_index == -1) { // none are empty, so overwrite the earliest backup
@@ -755,39 +704,24 @@ export async function makePack(structureFiles, config = {}, resourcePackStack, p
 			v.hologram.y = q.position(1);
 			v.hologram.z = q.position(2);
 			v.hologram.backup_time_stamp = q.time_stamp;
-			if(v.hologram_backup_index == 0) {
-				t.hologram_backup_0 = v.hologram;
-				t.hologram_backup_empty_0 = false;
-			} else if(v.hologram_backup_index == 1) {
-				t.hologram_backup_1 = v.hologram;
-				t.hologram_backup_empty_1 = false;
-			} else if(v.hologram_backup_index == 2) {
-				t.hologram_backup_2 = v.hologram;
-				t.hologram_backup_empty_2 = false;
-			} else if(v.hologram_backup_index == 3) {
-				t.hologram_backup_3 = v.hologram;
-				t.hologram_backup_empty_3 = false;
-			} else if(v.hologram_backup_index == 4) {
-				t.hologram_backup_4 = v.hologram;
-				t.hologram_backup_empty_4 = false;
+			for(let i = 0; i < $[backupSlotCount]; i++) {
+				if(v.hologram_backup_index == $[i]) {
+					t.hologram_backup_$[i] = v.hologram;
+					t.hologram_backup_empty_$[i] = false;
+				}
 			}
 		} else if(v.hologram_backup_index != -1) {
-			if(v.hologram_backup_index == 0) {
-				t.hologram_backup_empty_0 = true;
-			} else if(v.hologram_backup_index == 1) {
-				t.hologram_backup_empty_1 = true;
-			} else if(v.hologram_backup_index == 2) {
-				t.hologram_backup_empty_2 = true;
-			} else if(v.hologram_backup_index == 3) {
-				t.hologram_backup_empty_3 = true;
-			} else if(v.hologram_backup_index == 4) {
-				t.hologram_backup_empty_4 = true;
+			for(let i = 0; i < $[backupSlotCount]; i++) {
+				if(v.hologram_backup_index == $[i]) {
+					t.hologram_backup_empty_$[i] = true;
+				}
 			}
 			v.hologram_backup_index = -1;
 		}
 	}, {
 		textureBlobsCount: textureBlobs.length,
 		totalBlocksToValidate: arrayToMolang(totalBlocksToValidateByStructure, "v.hologram.structure_index"),
+		backupSlotCount: config.BACKUP_SLOT_COUNT,
 		structureWMolang,
 		structureHMolang,
 		structureDMolang,
@@ -922,7 +856,6 @@ export async function makePack(structureFiles, config = {}, resourcePackStack, p
 	pack.file("subpacks/punch_to_activate/entity/armor_stand.entity.json", JSON.stringify(entityFile).replaceAll("HOLOGRAM_INITIAL_ACTIVATION", false));
 	pack.file("render_controllers/armor_stand.hologram.render_controllers.json", JSON.stringify(hologramRenderControllers));
 	pack.file("render_controllers/player.render_controllers.json", JSON.stringify(playerRenderControllers));
-	pack.file("models/entity/armor_stand.geo.json", JSON.stringify(armorStandGeo));
 	pack.file("models/entity/armor_stand.hologram.geo.json", stringifyWithFixedDecimals(hologramGeo));
 	pack.file("materials/entity.material", JSON.stringify(hologramMaterial));
 	pack.file("animation_controllers/armor_stand.hologram.animation_controllers.json", JSON.stringify(hologramAnimationControllers));
@@ -1069,6 +1002,7 @@ export function addDefaultConfig(config) {
 			SPAWN_ANIMATION_LENGTH: 0.4, // in seconds
 			WRONG_BLOCK_OVERLAY_COLOR: [1, 0, 0, 0.3],
 			CONTROLS: {},
+			BACKUP_SLOT_COUNT: 5,
 			MATERIAL_LIST_LANGUAGE: "en_US",
 			PACK_NAME: undefined,
 			PACK_ICON_BLOB: undefined,
@@ -1428,7 +1362,7 @@ function addPlayerControlsToRenderControllers(config, defaultPlayerRenderControl
 	}, {
 		moveHologram: itemCriteriaToMolang(config.CONTROLS.MOVE_HOLOGRAM)
 	});
-	let broadcastActions = functionToMolang((v, t, q) => {
+	let broadcastActions = functionToMolang((v, t, q, backupSlotCount) => {
 		if(v.new_action != "") {
 			v.player_action = v.new_action;
 			v.new_action = "";
@@ -1441,66 +1375,22 @@ function addPlayerControlsToRenderControllers(config, defaultPlayerRenderControl
 		t.player_action = v.player_action;
 		t.player_action_counter = v.player_action_counter;
 		
-		v.hologram_backup_empty_0 ??= true;
-		if((t.hologram_backup_empty_0 ?? -1) == -1) {
-			t.hologram_backup_empty_0 = v.hologram_backup_empty_0;
-			if(!v.hologram_backup_empty_0) {
-				t.hologram_backup_0 = v.hologram_backup_0;
-			}
-		} else {
-			v.hologram_backup_empty_0 = t.hologram_backup_empty_0;
-			if(!t.hologram_backup_empty_0) {
-				v.hologram_backup_0 = t.hologram_backup_0;
-			}
-		}
-		v.hologram_backup_empty_1 ??= true;
-		if((t.hologram_backup_empty_1 ?? -1) == -1) {
-			t.hologram_backup_empty_1 = v.hologram_backup_empty_1;
-			if(!v.hologram_backup_empty_1) {
-				t.hologram_backup_1 = v.hologram_backup_1;
-			}
-		} else {
-			v.hologram_backup_empty_1 = t.hologram_backup_empty_1;
-			if(!t.hologram_backup_empty_1) {
-				v.hologram_backup_1 = t.hologram_backup_1;
+		for(let i = 0; i < $[backupSlotCount]; i++) {
+			v.hologram_backup_empty_$[i] ??= true;
+			if((t.hologram_backup_empty_$[i] ?? -1) == -1) {
+				t.hologram_backup_empty_$[i] = v.hologram_backup_empty_$[i];
+				if(!v.hologram_backup_empty_$[i]) {
+					t.hologram_backup_$[i] = v.hologram_backup_$[i];
+				}
+			} else {
+				v.hologram_backup_empty_$[i] = t.hologram_backup_empty_$[i];
+				if(!t.hologram_backup_empty_$[i]) {
+					v.hologram_backup_$[i] = t.hologram_backup_$[i];
+				}
 			}
 		}
-		v.hologram_backup_empty_2 ??= true;
-		if((t.hologram_backup_empty_2 ?? -1) == -1) {
-			t.hologram_backup_empty_2 = v.hologram_backup_empty_2;
-			if(!v.hologram_backup_empty_2) {
-				t.hologram_backup_2 = v.hologram_backup_2;
-			}
-		} else {
-			v.hologram_backup_empty_2 = t.hologram_backup_empty_2;
-			if(!t.hologram_backup_empty_2) {
-				v.hologram_backup_2 = t.hologram_backup_2;
-			}
-		}
-		v.hologram_backup_empty_3 ??= true;
-		if((t.hologram_backup_empty_3 ?? -1) == -1) {
-			t.hologram_backup_empty_3 = v.hologram_backup_empty_3;
-			if(!v.hologram_backup_empty_3) {
-				t.hologram_backup_3 = v.hologram_backup_3;
-			}
-		} else {
-			v.hologram_backup_empty_3 = t.hologram_backup_empty_3;
-			if(!t.hologram_backup_empty_3) {
-				v.hologram_backup_3 = t.hologram_backup_3;
-			}
-		}
-		v.hologram_backup_empty_4 ??= true;
-		if((t.hologram_backup_empty_4 ?? -1) == -1) {
-			t.hologram_backup_empty_4 = v.hologram_backup_empty_4;
-			if(!v.hologram_backup_empty_4) {
-				t.hologram_backup_4 = v.hologram_backup_4;
-			}
-		} else {
-			v.hologram_backup_empty_4 = t.hologram_backup_empty_4;
-			if(!t.hologram_backup_empty_4) {
-				v.hologram_backup_4 = t.hologram_backup_4;
-			}
-		}
+	}, {
+		backupSlotCount: config.BACKUP_SLOT_COUNT
 	});
 	return patchRenderControllers(defaultPlayerRenderControllers, {
 		"controller.render.player.first_person": functionToMolang((q, v) => {
@@ -1677,48 +1567,10 @@ function functionToMolang(func, vars = {}) {
 		}
 		expandedElseIfCode += minifiedFuncBody[i];
 	}
-	let mathedCode = expandedElseIfCode.replaceAll(`"`, `'`).replaceAll(/([\w\.]+)(\+|-){2};/g, "$1=$1$21;").replaceAll(/([\w\.]+)--;/g, "$1=$1-1;").replaceAll(/([\w\.]+)(\+|-|\*|\/|\?\?)=([^;]+);/g, "$1=$1$2$3;");
+	let mathedCode = expandedElseIfCode.replaceAll(`"`, `'`).replaceAll(/([\w\.]+)(\+|-){2};/g, "$1=$1$21;").replaceAll(/([\w\.]+)--;/g, "$1=$1-1;").replaceAll(/([\w\.\$\[\]]+)(\+|-|\*|\/|\?\?)=([^;]+);/g, "$1=$1$2$3;");
 	
-	// I have no idea how to make this smaller. I really wish JS had a native AST conversion API
-	let conditionedCode = "";
-	let parenthesisCounter = 0;
-	let inIfCondition = false;
-	let needsExtraBracketAtEndOfIfCondition = false; // short variable names are for slow typers :)
-	for(let i = 0; i < mathedCode.length; i++) {
-		let char = mathedCode[i];
-		if(mathedCode.slice(i, i + 3) == "if(") {
-			inIfCondition = true;
-			parenthesisCounter++;
-			needsExtraBracketAtEndOfIfCondition = /^if\([^()]+\?\?/.test(mathedCode.slice(i)); // null coalescing operator is the only operator with lower precedence than the ternary conditional operator, so if a conditional expression in if() has ?? without any brackets around it, brackets are needed around the entire conditional expression
-			if(needsExtraBracketAtEndOfIfCondition) {
-				conditionedCode += "(";
-			}
-			i += 2;
-			continue;
-		} else if(mathedCode.slice(i, i + 4) == "else") {
-			conditionedCode = conditionedCode.slice(0, -1) + ":"; // replace the ; with :
-			i += 3;
-			continue;
-		} else if(char == "(") {
-			parenthesisCounter++;
-		} else if(char == ")") {
-			parenthesisCounter--;
-			if(parenthesisCounter == 0 && inIfCondition) {
-				inIfCondition = false;
-				if(needsExtraBracketAtEndOfIfCondition) {
-					conditionedCode += ")";
-				}
-				conditionedCode += "?";
-				continue;
-			}
-		} else if(char == "}") {
-			conditionedCode += "};";
-			continue;
-		}
-		conditionedCode += char;
-	}
 	// Yay more fun regular expressions, this time to work with variable substitution ($[...])
-	let variabledCode = conditionedCode.replaceAll(/\$\[(\w+)(?:\[(\d+)\])?(?:(\+|-|\*|\/)(\d+))?\]/g, (match, varName, index, operator, operand) => {
+	let substituteInVariables = (code, vars) => code.replaceAll(/\$\[(\w+)(?:\[(\d+)\])?(?:(\+|-|\*|\/)(\d+))?\]/g, (match, varName, index, operator, operand) => {
 		if(varName in vars) {
 			let value = vars[varName];
 			if(index != undefined) {
@@ -1739,6 +1591,72 @@ function functionToMolang(func, vars = {}) {
 			throw new ReferenceError(`Variable "${varName}" was not passed to function -> Molang converter!`);
 		}
 	});
+	// I have no idea how to make this smaller. I really wish JS had a native AST conversion API
+	let conditionedCode = "";
+	let parenthesisCounter = 0;
+	let inIfCondition = false;
+	let needsExtraBracketAtEndOfIfCondition = false; // short variable names are for slow typers :)
+	for(let i = 0; i < mathedCode.length; i++) {
+		let char = mathedCode[i];
+		if(mathedCode.slice(i, i + 3) == "if(") {
+			inIfCondition = true;
+			parenthesisCounter++;
+			needsExtraBracketAtEndOfIfCondition = /^if\([^()]+\?\?/.test(mathedCode.slice(i)); // null coalescing operator is the only operator with lower precedence than the ternary conditional operator, so if a conditional expression in if() has ?? without any brackets around it, brackets are needed around the entire conditional expression
+			if(needsExtraBracketAtEndOfIfCondition) {
+				conditionedCode += "(";
+			}
+			i += 2;
+			continue;
+		} else if(mathedCode.slice(i, i + 4) == "else") {
+			conditionedCode = conditionedCode.slice(0, -1) + ":"; // replace the ; with :
+			i += 3;
+			continue;
+		} else if(/^for\([^)]+\)/.test(mathedCode.slice(i))) {
+			let forStatement = substituteInVariables(mathedCode.slice(i).match(/^for\([^)]+\)/)[0], vars);
+			let [, forVarName, initialValue, upperBound] = forStatement.match(/^for\(let(\w+)=(\d+);\w+<(\d+);\w+\+\+\)/);
+			let forBlockStartI = mathedCode.slice(i).indexOf("{") + i;
+			let forBlockEndI = forBlockStartI + 1;
+			let braceCounter = 1;
+			while(braceCounter > 0) {
+				if(mathedCode[forBlockEndI] == "{") {
+					braceCounter++;
+				} else if(mathedCode[forBlockEndI] == "}") {
+					braceCounter--;
+				}
+				forBlockEndI++;
+			}
+			let forBlockContent = mathedCode.slice(forBlockStartI + 1, forBlockEndI - 1);
+			let expandedForCode = "";
+			for(let forI = +initialValue; forI < upperBound; forI++) {
+				expandedForCode += substituteInVariables(forBlockContent, {
+					...vars,
+					...{
+						[forVarName]: forI
+					}
+				});
+			}
+			mathedCode = mathedCode.slice(0, i) + expandedForCode + mathedCode.slice(forBlockEndI);
+			i--;
+			continue;
+		} else if(char == "(") {
+			parenthesisCounter++;
+		} else if(char == ")") {
+			parenthesisCounter--;
+			if(parenthesisCounter == 0 && inIfCondition) {
+				inIfCondition = false;
+				if(needsExtraBracketAtEndOfIfCondition) {
+					conditionedCode += ")";
+				}
+				conditionedCode += "?";
+				continue;
+			}
+		} else if(char == "}") {
+			conditionedCode += "};";
+			continue;
+		}
+		conditionedCode += char;
+	}
+	let variabledCode = substituteInVariables(conditionedCode, vars);
 	return variabledCode;
 }
 /**
@@ -1780,6 +1698,7 @@ function stringifyWithFixedDecimals(value) {
  * @property {Number} SPAWN_ANIMATION_LENGTH Length of each individual block's spawn animation (seconds)
  * @property {Array<Number>} WRONG_BLOCK_OVERLAY_COLOR Clamped colour quartet
  * @property {HoloPrintControlsConfig} CONTROLS
+ * @property {Number} BACKUP_SLOT_COUNT
  * @property {String} MATERIAL_LIST_LANGUAGE The language code, as appearing in `texts/languages.json`
  * @property {String|undefined} PACK_NAME The name of the completed pack; will default to the structure file names
  * @property {Blob} PACK_ICON_BLOB Blob for `pack_icon.png`
