@@ -686,6 +686,7 @@ export async function makePack(structureFiles, config = {}, resourcePackStack, p
 		if(q.distance_from_camera > 60 || q.time_stamp - v.hologram_backup_requested_time <= 600) { // 10 blocks leeway for automatic backups, and 30s after players request a backup
 			// one by one, check each backup slot. if it's empty, we take that spot; if not, try to find which backup slot was set the earliest.
 			t.earliest_backup_time_stamp = q.time_stamp + 9999; // all backups should be less than this
+			t.earliest_backup_index = -1;
 			for(let i = 0; i < $[backupSlotCount]; i++) {
 				if(v.hologram_backup_index == -1) {
 					if(t.hologram_backup_empty_$[i] ?? true) {
@@ -697,6 +698,9 @@ export async function makePack(structureFiles, config = {}, resourcePackStack, p
 				}
 			}
 			if(v.hologram_backup_index == -1) { // none are empty, so overwrite the earliest backup
+				if(t.earliest_backup_index == -1) { // will only happen when the backup slot count is 0
+					return 0;
+				}
 				v.hologram_backup_index = t.earliest_backup_index;
 			}
 			
@@ -1002,7 +1006,7 @@ export function addDefaultConfig(config) {
 			SPAWN_ANIMATION_LENGTH: 0.4, // in seconds
 			WRONG_BLOCK_OVERLAY_COLOR: [1, 0, 0, 0.3],
 			CONTROLS: {},
-			BACKUP_SLOT_COUNT: 5,
+			BACKUP_SLOT_COUNT: 10,
 			MATERIAL_LIST_LANGUAGE: "en_US",
 			PACK_NAME: undefined,
 			PACK_ICON_BLOB: undefined,

@@ -41,6 +41,7 @@
 	"resource_packs.reset": "Resource packs reset!",
 	"resource_packs.upload_local": "Upload a local resource pack:",
 	"settings.advanced": "Advanced",
+	"settings.backup_slot_count": "Backup slot count:",
 	"settings.heading": "Settings",
 	"settings.ghost_block_scale": "Ghost block scale:",
 	"settings.ignored_blocks": "Ignored blocks:",

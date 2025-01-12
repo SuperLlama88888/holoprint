@@ -393,6 +393,7 @@ async function makePack(structureFiles, localResourcePacks) {
 		TEXTURE_OUTLINE_OPACITY: formData.get("textureOutlineOpacity") / 100,
 		DO_SPAWN_ANIMATION: formData.get("spawnAnimationEnabled"),
 		CONTROLS: Object.fromEntries([...formData].filter(([key]) => key.startsWith("control.")).map(([key, value]) => [key.replace(/^control./, ""), JSON.parse(value)])),
+		BACKUP_SLOT_COUNT: +formData.get("backupSlotCount"),
 		MATERIAL_LIST_LANGUAGE: formData.get("materialListLanguage"),
 		PACK_NAME: formData.get("packName") || undefined,
 		PACK_ICON_BLOB: formData.get("packIcon").size? formData.get("packIcon") : undefined,
