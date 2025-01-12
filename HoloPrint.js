@@ -78,7 +78,9 @@ export async function makePack(structureFiles, config = {}, resourcePackStack, p
 			hologramAnimations: "animations/armor_stand.hologram.animation.json",
 			boundingBoxOutlineParticle: "particles/bounding_box_outline.json",
 			blockValidationParticle: "particles/block_validation.json",
+			savingBackupParticle: "particles/saving_backup.json",
 			singleWhitePixelTexture: "textures/particle/single_white_pixel.png",
+			saveIconTexture: "textures/particle/save_icon.png",
 			hudScreenUI: "ui/hud_screen.json",
 			languagesDotJson: "texts/languages.json"
 		},
@@ -95,7 +97,7 @@ export async function makePack(structureFiles, config = {}, resourcePackStack, p
 			itemMetadata: "metadata/vanilladata_modules/mojang-items.json"
 		}
 	}, resourcePackStack);
-	let { manifest, packIcon, entityFile, hologramRenderControllers, defaultPlayerRenderControllers, hologramGeo, hologramMaterial, hologramAnimationControllers, hologramAnimations, boundingBoxOutlineParticle, blockValidationParticle, singleWhitePixelTexture, hudScreenUI, languagesDotJson, translationFile } = loadedStuff.files;
+	let { manifest, packIcon, entityFile, hologramRenderControllers, defaultPlayerRenderControllers, hologramGeo, hologramMaterial, hologramAnimationControllers, hologramAnimations, boundingBoxOutlineParticle, blockValidationParticle, savingBackupParticle, singleWhitePixelTexture, saveIconTexture, hudScreenUI, languagesDotJson, translationFile } = loadedStuff.files;
 	let { blockMetadata, itemMetadata } = loadedStuff.data;
 	
 	let structures = nbts.map(nbt => nbt["structure"]);
@@ -420,6 +422,7 @@ export async function makePack(structureFiles, config = {}, resourcePackStack, p
 	entityDescription["materials"]["hologram"] = "holoprint_hologram";
 	entityDescription["materials"]["hologram.wrong_block_overlay"] = "holoprint_hologram.wrong_block_overlay";
 	entityDescription["textures"]["hologram.overlay"] = "textures/entity/overlay";
+	entityDescription["textures"]["hologram.save_icon"] = "textures/particle/save_icon";
 	entityDescription["animations"]["hologram.align"] = "animation.armor_stand.hologram.align";
 	entityDescription["animations"]["hologram.offset"] = "animation.armor_stand.hologram.offset";
 	entityDescription["animations"]["hologram.spawn"] = "animation.armor_stand.hologram.spawn";
@@ -428,8 +431,9 @@ export async function makePack(structureFiles, config = {}, resourcePackStack, p
 	entityDescription["animations"]["controller.hologram.layers"] = "controller.animation.armor_stand.hologram.layers";
 	entityDescription["animations"]["controller.hologram.bounding_box"] = "controller.animation.armor_stand.hologram.bounding_box";
 	entityDescription["animations"]["controller.hologram.block_validation"] = "controller.animation.armor_stand.hologram.block_validation";
+	entityDescription["animations"]["controller.hologram.saving_backup_particles"] = "controller.animation.armor_stand.hologram.saving_backup_particles";
 	entityDescription["scripts"]["animate"] ??= [];
-	entityDescription["scripts"]["animate"].push("hologram.align", "hologram.offset", "hologram.wrong_block_overlay", "controller.hologram.spawn_animation", "controller.hologram.layers", "controller.hologram.bounding_box", "controller.hologram.block_validation");
+	entityDescription["scripts"]["animate"].push("hologram.align", "hologram.offset", "hologram.wrong_block_overlay", "controller.hologram.spawn_animation", "controller.hologram.layers", "controller.hologram.bounding_box", "controller.hologram.block_validation", "controller.hologram.saving_backup_particles");
 	entityDescription["scripts"]["should_update_bones_and_effects_offscreen"] = true; // makes backups work when offscreen (from my testing it helps a bit). this also makes it render when you're facing away, removing the need for visible_bounds_width/visible_bounds_height in the geometry file. (when should_update_effects_offscreen is set, it renders when facing away, but doesn't seem to have access to v. variables.)
 	entityDescription["scripts"]["initialize"] ??= [];
 	entityDescription["scripts"]["initialize"].push(functionToMolang((v, q, structureSize, singleLayerMode, structureCount, HOLOGRAM_INITIAL_ACTIVATION) => {
@@ -463,6 +467,7 @@ export async function makePack(structureFiles, config = {}, resourcePackStack, p
 		
 		v.spawn_time = q.time_stamp;
 		v.player_has_interacted = false;
+		v.saving_backup = false;
 		v.hologram_backup_index = -1;
 		v.hologram_backup_requested_time = -601; // 600 ticks = 30s (how long the backup request lasts for)
 		v.skip_spawn_animation = false;
@@ -683,7 +688,8 @@ export async function makePack(structureFiles, config = {}, resourcePackStack, p
 			}
 		}
 		
-		if(q.distance_from_camera > 60 || q.time_stamp - v.hologram_backup_requested_time <= 600) { // 10 blocks leeway for automatic backups, and 30s after players request a backup
+		v.saving_backup = q.distance_from_camera > 55 || q.time_stamp - v.hologram_backup_requested_time <= 600; // 15 blocks leeway for automatic backups, or 30s after players request a backup
+		if(v.saving_backup) {
 			// one by one, check each backup slot. if it's empty, we take that spot; if not, try to find which backup slot was set the earliest.
 			t.earliest_backup_time_stamp = q.time_stamp + 9999; // all backups should be less than this
 			t.earliest_backup_index = -1;
@@ -753,6 +759,7 @@ export async function makePack(structureFiles, config = {}, resourcePackStack, p
 	}, "controller.render.armor_stand.hologram.particle_alignment");
 	entityDescription["particle_effects"] ??= {};
 	entityDescription["particle_effects"]["bounding_box_outline"] = "holoprint:bounding_box_outline";
+	entityDescription["particle_effects"]["saving_backup"] = "holoprint:saving_backup";
 	
 	textureBlobs.forEach(([textureName]) => {
 		entityDescription["textures"][textureName] = `textures/entity/${textureName}`;
@@ -871,7 +878,9 @@ export async function makePack(structureFiles, config = {}, resourcePackStack, p
 		particle["particle_effect"]["components"]["minecraft:particle_expire_if_in_blocks"] = [blockName.includes(":")? blockName : `minecraft:${blockName}`]; // add back minecraft: namespace if it's missing
 		pack.file(`particles/${particleName}.json`, JSON.stringify(particle));
 	});
+	pack.file("particles/saving_backup.json", JSON.stringify(savingBackupParticle));
 	pack.file("textures/particle/single_white_pixel.png", await singleWhitePixelTexture.toBlob());
+	pack.file("textures/particle/save_icon.png", await saveIconTexture.toBlob());
 	pack.file("textures/entity/overlay.png", await overlayTexture.toBlob());
 	pack.file("animations/armor_stand.hologram.animation.json", JSON.stringify(hologramAnimations));
 	textureBlobs.forEach(([textureName, blob]) => {

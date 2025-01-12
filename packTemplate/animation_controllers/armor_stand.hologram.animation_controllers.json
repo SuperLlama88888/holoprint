@@ -50,6 +50,30 @@
 					"transitions": []
 				}
 			}
+		},
+		"controller.animation.armor_stand.hologram.saving_backup_particles": {
+			"initial_state": "default",
+			"states": {
+				"default": {
+					"transitions": [
+						{
+							"particles": "v.saving_backup"
+						}
+					]
+				},
+				"particles": {
+					"transitions": [
+						{
+							"default": "!v.saving_backup"
+						}
+					],
+					"particle_effects": [
+						{
+							"effect": "saving_backup"
+						}
+					]
+				}
+			}
 		}
 	}
 }
