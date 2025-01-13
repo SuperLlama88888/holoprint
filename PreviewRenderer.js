@@ -73,8 +73,8 @@ export default class PreviewRenderer {
 		this.viewer.scene.children.shift(); // remove the default ambient light
 		
 		let directionalLight = new THREE.DirectionalLight(0xFFFFFF, 0.5);
-		directionalLight.position.set(-6, 16, 10);
-		directionalLight.target.position.set(6, 5, 10);
+		directionalLight.position.set(6, 16, 0);
+		directionalLight.target.position.set(-6, 5, 5);
 		this.viewer.scene.add(directionalLight);
 		this.viewer.scene.add(directionalLight.target);
 		

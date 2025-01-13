@@ -29,6 +29,7 @@
 	"player_controls.move_hologram": "Move hologram",
 	"player_controls.change_structure": "Change structure",
 	"player_controls.disable_player_controls": "Disable player controls",
+	"player_controls.backup_hologram": "Save hologram settings",
 	"preview.click_to_view": "View preview<br/><small>({TOTAL_BLOCK_COUNT} blocks)</small>",
 	"preview.click_to_view_multiple": "View previews<br/><small>({TOTAL_BLOCK_COUNT} blocks)</small>", // "previews" is plural here
 	"preview.loading": "Loading preview...",
@@ -40,6 +41,7 @@
 	"resource_packs.reset": "Resource packs reset!",
 	"resource_packs.upload_local": "Upload a local resource pack:",
 	"settings.advanced": "Advanced",
+	"settings.backup_slot_count": "Backup slot count:",
 	"settings.heading": "Settings",
 	"settings.ghost_block_scale": "Ghost block scale:",
 	"settings.ignored_blocks": "Ignored blocks:",

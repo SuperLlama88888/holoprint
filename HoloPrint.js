@@ -22,7 +22,8 @@ export const PLAYER_CONTROL_NAMES = {
 	CHANGE_LAYER_MODE: "player_controls.change_layer_mode",
 	MOVE_HOLOGRAM: "player_controls.move_hologram",
 	CHANGE_STRUCTURE: "player_controls.change_structure",
-	DISABLE_PLAYER_CONTROLS: "player_controls.disable_player_controls"
+	DISABLE_PLAYER_CONTROLS: "player_controls.disable_player_controls",
+	BACKUP_HOLOGRAM: "player_controls.backup_hologram"
 };
 export const DEFAULT_PLAYER_CONTROLS = {
 	TOGGLE_RENDERING: createItemCriteria("stone"),
@@ -34,7 +35,8 @@ export const DEFAULT_PLAYER_CONTROLS = {
 	CHANGE_LAYER_MODE: createItemCriteria([], "wooden_slabs"),
 	MOVE_HOLOGRAM: createItemCriteria("stick"),
 	CHANGE_STRUCTURE: createItemCriteria("arrow"),
-	DISABLE_PLAYER_CONTROLS: createItemCriteria("bone")
+	DISABLE_PLAYER_CONTROLS: createItemCriteria("bone"),
+	BACKUP_HOLOGRAM: createItemCriteria("paper")
 };
 
 const HOLOGRAM_LAYER_MODES = createEnum(["SINGLE", "ALL_BELOW"]);
@@ -76,14 +78,15 @@ export async function makePack(structureFiles, config = {}, resourcePackStack, p
 			hologramAnimations: "animations/armor_stand.hologram.animation.json",
 			boundingBoxOutlineParticle: "particles/bounding_box_outline.json",
 			blockValidationParticle: "particles/block_validation.json",
+			savingBackupParticle: "particles/saving_backup.json",
 			singleWhitePixelTexture: "textures/particle/single_white_pixel.png",
+			saveIconTexture: "textures/particle/save_icon.png",
 			hudScreenUI: "ui/hud_screen.json",
 			languagesDotJson: "texts/languages.json"
 		},
 		resources: {
 			entityFile: "entity/armor_stand.entity.json",
 			defaultPlayerRenderControllers: "render_controllers/player.render_controllers.json",
-			armorStandGeo: "models/entity/armor_stand.geo.json", // for visible bounds. I don't think we need this
 			translationFile: `texts/${config.MATERIAL_LIST_LANGUAGE}.lang`
 		},
 		otherFiles: {
@@ -94,7 +97,7 @@ export async function makePack(structureFiles, config = {}, resourcePackStack, p
 			itemMetadata: "metadata/vanilladata_modules/mojang-items.json"
 		}
 	}, resourcePackStack);
-	let { manifest, packIcon, entityFile, hologramRenderControllers, defaultPlayerRenderControllers, hologramGeo, armorStandGeo, hologramMaterial, hologramAnimationControllers, hologramAnimations, boundingBoxOutlineParticle, blockValidationParticle, singleWhitePixelTexture, hudScreenUI, languagesDotJson, translationFile } = loadedStuff.files;
+	let { manifest, packIcon, entityFile, hologramRenderControllers, defaultPlayerRenderControllers, hologramGeo, hologramMaterial, hologramAnimationControllers, hologramAnimations, boundingBoxOutlineParticle, blockValidationParticle, savingBackupParticle, singleWhitePixelTexture, saveIconTexture, hudScreenUI, languagesDotJson, translationFile } = loadedStuff.files;
 	let { blockMetadata, itemMetadata } = loadedStuff.data;
 	
 	let structures = nbts.map(nbt => nbt["structure"]);
@@ -165,22 +168,15 @@ export async function makePack(structureFiles, config = {}, resourcePackStack, p
 	});
 	console.log("Bone template palette with resolved UVs:", boneTemplatePalette);
 	
-	// I have no idea if these visible bounds actually influence anything...
-	let visibleBoundsWidth = 16 * max(...structureSizes.map(structureSize => max(structureSize[0], structureSize[2])));
-	let visibleBoundsHeight = 16 * max(...structureSizes.map(structureSize => structureSize[1]));
-	armorStandGeo["minecraft:geometry"][0]["description"]["visible_bounds_width"] = visibleBoundsWidth;
-	armorStandGeo["minecraft:geometry"][0]["description"]["visible_bounds_height"] = visibleBoundsHeight;
 	let structureGeoTemplate = hologramGeo["minecraft:geometry"][0];
 	hologramGeo["minecraft:geometry"].splice(0, 1);
-	structureGeoTemplate["description"]["visible_bounds_width"] = visibleBoundsWidth;
-	structureGeoTemplate["description"]["visible_bounds_height"] = visibleBoundsHeight;
 	
 	structureGeoTemplate["description"]["texture_width"] = textureAtlas.atlasWidth;
 	structureGeoTemplate["description"]["texture_height"] = textureAtlas.atlasHeight;
 	
-	let structureWMolang = arrayToMolang(structureSizes.map(structureSize => structureSize[0]), "v.structure_index");
-	let structureHMolang = arrayToMolang(structureSizes.map(structureSize => structureSize[1]), "v.structure_index");
-	let structureDMolang = arrayToMolang(structureSizes.map(structureSize => structureSize[2]), "v.structure_index");
+	let structureWMolang = arrayToMolang(structureSizes.map(structureSize => structureSize[0]), "v.hologram.structure_index");
+	let structureHMolang = arrayToMolang(structureSizes.map(structureSize => structureSize[1]), "v.hologram.structure_index");
+	let structureDMolang = arrayToMolang(structureSizes.map(structureSize => structureSize[2]), "v.hologram.structure_index");
 	
 	if(!config.DO_SPAWN_ANIMATION) {
 		// Totally empty animation
@@ -192,19 +188,19 @@ export async function makePack(structureFiles, config = {}, resourcePackStack, p
 	let topLayer = max(...structureSizes.map(structureSize => structureSize[1])) - 1;
 	layerAnimationStates["default"]["transitions"].push(
 		{
-			"l_0": `v.hologram_layer > -1 && v.hologram_layer != ${topLayer} && v.hologram_layer_mode == ${HOLOGRAM_LAYER_MODES.SINGLE}`
+			"l_0": `v.hologram.layer > -1 && v.hologram.layer != ${topLayer} && v.hologram.layer_mode == ${HOLOGRAM_LAYER_MODES.SINGLE}`
 		},
 		{
-			[`l_${topLayer}`]: `v.hologram_layer == ${topLayer} && v.hologram_layer_mode == ${HOLOGRAM_LAYER_MODES.SINGLE}`
+			[`l_${topLayer}`]: `v.hologram.layer == ${topLayer} && v.hologram.layer_mode == ${HOLOGRAM_LAYER_MODES.SINGLE}`
 		}
 	);
 	if(topLayer > 0) {
 		layerAnimationStates["default"]["transitions"].push(
 			{
-				"l_0-": `v.hologram_layer > -1 && v.hologram_layer != ${topLayer - 1} && v.hologram_layer_mode == ${HOLOGRAM_LAYER_MODES.ALL_BELOW}`
+				"l_0-": `v.hologram.layer > -1 && v.hologram.layer != ${topLayer - 1} && v.hologram.layer_mode == ${HOLOGRAM_LAYER_MODES.ALL_BELOW}`
 			},
 			{
-				[`l_${topLayer - 1}-`]: `v.hologram_layer == ${topLayer - 1} && v.hologram_layer_mode == ${HOLOGRAM_LAYER_MODES.ALL_BELOW}`
+				[`l_${topLayer - 1}-`]: `v.hologram.layer == ${topLayer - 1} && v.hologram.layer_mode == ${HOLOGRAM_LAYER_MODES.ALL_BELOW}`
 			}
 		);
 	}
@@ -257,15 +253,15 @@ export async function makePack(structureFiles, config = {}, resourcePackStack, p
 				"blend_via_shortest_path": true,
 				"transitions": [
 					{
-						[y == topLayer? "default" : `${layerName}-`]: `v.hologram_layer_mode == ${HOLOGRAM_LAYER_MODES.ALL_BELOW}`
+						[y == topLayer? "default" : `${layerName}-`]: `v.hologram.layer_mode == ${HOLOGRAM_LAYER_MODES.ALL_BELOW}`
 					},
 					{
-						[y == 0? "default" : `l_${y - 1}`]: `v.hologram_layer < ${y}${y == topLayer? " && v.hologram_layer != -1" : ""}`
+						[y == 0? "default" : `l_${y - 1}`]: `v.hologram.layer < ${y}${y == topLayer? " && v.hologram.layer != -1" : ""}`
 					},
 					(y == topLayer? {
-						"default": "v.hologram_layer == -1"
+						"default": "v.hologram.layer == -1"
 					} : {
-						[`l_${y + 1}`]: `v.hologram_layer > ${y}`
+						[`l_${y + 1}`]: `v.hologram.layer > ${y}`
 					})
 				]
 			};
@@ -292,15 +288,15 @@ export async function makePack(structureFiles, config = {}, resourcePackStack, p
 					"blend_via_shortest_path": true,
 					"transitions": [
 						{
-							[layerName]: `v.hologram_layer_mode == ${HOLOGRAM_LAYER_MODES.SINGLE}`
+							[layerName]: `v.hologram.layer_mode == ${HOLOGRAM_LAYER_MODES.SINGLE}`
 						},
 						{
-							[y == 0? "default" : `l_${y - 1}-`]: `v.hologram_layer < ${y}${y == topLayer - 1? " && v.hologram_layer != -1" : ""}`
+							[y == 0? "default" : `l_${y - 1}-`]: `v.hologram.layer < ${y}${y == topLayer - 1? " && v.hologram.layer != -1" : ""}`
 						},
 						(y >= topLayer - 1? {
-							"default": "v.hologram_layer == -1"
+							"default": "v.hologram.layer == -1"
 						} : {
-							[`l_${y + 1}-`]: `v.hologram_layer > ${y}`
+							[`l_${y + 1}-`]: `v.hologram.layer > ${y}`
 						})
 					]
 				};
@@ -426,43 +422,56 @@ export async function makePack(structureFiles, config = {}, resourcePackStack, p
 	entityDescription["materials"]["hologram"] = "holoprint_hologram";
 	entityDescription["materials"]["hologram.wrong_block_overlay"] = "holoprint_hologram.wrong_block_overlay";
 	entityDescription["textures"]["hologram.overlay"] = "textures/entity/overlay";
+	entityDescription["textures"]["hologram.save_icon"] = "textures/particle/save_icon";
 	entityDescription["animations"]["hologram.align"] = "animation.armor_stand.hologram.align";
 	entityDescription["animations"]["hologram.offset"] = "animation.armor_stand.hologram.offset";
 	entityDescription["animations"]["hologram.spawn"] = "animation.armor_stand.hologram.spawn";
 	entityDescription["animations"]["hologram.wrong_block_overlay"] = "animation.armor_stand.hologram.wrong_block_overlay";
+	entityDescription["animations"]["controller.hologram.spawn_animation"] = "controller.animation.armor_stand.hologram.spawn_animation";
 	entityDescription["animations"]["controller.hologram.layers"] = "controller.animation.armor_stand.hologram.layers";
 	entityDescription["animations"]["controller.hologram.bounding_box"] = "controller.animation.armor_stand.hologram.bounding_box";
 	entityDescription["animations"]["controller.hologram.block_validation"] = "controller.animation.armor_stand.hologram.block_validation";
+	entityDescription["animations"]["controller.hologram.saving_backup_particles"] = "controller.animation.armor_stand.hologram.saving_backup_particles";
 	entityDescription["scripts"]["animate"] ??= [];
-	entityDescription["scripts"]["animate"].push("hologram.align", "hologram.offset", "hologram.spawn", "hologram.wrong_block_overlay", "controller.hologram.layers", "controller.hologram.bounding_box", "controller.hologram.block_validation");
+	entityDescription["scripts"]["animate"].push("hologram.align", "hologram.offset", "hologram.wrong_block_overlay", "controller.hologram.spawn_animation", "controller.hologram.layers", "controller.hologram.bounding_box", "controller.hologram.block_validation", "controller.hologram.saving_backup_particles");
+	entityDescription["scripts"]["should_update_bones_and_effects_offscreen"] = true; // makes backups work when offscreen (from my testing it helps a bit). this also makes it render when you're facing away, removing the need for visible_bounds_width/visible_bounds_height in the geometry file. (when should_update_effects_offscreen is set, it renders when facing away, but doesn't seem to have access to v. variables.)
 	entityDescription["scripts"]["initialize"] ??= [];
-	entityDescription["scripts"]["initialize"].push(functionToMolang((v, structureSize, singleLayerMode, structureCount) => {
-		v.hologram_offset_x = 0;
-		v.hologram_offset_y = 0;
-		v.hologram_offset_z = 0;
-		v.structure_w = $[structureSize[0]];
-		v.structure_h = $[structureSize[1]];
-		v.structure_d = $[structureSize[2]];
-		v.render_hologram = true;
-		v.hologram_texture_index = $[defaultTextureIndex];
-		v.show_tint = false;
-		v.hologram_layer = -1;
-		v.hologram_layer_mode = $[singleLayerMode];
-		v.validate_hologram = false;
-		v.show_wrong_block_overlay = false;
-		v.wrong_blocks = -1;
-		v.wrong_block_x = 0;
-		v.wrong_block_y = 0;
-		v.wrong_block_z = 0;
+	entityDescription["scripts"]["initialize"].push(functionToMolang((v, q, structureSize, singleLayerMode, structureCount, HOLOGRAM_INITIAL_ACTIVATION) => {
+		v.hologram_activated = HOLOGRAM_INITIAL_ACTIVATION; // true/false are substituted in here for the different subpacks
+		v.hologram.offset_x = 0;
+		v.hologram.offset_y = 0;
+		v.hologram.offset_z = 0;
+		v.hologram.structure_w = $[structureSize[0]];
+		v.hologram.structure_h = $[structureSize[1]];
+		v.hologram.structure_d = $[structureSize[2]];
+		v.hologram.rendering = HOLOGRAM_INITIAL_ACTIVATION;
+		v.hologram.texture_index = $[defaultTextureIndex];
+		v.hologram.show_tint = false;
+		v.hologram.layer = -1;
+		v.hologram.layer_mode = $[singleLayerMode];
+		v.hologram.validating = false;
+		v.hologram.show_wrong_block_overlay = false;
+		v.hologram.wrong_blocks = -1;
+		v.hologram.wrong_block_x = 0;
+		v.hologram.wrong_block_y = 0;
+		v.hologram.wrong_block_z = 0;
 		
-		v.structure_index = 0;
-		v.structure_count = $[structureCount];
+		v.hologram.structure_index = 0;
+		v.hologram.structure_count = $[structureCount];
 		
-		// v.last_held_item = q.get_equipped_item_name ?? "";
-		v.last_held_item = "";
-		v.last_hurt_direction = 1;
+		// v.hologram.last_held_item = q.get_equipped_item_name ?? "";
+		v.hologram.last_held_item = ""; // this will be kept in the backup
+		v.last_pose = 0;
+		v.last_hurt_direction = q.hurt_direction;
 		// v.player_action_counter = t.player_action_counter ?? 0;
 		v.player_action_counter = 0;
+		
+		v.spawn_time = q.time_stamp;
+		v.player_has_interacted = false;
+		v.saving_backup = false;
+		v.hologram_backup_index = -1;
+		v.hologram_backup_requested_time = -601; // 600 ticks = 30s (how long the backup request lasts for)
+		v.skip_spawn_animation = false;
 	}, {
 		structureSize: structureSizes[0],
 		defaultTextureIndex,
@@ -470,15 +479,53 @@ export async function makePack(structureFiles, config = {}, resourcePackStack, p
 		structureCount: structureFiles.length
 	}));
 	entityDescription["scripts"]["pre_animation"] ??= [];
-	entityDescription["scripts"]["pre_animation"].push(functionToMolang((v, q, t, textureBlobsCount, totalBlocksToValidate, toggleRendering, changeOpacity, toggleTint, toggleValidating, changeLayer, decreaseLayer, changeLayerMode, disablePlayerControls, singleLayerMode) => {
+	entityDescription["scripts"]["pre_animation"].push(functionToMolang((v, q, t, textureBlobsCount, totalBlocksToValidate, backupSlotCount, toggleRendering, changeOpacity, toggleTint, toggleValidating, changeLayer, decreaseLayer, changeLayerMode, disablePlayerControls, backupHologram, singleLayerMode) => {
+		if(q.time_stamp - v.spawn_time < 5) {
+			v.last_pose = v.armor_stand.pose_index; // armour stands take a tick or two at the start to set their pose correctly
+		}
 		v.hologram_dir = Math.floor(q.body_y_rotation / 90) + 2; // [south, west, north, east] (since it goes from -180 to 180)
+		
+		if(q.time_stamp - v.spawn_time < 200 && !v.player_has_interacted) { // if it's less than 10 seconds after being spawned and the player hasn't interacted yet...
+			t.just_recovered_backup = false;
+			for(let i = 0; i < $[backupSlotCount]; i++) {
+				if(!t.just_recovered_backup && !(t.hologram_backup_empty_$[i] ?? true) && t.hologram_backup_$[i].x == q.position(0) && t.hologram_backup_$[i].y == q.position(1) && t.hologram_backup_$[i].z == q.position(2)) {
+					v.hologram = t.hologram_backup_$[i];
+					t.hologram_backup_empty_$[i] = true;
+					t.just_recovered_backup = true;
+				}
+			}
+			if(t.just_recovered_backup) {
+				v.player_has_interacted = true;
+				v.hologram_activated = true;
+				v.skip_spawn_animation = true;
+			}
+		}
+		if(!v.hologram_activated) { // even though the subpack is called "punch to activate", changing the pose or giving an item will work as well
+			t.activate_hologram = false;
+			if(v.last_hurt_direction != q.hurt_direction) {
+				v.last_hurt_direction = q.hurt_direction;
+				t.activate_hologram = true;
+			} else if(v.last_pose != v.armor_stand.pose_index) {
+				v.last_pose = v.armor_stand.pose_index;
+				t.activate_hologram = true;
+			} else if(v.hologram.last_held_item != q.get_equipped_item_name) {
+				v.hologram.last_held_item = q.get_equipped_item_name;
+				t.activate_hologram = true;
+			}
+			if(t.activate_hologram) {
+				v.hologram_activated = true;
+				v.hologram.rendering = true;
+			} else {
+				return 0; // must have a return value
+			}
+		}
 		
 		t.process_action = false; // this is the only place I'm using temp variables for their intended purpose
 		t.action = "";
 		t.check_layer_validity = false;
 		t.changed_structure = false;
-		if(v.last_held_item != q.get_equipped_item_name) {
-			v.last_held_item = q.get_equipped_item_name;
+		if(v.hologram.last_held_item != q.get_equipped_item_name) {
+			v.hologram.last_held_item = q.get_equipped_item_name;
 			t.process_action = true;
 		}
 		if(v.last_hurt_direction != q.hurt_direction) { // hitting the armour stand changes this: https://wiki.bedrock.dev/entities/non-mob-runtime-identifiers.html#notable-queries-3
@@ -489,10 +536,9 @@ export async function makePack(structureFiles, config = {}, resourcePackStack, p
 			}
 		}
 		
-		v.last_pose ??= v.armor_stand.pose_index;
 		if(v.last_pose != v.armor_stand.pose_index) {
 			v.last_pose = v.armor_stand.pose_index;
-			if(v.render_hologram) {
+			if(v.hologram.rendering) {
 				t.action = "increase_layer";
 			}
 		}
@@ -512,6 +558,8 @@ export async function makePack(structureFiles, config = {}, resourcePackStack, p
 				t.action = "decrease_layer";
 			} else if($[changeLayerMode]) {
 				t.action = "change_layer_mode";
+			} else if($[backupHologram]) {
+				t.action = "backup_hologram";
 			} else if(q.is_item_name_any("slot.weapon.mainhand", "minecraft:white_wool")) { // Movement controls (I hate that I'm having to do this)
 				t.action = "move_y-";
 			} else if(q.is_item_name_any("slot.weapon.mainhand", "minecraft:red_wool")) {
@@ -534,114 +582,159 @@ export async function makePack(structureFiles, config = {}, resourcePackStack, p
 			}
 		}
 		if(t.action != "") {
+			v.player_has_interacted = true;
 			if(t.action == "toggle_rendering") {
-				v.render_hologram = !v.render_hologram;
+				v.hologram.rendering = !v.hologram.rendering;
 			} else if(t.action == "toggle_validating") {
-				v.validate_hologram = !v.validate_hologram;
-				if(v.validate_hologram) {
-					v.wrong_blocks = $[totalBlocksToValidate];
+				v.hologram.validating = !v.hologram.validating;
+				if(v.hologram.validating) {
+					v.hologram.wrong_blocks = $[totalBlocksToValidate];
 					t.wrong_blocks = $[totalBlocksToValidate];
 				} else {
-					v.show_wrong_block_overlay = false;
+					v.hologram.show_wrong_block_overlay = false;
 				}
-			} else if(v.render_hologram) { // opacity, layer, movement, and structure controls require the hologram to be visible, otherwise it could be confusing if you accidentally change something when it's invisible
+			} else if(t.action == "backup_hologram") {
+				v.hologram_backup_requested_time = q.time_stamp;
+			} else if(v.hologram.rendering) { // opacity, layer, movement, and structure controls require the hologram to be visible, otherwise it could be confusing if you accidentally change something when it's invisible
 				if(t.action == "increase_opacity") {
-					v.hologram_texture_index++;
-					if(v.hologram_texture_index >= $[textureBlobsCount]) {
-						v.hologram_texture_index = 0;
+					v.hologram.texture_index++;
+					if(v.hologram.texture_index >= $[textureBlobsCount]) {
+						v.hologram.texture_index = 0;
 					}
 				} else if(t.action == "decrease_opacity") {
-					v.hologram_texture_index--;
-					if(v.hologram_texture_index < 0) {
-						v.hologram_texture_index = $[textureBlobsCount - 1];
+					v.hologram.texture_index--;
+					if(v.hologram.texture_index < 0) {
+						v.hologram.texture_index = $[textureBlobsCount - 1];
 					}
 				} else if(t.action == "toggle_tint") {
-					v.show_tint = !v.show_tint;
+					v.hologram.show_tint = !v.hologram.show_tint;
 				} else if(t.action == "increase_layer") {
-					v.hologram_layer++;
+					v.hologram.layer++;
 					t.check_layer_validity = true;
 				} else if(t.action == "decrease_layer") {
-					v.hologram_layer--;
+					v.hologram.layer--;
 					t.check_layer_validity = true;
 				} else if(t.action == "change_layer_mode") {
-					v.hologram_layer_mode = 1 - v.hologram_layer_mode; // ez
+					v.hologram.layer_mode = 1 - v.hologram.layer_mode; // ez
 					t.check_layer_validity = true;
 				} else if(t.action == "move_x-") {
-					v.hologram_offset_x--;
+					v.hologram.offset_x--;
 				} else if(t.action == "move_x+") {
-					v.hologram_offset_x++;
+					v.hologram.offset_x++;
 				} else if(t.action == "move_y-") {
-					v.hologram_offset_y--;
+					v.hologram.offset_y--;
 				} else if(t.action == "move_y+") {
-					v.hologram_offset_y++;
+					v.hologram.offset_y++;
 				} else if(t.action == "move_z-") {
-					v.hologram_offset_z--;
+					v.hologram.offset_z--;
 				} else if(t.action == "move_z+") {
-					v.hologram_offset_z++;
-				} else if(t.action == "next_structure" && v.structure_count > 1) {
-					v.structure_index++;
+					v.hologram.offset_z++;
+				} else if(t.action == "next_structure" && v.hologram.structure_count > 1) {
+					v.hologram.structure_index++;
 					t.changed_structure = true;
-				} else if(t.action == "previous_structure" && v.structure_count > 1) {
-					v.structure_index--;
+				} else if(t.action == "previous_structure" && v.hologram.structure_count > 1) {
+					v.hologram.structure_index--;
 					t.changed_structure = true;
 				}
 			}
 		}
 		
 		if(t.check_layer_validity) {
-			if(v.hologram_layer < -1) {
-				v.hologram_layer = v.structure_h - (v.hologram_layer_mode == $[singleLayerMode]? 1 : 2);
+			if(v.hologram.layer < -1) {
+				v.hologram.layer = v.hologram.structure_h - (v.hologram.layer_mode == $[singleLayerMode]? 1 : 2);
 			}
-			if(v.hologram_layer >= (v.hologram_layer_mode == $[singleLayerMode]? v.structure_h : v.structure_h - 1)) {
-				v.hologram_layer = -1;
+			if(v.hologram.layer >= (v.hologram.layer_mode == $[singleLayerMode]? v.hologram.structure_h : v.hologram.structure_h - 1)) {
+				v.hologram.layer = -1;
 			}
 		}
 		if(t.changed_structure) {
-			if(v.structure_index < 0) {
-				v.structure_index = v.structure_count - 1;
+			if(v.hologram.structure_index < 0) {
+				v.hologram.structure_index = v.hologram.structure_count - 1;
 			}
-			if(v.structure_index >= v.structure_count) {
-				v.structure_index = 0;
+			if(v.hologram.structure_index >= v.hologram.structure_count) {
+				v.hologram.structure_index = 0;
 			}
-			v.structure_w = $[structureWMolang];
-			v.structure_h = $[structureHMolang];
-			v.structure_d = $[structureDMolang];
-			v.hologram_layer = -1;
-			v.validate_hologram = false;
-			v.show_wrong_block_overlay = false;
+			v.hologram.structure_w = $[structureWMolang];
+			v.hologram.structure_h = $[structureHMolang];
+			v.hologram.structure_d = $[structureDMolang];
+			v.hologram.layer = -1;
+			v.hologram.validating = false;
+			v.hologram.show_wrong_block_overlay = false;
 		}
 		
-		if(v.validate_hologram) {
+		if(v.hologram.validating) {
 			// block validation particles rely on temp variables. this code checks if the temp variables are defined; if they are, it updates the internal state; if not, it sets the temp variables to its internal state. very messy ik
 			if((t.wrong_blocks ?? -1) == -1) {
-				t.wrong_blocks = v.wrong_blocks;
+				t.wrong_blocks = v.hologram.wrong_blocks;
 			} else {
-				v.wrong_blocks = t.wrong_blocks;
+				v.hologram.wrong_blocks = t.wrong_blocks;
 			}
 			if((t.show_wrong_block_overlay ?? -1) == -1) {
-				t.show_wrong_block_overlay = v.show_wrong_block_overlay;
+				t.show_wrong_block_overlay = v.hologram.show_wrong_block_overlay;
 			} else {
-				v.show_wrong_block_overlay = t.show_wrong_block_overlay;
+				v.hologram.show_wrong_block_overlay = t.show_wrong_block_overlay;
 			}
 			if((t.wrong_block_x ?? -1) == -1) {
-				t.wrong_block_x = v.wrong_block_x;
+				t.wrong_block_x = v.hologram.wrong_block_x;
 			} else {
-				v.wrong_block_x = t.wrong_block_x;
+				v.hologram.wrong_block_x = t.wrong_block_x;
 			}
 			if((t.wrong_block_y ?? -1) == -1) {
-				t.wrong_block_y = v.wrong_block_y;
+				t.wrong_block_y = v.hologram.wrong_block_y;
 			} else {
-				v.wrong_block_y = t.wrong_block_y;
+				v.hologram.wrong_block_y = t.wrong_block_y;
 			}
 			if((t.wrong_block_z ?? -1) == -1) {
-				t.wrong_block_z = v.wrong_block_z;
+				t.wrong_block_z = v.hologram.wrong_block_z;
 			} else {
-				v.wrong_block_z = t.wrong_block_z;
+				v.hologram.wrong_block_z = t.wrong_block_z;
 			}
+		}
+		
+		v.saving_backup = q.distance_from_camera > 55 || q.time_stamp - v.hologram_backup_requested_time <= 600; // 15 blocks leeway for automatic backups, or 30s after players request a backup
+		if(v.saving_backup) {
+			// one by one, check each backup slot. if it's empty, we take that spot; if not, try to find which backup slot was set the earliest.
+			t.earliest_backup_time_stamp = q.time_stamp + 9999; // all backups should be less than this
+			t.earliest_backup_index = -1;
+			for(let i = 0; i < $[backupSlotCount]; i++) {
+				if(v.hologram_backup_index == -1) {
+					if(t.hologram_backup_empty_$[i] ?? true) {
+						v.hologram_backup_index = $[i];
+					} else if(t.hologram_backup_$[i].backup_time_stamp < t.earliest_backup_time_stamp) {
+						t.earliest_backup_time_stamp = t.hologram_backup_$[i].backup_time_stamp;
+						t.earliest_backup_index = $[i];
+					}
+				}
+			}
+			if(v.hologram_backup_index == -1) { // none are empty, so overwrite the earliest backup
+				if(t.earliest_backup_index == -1) { // will only happen when the backup slot count is 0
+					return 0;
+				}
+				v.hologram_backup_index = t.earliest_backup_index;
+			}
+			
+			v.hologram.x = q.position(0);
+			v.hologram.y = q.position(1);
+			v.hologram.z = q.position(2);
+			v.hologram.backup_time_stamp = q.time_stamp;
+			for(let i = 0; i < $[backupSlotCount]; i++) {
+				if(v.hologram_backup_index == $[i]) {
+					t.hologram_backup_$[i] = v.hologram;
+					t.hologram_backup_empty_$[i] = false;
+				}
+			}
+		} else if(v.hologram_backup_index != -1) {
+			for(let i = 0; i < $[backupSlotCount]; i++) {
+				if(v.hologram_backup_index == $[i]) {
+					t.hologram_backup_empty_$[i] = true;
+				}
+			}
+			v.hologram_backup_index = -1;
 		}
 	}, {
 		textureBlobsCount: textureBlobs.length,
-		totalBlocksToValidate: arrayToMolang(totalBlocksToValidateByStructure, "v.structure_index"),
+		totalBlocksToValidate: arrayToMolang(totalBlocksToValidateByStructure, "v.hologram.structure_index"),
+		backupSlotCount: config.BACKUP_SLOT_COUNT,
 		structureWMolang,
 		structureHMolang,
 		structureDMolang,
@@ -653,6 +746,7 @@ export async function makePack(structureFiles, config = {}, resourcePackStack, p
 		decreaseLayer: itemCriteriaToMolang(config.CONTROLS.DECREASE_LAYER),
 		changeLayerMode: itemCriteriaToMolang(config.CONTROLS.CHANGE_LAYER_MODE),
 		disablePlayerControls: itemCriteriaToMolang(config.CONTROLS.DISABLE_PLAYER_CONTROLS),
+		backupHologram: itemCriteriaToMolang(config.CONTROLS.BACKUP_HOLOGRAM),
 		singleLayerMode: HOLOGRAM_LAYER_MODES.SINGLE
 	}));
 	entityDescription["geometry"]["hologram.wrong_block_overlay"] = "geometry.armor_stand.hologram.wrong_block_overlay";
@@ -660,27 +754,27 @@ export async function makePack(structureFiles, config = {}, resourcePackStack, p
 	entityDescription["geometry"]["hologram.particle_alignment"] = "geometry.armor_stand.hologram.particle_alignment";
 	entityDescription["render_controllers"] ??= [];
 	entityDescription["render_controllers"].push({
-		"controller.render.armor_stand.hologram": "v.render_hologram"
+		"controller.render.armor_stand.hologram": "v.hologram.rendering"
 	}, {
-		"controller.render.armor_stand.hologram.wrong_block_overlay": "v.show_wrong_block_overlay"
+		"controller.render.armor_stand.hologram.wrong_block_overlay": "v.hologram.show_wrong_block_overlay"
 	}, {
-		"controller.render.armor_stand.hologram.valid_structure_overlay": "v.validate_hologram && v.wrong_blocks == 0"
+		"controller.render.armor_stand.hologram.valid_structure_overlay": "v.hologram.validating && v.hologram.wrong_blocks == 0"
 	}, "controller.render.armor_stand.hologram.particle_alignment");
 	entityDescription["particle_effects"] ??= {};
 	entityDescription["particle_effects"]["bounding_box_outline"] = "holoprint:bounding_box_outline";
+	entityDescription["particle_effects"]["saving_backup"] = "holoprint:saving_backup";
 	
 	textureBlobs.forEach(([textureName]) => {
 		entityDescription["textures"][textureName] = `textures/entity/${textureName}`;
 		hologramRenderControllers["render_controllers"]["controller.render.armor_stand.hologram"]["arrays"]["textures"]["Array.textures"].push(`Texture.${textureName}`);
 	});
-	hologramRenderControllers["render_controllers"]["controller.render.armor_stand.hologram"]["textures"][0] = `Array.textures[v.hologram_texture_index ?? ${defaultTextureIndex}]`;
 	
 	let tintColorChannels = hexColorToClampedTriplet(config.TINT_COLOR);
 	hologramRenderControllers["render_controllers"]["controller.render.armor_stand.hologram"]["overlay_color"] = {
-		"r": tintColorChannels[0],
-		"g": tintColorChannels[1],
-		"b": tintColorChannels[2],
-		"a": `v.show_tint? ${config.TINT_OPACITY} : 0`
+		"r": +tintColorChannels[0].toFixed(4),
+		"g": +tintColorChannels[1].toFixed(4),
+		"b": +tintColorChannels[2].toFixed(4),
+		"a": `v.hologram.show_tint? ${config.TINT_OPACITY} : 0`
 	};
 	
 	let overlayTexture = await singleWhitePixelTexture.setOpacity(config.WRONG_BLOCK_OVERLAY_COLOR[3]);
@@ -711,6 +805,7 @@ export async function makePack(structureFiles, config = {}, resourcePackStack, p
 	})));
 	hudScreenUI["material_list"]["size"][1] = finalisedMaterialList.length * 12 + 12; // 12px for each item + 12px for the heading
 	
+	manifest["header"]["name"] = packName;
 	manifest["header"]["uuid"] = crypto.randomUUID();
 	manifest["modules"][0]["uuid"] = crypto.randomUUID();
 	if(config.AUTHORS.length) {
@@ -767,10 +862,10 @@ export async function makePack(structureFiles, config = {}, resourcePackStack, p
 	}
 	pack.file("manifest.json", JSON.stringify(manifest));
 	pack.file("pack_icon.png", packIcon);
-	pack.file("entity/armor_stand.entity.json", JSON.stringify(entityFile));
+	pack.file("entity/armor_stand.entity.json", JSON.stringify(entityFile).replaceAll("HOLOGRAM_INITIAL_ACTIVATION", true));
+	pack.file("subpacks/punch_to_activate/entity/armor_stand.entity.json", JSON.stringify(entityFile).replaceAll("HOLOGRAM_INITIAL_ACTIVATION", false));
 	pack.file("render_controllers/armor_stand.hologram.render_controllers.json", JSON.stringify(hologramRenderControllers));
 	pack.file("render_controllers/player.render_controllers.json", JSON.stringify(playerRenderControllers));
-	pack.file("models/entity/armor_stand.geo.json", JSON.stringify(armorStandGeo));
 	pack.file("models/entity/armor_stand.hologram.geo.json", stringifyWithFixedDecimals(hologramGeo));
 	pack.file("materials/entity.material", JSON.stringify(hologramMaterial));
 	pack.file("animation_controllers/armor_stand.hologram.animation_controllers.json", JSON.stringify(hologramAnimationControllers));
@@ -782,7 +877,9 @@ export async function makePack(structureFiles, config = {}, resourcePackStack, p
 		particle["particle_effect"]["components"]["minecraft:particle_expire_if_in_blocks"] = [blockName.includes(":")? blockName : `minecraft:${blockName}`]; // add back minecraft: namespace if it's missing
 		pack.file(`particles/${particleName}.json`, JSON.stringify(particle));
 	});
+	pack.file("particles/saving_backup.json", JSON.stringify(savingBackupParticle));
 	pack.file("textures/particle/single_white_pixel.png", await singleWhitePixelTexture.toBlob());
+	pack.file("textures/particle/save_icon.png", await saveIconTexture.toBlob());
 	pack.file("textures/entity/overlay.png", await overlayTexture.toBlob());
 	pack.file("animations/armor_stand.hologram.animation.json", JSON.stringify(hologramAnimations));
 	textureBlobs.forEach(([textureName, blob]) => {
@@ -917,12 +1014,13 @@ export function addDefaultConfig(config) {
 			SPAWN_ANIMATION_LENGTH: 0.4, // in seconds
 			WRONG_BLOCK_OVERLAY_COLOR: [1, 0, 0, 0.3],
 			CONTROLS: {},
+			BACKUP_SLOT_COUNT: 10,
 			MATERIAL_LIST_LANGUAGE: "en_US",
 			PACK_NAME: undefined,
 			PACK_ICON_BLOB: undefined,
 			AUTHORS: [],
 			DESCRIPTION: undefined,
-			PREVIEW_BLOCK_LIMIT: 1000,
+			PREVIEW_BLOCK_LIMIT: 500,
 			SHOW_PREVIEW_SKYBOX: true
 		},
 		...config,
@@ -1111,7 +1209,7 @@ function addBoundingBoxParticles(hologramAnimationControllers, structureI, struc
 		"particle_effects": [],
 		"transitions": [
 			{
-				"hidden": `!v.render_hologram || v.structure_index != ${structureI}`
+				"hidden": `!v.hologram.rendering || v.hologram.structure_index != ${structureI}`
 			}
 		]
 	};
@@ -1125,7 +1223,7 @@ function addBoundingBoxParticles(hologramAnimationControllers, structureI, struc
 	let animationStateName = `visible_${structureI}`;
 	hologramAnimationControllers["animation_controllers"]["controller.animation.armor_stand.hologram.bounding_box"]["states"][animationStateName] = boundingBoxAnimation;
 	hologramAnimationControllers["animation_controllers"]["controller.animation.armor_stand.hologram.bounding_box"]["states"]["hidden"]["transitions"].push({
-		[animationStateName]: `v.render_hologram && v.structure_index == ${structureI}`
+		[animationStateName]: `v.hologram.rendering && v.hologram.structure_index == ${structureI}`
 	});
 }
 /**
@@ -1139,7 +1237,7 @@ function addBlockValidationParticles(hologramAnimationControllers, structureI, b
 		"particle_effects": [],
 		"transitions": [
 			{
-				"default": "!v.validate_hologram" // when changing structure it will always stop validating, so there's no need to check v.structure_index
+				"default": "!v.hologram.validating" // when changing structure it will always stop validating, so there's no need to check v.hologram.structure_index
 			}
 		]
 	};
@@ -1147,7 +1245,7 @@ function addBlockValidationParticles(hologramAnimationControllers, structureI, b
 	let validationStates = hologramAnimationControllers["animation_controllers"]["controller.animation.armor_stand.hologram.block_validation"]["states"];
 	validationStates[validateAllStateName] = validateAllState;
 	let validateAllStateTransition = {
-		[validateAllStateName]: `v.validate_hologram && v.structure_index == ${structureI} && v.hologram_layer == -1`
+		[validateAllStateName]: `v.hologram.validating && v.hologram.structure_index == ${structureI} && v.hologram.layer == -1`
 	};
 	validationStates["default"]["transitions"].push(validateAllStateTransition);
 	let layersWithBlocksToValidate = [];
@@ -1159,19 +1257,19 @@ function addBlockValidationParticles(hologramAnimationControllers, structureI, b
 				"particle_effects": [],
 				"transitions": [
 					{
-						"default": "!v.validate_hologram"
+						"default": "!v.hologram.validating"
 					},
 					validateAllStateTransition
 				]
 			};
 			layersWithBlocksToValidate.forEach(layerY => { // add transitions from this layer state to others
 				layerAnimationState["transitions"].push({
-					[`validate_${structureI}_l_${layerY}`]: `v.validate_hologram && v.structure_index == ${structureI} && v.hologram_layer == ${layerY}`
+					[`validate_${structureI}_l_${layerY}`]: `v.hologram.validating && v.hologram.structure_index == ${structureI} && v.hologram.layer == ${layerY}`
 				});
 			});
 			Object.values(validationStates).forEach(state => { // add transitions from other layer states (+ default/all layers) to this layer
 				state["transitions"].push({
-					[animationStateName]: `v.validate_hologram && v.structure_index == ${structureI} && v.hologram_layer == ${y}`
+					[animationStateName]: `v.hologram.validating && v.hologram.structure_index == ${structureI} && v.hologram.layer == ${y}`
 				});
 			});
 			validationStates[animationStateName] = layerAnimationState;
@@ -1208,7 +1306,7 @@ function addPlayerControlsToRenderControllers(config, defaultPlayerRenderControl
 		v.attack = v.attack_time > 0 && (v.last_attack_time == 0 || v.attack_time < v.last_attack_time);
 		v.last_attack_time = v.attack_time;
 	});
-	let renderingControls = functionToMolang((q, v, toggleRendering, changeOpacity, toggleTint, toggleValidating, changeLayer, decreaseLayer, changeLayerMode, changeStructure) => {
+	let renderingControls = functionToMolang((q, v, toggleRendering, changeOpacity, toggleTint, toggleValidating, changeLayer, decreaseLayer, changeLayerMode, changeStructure, backupHologram) => {
 		if(v.attack) {
 			if($[toggleRendering]) {
 				v.new_action = "toggle_rendering";
@@ -1242,6 +1340,8 @@ function addPlayerControlsToRenderControllers(config, defaultPlayerRenderControl
 				} else {
 					v.new_action = "next_structure";
 				}
+			} else if($[backupHologram]) {
+				v.new_action = "backup_hologram";
 			}
 		}
 	}, {
@@ -1252,7 +1352,8 @@ function addPlayerControlsToRenderControllers(config, defaultPlayerRenderControl
 		changeLayer: itemCriteriaToMolang(config.CONTROLS.CHANGE_LAYER),
 		decreaseLayer: itemCriteriaToMolang(config.CONTROLS.DECREASE_LAYER),
 		changeLayerMode: itemCriteriaToMolang(config.CONTROLS.CHANGE_LAYER_MODE),
-		changeStructure: itemCriteriaToMolang(config.CONTROLS.CHANGE_STRUCTURE)
+		changeStructure: itemCriteriaToMolang(config.CONTROLS.CHANGE_STRUCTURE),
+		backupHologram: itemCriteriaToMolang(config.CONTROLS.BACKUP_HOLOGRAM)
 	});
 	let movementControls = functionToMolang((q, v, moveHologram) => {
 		if(v.attack && $[moveHologram]) {
@@ -1273,7 +1374,7 @@ function addPlayerControlsToRenderControllers(config, defaultPlayerRenderControl
 	}, {
 		moveHologram: itemCriteriaToMolang(config.CONTROLS.MOVE_HOLOGRAM)
 	});
-	let broadcastActions = functionToMolang((v, t, q) => {
+	let broadcastActions = functionToMolang((v, t, q, backupSlotCount) => {
 		if(v.new_action != "") {
 			v.player_action = v.new_action;
 			v.new_action = "";
@@ -1285,6 +1386,23 @@ function addPlayerControlsToRenderControllers(config, defaultPlayerRenderControl
 		}
 		t.player_action = v.player_action;
 		t.player_action_counter = v.player_action_counter;
+		
+		for(let i = 0; i < $[backupSlotCount]; i++) {
+			v.hologram_backup_empty_$[i] ??= true;
+			if((t.hologram_backup_empty_$[i] ?? -1) == -1) {
+				t.hologram_backup_empty_$[i] = v.hologram_backup_empty_$[i];
+				if(!v.hologram_backup_empty_$[i]) {
+					t.hologram_backup_$[i] = v.hologram_backup_$[i];
+				}
+			} else {
+				v.hologram_backup_empty_$[i] = t.hologram_backup_empty_$[i];
+				if(!t.hologram_backup_empty_$[i]) {
+					v.hologram_backup_$[i] = t.hologram_backup_$[i];
+				}
+			}
+		}
+	}, {
+		backupSlotCount: config.BACKUP_SLOT_COUNT
 	});
 	return patchRenderControllers(defaultPlayerRenderControllers, {
 		"controller.render.player.first_person": functionToMolang((q, v) => {
@@ -1461,40 +1579,10 @@ function functionToMolang(func, vars = {}) {
 		}
 		expandedElseIfCode += minifiedFuncBody[i];
 	}
-	let mathedCode = expandedElseIfCode.replaceAll(`"`, `'`).replaceAll(/([\w\.]+)(\+|-){2};/g, "$1=$1$21;").replaceAll(/([\w\.]+)--;/g, "$1=$1-1;").replaceAll(/([\w\.]+)(\+|-|\*|\/|\?\?)=([^;]+);/g, "$1=$1$2$3;");
+	let mathedCode = expandedElseIfCode.replaceAll(`"`, `'`).replaceAll(/([\w\.]+)(\+|-){2};/g, "$1=$1$21;").replaceAll(/([\w\.]+)--;/g, "$1=$1-1;").replaceAll(/([\w\.\$\[\]]+)(\+|-|\*|\/|\?\?)=([^;]+);/g, "$1=$1$2$3;");
 	
-	// I have no idea how to make this smaller. I really wish JS had a native AST conversion API
-	let conditionedCode = "";
-	let parenthesisCounter = 0;
-	let inIfCondition = false;
-	for(let i = 0; i < mathedCode.length; i++) {
-		let char = mathedCode[i];
-		if(mathedCode.slice(i, i + 3) == "if(") {
-			inIfCondition = true;
-			parenthesisCounter++;
-			i += 2;
-			continue;
-		} else if(mathedCode.slice(i, i + 4) == "else") {
-			conditionedCode = conditionedCode.slice(0, -1) + ":"; // replace the ; with :
-			i += 3;
-			continue;
-		} else if(char == "(") {
-			parenthesisCounter++;
-		} else if(char == ")") {
-			parenthesisCounter--;
-			if(parenthesisCounter == 0 && inIfCondition) {
-				inIfCondition = false;
-				conditionedCode += "?";
-				continue;
-			}
-		} else if(char == "}") {
-			conditionedCode += "};";
-			continue;
-		}
-		conditionedCode += char;
-	}
 	// Yay more fun regular expressions, this time to work with variable substitution ($[...])
-	let variabledCode = conditionedCode.replaceAll(/\$\[(\w+)(?:\[(\d+)\])?(?:(\+|-|\*|\/)(\d+))?\]/g, (match, varName, index, operator, operand) => {
+	let substituteInVariables = (code, vars) => code.replaceAll(/\$\[(\w+)(?:\[(\d+)\])?(?:(\+|-|\*|\/)(\d+))?\]/g, (match, varName, index, operator, operand) => {
 		if(varName in vars) {
 			let value = vars[varName];
 			if(index != undefined) {
@@ -1515,6 +1603,72 @@ function functionToMolang(func, vars = {}) {
 			throw new ReferenceError(`Variable "${varName}" was not passed to function -> Molang converter!`);
 		}
 	});
+	// I have no idea how to make this smaller. I really wish JS had a native AST conversion API
+	let conditionedCode = "";
+	let parenthesisCounter = 0;
+	let inIfCondition = false;
+	let needsExtraBracketAtEndOfIfCondition = false; // short variable names are for slow typers :)
+	for(let i = 0; i < mathedCode.length; i++) {
+		let char = mathedCode[i];
+		if(mathedCode.slice(i, i + 3) == "if(") {
+			inIfCondition = true;
+			parenthesisCounter++;
+			needsExtraBracketAtEndOfIfCondition = /^if\([^()]+\?\?/.test(mathedCode.slice(i)); // null coalescing operator is the only operator with lower precedence than the ternary conditional operator, so if a conditional expression in if() has ?? without any brackets around it, brackets are needed around the entire conditional expression
+			if(needsExtraBracketAtEndOfIfCondition) {
+				conditionedCode += "(";
+			}
+			i += 2;
+			continue;
+		} else if(mathedCode.slice(i, i + 4) == "else") {
+			conditionedCode = conditionedCode.slice(0, -1) + ":"; // replace the ; with :
+			i += 3;
+			continue;
+		} else if(/^for\([^)]+\)/.test(mathedCode.slice(i))) {
+			let forStatement = substituteInVariables(mathedCode.slice(i).match(/^for\([^)]+\)/)[0], vars);
+			let [, forVarName, initialValue, upperBound] = forStatement.match(/^for\(let(\w+)=(\d+);\w+<(\d+);\w+\+\+\)/);
+			let forBlockStartI = mathedCode.slice(i).indexOf("{") + i;
+			let forBlockEndI = forBlockStartI + 1;
+			let braceCounter = 1;
+			while(braceCounter > 0) {
+				if(mathedCode[forBlockEndI] == "{") {
+					braceCounter++;
+				} else if(mathedCode[forBlockEndI] == "}") {
+					braceCounter--;
+				}
+				forBlockEndI++;
+			}
+			let forBlockContent = mathedCode.slice(forBlockStartI + 1, forBlockEndI - 1);
+			let expandedForCode = "";
+			for(let forI = +initialValue; forI < upperBound; forI++) {
+				expandedForCode += substituteInVariables(forBlockContent, {
+					...vars,
+					...{
+						[forVarName]: forI
+					}
+				});
+			}
+			mathedCode = mathedCode.slice(0, i) + expandedForCode + mathedCode.slice(forBlockEndI);
+			i--;
+			continue;
+		} else if(char == "(") {
+			parenthesisCounter++;
+		} else if(char == ")") {
+			parenthesisCounter--;
+			if(parenthesisCounter == 0 && inIfCondition) {
+				inIfCondition = false;
+				if(needsExtraBracketAtEndOfIfCondition) {
+					conditionedCode += ")";
+				}
+				conditionedCode += "?";
+				continue;
+			}
+		} else if(char == "}") {
+			conditionedCode += "};";
+			continue;
+		}
+		conditionedCode += char;
+	}
+	let variabledCode = substituteInVariables(conditionedCode, vars);
 	return variabledCode;
 }
 /**
@@ -1556,6 +1710,7 @@ function stringifyWithFixedDecimals(value) {
  * @property {Number} SPAWN_ANIMATION_LENGTH Length of each individual block's spawn animation (seconds)
  * @property {Array<Number>} WRONG_BLOCK_OVERLAY_COLOR Clamped colour quartet
  * @property {HoloPrintControlsConfig} CONTROLS
+ * @property {Number} BACKUP_SLOT_COUNT
  * @property {String} MATERIAL_LIST_LANGUAGE The language code, as appearing in `texts/languages.json`
  * @property {String|undefined} PACK_NAME The name of the completed pack; will default to the structure file names
  * @property {Blob} PACK_ICON_BLOB Blob for `pack_icon.png`
@@ -1577,6 +1732,7 @@ function stringifyWithFixedDecimals(value) {
  * @property {ItemCriteria} MOVE_HOLOGRAM For players in third-person
  * @property {ItemCriteria} CHANGE_STRUCTURE For players only
  * @property {ItemCriteria} DISABLE_PLAYER_CONTROLS
+ * @property {ItemCriteria} BACKUP_HOLOGRAM Force armour stands to try and backup the hologram state for 30s.
  */
 /**
  * Stores item names and tags for checking items. Leaving everything empty will check for nothing being held.

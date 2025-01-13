@@ -86,7 +86,12 @@
 				"age": [0, 1, 2, 3]
 			},
 			"creaking_heart": {
-				"active": [0, 1]
+				"active": [0, 1],
+				"creaking_heart_state": { // added in 1.21.60.25 to replace active
+					"uprooted": 0,
+					"dormant": 1,
+					"awake": 2
+				}
 			},
 			"vault": {
 				"#exclusive_add": true,

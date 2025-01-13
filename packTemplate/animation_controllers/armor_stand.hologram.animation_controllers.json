@@ -1,6 +1,30 @@
 {
 	"format_version": "1.10.0",
 	"animation_controllers": {
+		"controller.animation.armor_stand.hologram.spawn_animation": {
+			"initial_state": "default",
+			"states": {
+				"default": {
+					"transitions": [
+						{
+							"skip_spawn_animation": "v.skip_spawn_animation"
+						},
+						{
+							"animate": "v.hologram_activated"
+						}
+					]
+				},
+				"animate": {
+					"transitions": [
+						{
+							"skip_spawn_animation": "v.skip_spawn_animation"
+						}
+					],
+					"animations": ["hologram.spawn"]
+				},
+				"skip_spawn_animation": {}
+			}
+		},
 		"controller.animation.armor_stand.hologram.layers": {
 			"initial_state": "default",
 			"states": {
@@ -24,6 +48,30 @@
 			"states": {
 				"default": {
 					"transitions": []
+				}
+			}
+		},
+		"controller.animation.armor_stand.hologram.saving_backup_particles": {
+			"initial_state": "default",
+			"states": {
+				"default": {
+					"transitions": [
+						{
+							"particles": "v.saving_backup"
+						}
+					]
+				},
+				"particles": {
+					"transitions": [
+						{
+							"default": "!v.saving_backup"
+						}
+					],
+					"particle_effects": [
+						{
+							"effect": "saving_backup"
+						}
+					]
 				}
 			}
 		}
