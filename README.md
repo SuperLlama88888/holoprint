@@ -35,6 +35,8 @@ HoloPrint is a web app that converts MCBE structure files into resource packs sh
 ![Change layer mode](assets/changingLayerMode.gif)
 - Change structure: Arrow, or hit armour stand that's holding nothing  
 ![Changing structure](assets/changingStructure.gif)
+- Save hologram settings: Paper  
+![Saving backup](assets/savingBackup.gif)
 - Armour stand controls: Give item or hit  
 ![Armour stand controls](assets/armourStandControls.gif)
 - Disable player controls: Bone  
