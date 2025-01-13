@@ -461,6 +461,7 @@ export async function makePack(structureFiles, config = {}, resourcePackStack, p
 		
 		// v.hologram.last_held_item = q.get_equipped_item_name ?? "";
 		v.hologram.last_held_item = ""; // this will be kept in the backup
+		v.last_pose = 0;
 		v.last_hurt_direction = q.hurt_direction;
 		// v.player_action_counter = t.player_action_counter ?? 0;
 		v.player_action_counter = 0;
@@ -479,7 +480,9 @@ export async function makePack(structureFiles, config = {}, resourcePackStack, p
 	}));
 	entityDescription["scripts"]["pre_animation"] ??= [];
 	entityDescription["scripts"]["pre_animation"].push(functionToMolang((v, q, t, textureBlobsCount, totalBlocksToValidate, backupSlotCount, toggleRendering, changeOpacity, toggleTint, toggleValidating, changeLayer, decreaseLayer, changeLayerMode, disablePlayerControls, backupHologram, singleLayerMode) => {
-		v.last_pose ??= v.armor_stand.pose_index;
+		if(q.time_stamp - v.spawn_time < 5) {
+			v.last_pose = v.armor_stand.pose_index; // armour stands take a tick or two at the start to set their pose correctly
+		}
 		v.hologram_dir = Math.floor(q.body_y_rotation / 90) + 2; // [south, west, north, east] (since it goes from -180 to 180)
 		
 		if(q.time_stamp - v.spawn_time < 200 && !v.player_has_interacted) { // if it's less than 10 seconds after being spawned and the player hasn't interacted yet...
@@ -768,10 +771,6 @@ export async function makePack(structureFiles, config = {}, resourcePackStack, p
 	
 	let tintColorChannels = hexColorToClampedTriplet(config.TINT_COLOR);
 	hologramRenderControllers["render_controllers"]["controller.render.armor_stand.hologram"]["overlay_color"] = {
-		// "r": "t.hologram_backup_empty_0 ?? Math.random(0,1)",
-		// "g": "t.hologram_backup_empty_1 ?? Math.random(0,1)",
-		// "b": "t.hologram_backup_empty_2 ?? Math.random(0,1)",
-		// "a": "1"
 		"r": +tintColorChannels[0].toFixed(4),
 		"g": +tintColorChannels[1].toFixed(4),
 		"b": +tintColorChannels[2].toFixed(4),
