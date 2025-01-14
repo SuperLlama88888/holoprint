@@ -22,6 +22,7 @@ export const PLAYER_CONTROL_NAMES = {
 	DECREASE_LAYER: "player_controls.decrease_layer",
 	CHANGE_LAYER_MODE: "player_controls.change_layer_mode",
 	MOVE_HOLOGRAM: "player_controls.move_hologram",
+	ROTATE_HOLOGRAM: "player_controls.rotate_hologram",
 	CHANGE_STRUCTURE: "player_controls.change_structure",
 	DISABLE_PLAYER_CONTROLS: "player_controls.disable_player_controls",
 	BACKUP_HOLOGRAM: "player_controls.backup_hologram"
@@ -35,6 +36,7 @@ export const DEFAULT_PLAYER_CONTROLS = {
 	DECREASE_LAYER: createItemCriteria([], "logs"),
 	CHANGE_LAYER_MODE: createItemCriteria([], "wooden_slabs"),
 	MOVE_HOLOGRAM: createItemCriteria("stick"),
+	ROTATE_HOLOGRAM: createItemCriteria("copper_ingot"),
 	CHANGE_STRUCTURE: createItemCriteria("arrow"),
 	DISABLE_PLAYER_CONTROLS: createItemCriteria("bone"),
 	BACKUP_HOLOGRAM: createItemCriteria("paper")
@@ -416,7 +418,7 @@ export async function makePack(structureFiles, config = {}, resourcePackStack, p
 		}
 		
 		addBoundingBoxParticles(hologramAnimationControllers, structureI, structureSize);
-		addBlockValidationParticles(hologramAnimationControllers, structureI, blocksToValidate);
+		addBlockValidationParticles(hologramAnimationControllers, structureI, blocksToValidate, structureSize);
 		totalBlocksToValidateByStructure.push(blocksToValidate.length);
 	});
 	
@@ -458,6 +460,7 @@ export async function makePack(structureFiles, config = {}, resourcePackStack, p
 		changeLayer: itemCriteriaToMolang(config.CONTROLS.CHANGE_LAYER),
 		decreaseLayer: itemCriteriaToMolang(config.CONTROLS.DECREASE_LAYER),
 		changeLayerMode: itemCriteriaToMolang(config.CONTROLS.CHANGE_LAYER_MODE),
+		rotateHologram: itemCriteriaToMolang(config.CONTROLS.ROTATE_HOLOGRAM),
 		disablePlayerControls: itemCriteriaToMolang(config.CONTROLS.DISABLE_PLAYER_CONTROLS),
 		backupHologram: itemCriteriaToMolang(config.CONTROLS.BACKUP_HOLOGRAM),
 		singleLayerMode: HOLOGRAM_LAYER_MODES.SINGLE
@@ -947,8 +950,9 @@ function addBoundingBoxParticles(hologramAnimationControllers, structureI, struc
  * @param {Object} hologramAnimationControllers
  * @param {Number} structureI
  * @param {Array<Object>} blocksToValidate
+ * @param {Vec3} structureSize
  */
-function addBlockValidationParticles(hologramAnimationControllers, structureI, blocksToValidate) {
+function addBlockValidationParticles(hologramAnimationControllers, structureI, blocksToValidate, structureSize) {
 	let validateAllState = {
 		"particle_effects": [],
 		"transitions": [
@@ -1003,6 +1007,15 @@ function addBlockValidationParticles(hologramAnimationControllers, structureI, b
 		validateAllState["particle_effects"].push(particleEffect);
 		validationStates[animationStateName]["particle_effects"].push(particleEffect);
 	});
+	for(let y = 0; y < structureSize[1]; y++) {
+		if(!layersWithBlocksToValidate.includes(y)) {
+			Object.entries(validationStates).forEach(([validationStateName, validationState]) => {
+				if(validationStateName != "default") {
+					validationState["transitions"][0]["default"] += ` || v.hologram.layer == ${y}`;
+				}
+			});
+		}
+	}
 }
 
 /**
@@ -1021,6 +1034,7 @@ function addPlayerControlsToRenderControllers(config, defaultPlayerRenderControl
 		changeLayer: itemCriteriaToMolang(config.CONTROLS.CHANGE_LAYER),
 		decreaseLayer: itemCriteriaToMolang(config.CONTROLS.DECREASE_LAYER),
 		changeLayerMode: itemCriteriaToMolang(config.CONTROLS.CHANGE_LAYER_MODE),
+		rotateHologram: itemCriteriaToMolang(config.CONTROLS.ROTATE_HOLOGRAM),
 		changeStructure: itemCriteriaToMolang(config.CONTROLS.CHANGE_STRUCTURE),
 		backupHologram: itemCriteriaToMolang(config.CONTROLS.BACKUP_HOLOGRAM)
 	});
@@ -1343,6 +1357,7 @@ function stringifyWithFixedDecimals(value) {
  * @property {ItemCriteria} DECREASE_LAYER
  * @property {ItemCriteria} CHANGE_LAYER_MODE Single layer or all layers below
  * @property {ItemCriteria} MOVE_HOLOGRAM For players in third-person
+ * @property {ItemCriteria} ROTATE_HOLOGRAM
  * @property {ItemCriteria} CHANGE_STRUCTURE For players only
  * @property {ItemCriteria} DISABLE_PLAYER_CONTROLS
  * @property {ItemCriteria} BACKUP_HOLOGRAM Force armour stands to try and backup the hologram state for 30s.

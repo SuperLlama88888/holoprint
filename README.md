@@ -25,6 +25,8 @@ HoloPrint is a web app that converts MCBE structure files into resource packs sh
 ![Changing layer](assets/changingLayer.gif)
 - Move hologram (third person only): Stick  
 ![Moving hologram](assets/movingHologram.gif)
+- Rotate hologram: Copper ingot  
+![Rotating hologram](assets/rotatingHologram.gif)
 - Block validation: Iron ingot  
 ![Validating structure](assets/validatingStructure.gif)
 - Material list: Tab button (keyboard), book icon (touch)  

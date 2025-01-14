@@ -1,10 +1,11 @@
-let v, q, t, structureSize, singleLayerMode, structureCount, HOLOGRAM_INITIAL_ACTIVATION, defaultTextureIndex, textureBlobsCount, totalBlocksToValidate, backupSlotCount, toggleRendering, changeOpacity, toggleTint, toggleValidating, changeLayer, decreaseLayer, changeLayerMode, disablePlayerControls, backupHologram, changeStructure, moveHologram, initVariables, renderingControls, movementControls, broadcastActions, structureWMolang, structureHMolang, structureDMolang;
+let v, q, t, structureSize, singleLayerMode, structureCount, HOLOGRAM_INITIAL_ACTIVATION, defaultTextureIndex, textureBlobsCount, totalBlocksToValidate, backupSlotCount, toggleRendering, changeOpacity, toggleTint, toggleValidating, changeLayer, decreaseLayer, changeLayerMode, disablePlayerControls, backupHologram, changeStructure, moveHologram, rotateHologram, initVariables, renderingControls, movementControls, broadcastActions, structureWMolang, structureHMolang, structureDMolang;
 
 export function armorStandInitialization() {
 	v.hologram_activated = HOLOGRAM_INITIAL_ACTIVATION; // true/false are substituted in here for the different subpacks
 	v.hologram.offset_x = 0;
 	v.hologram.offset_y = 0;
 	v.hologram.offset_z = 0;
+	v.hologram.rotation = 0;
 	v.hologram.structure_w = $[structureSize[0]];
 	v.hologram.structure_h = $[structureSize[1]];
 	v.hologram.structure_d = $[structureSize[2]];
@@ -41,7 +42,7 @@ export function armorStandPreAnimation() {
 	if(q.time_stamp - v.spawn_time < 5) {
 		v.last_pose = v.armor_stand.pose_index; // armour stands take a tick or two at the start to set their pose correctly
 	}
-	v.hologram_dir = Math.floor(q.body_y_rotation / 90) + 2; // [south, west, north, east] (since it goes from -180 to 180)
+	v.armor_stand_dir = Math.floor(q.body_y_rotation / 90) + 2; // [south, west, north, east] (since it goes from -180 to 180)
 	
 	if(q.time_stamp - v.spawn_time < 200 && !v.player_has_interacted) { // if it's less than 10 seconds after being spawned and the player hasn't interacted yet...
 		t.just_recovered_backup = false;
@@ -116,6 +117,8 @@ export function armorStandPreAnimation() {
 			t.action = "decrease_layer";
 		} else if($[changeLayerMode]) {
 			t.action = "change_layer_mode";
+		} else if($[rotateHologram]) {
+			t.action = "rotate_hologram_clockwise";
 		} else if($[backupHologram]) {
 			t.action = "backup_hologram";
 		} else if(q.is_item_name_any("slot.weapon.mainhand", "minecraft:white_wool")) { // Movement controls (I hate that I'm having to do this)
@@ -187,6 +190,10 @@ export function armorStandPreAnimation() {
 				v.hologram.offset_z--;
 			} else if(t.action == "move_z+") {
 				v.hologram.offset_z++;
+			} else if(t.action == "rotate_hologram_clockwise") {
+				v.hologram.rotation = Math.mod(v.hologram.rotation + 1, 4);
+			} else if(t.action == "rotate_hologram_anticlockwise") {
+				v.hologram.rotation = Math.mod(v.hologram.rotation + 3, 4); // Molang Math.mod is more of a remainder function (like JS), so it can return values from -3 to 3. Because of this I do + 3 not - 1.
 			} else if(t.action == "next_structure" && v.hologram.structure_count > 1) {
 				v.hologram.structure_index++;
 				t.changed_structure = true;
@@ -197,6 +204,7 @@ export function armorStandPreAnimation() {
 		}
 	}
 	
+	v.hologram_dir = Math.mod(v.armor_stand_dir + v.hologram.rotation, 4);
 	if(t.check_layer_validity) {
 		if(v.hologram.layer < -1) {
 			v.hologram.layer = v.hologram.structure_h - (v.hologram.layer_mode == $[singleLayerMode]? 1 : 2);
@@ -329,6 +337,12 @@ export function playerRenderingControls() {
 			}
 		} else if($[changeLayerMode]) {
 			v.new_action = "change_layer_mode";
+		} else if($[rotateHologram]) {
+			if(q.is_sneaking) {
+				v.new_action = "rotate_hologram_anticlockwise";
+			} else {
+				v.new_action = "rotate_hologram_clockwise";
+			}
 		} else if($[changeStructure]) {
 			if(q.is_sneaking) {
 				v.new_action = "previous_structure";
