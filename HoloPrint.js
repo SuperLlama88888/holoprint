@@ -7,7 +7,7 @@ import MaterialList from "./MaterialList.js";
 import PreviewRenderer from "./PreviewRenderer.js";
 
 import * as entityScripts from "./entityScripts.molang.js";
-import { awaitAllEntries, concatenateFiles, createEnum, exp, hexColorToClampedTriplet, JSONMap, JSONSet, max, min, pi, sha256, translate } from "./essential.js";
+import { awaitAllEntries, concatenateFiles, createEnum, exp, hexColorToClampedTriplet, JSONMap, JSONSet, max, min, pi, round, sha256, translate } from "./essential.js";
 import ResourcePackStack from "./ResourcePackStack.js";
 
 export const IGNORED_BLOCKS = ["air", "piston_arm_collision", "sticky_piston_arm_collision"]; // blocks to be ignored when scanning the structure file
@@ -85,6 +85,7 @@ export async function makePack(structureFiles, config = {}, resourcePackStack, p
 			singleWhitePixelTexture: "textures/particle/single_white_pixel.png",
 			saveIconTexture: "textures/particle/save_icon.png",
 			hudScreenUI: "ui/hud_screen.json",
+			customEmojiFont: "font/glyph_E2.png",
 			languagesDotJson: "texts/languages.json"
 		},
 		resources: {
@@ -100,7 +101,7 @@ export async function makePack(structureFiles, config = {}, resourcePackStack, p
 			itemMetadata: "metadata/vanilladata_modules/mojang-items.json"
 		}
 	}, resourcePackStack);
-	let { manifest, packIcon, entityFile, hologramRenderControllers, defaultPlayerRenderControllers, hologramGeo, hologramMaterial, hologramAnimationControllers, hologramAnimations, boundingBoxOutlineParticle, blockValidationParticle, savingBackupParticle, singleWhitePixelTexture, saveIconTexture, hudScreenUI, languagesDotJson, translationFile } = loadedStuff.files;
+	let { manifest, packIcon, entityFile, hologramRenderControllers, defaultPlayerRenderControllers, hologramGeo, hologramMaterial, hologramAnimationControllers, hologramAnimations, boundingBoxOutlineParticle, blockValidationParticle, savingBackupParticle, singleWhitePixelTexture, saveIconTexture, hudScreenUI, customEmojiFont, languagesDotJson, translationFile } = loadedStuff.files;
 	let { blockMetadata, itemMetadata } = loadedStuff.data;
 	
 	let structures = nbts.map(nbt => nbt["structure"]);
@@ -519,7 +520,14 @@ export async function makePack(structureFiles, config = {}, resourcePackStack, p
 			"$background_opacity": i % 2 * 0.2
 		}
 	})));
+	let longestItemNameLength = max(...finalisedMaterialList.map(({ translatedName }) => translatedName.length));
+	let longestCountLength = max(...finalisedMaterialList.map(({ partitionedCount }) => partitionedCount.length));
+	if(longestItemNameLength + longestCountLength >= 47) {
+		hudScreenUI["material_list"]["size"][0] = "50%"; // up from 40%
+		hudScreenUI["material_list"]["max_size"][0] = "50%";
+	}
 	hudScreenUI["material_list"]["size"][1] = finalisedMaterialList.length * 12 + 12; // 12px for each item + 12px for the heading
+	hudScreenUI["material_list_entry"]["controls"][0]["content"]["controls"][3]["item_name"]["size"][0] += `${round(longestCountLength * 4.2 + 10)}px`;
 	
 	manifest["header"]["name"] = packName;
 	manifest["header"]["uuid"] = crypto.randomUUID();
@@ -602,6 +610,7 @@ export async function makePack(structureFiles, config = {}, resourcePackStack, p
 		pack.file(`textures/entity/${textureName}.png`, blob);
 	});
 	pack.file("ui/hud_screen.json", JSON.stringify(hudScreenUI));
+	pack.file("font/glyph_E2.png", await customEmojiFont.toBlob());
 	pack.file("texts/languages.json", JSON.stringify(languagesDotJson));
 	languageFiles.forEach(([language, languageFile]) => {
 		pack.file(`texts/${language}.lang`, languageFile);
