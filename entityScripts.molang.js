@@ -1,4 +1,4 @@
-let v, q, t, structureSize, singleLayerMode, structureCount, HOLOGRAM_INITIAL_ACTIVATION, defaultTextureIndex, textureBlobsCount, totalBlocksToValidate, backupSlotCount, toggleRendering, changeOpacity, toggleTint, toggleValidating, changeLayer, decreaseLayer, changeLayerMode, disablePlayerControls, backupHologram, changeStructure, moveHologram, rotateHologram, initVariables, renderingControls, movementControls, broadcastActions, structureWMolang, structureHMolang, structureDMolang;
+let v, q, t, structureSize, singleLayerMode, structureCount, HOLOGRAM_INITIAL_ACTIVATION, defaultTextureIndex, textureBlobsCount, totalBlocksToValidate, totalBlocksToValidateByLayer, backupSlotCount, toggleRendering, changeOpacity, toggleTint, toggleValidating, changeLayer, decreaseLayer, changeLayerMode, disablePlayerControls, backupHologram, changeStructure, moveHologram, rotateHologram, initVariables, renderingControls, movementControls, broadcastActions, structureWMolang, structureHMolang, structureDMolang;
 
 export function armorStandInitialization() {
 	v.hologram_activated = HOLOGRAM_INITIAL_ACTIVATION; // true/false are substituted in here for the different subpacks
@@ -149,8 +149,8 @@ export function armorStandPreAnimation() {
 		} else if(t.action == "toggle_validating") {
 			v.hologram.validating = !v.hologram.validating;
 			if(v.hologram.validating) {
-				v.hologram.wrong_blocks = $[totalBlocksToValidate];
-				t.wrong_blocks = $[totalBlocksToValidate];
+				v.hologram.wrong_blocks = (v.hologram.layer == -1? ($[totalBlocksToValidate]) : ($[totalBlocksToValidateByLayer]));
+				t.wrong_blocks = v.hologram.wrong_blocks;
 			} else {
 				v.hologram.show_wrong_block_overlay = false;
 			}
@@ -211,6 +211,10 @@ export function armorStandPreAnimation() {
 		}
 		if(v.hologram.layer >= (v.hologram.layer_mode == $[singleLayerMode]? v.hologram.structure_h : v.hologram.structure_h - 1)) {
 			v.hologram.layer = -1;
+		}
+		if(v.hologram.validating) {
+			v.hologram.wrong_blocks = (v.hologram.layer == -1? ($[totalBlocksToValidate]) : ($[totalBlocksToValidateByLayer]));
+			t.wrong_blocks = v.hologram.wrong_blocks;
 		}
 	}
 	if(t.changed_structure) {

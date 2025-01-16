@@ -213,6 +213,7 @@ export async function makePack(structureFiles, config = {}, resourcePackStack, p
 	
 	let totalBlockCount = 0;
 	let totalBlocksToValidateByStructure = [];
+	let totalBlocksToValidateByStructureByLayer = [];
 	let uniqueBlocksToValidate = new Set();
 	
 	let materialList = new MaterialList(blockMetadata, itemMetadata, translationFile);
@@ -225,6 +226,7 @@ export async function makePack(structureFiles, config = {}, resourcePackStack, p
 		entityDescription["geometry"][geoShortName] = geoIdentifier;
 		hologramRenderControllers["render_controllers"]["controller.render.armor_stand.hologram"]["arrays"]["geometries"]["Array.geometries"].push(`Geometry.${geoShortName}`);
 		let blocksToValidate = [];
+		let blocksToValidateByLayer = [];
 		
 		let getSpawnAnimationDelay;
 		let makeHologramSpawnAnimation;
@@ -323,6 +325,7 @@ export async function makePack(structureFiles, config = {}, resourcePackStack, p
 				entityDescription["animations"][`hologram.l_${y}-`] = `animation.armor_stand.hologram.l_${y}-`;
 			}
 			
+			let blocksToValidateCurrentLayer = 0; // "layer" in here refers to y-coordinate, NOT structure layer
 			for(let x = 0; x < structureSize[0]; x++) {
 				for(let z = 0; z < structureSize[2]; z++) {
 					let blockI = (x * structureSize[1] + y) * structureSize[2] + z;
@@ -400,6 +403,7 @@ export async function makePack(structureFiles, config = {}, resourcePackStack, p
 								"block": blockName,
 								"pos": [x, y, z]
 							});
+							blocksToValidateCurrentLayer++;
 							uniqueBlocksToValidate.add(blockName);
 						}
 						firstBoneForThisBlock = false;
@@ -407,6 +411,7 @@ export async function makePack(structureFiles, config = {}, resourcePackStack, p
 					});
 				}
 			}
+			blocksToValidateByLayer.push(blocksToValidateCurrentLayer);
 		}
 		hologramGeo["minecraft:geometry"].push(geo);
 		
@@ -422,6 +427,7 @@ export async function makePack(structureFiles, config = {}, resourcePackStack, p
 		addBoundingBoxParticles(hologramAnimationControllers, structureI, structureSize);
 		addBlockValidationParticles(hologramAnimationControllers, structureI, blocksToValidate, structureSize);
 		totalBlocksToValidateByStructure.push(blocksToValidate.length);
+		totalBlocksToValidateByStructureByLayer.push(blocksToValidateByLayer);
 	});
 	
 	entityDescription["materials"]["hologram"] = "holoprint_hologram";
@@ -451,6 +457,7 @@ export async function makePack(structureFiles, config = {}, resourcePackStack, p
 	entityDescription["scripts"]["pre_animation"].push(functionToMolang(entityScripts.armorStandPreAnimation, {
 		textureBlobsCount: textureBlobs.length,
 		totalBlocksToValidate: arrayToMolang(totalBlocksToValidateByStructure, "v.hologram.structure_index"),
+		totalBlocksToValidateByLayer: array2DToMolang(totalBlocksToValidateByStructureByLayer, "v.hologram.structure_index", "v.hologram.layer"),
 		backupSlotCount: config.BACKUP_SLOT_COUNT,
 		structureWMolang,
 		structureHMolang,
@@ -1184,10 +1191,21 @@ function itemCriteriaToMolang(itemCriteria, slot = "slot.weapon.mainhand") {
 /**
  * Creates a Molang expression that mimics array access. Defaults to the last element if nothing is found.
  * @param {Array} array
+ * @param {String} indexVar
  * @returns {String}
  */
 function arrayToMolang(array, indexVar) {
 	return array.map((el, i) => i == array.length - 1? el : `${i > 0? "(" : ""}${indexVar}==${i}?${el}:`).join("") + ")".repeat(max(array.length - 2, 0));
+}
+/**
+ * Creates a Molang expression that mimics 2D array access.
+ * @param {Array<Array>} array
+ * @param {String} indexVar1
+ * @param {String} indexVar2
+ * @returns {String}
+ */
+function array2DToMolang(array, indexVar1, indexVar2) {
+	return arrayToMolang(array.map(subArray => `(${arrayToMolang(subArray, indexVar2)})`), indexVar1);
 }
 /**
  * Converts a function into minified Molang code. Variables can be referenced with $[...].

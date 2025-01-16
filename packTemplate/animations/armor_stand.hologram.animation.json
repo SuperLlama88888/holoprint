@@ -28,8 +28,8 @@ I also wonder if we could have a "rotation lock" option which makes the hologram
 					]
 				},
 				"valid_structure_overlay": {
-					"scale": ["v.hologram.structure_w + 0.05", "v.hologram.structure_h + 0.05", "v.hologram.structure_d + 0.05"],
-					"position": ["7.6 - v.hologram.structure_w * 16", -0.4, -8.4] // Don't question why. I have already forgotten.
+					"scale": ["v.hologram.structure_w + 0.05", "(v.hologram.layer == -1? v.hologram.structure_h : 1) + 0.05", "v.hologram.structure_d + 0.05"],
+					"position": ["7.6 - v.hologram.structure_w * 16", "math.max(v.hologram.layer * 16, 0) - 0.4", -8.4] // Don't question why. I have already forgotten.
 				}
 			}
 		},
