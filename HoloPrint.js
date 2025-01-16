@@ -83,6 +83,7 @@ export async function makePack(structureFiles, config = {}, resourcePackStack, p
 			blockValidationParticle: "particles/block_validation.json",
 			savingBackupParticle: "particles/saving_backup.json",
 			singleWhitePixelTexture: "textures/particle/single_white_pixel.png",
+			exclamationMarkTexture: "textures/particle/exclamation_mark.png",
 			saveIconTexture: "textures/particle/save_icon.png",
 			hudScreenUI: "ui/hud_screen.json",
 			customEmojiFont: "font/glyph_E2.png",
@@ -101,7 +102,7 @@ export async function makePack(structureFiles, config = {}, resourcePackStack, p
 			itemMetadata: "metadata/vanilladata_modules/mojang-items.json"
 		}
 	}, resourcePackStack);
-	let { manifest, packIcon, entityFile, hologramRenderControllers, defaultPlayerRenderControllers, hologramGeo, hologramMaterial, hologramAnimationControllers, hologramAnimations, boundingBoxOutlineParticle, blockValidationParticle, savingBackupParticle, singleWhitePixelTexture, saveIconTexture, hudScreenUI, customEmojiFont, languagesDotJson, translationFile } = loadedStuff.files;
+	let { manifest, packIcon, entityFile, hologramRenderControllers, defaultPlayerRenderControllers, hologramGeo, hologramMaterial, hologramAnimationControllers, hologramAnimations, boundingBoxOutlineParticle, blockValidationParticle, savingBackupParticle, singleWhitePixelTexture, exclamationMarkTexture, saveIconTexture, hudScreenUI, customEmojiFont, languagesDotJson, translationFile } = loadedStuff.files;
 	let { blockMetadata, itemMetadata } = loadedStuff.data;
 	
 	let structures = nbts.map(nbt => nbt["structure"]);
@@ -599,6 +600,7 @@ export async function makePack(structureFiles, config = {}, resourcePackStack, p
 	});
 	packFiles.push(["particles/saving_backup.json", JSON.stringify(savingBackupParticle)]);
 	packFiles.push(["textures/particle/single_white_pixel.png", await singleWhitePixelTexture.toBlob()]);
+	packFiles.push(["textures/particle/exclamation_mark.png", await exclamationMarkTexture.toBlob()]);
 	packFiles.push(["textures/particle/save_icon.png", await saveIconTexture.toBlob()]);
 	packFiles.push(["textures/entity/overlay.png", await overlayTexture.toBlob()]);
 	packFiles.push(["animations/armor_stand.hologram.animation.json", JSON.stringify(hologramAnimations)]);

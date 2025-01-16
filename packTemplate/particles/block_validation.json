@@ -3,8 +3,8 @@
 	"particle_effect": {
 		"description": {
 			"basic_render_parameters": {
-				"material": "particles_blend",
-				"texture": "textures/particle/single_white_pixel"
+				"material": "particles_alpha",
+				"texture": "textures/particle/exclamation_mark"
 			}
 		},
 		"components": {
@@ -17,23 +17,21 @@
 			"minecraft:emitter_lifetime_events": {
 				"expiration_event": "kill_particles"
 			},
+			"minecraft:emitter_shape_point": {
+				"offset": [0, -0.4, 0]
+			},
 			"minecraft:particle_lifetime_expression": {
 				"expiration_expression": "!(t.show_wrong_block_overlay ?? false)? { t.show_wrong_block_overlay = true; t.wrong_block_x = v.x; t.wrong_block_y = v.y; t.wrong_block_z = v.z; }; return v.kill_particles;"
 			},
 			"minecraft:particle_appearance_billboard": {
-				"size": [10, "0.125 * (q.distance_from_camera * 0.02 + 0.65)"],
-				"facing_camera_mode": "lookat_direction",
-				"direction": {
-					"mode": "custom",
-					"custom_direction": [0, 1, 0]
-				},
+				"size": ["q.distance_from_camera < 25? 0.1 : 0.15", "q.distance_from_camera < 25? 1 : 10"], // The actual exclamation mark is 8x32, but the texture is 8x80. This is so the origin of the particle is inside the block space, but the exclamation mark floats above.
+				"facing_camera_mode": "rotate_y",
 				"uv": {
-					"uv": [0, 0],
-					"uv_size": [1, 1]
+					"texture_width": 8,
+					"texture_height": 80,
+					"uv": ["q.distance_from_camera < 25? 0 : 1", "q.distance_from_camera < 25? 0 : 15"],
+					"uv_size": ["q.distance_from_camera < 25? 8 : 1", "q.distance_from_camera < 25? 80 : 1"]
 				}
-			},
-			"minecraft:particle_appearance_tinting": {
-				"color": [0.8, 0, 0, "math.min(q.distance_from_camera / 15 + 0.5, 1)"]
 			},
 			"minecraft:particle_lifetime_events": {
 				"timeline": {
