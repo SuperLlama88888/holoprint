@@ -398,7 +398,8 @@ async function makePack(structureFiles, localResourcePacks) {
 		PACK_NAME: formData.get("packName") || undefined,
 		PACK_ICON_BLOB: formData.get("packIcon").size? formData.get("packIcon") : undefined,
 		AUTHORS: authors,
-		DESCRIPTION: formData.get("description") || undefined
+		DESCRIPTION: formData.get("description") || undefined,
+		COMPRESSION_LEVEL: +formData.get("compressionLevel")
 	};
 	
 	let previewCont = document.createElement("div");

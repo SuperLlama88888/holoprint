@@ -1,5 +1,5 @@
 import * as NBT from "nbtify";
-import JSZip from "jszip";
+import { ZipWriter, TextReader, BlobWriter, BlobReader, ZipReader } from "@zip.js/zip.js";
 
 import BlockGeoMaker from "./BlockGeoMaker.js";
 import TextureAtlas from "./TextureAtlas.js";
@@ -572,57 +572,60 @@ export async function makePack(structureFiles, config = {}, resourcePackStack, p
 	
 	console.info("Finished making all pack files!");
 	
-	let pack = new JSZip();
+	let packFileWriter = new BlobWriter();
+	let pack = new ZipWriter(packFileWriter);
+	let packFiles = [];
 	if(structureFiles.length == 1) {
-		pack.file(".mcstructure", structureFiles[0], {
-			comment: structureFiles[0].name
-		});
+		packFiles.push([".mcstructure", new BlobReader(structureFiles[0]), structureFiles[0].name]);
 	} else {
-		structureFiles.forEach((structureFile, i) => {
-			pack.file(`${i}.mcstructure`, structureFile, {
-				comment: structureFile.name
-			});
-		});
+		packFiles.push(...structureFiles.map((structureFile, i) => [`${i}.mcstructure`, structureFile, structureFile.name]));
 	}
-	pack.file("manifest.json", JSON.stringify(manifest));
-	pack.file("pack_icon.png", packIcon);
-	pack.file("entity/armor_stand.entity.json", JSON.stringify(entityFile).replaceAll("HOLOGRAM_INITIAL_ACTIVATION", true));
-	pack.file("subpacks/punch_to_activate/entity/armor_stand.entity.json", JSON.stringify(entityFile).replaceAll("HOLOGRAM_INITIAL_ACTIVATION", false));
-	pack.file("render_controllers/armor_stand.hologram.render_controllers.json", JSON.stringify(hologramRenderControllers));
-	pack.file("render_controllers/player.render_controllers.json", JSON.stringify(playerRenderControllers));
-	pack.file("models/entity/armor_stand.hologram.geo.json", stringifyWithFixedDecimals(hologramGeo));
-	pack.file("materials/entity.material", JSON.stringify(hologramMaterial));
-	pack.file("animation_controllers/armor_stand.hologram.animation_controllers.json", JSON.stringify(hologramAnimationControllers));
-	pack.file("particles/bounding_box_outline.json", JSON.stringify(boundingBoxOutlineParticle));
+	packFiles.push(["manifest.json", JSON.stringify(manifest)]);
+	packFiles.push(["pack_icon.png", packIcon]);
+	packFiles.push(["entity/armor_stand.entity.json", JSON.stringify(entityFile).replaceAll("HOLOGRAM_INITIAL_ACTIVATION", true)]);
+	packFiles.push(["subpacks/punch_to_activate/entity/armor_stand.entity.json", JSON.stringify(entityFile).replaceAll("HOLOGRAM_INITIAL_ACTIVATION", false)]);
+	packFiles.push(["render_controllers/armor_stand.hologram.render_controllers.json", JSON.stringify(hologramRenderControllers)]);
+	packFiles.push(["render_controllers/player.render_controllers.json", JSON.stringify(playerRenderControllers)]);
+	packFiles.push(["models/entity/armor_stand.hologram.geo.json", stringifyWithFixedDecimals(hologramGeo)]);
+	packFiles.push(["materials/entity.material", JSON.stringify(hologramMaterial)]);
+	packFiles.push(["animation_controllers/armor_stand.hologram.animation_controllers.json", JSON.stringify(hologramAnimationControllers)]);
+	packFiles.push(["particles/bounding_box_outline.json", JSON.stringify(boundingBoxOutlineParticle)]);
 	uniqueBlocksToValidate.forEach(blockName => {
 		let particleName = `validate_${blockName.replace(":", ".")}`; // file names can't have : in them
 		let particle = structuredClone(blockValidationParticle);
 		particle["particle_effect"]["description"]["identifier"] = `holoprint:${particleName}`;
 		particle["particle_effect"]["components"]["minecraft:particle_expire_if_in_blocks"] = [blockName.includes(":")? blockName : `minecraft:${blockName}`]; // add back minecraft: namespace if it's missing
-		pack.file(`particles/${particleName}.json`, JSON.stringify(particle));
+		packFiles.push([`particles/${particleName}.json`, JSON.stringify(particle)]);
 	});
-	pack.file("particles/saving_backup.json", JSON.stringify(savingBackupParticle));
-	pack.file("textures/particle/single_white_pixel.png", await singleWhitePixelTexture.toBlob());
-	pack.file("textures/particle/save_icon.png", await saveIconTexture.toBlob());
-	pack.file("textures/entity/overlay.png", await overlayTexture.toBlob());
-	pack.file("animations/armor_stand.hologram.animation.json", JSON.stringify(hologramAnimations));
+	packFiles.push(["particles/saving_backup.json", JSON.stringify(savingBackupParticle)]);
+	packFiles.push(["textures/particle/single_white_pixel.png", await singleWhitePixelTexture.toBlob()]);
+	packFiles.push(["textures/particle/save_icon.png", await saveIconTexture.toBlob()]);
+	packFiles.push(["textures/entity/overlay.png", await overlayTexture.toBlob()]);
+	packFiles.push(["animations/armor_stand.hologram.animation.json", JSON.stringify(hologramAnimations)]);
 	textureBlobs.forEach(([textureName, blob]) => {
-		pack.file(`textures/entity/${textureName}.png`, blob);
+		packFiles.push([`textures/entity/${textureName}.png`, blob]);
 	});
-	pack.file("ui/hud_screen.json", JSON.stringify(hudScreenUI));
-	pack.file("font/glyph_E2.png", await customEmojiFont.toBlob());
-	pack.file("texts/languages.json", JSON.stringify(languagesDotJson));
+	packFiles.push(["ui/hud_screen.json", JSON.stringify(hudScreenUI)]);
+	packFiles.push(["font/glyph_E2.png", await customEmojiFont.toBlob()]);
+	packFiles.push(["texts/languages.json", JSON.stringify(languagesDotJson)]);
 	languageFiles.forEach(([language, languageFile]) => {
-		pack.file(`texts/${language}.lang`, languageFile);
+		packFiles.push([`texts/${language}.lang`, languageFile]);
 	});
 	
-	let zippedPack = await pack.generateAsync({
-		type: "blob",
-		compression: "DEFLATE",
-		compressionOptions: {
-			level: 9 // too much???
+	await Promise.all(packFiles.map(([fileName, fileContents, comment]) => {
+		/** @type {import("@zip.js/zip.js").ZipWriterAddDataOptions} */
+		let options = {
+			comment,
+			level: config.COMPRESSION_LEVEL
+		};
+		if(fileContents instanceof Blob) {
+			return pack.add(fileName, new BlobReader(fileContents), options);
+		} else {
+			return pack.add(fileName, new TextReader(fileContents), options);
 		}
-	});
+	}));
+	let zippedPack = await pack.close();
+	
 	console.info(`Finished creating pack in ${(performance.now() - startTime).toFixed(0) / 1000}s!`);
 	
 	if(previewCont) {
@@ -662,14 +665,16 @@ export async function makePack(structureFiles, config = {}, resourcePackStack, p
  * @returns {Promise<Array<File>>}
  */
 export async function extractStructureFilesFromPack(resourcePack) {
-	let packFolder = await JSZip.loadAsync(resourcePack);
-	let structureZipObjects = Object.values(packFolder.files).filter(file => file.name.endsWith(".mcstructure"));
-	let structureBlobs = await Promise.all(structureZipObjects.map(async zipObject => await zipObject.async("blob")));
+	let packFileReader = new BlobReader(resourcePack);
+	let packFolder = new ZipReader(packFileReader);
+	let structureFileEntries = (await packFolder.getEntries()).filter(entry => entry.filename.endsWith(".mcstructure"));
+	packFolder.close();
+	let structureBlobs = await Promise.all(structureFileEntries.map(entry => entry.getData(new BlobWriter())));
 	let packName = resourcePack.name.slice(0, resourcePack.name.indexOf("."));
 	if(structureBlobs.length == 1) {
-		return [new File([structureBlobs[0]], structureZipObjects[0].comment ?? `${packName}.mcstructure`)];
+		return [new File([structureBlobs[0]], structureFileEntries[0].comment || `${packName}.mcstructure`)];
 	} else {
-		return await Promise.all(structureBlobs.map(async (structureBlob, i) => new File([structureBlob], structureZipObjects[i].comment ?? `${packName}_${i}.mcstructure`)));
+		return await Promise.all(structureBlobs.map(async (structureBlob, i) => new File([structureBlob], structureFileEntries[i].comment || `${packName}_${i}.mcstructure`)));
 	}
 }
 /**
@@ -748,6 +753,7 @@ export function addDefaultConfig(config) {
 			PACK_ICON_BLOB: undefined,
 			AUTHORS: [],
 			DESCRIPTION: undefined,
+			COMPRESSION_LEVEL: 5, // level 9 was 8 bytes larger than level 5 when I tested... :0
 			PREVIEW_BLOCK_LIMIT: 500,
 			SHOW_PREVIEW_SKYBOX: true
 		},
@@ -1352,6 +1358,7 @@ function stringifyWithFixedDecimals(value) {
  * @property {Blob} PACK_ICON_BLOB Blob for `pack_icon.png`
  * @property {Array<String>} AUTHORS
  * @property {String|undefined} DESCRIPTION
+ * @property {Number} COMPRESSION_LEVEL
  * @property {Number} PREVIEW_BLOCK_LIMIT The maximum number of blocks a structure can have for rendering a preview
  * @property {Boolean} SHOW_PREVIEW_SKYBOX
  */

@@ -11,6 +11,7 @@
 	"item_criteria_input.or": " or ",
 	"item_criteria_input.error.empty": "Please enter item criteria",
 	"item_criteria_input.error.invalid": "Invalid item/tag name",
+	"metadata.compression_level": "Compression level:",
 	"metadata.description": "Description:",
 	"metadata.description.placeholder": "This is my epic house!",
 	"metadata.heading": "Metadata",
