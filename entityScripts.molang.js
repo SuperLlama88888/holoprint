@@ -16,7 +16,7 @@ export function armorStandInitialization() {
 	v.hologram.layer_mode = $[singleLayerMode];
 	v.hologram.validating = false;
 	v.hologram.show_wrong_block_overlay = false;
-	v.hologram.wrong_blocks = -1;
+	v.wrong_blocks = -1;
 	v.hologram.wrong_block_x = 0;
 	v.hologram.wrong_block_y = 0;
 	v.hologram.wrong_block_z = 0;
@@ -44,6 +44,7 @@ export function armorStandPreAnimation() {
 	}
 	v.armor_stand_dir = Math.floor(q.body_y_rotation / 90) + 2; // [south, west, north, east] (since it goes from -180 to 180)
 	
+	t.should_set_wrong_blocks = false;
 	if(q.time_stamp - v.spawn_time < 200 && !v.player_has_interacted) { // if it's less than 10 seconds after being spawned and the player hasn't interacted yet...
 		t.just_recovered_backup = false;
 		for(let i = 0; i < $[backupSlotCount]; i++) {
@@ -57,6 +58,9 @@ export function armorStandPreAnimation() {
 			v.player_has_interacted = true;
 			v.hologram_activated = true;
 			v.skip_spawn_animation = true;
+			if(v.hologram.validating) {
+				t.should_set_wrong_blocks = true;
+			}
 		}
 	}
 	if(!v.hologram_activated) { // even though the subpack is called "punch to activate", changing the pose or giving an item will work as well
@@ -137,8 +141,7 @@ export function armorStandPreAnimation() {
 		} else if(t.action == "toggle_validating") {
 			v.hologram.validating = !v.hologram.validating;
 			if(v.hologram.validating) {
-				v.hologram.wrong_blocks = (v.hologram.layer == -1? ($[totalBlocksToValidate]) : ($[totalBlocksToValidateByLayer]));
-				t.wrong_blocks = v.hologram.wrong_blocks;
+				t.should_set_wrong_blocks = true;
 			} else {
 				v.hologram.show_wrong_block_overlay = false;
 			}
@@ -205,9 +208,12 @@ export function armorStandPreAnimation() {
 			v.hologram.layer = -1;
 		}
 		if(v.hologram.validating) {
-			v.hologram.wrong_blocks = (v.hologram.layer == -1? ($[totalBlocksToValidate]) : ($[totalBlocksToValidateByLayer]));
-			t.wrong_blocks = v.hologram.wrong_blocks;
+			t.should_set_wrong_blocks = true;
 		}
+	}
+	if(t.should_set_wrong_blocks) {
+		v.wrong_blocks = (v.hologram.layer == -1? ($[totalBlocksToValidate]) : ($[totalBlocksToValidateByLayer]));
+		t.wrong_blocks = v.wrong_blocks;
 	}
 	if(t.changed_structure) {
 		if(v.hologram.structure_index < 0) {
@@ -227,9 +233,9 @@ export function armorStandPreAnimation() {
 	if(v.hologram.validating) {
 		// block validation particles rely on temp variables. this code checks if the temp variables are defined; if they are, it updates the internal state; if not, it sets the temp variables to its internal state. very messy ik
 		if((t.wrong_blocks ?? -1) == -1) {
-			t.wrong_blocks = v.hologram.wrong_blocks;
+			t.wrong_blocks = v.wrong_blocks;
 		} else {
-			v.hologram.wrong_blocks = t.wrong_blocks;
+			v.wrong_blocks = t.wrong_blocks;
 		}
 		if((t.show_wrong_block_overlay ?? -1) == -1) {
 			t.show_wrong_block_overlay = v.hologram.show_wrong_block_overlay;

@@ -490,7 +490,7 @@ export async function makePack(structureFiles, config = {}, resourcePackStack, p
 	}, {
 		"controller.render.armor_stand.hologram.wrong_block_overlay": "v.hologram.show_wrong_block_overlay"
 	}, {
-		"controller.render.armor_stand.hologram.valid_structure_overlay": "v.hologram.validating && v.hologram.wrong_blocks == 0"
+		"controller.render.armor_stand.hologram.valid_structure_overlay": "v.hologram.validating && v.wrong_blocks == 0"
 	}, "controller.render.armor_stand.hologram.particle_alignment");
 	entityDescription["particle_effects"] ??= {};
 	entityDescription["particle_effects"]["bounding_box_outline"] = "holoprint:bounding_box_outline";
