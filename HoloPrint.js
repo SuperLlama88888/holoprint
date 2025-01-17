@@ -229,6 +229,7 @@ export async function makePack(structureFiles, config = {}, resourcePackStack, p
 		let blocksToValidateByLayer = [];
 		
 		let getSpawnAnimationDelay;
+		let animationTimingFunc;
 		let makeHologramSpawnAnimation;
 		let spawnAnimationAnimatedBones = [];
 		if(config.DO_SPAWN_ANIMATION) {
@@ -238,12 +239,17 @@ export async function makePack(structureFiles, config = {}, resourcePackStack, p
 				let randomness = 2 - 1.9 * exp(-0.005 * totalVolume); // 100 -> ~0.85, 1000 -> ~1.99, asymptotic to 2
 				return config.SPAWN_ANIMATION_LENGTH * 0.25 * (structureSize[0] - x + y + structureSize[2] - z + Math.random() * randomness);
 			};
-			makeHologramSpawnAnimation = delay => {
+			animationTimingFunc = x => 1 - (1 - x) ** 3;
+			makeHologramSpawnAnimation = (delay, bonePos) => {
 				let animationEnd = Number((delay + config.SPAWN_ANIMATION_LENGTH).toFixed(2));
 				totalAnimationLength = max(totalAnimationLength, animationEnd);
 				hologramAnimations["animations"]["animation.armor_stand.hologram.spawn"]["animation_length"] = totalAnimationLength;
+				let keyframes = [0, 0.2, 0.4, 0.6, 0.8, 1]; // this is smooth enough
+				let positionOffset = [-bonePos[0] - 8, -bonePos[1], -bonePos[2] - 8];
+				let createAnimFromKeyframes = timingFunc => Object.fromEntries(keyframes.map(keyframe => [`${+(delay + keyframe * config.SPAWN_ANIMATION_LENGTH).toFixed(2)}`, timingFunc(keyframe)]));
 				return {
-					"scale": `q.anim_time <= ${delay}? 0 : (q.anim_time >= ${animationEnd}? 1 : (1 - math.pow(1 - (q.anim_time - ${delay}) / ${config.SPAWN_ANIMATION_LENGTH}, 3)))`.replaceAll(" ", "")
+					"scale": createAnimFromKeyframes(keyframe => (new Array(3)).fill(+animationTimingFunc(keyframe).toFixed(2))), // has to be an array here...
+					"position": createAnimFromKeyframes(keyframe => positionOffset.map(x => +(x * (1 - animationTimingFunc(keyframe))).toFixed(2)))
 				};
 			};
 		}
@@ -353,6 +359,7 @@ export async function makePack(structureFiles, config = {}, resourcePackStack, p
 						let bonesToAdd = [{
 							"name": boneName,
 							"parent": layerName,
+							"pivot": bonePos.map(x => x + 8), // prevent flickering
 							...positionedBoneTemplate
 						}];
 						let rotWrapperBones = new JSONMap();
@@ -390,7 +397,7 @@ export async function makePack(structureFiles, config = {}, resourcePackStack, p
 							hologramGeo["minecraft:geometry"][2]["bones"][1]["locators"][boneName] ??= bonePos.map(x => x + 8);
 						}
 						if(config.DO_SPAWN_ANIMATION && structureI == 0) {
-							spawnAnimationAnimatedBones.push([boneName, getSpawnAnimationDelay(x, y, z)]);
+							spawnAnimationAnimatedBones.push([boneName, getSpawnAnimationDelay(x, y, z), bonePos]);
 						}
 						
 						let blockName = blockPalette[paletteI]["name"];
@@ -417,10 +424,10 @@ export async function makePack(structureFiles, config = {}, resourcePackStack, p
 		
 		if(config.DO_SPAWN_ANIMATION && structureI == 0) {
 			let minDelay = min(...spawnAnimationAnimatedBones.map(([, delay]) => delay));
-			spawnAnimationAnimatedBones.forEach(([boneName, delay]) => {
+			spawnAnimationAnimatedBones.forEach(([boneName, delay, bonePos]) => {
 				delay -= minDelay - 0.05;
 				delay = Number(delay.toFixed(2));
-				hologramAnimations["animations"]["animation.armor_stand.hologram.spawn"]["bones"][boneName] = makeHologramSpawnAnimation(delay);
+				hologramAnimations["animations"]["animation.armor_stand.hologram.spawn"]["bones"][boneName] = makeHologramSpawnAnimation(delay, bonePos);
 			});
 		}
 		
