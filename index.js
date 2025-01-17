@@ -177,6 +177,7 @@ document.onEvent("DOMContentLoaded", () => {
 				}
 			});
 			temporarilyChangeText(el, el.dataset.resetTranslation);
+			opacityModeSelect.dispatchEvent(new Event("change"));
 			updateTexturePreview();
 		});
 	});
