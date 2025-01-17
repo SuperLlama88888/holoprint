@@ -424,9 +424,13 @@ export default class TextureAtlas {
 				imageFragment["h"] = ceil(imageFragment["h"]);
 			}
 		});
+		let imageFragments2 = imageFragments.map(imageFragment => ({ ... imageFragment }));
 		let packing1 = potpack(imageFragments);
-		let packing2 = potpackWithWidthPresort(imageFragments);
+		let packing2 = potpackWithWidthPresort(imageFragments2);
 		let packing = packing1.fill > packing2.fill? packing1 : packing2; // In my testing on 100 structures, 10 times no width presort was better, 17 times width presort was better, and the rest they were equal. On average, width presorting improved space efficiency by 0.1385%. Since potpack takes just a couple ms, it's best to look at both and take the better one.
+		if(packing2.fill >= packing1.fill) {
+			imageFragments = imageFragments2;
+		}
 		imageFragments.sort((a, b) => a["i"] - b["i"]);
 		this.textureWidth = packing.w;
 		this.textureHeight = packing.h;
