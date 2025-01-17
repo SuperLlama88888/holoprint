@@ -476,7 +476,7 @@ customElements.define("item-criteria-input", class extends HTMLElement {
 		this.#tasksPendingConnection = [];
 		
 		this.#vanillaItemsPromise = (new VanillaDataFetcher()).then(fetcher => fetcher.fetch("metadata/vanilladata_modules/mojang-items.json")).then(res => res.json()).then(data => data["data_items"].map(item => item["name"].replace(/^minecraft:/, "")));
-		this.#vanillaItemTagsPromise = (new CachingFetcher("BedrockData@2.14.1+bedrock-1.21.40", "https://raw.githubusercontent.com/pmmp/BedrockData/refs/tags/2.14.1+bedrock-1.21.40/")).then(fetcher => fetcher.fetch("item_tags.json")).then(res => res.json()).then(data => Object.keys(data).map(tag => tag.replace(/^minecraft:/, "")));
+		this.#vanillaItemTagsPromise = (new CachingFetcher("BedrockData@2.15.0+bedrock-1.21.50", "https://raw.githubusercontent.com/pmmp/BedrockData/refs/tags/2.15.0+bedrock-1.21.50/")).then(fetcher => fetcher.fetch("item_tags.json")).then(res => res.json()).then(data => Object.keys(data).map(tag => tag.replace(/^minecraft:/, "")));
 	}
 	connectedCallback() {
 		if(this.#connected) {
