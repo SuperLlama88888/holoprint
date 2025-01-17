@@ -1065,19 +1065,17 @@ function addPlayerControlsToRenderControllers(config, defaultPlayerRenderControl
 		changeLayer: itemCriteriaToMolang(config.CONTROLS.CHANGE_LAYER),
 		decreaseLayer: itemCriteriaToMolang(config.CONTROLS.DECREASE_LAYER),
 		changeLayerMode: itemCriteriaToMolang(config.CONTROLS.CHANGE_LAYER_MODE),
+		moveHologram: itemCriteriaToMolang(config.CONTROLS.MOVE_HOLOGRAM),
 		rotateHologram: itemCriteriaToMolang(config.CONTROLS.ROTATE_HOLOGRAM),
 		changeStructure: itemCriteriaToMolang(config.CONTROLS.CHANGE_STRUCTURE),
 		backupHologram: itemCriteriaToMolang(config.CONTROLS.BACKUP_HOLOGRAM)
-	});
-	let movementControls = functionToMolang(entityScripts.playerMovementControls, {
-		moveHologram: itemCriteriaToMolang(config.CONTROLS.MOVE_HOLOGRAM)
 	});
 	let broadcastActions = functionToMolang(entityScripts.playerBroadcastActions, {
 		backupSlotCount: config.BACKUP_SLOT_COUNT
 	});
 	return patchRenderControllers(defaultPlayerRenderControllers, {
 		"controller.render.player.first_person": functionToMolang(entityScripts.playerFirstPerson, { initVariables, renderingControls, broadcastActions }),
-		"controller.render.player.third_person": functionToMolang(entityScripts.playerThirdPerson, { initVariables, renderingControls, movementControls, broadcastActions })
+		"controller.render.player.third_person": functionToMolang(entityScripts.playerThirdPerson, { initVariables, renderingControls, broadcastActions })
 	});
 }
 /**
@@ -1399,7 +1397,7 @@ function stringifyWithFixedDecimals(value) {
  * @property {ItemCriteria} CHANGE_LAYER Both for players and armour stands
  * @property {ItemCriteria} DECREASE_LAYER
  * @property {ItemCriteria} CHANGE_LAYER_MODE Single layer or all layers below
- * @property {ItemCriteria} MOVE_HOLOGRAM For players in third-person
+ * @property {ItemCriteria} MOVE_HOLOGRAM
  * @property {ItemCriteria} ROTATE_HOLOGRAM
  * @property {ItemCriteria} CHANGE_STRUCTURE For players only
  * @property {ItemCriteria} DISABLE_PLAYER_CONTROLS

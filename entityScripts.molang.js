@@ -121,18 +121,6 @@ export function armorStandPreAnimation() {
 			t.action = "rotate_hologram_clockwise";
 		} else if($[backupHologram]) {
 			t.action = "backup_hologram";
-		} else if(q.is_item_name_any("slot.weapon.mainhand", "minecraft:white_wool")) { // Movement controls (I hate that I'm having to do this)
-			t.action = "move_y-";
-		} else if(q.is_item_name_any("slot.weapon.mainhand", "minecraft:red_wool")) {
-			t.action = "move_y+";
-		} else if(q.is_item_name_any("slot.weapon.mainhand", "minecraft:orange_wool")) {
-			t.action = "move_z-";
-		} else if(q.is_item_name_any("slot.weapon.mainhand", "minecraft:yellow_wool")) {
-			t.action = "move_z+";
-		} else if(q.is_item_name_any("slot.weapon.mainhand", "minecraft:lime_wool")) {
-			t.action = "move_x+";
-		} else if(q.is_item_name_any("slot.weapon.mainhand", "minecraft:light_blue_wool")) {
-			t.action = "move_x-";
 		}
 	}
 	t.player_action_counter ??= 0;
@@ -178,18 +166,22 @@ export function armorStandPreAnimation() {
 			} else if(t.action == "change_layer_mode") {
 				v.hologram.layer_mode = 1 - v.hologram.layer_mode; // ez
 				t.check_layer_validity = true;
-			} else if(t.action == "move_x-") {
-				v.hologram.offset_x--;
-			} else if(t.action == "move_x+") {
-				v.hologram.offset_x++;
-			} else if(t.action == "move_y-") {
-				v.hologram.offset_y--;
-			} else if(t.action == "move_y+") {
-				v.hologram.offset_y++;
-			} else if(t.action == "move_z-") {
-				v.hologram.offset_z--;
-			} else if(t.action == "move_z+") {
-				v.hologram.offset_z++;
+			} else if(t.action == "move_hologram") {
+				t.camera_rot_x = q.camera_rotation(0);
+				t.camera_rot_y = q.camera_rotation(1);
+				if(t.camera_rot_x <= -38) { // slightly more bias towards up/down
+					v.hologram.offset_y++;
+				} else if(t.camera_rot_x >= 38) {
+					v.hologram.offset_y--;
+				} else if(t.camera_rot_y > -45 && t.camera_rot_y <= 45) {
+					v.hologram.offset_z++;
+				} else if(t.camera_rot_y > 45 && t.camera_rot_y <= 135) {
+					v.hologram.offset_x++;
+				} else if(t.camera_rot_y > -135 && t.camera_rot_y <= -45) {
+					v.hologram.offset_x--;
+				} else {
+					v.hologram.offset_z--;
+				}
 			} else if(t.action == "rotate_hologram_clockwise") {
 				v.hologram.rotation = Math.mod(v.hologram.rotation + 1, 4);
 			} else if(t.action == "rotate_hologram_anticlockwise") {
@@ -341,6 +333,8 @@ export function playerRenderingControls() {
 			}
 		} else if($[changeLayerMode]) {
 			v.new_action = "change_layer_mode";
+		} else if($[moveHologram]) {
+			v.new_action = "move_hologram";
 		} else if($[rotateHologram]) {
 			if(q.is_sneaking) {
 				v.new_action = "rotate_hologram_anticlockwise";
@@ -355,23 +349,6 @@ export function playerRenderingControls() {
 			}
 		} else if($[backupHologram]) {
 			v.new_action = "backup_hologram";
-		}
-	}
-}
-export function playerMovementControls() {
-	if(v.attack && $[moveHologram]) {
-		if(q.cardinal_player_facing == 0) { // this query unfortunately doesn't work in armour stands
-			v.new_action = "move_y-";
-		} else if(q.cardinal_player_facing == 1) {
-			v.new_action = "move_y+";
-		} else if(q.cardinal_player_facing == 2) {
-			v.new_action = "move_z-";
-		} else if(q.cardinal_player_facing == 3) {
-			v.new_action = "move_z+";
-		} else if(q.cardinal_player_facing == 4) {
-			v.new_action = "move_x+";
-		} else if(q.cardinal_player_facing == 5) {
-			v.new_action = "move_x-";
 		}
 	}
 }
@@ -414,7 +391,6 @@ export function playerThirdPerson() {
 	if(!q.is_in_ui) {
 		$[initVariables]
 		$[renderingControls]
-		$[movementControls] // in first person, since the player entity is always at the front of the screen, it's always facing south so movement controls only work in third person
 		$[broadcastActions]
 	}
 }
