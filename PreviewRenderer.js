@@ -1,4 +1,5 @@
 import TextureAtlas from "./TextureAtlas.js";
+import { max } from "./essential.js";
 
 let THREE;
 let StandaloneModelViewer;
@@ -63,6 +64,10 @@ export default class PreviewRenderer {
 			this.viewer.controls.maxDistance = 1000;
 			
 			let animator = this.viewer.getModel().animator;
+			let animation = animations["animations"]["animation.armor_stand.hologram.spawn"];
+			Object.values(animation["bones"]).map(bone => Object.values(bone).forEach(animationChannel => {
+				animationChannel[`${animation["animation_length"]}`] = animationChannel[`${max(...Object.keys(animationChannel))}`];
+			}));
 			animator.addAnimation("spawn", animations["animations"]["animation.armor_stand.hologram.spawn"]);
 			animator.play("spawn");
 			
