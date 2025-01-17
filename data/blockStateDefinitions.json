@@ -29,7 +29,8 @@
 			"tip": [0, 1], // pale hanging moss
 			"bloom": [0, 1], // sculk catalyst (hardly noticeable in-game)
 			"can_summon": [0, 1], // sculk shrieker
-			"respawn_anchor_charge": [0, 1, 2, 3, 4]
+			"respawn_anchor_charge": [0, 1, 2, 3, 4],
+			"huge_mushroom_bits": [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15]
 		},
 		"block_shapes": {
 			"cake": {

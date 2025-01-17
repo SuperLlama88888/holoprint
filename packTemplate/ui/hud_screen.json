@@ -265,7 +265,7 @@
 								"type": "label",
 								"text": "$item_translation_key",
 								"localize": true,
-								"size": ["100% - 13px - 70px", 10], // leave 70px for the block count
+								"size": ["100% - 13px - ", 10], // space left for item count is put in by the JS
 								"font_scale_factor": 0.8
 							}
 						},

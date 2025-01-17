@@ -251,8 +251,8 @@ export default class MaterialList {
 		if(count < 64) {
 			return String(count);
 		} else {
-			let parts = [[floor(count / 1728), "b"], [floor(count / 64) % 27, "s"], [count % 64, ""]].filter(([n]) => n).map(x => x.join(""));
-			return `${count} = ${parts.join(" + ")}`;
+			let parts = [[floor(count / 1728), "\uE200"], [floor(count / 64) % 27, "s"], [count % 64, ""]].filter(([n]) => n).map(x => x.join(""));
+			return `${count} = ${parts.join(" + ")}`; // a custom shulker box emoji (taken from OreUI files) is defined in font/glyph_E2.png
 		}
 	}
 	#findItemAuxId(itemName) {

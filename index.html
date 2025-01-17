@@ -24,7 +24,7 @@
 					"@supabase/supabase-js": "https://esm.sh/@supabase/supabase-js@2?exports=createClient",
 					"three": "https://esm.sh/three@0.147.0?exports=DirectionalLight,AmbientLight,CubeTextureLoader",
 					"@bridge-editor/model-viewer": "https://esm.sh/@bridge-editor/model-viewer@0.8.1?exports=StandaloneModelViewer",
-					"jszip": "https://esm.sh/jszip@3.10.1",
+					"@zip.js/zip.js": "https://esm.sh/@zip.js/zip.js@2.7.54?exports=ZipWriter,TextReader,BlobWriter,BlobReader,ZipReader",
 					"strip-json-comments": "https://esm.sh/strip-json-comments@5.0.1"
 				}
 			}
@@ -79,7 +79,7 @@
 									</div>
 								</fieldset>
 								<fieldset class="expandable">
-									<legend><label><span data-translate="settings.player_controls">In-game controls</span><input type="checkbox"/></label></legend>
+									<legend><label><span data-translate="settings.player_controls">In-game controls (<a href="https://github.com/SuperLlama88888/holoprint/wiki/1.-Usage-instructions#hologram-controls" target="_blank">Wiki</a>)</span><input type="checkbox"/></label></legend>
 									<div id="playerControlsInputCont"></div>
 								</fieldset>
 								<label><span data-translate="settings.spawn_animation">Spawn animation:</span> <input type="checkbox" name="spawnAnimationEnabled" checked/></label>
@@ -103,6 +103,7 @@
 								<label><span data-translate="metadata.pack_icon">Pack icon (<code>*.png</code>):</span> <input type="file" accept=".png" name="packIcon"/></label>
 								<label><span data-translate="metadata.structure_author">Structure author:</span> <input type="text" placeholder="MinecraftLover123" name="author" data-translate-placeholder="metadata.structure_author.placeholder"/></label>
 								<label><span data-translate="metadata.description">Description:</span><br/><textarea placeholder="This is my epic house!" rows="3" cols="20" name="description" data-translate-placeholder="metadata.description.placeholder"></textarea></label>
+								<label><span data-translate="metadata.compression_level">Compression level:</span> <input type="number" min="0" max="9" step="1" value="5" name="compressionLevel"/></label>
 								<button type="button" class="resetButton" data-translate="reset" data-reset-translation="metadata.reset">Reset</button>
 							</fieldset>
 							<input type="radio" name="configTabs" form="" id="resourcesTab"/>
