@@ -17,5 +17,19 @@ jobs:
         run: |
           git remote add upstream https://github.com/SuperLlama88888/holoprint.git
           git fetch upstream --tags
+          latest_tag=$(git tag --sort=-v:refname | head -n 1)
+          echo "latest_tag=$latest_tag" >> $GITHUB_ENV
           git push origin upstream/main:main
           git push origin --tags
+      - name: Trigger bundle and deployment workflow
+        uses: actions/github-script@v6
+        with:
+          script: |
+            let latestTag = process.env.latest_tag;
+            let res = await github.rest.actions.createWorkflowDispatch({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              workflow_id: 'bundleAndDeploy.yml',
+              ref: latestTag
+            });
+            console.log(`Bundle and deployment workflow triggered with status ${res.status}`);
