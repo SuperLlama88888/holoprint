@@ -1,0 +1,17 @@
+name: Update from Upstream
+on:
+  workflow_dispatch: # triggered by bundleAndDeploy.yml
+permissions: read-all
+jobs:
+  update:
+    name: Update
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4.1.1
+      - name: Fetch upstream
+        run: |
+          git remote add upstream https://github.com/SuperLlama88888/holoprint.git
+          git fetch upstream --tags
+          git push origin upstream/main:main
+          git push origin --tags
