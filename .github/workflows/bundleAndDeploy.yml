@@ -84,4 +84,4 @@ jobs:
               workflow_id: 'updateFromUpstream.yml',
               ref: 'main'
             });
-            console.log(`Workflow triggered with status ${res.status}`);
+            console.log(`Fork upstream fetching workflow triggered with status ${res.status}`);
