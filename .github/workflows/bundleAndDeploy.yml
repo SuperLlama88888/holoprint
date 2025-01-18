@@ -66,3 +66,18 @@ jobs:
      - name: Deploy to GitHub Pages
        id: deployment
        uses: actions/deploy-pages@v4.0.5
+  update-fork:
+    needs: deploy
+    runs-on: ubuntu-latest
+    steps:
+      - name: Trigger workflow in fork
+        uses: actions/github-script@v6
+        with:
+          script: |
+            let res = await github.rest.actions.createWorkflowDispatch({
+              owner: 'HoloPrint-MC',
+              repo: 'holoprint-mc.github.io',
+              workflow_id: 'updateFromUpstream.yml',
+              ref: 'main'
+            });
+            console.log(`Workflow triggered with status ${res.status}`);
