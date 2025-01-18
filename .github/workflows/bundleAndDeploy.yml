@@ -39,6 +39,7 @@ jobs:
           rm *.md
           rm -r tests
           rm -r supabase
+          rm -r data/schemas
           rm -rf .*
           keys=$(jq -r '.inputs | keys[]' "esbuild_meta.json")
           for key in $keys; do

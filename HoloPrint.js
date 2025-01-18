@@ -354,7 +354,7 @@ export async function makePack(structureFiles, config = {}, resourcePackStack, p
 						if(!firstBoneForThisBlock) {
 							boneName += `_${layerI}`;
 						}
-						if(config.DO_SPAWN_ANIMATION && structureI == 0) {
+						if(config.DO_SPAWN_ANIMATION && structureI == 0 && structureFiles.length > 1) {
 							boneName += "_a"; // different bone name in order for the animation to not affect blocks in the same position in other structures
 						}
 						let bonePos = [-16 * x - 8, 16 * y, 16 * z - 8]; // I got these values from trial and error with blockbench (which makes the x negative I think. it's weird.)
