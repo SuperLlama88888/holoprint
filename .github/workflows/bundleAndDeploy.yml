@@ -71,10 +71,12 @@ jobs:
     name: Update Fork (HoloPrint-MC)
     needs: deploy
     runs-on: ubuntu-latest
+    if: github.repository == 'SuperLlama88888/holoprint'
     steps:
       - name: Trigger workflow in fork
         uses: actions/github-script@v6
         with:
+          github-token: ${{ secrets.PAT }}
           script: |
             let res = await github.rest.actions.createWorkflowDispatch({
               owner: 'HoloPrint-MC',
