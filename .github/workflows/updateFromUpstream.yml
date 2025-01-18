@@ -24,6 +24,7 @@ jobs:
       - name: Trigger bundle and deployment workflow
         uses: actions/github-script@v6
         with:
+          github-token: ${{ secrets.PAT }}
           script: |
             let latestTag = process.env.latest_tag;
             let res = await github.rest.actions.createWorkflowDispatch({
