@@ -85,5 +85,3 @@ jobs:
               ref: 'main'
             });
             console.log(`Workflow triggered with status ${res.status}`);
-        env:
-          GITHUB_TOKEN: ${{ secrets.PAT }}
