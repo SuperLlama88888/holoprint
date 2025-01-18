@@ -7,7 +7,7 @@ import ResourcePackStack, { VanillaDataFetcher } from "./ResourcePackStack.js";
 import LocalResourcePack from "./LocalResourcePack.js";
 import TextureAtlas from "./TextureAtlas.js";
 
-const IN_PRODUCTION = location.host.includes(".github.io"); // hosted on GitHub Pages
+const IN_PRODUCTION = false;
 const ACTUAL_CONSOLE_LOG = false;
 
 const supabaseProjectUrl = "https://gnzyfffwvulwxbczqpgl.supabase.co";
