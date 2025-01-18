@@ -1,11 +1,13 @@
 name: Update from Upstream
 on:
   workflow_dispatch: # triggered by bundleAndDeploy.yml
-permissions: read-all
+permissions:
+  contents: write
 jobs:
   update:
     name: Update
     runs-on: ubuntu-latest
+    if: github.repository == 'HoloPrint-MC/holoprint-mc.github.io'
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4.1.1
