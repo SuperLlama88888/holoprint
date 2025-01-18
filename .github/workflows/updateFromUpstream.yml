@@ -11,6 +11,8 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4.1.1
+      - name: Setup Git authentication
+        run: git remote set-url origin https://x-access-token:${{ secrets.PAT }}@github.com/${{ github.repository }}.git
       - name: Fetch upstream
         run: |
           git remote add upstream https://github.com/SuperLlama88888/holoprint.git
