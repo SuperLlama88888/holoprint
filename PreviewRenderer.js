@@ -66,7 +66,7 @@ export default class PreviewRenderer {
 			let animator = this.viewer.getModel().animator;
 			let animation = animations["animations"]["animation.armor_stand.hologram.spawn"];
 			Object.values(animation["bones"] ?? {}).map(bone => Object.values(bone).forEach(animationChannel => {
-				animationChannel[`${animation["animation_length"]}`] = animationChannel[`${max(...Object.keys(animationChannel))}`];
+				animationChannel["Infinity"] = animationChannel[`${max(...Object.keys(animationChannel))}`];
 			}));
 			animator.addAnimation("spawn", animations["animations"]["animation.armor_stand.hologram.spawn"]);
 			animator.play("spawn");
