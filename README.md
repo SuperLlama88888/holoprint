@@ -12,7 +12,7 @@ HoloPrint is a web app that converts MCBE structure files into resource packs sh
 1. Use a Structure Block to export a `.mcstructure` file. To get a structure block, run the command `/give @s structure_block`.  
 ![Give Structure Block command](assets/giveStructureBlockCommand.png)  
 ![Structure Block exporting](assets/structureBlockExporting.png)
-2. Go to [https://superllama88888.github.io/holoprint](https://superllama88888.github.io/holoprint), select your `.mcstructure` file, and tweak settings.  
+2. Go to [https://holoprint-mc.github.io](https://holoprint-mc.github.io), select your `.mcstructure` file, and tweak settings.  
 ![Pack generation screen](assets/packGenerationScreen.png)
 3. Generate and download your resource pack (`.mcpack`).  
 ![Resource pack active](assets/resourcePackActive.png)

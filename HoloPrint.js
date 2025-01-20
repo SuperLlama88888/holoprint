@@ -553,6 +553,7 @@ export async function makePack(structureFiles, config = {}, resourcePackStack, p
 	manifest["header"]["version"] = packVersion;
 	manifest["modules"][0]["uuid"] = crypto.randomUUID();
 	manifest["modules"][0]["version"] = packVersion;
+	manifest["metadata"]["generated_with"]["holoprint"] = [packVersion.join(".")];
 	if(config.AUTHORS.length) {
 		manifest["metadata"]["authors"].push(...config.AUTHORS);
 	}

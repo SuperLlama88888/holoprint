@@ -106,6 +106,9 @@ form {
 #structureFilesInput:valid ~ div {
 	display: none;
 }
+form:has(#structureFilesInput:invalid) ~ * {
+	display: none;
+}
 fieldset:has(#structureFilesInput:invalid) ~ * {
 	display: none;
 }
