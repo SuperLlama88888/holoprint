@@ -56,6 +56,12 @@ document.onEvent("DOMContentLoaded", () => {
 	dropFileNotice = selectEl("#dropFileNotice");
 	structureFilesInput = generatePackForm.elements.namedItem("structureFiles");
 	packNameInput = generatePackForm.elements.namedItem("packName");
+	packNameInput.onEvent("invalid", async () => {
+		packNameInput.setCustomValidity(await translateCurrentLanguage("metadata.pack_name.error"));
+	});
+	packNameInput.onEvent("input", () => {
+		packNameInput.setCustomValidity("");
+	});
 	structureFilesInput.onEventAndNow("input", updatePackNameInputPlaceholder);
 	completedPacksCont = selectEl("#completedPacksCont");
 	texturePreviewImageCont = selectEl("#texturePreviewImageCont");

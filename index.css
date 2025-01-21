@@ -195,6 +195,10 @@ input[type="number"], input[type="text"], textarea {
 input[type="text"]::placeholder {
 	text-overflow: ellipsis;
 }
+input[type="text"]:invalid {
+	border-color: #E24436;
+	outline-color: #E24436;
+}
 button:not(:disabled):not(.packInfoButton):hover, input[type="file"]:not(:disabled):hover::file-selector-button, select:not(:disabled):hover, .buttonlike:hover {
 	background: #E8C8E8;
 }

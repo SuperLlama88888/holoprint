@@ -25,7 +25,7 @@
 			},
 			"minecraft:particle_appearance_billboard": {
 				"size": ["q.distance_from_camera < 25? 0.1 : 0.15", "q.distance_from_camera < 25? 1 : 10"], // The actual exclamation mark is 8x32, but the texture is 8x80. This is so the origin of the particle is inside the block space, but the exclamation mark floats above.
-				"facing_camera_mode": "rotate_y",
+				"facing_camera_mode": "lookat_y",
 				"uv": {
 					"texture_width": 8,
 					"texture_height": 80,
