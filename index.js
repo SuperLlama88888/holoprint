@@ -1,4 +1,4 @@
-import { selectEl, downloadBlob, sleep, selectEls, htmlCodeToElement, CachingFetcher, translate, getStackTrace, random } from "./essential.js";
+import { selectEl, downloadBlob, sleep, selectEls, htmlCodeToElement, CachingFetcher, loadTranslationLanguage, translate, getStackTrace, random } from "./essential.js";
 import * as HoloPrint from "./HoloPrint.js";
 import SimpleLogger from "./SimpleLogger.js";
 import SupabaseLogger from "./SupabaseLogger.js";
@@ -56,6 +56,12 @@ document.onEvent("DOMContentLoaded", () => {
 	dropFileNotice = selectEl("#dropFileNotice");
 	structureFilesInput = generatePackForm.elements.namedItem("structureFiles");
 	packNameInput = generatePackForm.elements.namedItem("packName");
+	packNameInput.onEvent("invalid", () => {
+		packNameInput.setCustomValidity(translateCurrentLanguage("metadata.pack_name.error"));
+	});
+	packNameInput.onEvent("input", () => {
+		packNameInput.setCustomValidity("");
+	});
 	structureFilesInput.onEventAndNow("input", updatePackNameInputPlaceholder);
 	completedPacksCont = selectEl("#completedPacksCont");
 	texturePreviewImageCont = selectEl("#texturePreviewImageCont");
@@ -122,10 +128,10 @@ document.onEvent("DOMContentLoaded", () => {
 	});
 	
 	let playerControlsInputCont = selectEl("#playerControlsInputCont");
-	Promise.all(Object.entries(HoloPrint.DEFAULT_PLAYER_CONTROLS).map(async ([control, itemCriteria]) => {
+	Object.entries(HoloPrint.DEFAULT_PLAYER_CONTROLS).map(([control, itemCriteria]) => {
 		let label = document.createElement("label");
 		let playerControlTranslationKey = HoloPrint.PLAYER_CONTROL_NAMES[control];
-		label.innerHTML = `<span data-translate="${playerControlTranslationKey}">${await translate(playerControlTranslationKey, "en")}</span>:`;
+		label.innerHTML = `<span data-translate="${playerControlTranslationKey}">...</span>:`;
 		let input = document.createElement("item-criteria-input");
 		input.setAttribute("name", `control.${control}`);
 		if(itemCriteria["names"].length > 0) {
@@ -135,11 +141,9 @@ document.onEvent("DOMContentLoaded", () => {
 			input.setAttribute("value-tags", itemCriteria["tags"].join(","));
 		}
 		label.appendChild(input);
-		return [label, input];
-	})).then(els => els.forEach(([label, input]) => {
 		playerControlsInputCont.appendChild(label);
 		input.setAttribute("default", input.value); // has to be called after being added to the DOM
-	}));
+	});
 	
 	let clearResourcePackCacheButton = selectEl("#clearResourcePackCacheButton");
 	clearResourcePackCacheButton.onEvent("click", async () => {
@@ -289,7 +293,7 @@ async function updateTexturePreview() {
 }
 async function translatePage(language, generateTranslations = false) {
 	let translatableEls = document.documentElement.getAllChildren().filter(el => [...el.attributes].some(attr => attr.name.startsWith("data-translate")));
-	await translate(42, language); // translation file prefetch
+	await loadTranslationLanguage(language);
 	let translations = generateTranslations? await fetch(`translations/${language}.json`).then(res => res.jsonc()) : {};
 	await Promise.all(translatableEls.map(async el => {
 		if("translate" in el.dataset) {
@@ -297,13 +301,13 @@ async function translatePage(language, generateTranslations = false) {
 			if(generateTranslations) {
 				translations[translationKey] = el.innerHTML.replaceAll("<code>", "`").replaceAll("</code>", "`").replaceAll(/<a href="([^"]+)"[^>]*>([^<]+)<\/a>/g, "[$2]($1)");
 			} else {
-				let translation = await translate(translationKey, language);
+				let translation = translate(translationKey, language);
 				if(translation != undefined) {
 					el.innerHTML = performTranslationSubstitutions(el, translation);
 				} else {
 					console.warn(`Couldn't find translation for ${translationKey} for language ${language}!`);
 					if(el.innerHTML == "") {
-						let englishTranslation = await translate(translationKey, "en");
+						let englishTranslation = translate(translationKey, "en");
 						if(englishTranslation) {
 							el.innerHTML = performTranslationSubstitutions(el, englishTranslation);
 						} else {
@@ -319,13 +323,13 @@ async function translatePage(language, generateTranslations = false) {
 			if(generateTranslations) {
 				translations[translationKey] = el.getAttribute(targetAttrName);
 			} else {
-				let translation = await translate(translationKey, language);
+				let translation = translate(translationKey, language);
 				if(translation != undefined) {
 					el.setAttribute(targetAttrName, performTranslationSubstitutions(el, translation));
 				} else {
 					console.warn(`Couldn't find translation for ${translationKey} for language ${language}!`);
 					if(!el.hasAttribute(targetAttrName)) {
-						let englishTranslation = await translate(translationKey, "en");
+						let englishTranslation = translate(translationKey, "en");
 						if(englishTranslation) {
 							el.setAttribute(targetAttrName, performTranslationSubstitutions(el, englishTranslation));
 						} else {
@@ -349,10 +353,10 @@ function performTranslationSubstitutions(el, translation) {
 	}
 	return translation;
 }
-async function translateCurrentLanguage(translationKey) {
-	let translation = await translate(translationKey, languageSelector.value);
+function translateCurrentLanguage(translationKey) {
+	let translation = translate(translationKey, languageSelector.value);
 	if(!translation) {
-		translation = await translate(translationKey, "en");
+		translation = translate(translationKey, "en");
 		if(translation) {
 			console.warn(`Couldn't find translation for ${translationKey} for language ${languageSelector.value}!`);
 		} else {
@@ -606,17 +610,17 @@ customElements.define("item-criteria-input", class extends HTMLElement {
 		});
 	}
 	
-	async #reportFormState() {
+	#reportFormState() {
 		this.internals.setFormValue(this.value);
 		let allInputs = [...this.#criteriaInputsCont.selectEls("input")];
 		if(allInputs.length == 0) {
 			this.internals.setValidity({
 				tooShort: true
-			}, await translateCurrentLanguage("item_criteria_input.error.empty"));
+			}, translateCurrentLanguage("item_criteria_input.error.empty"));
 		} else if(allInputs.some(el => !el.validity.valid)) {
 			this.internals.setValidity({
 				patternMismatch: true
-			}, await translateCurrentLanguage("item_criteria_input.error.invalid"));
+			}, translateCurrentLanguage("item_criteria_input.error.invalid"));
 		} else {
 			this.internals.setValidity({});
 		}

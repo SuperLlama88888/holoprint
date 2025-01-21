@@ -17,6 +17,7 @@
 	"metadata.heading": "Metadata",
 	"metadata.pack_icon": "Pack icon (`*.png`):",
 	"metadata.pack_name": "Pack name:",
+	"metadata.pack_name.error": "Pack name cannot contain '/'",
 	"metadata.reset": "Metadata reset!",
 	"metadata.structure_author": "Structure author:",
 	"metadata.structure_author.placeholder": "MinecraftLover123",
