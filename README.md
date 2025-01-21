@@ -20,11 +20,11 @@ HoloPrint is a web app that converts MCBE structure files into resource packs sh
 ![Placing armour stand](assets/placingArmourStand.gif)
 
 ### Hologram controls ([Wiki](https://github.com/SuperLlama88888/holoprint/wiki/1.-Usage-instructions#hologram-controls))
-- Toggle rendering: Stone  
+- Toggle rendering: Brick  
 ![Toggling rendering](assets/togglingRendering.gif)
-- Change transparency: Glass (sneak to decrease, stand to increase)  
+- Change transparency: Amethyst shard (sneak to decrease, stand to increase)  
 ![Changing transparency](assets/changingTransparency.gif)
-- Change layer: Planks (sneak to decrease, stand to increase), or changing the pose on the armour stand  
+- Change layer: Leather (sneak to decrease, stand to increase), or changing the pose on the armour stand  
 ![Changing layer](assets/changingLayer.gif)
 - Move hologram: Stick  
 ![Moving hologram](assets/movingHologram.gif)
@@ -36,7 +36,7 @@ HoloPrint is a web app that converts MCBE structure files into resource packs sh
 ![Material list](assets/materialList.gif)
 - Toggle tint: White dye  
 ![Toggle tint](assets/togglingTint.gif)
-- Change layer mode: Wooden slab  
+- Change layer mode: Flint  
 ![Change layer mode](assets/changingLayerMode.gif)
 - Change structure: Arrow, or hit armour stand that's holding nothing  
 ![Changing structure](assets/changingStructure.gif)

@@ -673,7 +673,7 @@ customElements.define("item-criteria-input", class extends HTMLElement {
 	};
 	#removeConsecutiveOrSpacers() {
 		[...this.#criteriaInputsCont.children].forEach(node => {
-			if(node instanceof HTMLSpanElement && (node.previousSibling instanceof HTMLSpanElement || !node.previousSibling || !node.nextSibling)) {
+			if(node instanceof HTMLSpanElement && (node.previousSibling instanceof HTMLSpanElement || node.nextSibling instanceof HTMLSpanElement || !node.previousSibling || !node.nextSibling)) {
 				node.remove();
 			}
 		});

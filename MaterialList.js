@@ -91,7 +91,8 @@ export default class MaterialList {
 		"item.skeleton_skull": "item.skull.skeleton",
 		"item.wither_skeleton_skull": "item.skull.wither",
 		"item.zombie_head": "item.skull.zombie",
-		"item.cocoa_beans": "item.dye.brown"
+		"item.cocoa_beans": "item.dye.brown",
+		"item.white_dye": "item.dye.white_new"
 	};
 	static #blockSerializationIdPatches = {
 		"end_gateway": "tile.end_gateway" // despite still existing, end gateways were removed from mojang-blocks.json in 1.21.50...

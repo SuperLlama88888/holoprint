@@ -30,13 +30,13 @@ export const PLAYER_CONTROL_NAMES = {
 	BACKUP_HOLOGRAM: "player_controls.backup_hologram"
 };
 export const DEFAULT_PLAYER_CONTROLS = {
-	TOGGLE_RENDERING: createItemCriteria("stone"),
-	CHANGE_OPACITY: createItemCriteria("glass"),
+	TOGGLE_RENDERING: createItemCriteria("brick"),
+	CHANGE_OPACITY: createItemCriteria("amethyst_shard"),
 	TOGGLE_TINT: createItemCriteria("white_dye"),
 	TOGGLE_VALIDATING: createItemCriteria("iron_ingot"),
-	CHANGE_LAYER: createItemCriteria([], "planks"),
-	DECREASE_LAYER: createItemCriteria([], "logs"),
-	CHANGE_LAYER_MODE: createItemCriteria([], "wooden_slabs"),
+	CHANGE_LAYER: createItemCriteria("leather"),
+	DECREASE_LAYER: createItemCriteria("feather"),
+	CHANGE_LAYER_MODE: createItemCriteria("flint"),
 	MOVE_HOLOGRAM: createItemCriteria("stick"),
 	ROTATE_HOLOGRAM: createItemCriteria("copper_ingot"),
 	CHANGE_STRUCTURE: createItemCriteria("arrow"),
@@ -598,7 +598,7 @@ export async function makePack(structureFiles, config = {}, resourcePackStack, p
 	let pack = new ZipWriter(packFileWriter);
 	let packFiles = [];
 	if(structureFiles.length == 1) {
-		packFiles.push([".mcstructure", new BlobReader(structureFiles[0]), structureFiles[0].name]);
+		packFiles.push([".mcstructure", structureFiles[0], structureFiles[0].name]);
 	} else {
 		packFiles.push(...structureFiles.map((structureFile, i) => [`${i}.mcstructure`, structureFile, structureFile.name]));
 	}

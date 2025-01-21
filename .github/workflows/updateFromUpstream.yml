@@ -21,16 +21,3 @@ jobs:
           echo "latest_tag=$latest_tag" >> $GITHUB_ENV
           git push origin upstream/main:main
           git push origin --tags
-      - name: Trigger bundle and deployment workflow
-        uses: actions/github-script@v6
-        with:
-          github-token: ${{ secrets.PAT }}
-          script: |
-            let latestTag = process.env.latest_tag;
-            let res = await github.rest.actions.createWorkflowDispatch({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              workflow_id: 'bundleAndDeploy.yml',
-              ref: latestTag
-            });
-            console.log(`Bundle and deployment workflow triggered with status ${res.status}`);
