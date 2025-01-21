@@ -195,18 +195,26 @@ export function stringToImageData(text, textCol = "black", backgroundCol = "whit
 	ctx.fillText(text, 0, 15);
 	return ctx.getImageData(0, 0, can.width, can.height);
 }
+
+let translationLanguages = {};
+export async function loadTranslationLanguage(language) {
+	translationLanguages[language] ??= await fetch(`translations/${language}.json`).then(res => res.jsonc()).catch(() => {
+		console.warn(`Failed to load language ${language} for translations!`);
+		return {};
+	});
+}
 /**
  * Looks up a translation from translations/`language`.json
  * @param {String} translationKey
  * @param {String} language
- * @returns {Promise<String|undefined>}
+ * @returns {String|undefined}
  */
-export async function translate(translationKey, language) {
-	translate[language] ??= await fetch(`translations/${language}.json`).then(res => res.jsonc()).catch(() => {
-		console.warn(`Failed to load language ${language} for translations!`);
-		return {};
-	});
-	return translate[language]?.[translationKey]?.replaceAll(/`([^`]+)`/g, "<code>$1</code>")?.replaceAll(/\[([^\]]+)\]\(([^\)]+)\)/g, `<a href="$2" target="_blank">$1</a>`);
+export function translate(translationKey, language) {
+	if(!(language in translationLanguages)) {
+		console.error(`Language ${language} not loaded for translation!`);
+		return undefined;
+	}
+	return translationLanguages[language][translationKey]?.replaceAll(/`([^`]+)`/g, "<code>$1</code>")?.replaceAll(/\[([^\]]+)\]\(([^\)]+)\)/g, `<a href="$2" target="_blank">$1</a>`);
 }
 
 export function getStackTrace(e = new Error()) {
