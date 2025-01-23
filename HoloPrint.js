@@ -1045,10 +1045,10 @@ function addBlockValidationParticles(hologramAnimationControllers, structureI, b
 		validateAllState["particle_effects"].push(particleEffect);
 		validationStates[animationStateName]["particle_effects"].push(particleEffect);
 	});
-	for(let y = 0; y < structureSize[1]; y++) {
+	for(let y = 0; y < structureSize[1]; y++) { // layers with no blocks to validate don't have an animation controller state, so transitions to the default state need to be added for when it's on these empty layers
 		if(!layersWithBlocksToValidate.includes(y)) {
 			Object.entries(validationStates).forEach(([validationStateName, validationState]) => {
-				if(validationStateName != "default") {
+				if(validationStateName.startsWith(`validate_${structureI}`)) {
 					validationState["transitions"][0]["default"] += ` || v.hologram.layer == ${y}`;
 				}
 			});

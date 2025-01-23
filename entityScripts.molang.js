@@ -30,6 +30,7 @@ export function armorStandInitialization() {
 	v.last_hurt_direction = q.hurt_direction;
 	// v.player_action_counter = t.player_action_counter ?? 0;
 	v.player_action_counter = 0;
+	v.hologram_dir = 0;
 	
 	v.spawn_time = q.time_stamp;
 	v.player_has_interacted = false;
