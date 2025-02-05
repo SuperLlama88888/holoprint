@@ -9,6 +9,7 @@ jobs:
   bundle:
     name: Bundle and Minify
     runs-on: ubuntu-latest
+    if: github.repository == 'HoloPrint-MC/holoprint-mc.github.io'
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4.1.1
@@ -20,7 +21,7 @@ jobs:
         run: |
           npm install -g esbuild html-minifier clean-css-cli strip-json-comments-cli json-minify
           external_modules=$(awk '/<script type="importmap">/,/<\/script>/' index.html | sed -n '2,$p' | sed '$d' | jq -r '.imports | keys[]' | awk '{printf "--external:%s ", $0}') # ChatGPT says this is how to get all imports from index.html
-          esbuild --bundle --define:VERSION='"${TAG_NAME}"' --external:./entityScripts.molang.js $external_modules --format=esm --minify --outdir=. --allow-overwrite --sourcemap --analyze --metafile=esbuild_meta.json index.js
+          esbuild --bundle --external:./entityScripts.molang.js $external_modules --format=esm --minify --outdir=. --allow-overwrite --sourcemap --analyze --metafile=esbuild_meta.json index.js
           find . -type f | while read file; do
             if [[ $file == *.html ]]; then
               echo "Minifying $file"
@@ -69,7 +70,6 @@ jobs:
         uses: actions/deploy-pages@v4.0.5
   update-fork:
     name: Update Fork (HoloPrint-MC)
-    needs: deploy
     runs-on: ubuntu-latest
     if: github.repository == 'SuperLlama88888/holoprint'
     steps:
