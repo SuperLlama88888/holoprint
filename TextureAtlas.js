@@ -400,6 +400,7 @@ export default class TextureAtlas {
 	/**
 	 * Stitches together images with widths and heights, and puts the UV coordinates and sizes into the textureUvs property.
 	 * @param {Array<ImageFragment>} imageFragments
+	 * @returns {Array<{ uv: [Number, Number], uv_size: [Number, Number], crop: Object|undefined }>}
 	 */
 	async #stitchTextureAtlas(imageFragments) {
 		imageFragments.forEach((imageFragment, i) => {
@@ -409,7 +410,7 @@ export default class TextureAtlas {
 			// fractional dimensions don't work with js canvas, so we need to extract the full part of the texture we need, but keep the uv positions fractional
 			if(!Number.isInteger(imageFragment["sourceX"])) {
 				imageFragment["offset"][0] = imageFragment["sourceX"] % 1;
-				imageFragment["w"] += imageFragment["offset"][1];
+				imageFragment["w"] += imageFragment["offset"][0];
 				imageFragment["sourceX"] = floor(imageFragment["sourceX"]);
 			}
 			if(!Number.isInteger(imageFragment["sourceY"])) {

@@ -538,6 +538,7 @@ export async function makePack(structureFiles, config = {}, resourcePackStack, p
 			"$background_opacity": i % 2 * 0.2
 		}
 	})));
+	let highestItemCount = max(...finalisedMaterialList.map(({ count }) => count));
 	let longestItemNameLength = max(...finalisedMaterialList.map(({ translatedName }) => translatedName.length));
 	let longestCountLength = max(...finalisedMaterialList.map(({ partitionedCount }) => partitionedCount.length));
 	if(longestItemNameLength + longestCountLength >= 47) {
@@ -629,7 +630,9 @@ export async function makePack(structureFiles, config = {}, resourcePackStack, p
 		packFiles.push([`textures/entity/${textureName}.png`, blob]);
 	});
 	packFiles.push(["ui/hud_screen.json", JSON.stringify(hudScreenUI)]);
-	packFiles.push(["font/glyph_E2.png", await customEmojiFont.toBlob()]);
+	if(highestItemCount >= 1728) {
+		packFiles.push(["font/glyph_E2.png", await customEmojiFont.toBlob()]);
+	}
 	packFiles.push(["texts/languages.json", JSON.stringify(languagesDotJson)]);
 	languageFiles.forEach(([language, languageFile]) => {
 		packFiles.push([`texts/${language}.lang`, languageFile]);
@@ -791,6 +794,14 @@ export function addDefaultConfig(config) {
 		}
 	});
 }
+/**
+ * Expands the block version number found in structure NBT into an array.
+ * @param {Number} blockVersion Block version number as found in structure NBT
+ * @returns {Array<Number>}
+ */
+export function parseBlockVersion(blockVersion) {
+	return blockVersion.toString(16).padStart(8, 0).match(/.{2}/g).map(x => parseInt(x, 16));
+}
 
 /**
  * Reads the NBT of a structure file, returning a JSON object.
@@ -866,7 +877,7 @@ function tweakBlockPalette(structure, ignoredBlocks) {
 			delete block["states"]; // easier viewing
 		}
 	});
-	console.log("Block versions:", [...blockVersions], [...blockVersions].map(v => v.toString(16).padStart(8, 0).match(/.{2}/g).map(x => parseInt(x, 16)).join(".")));
+	console.log("Block versions:", [...blockVersions], [...blockVersions].map(v => parseBlockVersion(v).join(".")));
 	
 	// add block entities into the block palette (on layer 0)
 	let indices = structure["block_indices"].map(layer => structuredClone(layer).map(i => +i));
@@ -1469,6 +1480,7 @@ function stringifyWithFixedDecimals(value) {
  * @property {Number} h Height
  * @property {Number} sourceX
  * @property {Number} sourceY
+ * @property {{ x: Number, y: Number, w: Number, h: Number }} crop
  */
 /**
  * An entry in a material list.

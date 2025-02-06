@@ -249,7 +249,7 @@ window.onEvent("load", () => { // shadow DOMs aren't populated in the DOMContent
 
 async function handleInputFiles(files) {
 	let structureFiles = files.filter(file => file.name.endsWith(".mcstructure"));
-	let resourcePacks = files.filter(file => file.name.endsWith(".mcpack"));
+	let resourcePacks = files.filter(file => file.name.endsWith(".mcpack") || file.name.endsWith(".zip"));
 	
 	for(let resourcePack of resourcePacks) {
 		let extractedStructureFiles = await HoloPrint.extractStructureFilesFromPack(resourcePack);
