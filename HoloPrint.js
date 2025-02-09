@@ -683,7 +683,9 @@ export async function makePack(structureFiles, config = {}, resourcePackStack, p
 		}
 	}
 	
-	return new File([zippedPack], `${packName}.holoprint.mcpack`);
+	return new File([zippedPack], `${packName}.holoprint.mcpack`, {
+		type: "application/mcpack"
+	});
 }
 /**
  * Retrieves the structure files from a completed HoloPrint resource pack.
