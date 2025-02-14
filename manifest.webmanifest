@@ -1,6 +1,7 @@
 {
 	"name": "HoloPrint",
-	"description": "Minecraft Bedrock build tool - generate holograms of your builds!",
+	"description": "Minecraft Bedrock build tool, like Litematica or Schematica. Create MCBE resource packs to show holograms of schematics. Make MCPE building easier!",
+	"categories": ["utilities"],
 	"icons": [
 		{
 			"src": "assets/logo_192.png",
@@ -26,6 +27,18 @@
 				"application/mcpack": [".mcpack"]
 			},
 			"action": "./?loadFile"
+		}
+	],
+	"screenshots": [
+		{
+			"src": "assets/banner_1200x630.png",
+			"sizes": "1200x630",
+			"form_factor": "wide"
+		},
+		{
+			"src": "assets/logo_512.png",
+			"sizes": "512x512",
+			"form_factor": "narrow"
 		}
 	]
 }
