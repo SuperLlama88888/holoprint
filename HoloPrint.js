@@ -7,7 +7,7 @@ import MaterialList from "./MaterialList.js";
 import PreviewRenderer from "./PreviewRenderer.js";
 
 import * as entityScripts from "./entityScripts.molang.js";
-import { awaitAllEntries, concatenateFiles, createEnum, exp, hexColorToClampedTriplet, JSONMap, JSONSet, max, min, pi, round, sha256, translate } from "./essential.js";
+import { awaitAllEntries, concatenateFiles, createEnum, exp, floor, hexColorToClampedTriplet, JSONMap, JSONSet, max, min, pi, round, sha256, translate } from "./essential.js";
 import ResourcePackStack from "./ResourcePackStack.js";
 
 const VERSION = "dev";
@@ -1213,12 +1213,21 @@ function itemCriteriaToMolang(itemCriteria, slot = "slot.weapon.mainhand") {
 }
 /**
  * Creates a Molang expression that mimics array access. Defaults to the last element if nothing is found.
- * @param {Array} array
+ * @param {Array} array A continuous array
  * @param {String} indexVar
  * @returns {String}
  */
-function arrayToMolang(array, indexVar) {
-	return array.map((el, i) => i == array.length - 1? el : `${i > 0? "(" : ""}${indexVar}==${i}?${el}:`).join("") + ")".repeat(max(array.length - 2, 0));
+export function arrayToMolang(array, indexVar) {
+	let arrayEntries = Object.entries(array); // to handle splitting, original indices need to be preserved, hence looking at index-value pairs
+	return arrayEntriesToMolang(arrayEntries, indexVar);
+}
+function arrayEntriesToMolang(entries, indexVar) {
+	const splittingThreshold = 50;
+	if(entries.length > splittingThreshold) { // large arrays cause Molang stack overflows, so this splits them in half in such a situation.
+		let middle = floor(entries.length / 2);
+		return `${indexVar}<${entries[middle][0]}?(${arrayEntriesToMolang(entries.slice(0, middle), indexVar)}):(${arrayEntriesToMolang(entries.slice(middle), indexVar)})`;
+	}
+	return entries.map(([index, value], i) => i == entries.length - 1? value : `${i > 0? "(" : ""}${indexVar}==${index}?${value}:`).join("") + ")".repeat(max(entries.length - 2, 0));
 }
 /**
  * Creates a Molang expression that mimics 2D array access.
