@@ -72,13 +72,13 @@ async function test() {
 			if(["hard_", "element_", "colored_torch_"].some(prefix => blockName.startsWith(prefix)) || ["chemical_heat", "compound_creator", "lab_table", "material_reducer", "underwater_torch"].includes(blockName)) { // chemistry features
 				return;
 			}
-			if(HoloPrint.IGNORED_BLOCKS.includes(blockName) || HoloPrint.IGNORED_MATERIAL_LIST_BLOCKS.includes(blockName)) {
+			if(HoloPrint.IGNORED_BLOCKS.includes(blockName)) {
 				return;
 			}
 			blockNames.push(blockName);
 		});
 
-		let materialList = new MaterialList(blockMetadata, itemMetadata, translationFile);
+		let materialList = await new MaterialList(blockMetadata, itemMetadata, translationFile);
 		blockNames.forEach(blockName => materialList.add(blockName));
 		console.log(JSON.stringify(materialList.export()));
 	});

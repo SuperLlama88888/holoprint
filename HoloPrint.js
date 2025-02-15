@@ -13,7 +13,6 @@ import ResourcePackStack from "./ResourcePackStack.js";
 const VERSION = "dev";
 
 export const IGNORED_BLOCKS = ["air", "piston_arm_collision", "sticky_piston_arm_collision"]; // blocks to be ignored when scanning the structure file
-export const IGNORED_MATERIAL_LIST_BLOCKS = ["bubble_column"]; // blocks that will always be hidden on the material list
 const IGNORED_BLOCK_ENTITIES = ["Beacon", "Beehive", "Bell", "BrewingStand", "ChiseledBookshelf", "CommandBlock", "Comparator", "Conduit", "EnchantTable", "EndGateway", "JigsawBlock", "Lodestone", "SculkCatalyst", "SculkShrieker", "SculkSensor", "CalibratedSculkSensor", "StructureBlock", "BrushableBlock", "TrialSpawner", "Vault"];
 export const PLAYER_CONTROL_NAMES = {
 	TOGGLE_RENDERING: "player_controls.toggle_rendering",
@@ -219,7 +218,7 @@ export async function makePack(structureFiles, config = {}, resourcePackStack, p
 	let totalBlocksToValidateByStructureByLayer = [];
 	let uniqueBlocksToValidate = new Set();
 	
-	let materialList = new MaterialList(blockMetadata, itemMetadata, translationFile);
+	let materialList = await new MaterialList(blockMetadata, itemMetadata, translationFile);
 	allStructureIndicesByLayer.forEach((structureIndicesByLayer, structureI) => {
 		let structureSize = structureSizes[structureI];
 		let geoShortName = `hologram_${structureI}`;
@@ -561,7 +560,7 @@ export async function makePack(structureFiles, config = {}, resourcePackStack, p
 	let inGameControls;
 	if(JSON.stringify(config.CONTROLS) != JSON.stringify(DEFAULT_PLAYER_CONTROLS)) { // add controls to pack description only if they've been changed
 		// make a fake material list for the in-game control items
-		let controlsMaterialList = new MaterialList(blockMetadata, itemMetadata, translationFile);
+		let controlsMaterialList = await new MaterialList(blockMetadata, itemMetadata, translationFile);
 		inGameControls = "";
 		for(let [control, itemCriteria] of Object.entries(config.CONTROLS)) {
 			itemCriteria["names"].forEach(itemName => controlsMaterialList.addItem(itemName));
@@ -788,7 +787,6 @@ export function addDefaultConfig(config) {
 		...config,
 		...{ // overrides (applied after)
 			IGNORED_BLOCKS: IGNORED_BLOCKS.concat(config.IGNORED_BLOCKS ?? []),
-			IGNORED_MATERIAL_LIST_BLOCKS: IGNORED_MATERIAL_LIST_BLOCKS.concat(config.IGNORED_MATERIAL_LIST_BLOCKS ?? []),
 			CONTROLS: {
 				...DEFAULT_PLAYER_CONTROLS,
 				...config.CONTROLS

@@ -40,5 +40,6 @@
 			"additionalProperties": false
 		}
 	},
+	"required": ["patterns", "individual_blocks"],
 	"additionalProperties": false
 }

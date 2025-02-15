@@ -3,57 +3,12 @@ import TGALoader from "tga-js"; // We could use dynamic import as this isn't use
 import potpack from "potpack";
 import ResourcePackStack from "./ResourcePackStack.js";
 
-const foliageTint = hexColorToClampedTriplet("#79C05A");
-const waterTint = hexColorToClampedTriplet("#44AFF5");
-
 export default class TextureAtlas {
-	/** Block IDs from the structure file that need to be remapped to something else in blocks.json, _._ means variants */
-	static #blocksDotJsonPatches = { // caused mainly by bugs like MCPE-186255 and MCPE-177977. ideally this doesn't exist.
-		"grass_block": "grass",
-		"trip_wire": "tripWire",
-		"sea_lantern": "seaLantern",
-		"oak_planks": "planks.0",
-		"spruce_planks": "planks.1",
-		"birch_planks": "planks.2",
-		"jungle_planks": "planks.3",
-		"acacia_planks": "planks.4",
-		"dark_oak_planks": "planks.5" // check this works
-	};
-	
-	// All the blocks in blocks.json that should use carried textures
-	// to check: calibrated_sculk_sensor, sculk_sensor, sculk_shrieker
-	static #blocksDotJsonCarriedTextures = ["acacia_leaves", "birch_leaves", "dark_oak_leaves", "fern", "jungle_leaves", "leaves", "leaves2", "light_block", "light_block_0", "light_block_1", "light_block_2", "light_block_3", "light_block_4", "light_block_5", "light_block_6", "light_block_7", "light_block_8", "light_block_9", "light_block_10", "light_block_11", "light_block_12", "light_block_13", "light_block_14", "light_block_15", "mangrove_leaves", "oak_leaves", "open_eyeblossom", "short_grass", "spruce_leaves", "vine", "waterlily"];
-	
-	/** Blocks that are transparent and need a certain opacity applied to them */
-	static #transparentBlocks = {
-		"water": 0.65,
-		"flowing_water": 0.65,
-		"slime": 0.8,
-		"respawn_anchor": 2 // the nether portal in the top of respawn anchors is slightly transparent in the image for some reason; this just makes it fully opaque
-	};
-	
-	/** Terrain texture keys that should lead to a texture path always, instead of what's in terrain_texture.json */
-	static #terrainTexturePatches = {
-		"grass_carried": "textures/blocks/grass_side_carried"
-		// we could add portal -> portal_placeholder.png which is a single frame of the portal animated texture (looks like the 1st frame), but it deals with flipbook textures anyway later on
-	};
-	
-	/** File paths of flipbook textures that aren't used in-game because they're missing from flipbook_textures.json, but we need to register them because of UV mapping */
-	static #extraFlipbookTextures = ["textures/blocks/soul_lantern"]; // https://bugs.mojang.com/browse/MCPE-89643
-	
-	static #terrainTextureTints = {
-		"grass_top": foliageTint, // tinting in terrain_texture.json is only for grass_side...
-		"tall_grass_bottom": foliageTint,
-		"tall_grass_top": foliageTint,
-		"large_fern_bottom": foliageTint,
-		"large_fern_top": foliageTint,
-		"flowing_water_grey": waterTint,
-		"flowing_water": waterTint,
-		"still_water_grey": waterTint,
-		"still_water": waterTint,
-	};
-	/** All terrain texture keys that are tinted but should be tinted how PNGs are, despite loading TGA images. */
-	static #terrainTextureTintsLikePng = ["tall_grass_bottom", "tall_grass_top", "large_fern_bottom", "large_fern_top"];
+	#blocksDotJsonPatches;
+	#blocksToUseCarriedTextures;
+	#transparentBlocks;
+	#terrainTexturePatches;
+	#terrainTextureTints;
 	
 	#blocksDotJson;
 	#terrainTexture;
@@ -88,16 +43,24 @@ export default class TextureAtlas {
 			this.config = config;
 			this.resourcePackStack = resourcePackStack;
 			
-			let { blocksDotJson, terrainTexture, flipbookTextures } = await awaitAllEntries({
+			let { blocksDotJson, terrainTexture, flipbookTextures, textureAtlasMappings } = await awaitAllEntries({
 				blocksDotJson: this.resourcePackStack.fetchResource("blocks.json").then(res => res.jsonc()),
 				terrainTexture: this.resourcePackStack.fetchResource("textures/terrain_texture.json").then(res => res.jsonc()),
-				flipbookTextures: this.resourcePackStack.fetchResource("textures/flipbook_textures.json").then(res => res.jsonc())
+				flipbookTextures: this.resourcePackStack.fetchResource("textures/flipbook_textures.json").then(res => res.jsonc()),
+				/** @type {import("./data/textureAtlasMappings.json")} */
+				textureAtlasMappings: fetch("data/textureAtlasMappings.json").then(res => res.jsonc())
 			})
 			this.#blocksDotJson = blocksDotJson;
 			this.#terrainTexture = terrainTexture;
 			
+			this.#blocksDotJsonPatches = textureAtlasMappings["blocks_dot_json_patches"];
+			this.#blocksToUseCarriedTextures = textureAtlasMappings["blocks_to_use_carried_textures"];
+			this.#transparentBlocks = textureAtlasMappings["transparent_blocks"];
+			this.#terrainTexturePatches = textureAtlasMappings["terrain_texture_patches"];
+			this.#terrainTextureTints = textureAtlasMappings["terrain_texture_tints"];
+			
 			this.#flipbookTexturesAndSizes = new Map();
-			TextureAtlas.#extraFlipbookTextures.forEach(terrainTextureKey => {
+			textureAtlasMappings["missing_flipbook_textures"].forEach(terrainTextureKey => {
 				this.#flipbookTexturesAndSizes.set(terrainTextureKey, 1);
 			});
 			flipbookTextures.map(entry => {
@@ -121,7 +84,7 @@ export default class TextureAtlas {
 		textureRefs.forEach(textureRef => {
 			let texturePath;
 			let tint = textureRef["tint"];
-			let tintLikePng;
+			let tintLikePng = false;
 			let opacity = 1;
 			if("texture_path_override" in textureRef) {
 				texturePath = textureRef["texture_path_override"];
@@ -139,12 +102,20 @@ export default class TextureAtlas {
 					texturePath = this.#getTexturePathAndTint("missing", -1)["texturePath"];
 				}
 				
-				tint ??= TextureAtlas.#terrainTextureTints[terrainTextureKey];
-				if(tint && TextureAtlas.#terrainTextureTintsLikePng.includes(terrainTextureKey)) {
-					tintLikePng = true;
+				if(tint == undefined && terrainTextureKey in this.#terrainTextureTints["terrain_texture_keys"]) {
+					let tintColor = this.#terrainTextureTints["terrain_texture_keys"][terrainTextureKey];
+					if(typeof tintColor == "object") {
+						tintLikePng = tintColor["tint_like_png"];
+						tintColor = tintColor["tint"];
+					}
+					if(tintColor in this.#terrainTextureTints["colors"]) {
+						tint = hexColorToClampedTriplet(this.#terrainTextureTints["colors"][tintColor]);
+					} else {
+						console.error(`No tint color ${tintColor}`)
+					}
 				}
-				if(blockName in TextureAtlas.#transparentBlocks) {
-					opacity = TextureAtlas.#transparentBlocks[blockName];
+				if(blockName in this.#transparentBlocks) {
+					opacity = this.#transparentBlocks[blockName];
 				}
 			}
 			let textureFragment = {
@@ -189,10 +160,10 @@ export default class TextureAtlas {
 			return textureRef["terrain_texture_override"];
 		}
 		let blockName = textureRef["block_name"];
-		if(!(blockName in this.#blocksDotJson) && blockName in TextureAtlas.#blocksDotJsonPatches) {
-			blockName = TextureAtlas.#blocksDotJsonPatches[blockName];
+		if(!(blockName in this.#blocksDotJson) && blockName in this.#blocksDotJsonPatches) {
+			blockName = this.#blocksDotJsonPatches[blockName];
 			if(blockName?.includes(".")) {
-				// This is only from TextureAtlas.blocksDotJsonPatches to indicate patches
+				// This is only from this.blocksDotJsonPatches to indicate patches
 				textureRef["variant"] = +blockName.split(".")[1]; // Hacky but that's a future me problem
 				blockName = blockName.split(".")[0];
 			}
@@ -230,7 +201,7 @@ export default class TextureAtlas {
 				console.error(`No carried texture for ${blockName}!`, textureRef, blockEntry);
 			}
 		}
-		if(TextureAtlas.#blocksDotJsonCarriedTextures.includes(blockName)) {
+		if(this.#blocksToUseCarriedTextures.includes(blockName)) {
 			terrainTextureKeys = blockEntry["carried_textures"];
 			console.debug(`Using carried textures for ${blockName}`);
 			if(!terrainTextureKeys) {
@@ -266,9 +237,9 @@ export default class TextureAtlas {
 	 * @returns {{ texturePath: String, tint?: String }}
 	 */
 	#getTexturePathAndTint(terrainTextureKey, variant) {
-		if(terrainTextureKey in TextureAtlas.#terrainTexturePatches) {
+		if(terrainTextureKey in this.#terrainTexturePatches) {
 			// These are the hard-coded terrain texture patches if we want to make a terrain texture key lead to a texture path instead of what it would regularly lead to
-			let texturePath = TextureAtlas.#terrainTexturePatches[terrainTextureKey];
+			let texturePath = this.#terrainTexturePatches[terrainTextureKey];
 			console.debug(`Terrain texture key ${terrainTextureKey} remapped to texture path ${texturePath}`);
 			return texturePath;
 		}

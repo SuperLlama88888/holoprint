@@ -1,0 +1,62 @@
+// These are patches and other things for TextureAtlas.js
+{
+	"$schema": "schemas/textureAtlasMappings.schema.json",
+	
+	"blocks_dot_json_patches": { // caused mainly by bugs like MCPE-186255 and MCPE-177977. ideally this doesn't exist. can be generated with: const missingFromBlocksDotJson=async VER=>[...(new Set((await fetch(`https://raw.githubusercontent.com/Mojang/bedrock-samples/${VER}/metadata/vanilladata_modules/mojang-blocks.json`).then(r=>r.json())).data_items.map(x=>x.name.replace("minecraft:","")))).difference(new Set(Object.keys(await fetch(`https://raw.githubusercontent.com/Mojang/bedrock-samples/${VER}/resource_pack/blocks.json`).then(res=>res.json()))))].filter(blockName=>!(["hard_","element_","colored_torch_"].some(prefix=>blockName.startsWith(prefix))||["chemical_heat","compound_creator","lab_table","material_reducer","underwater_torch"].includes(blockName)))
+		"grass_block": "grass",
+		"trip_wire": "tripWire",
+		"sea_lantern": "seaLantern",
+		"oak_planks": "planks.0",
+		"spruce_planks": "planks.1",
+		"birch_planks": "planks.2",
+		"jungle_planks": "planks.3",
+		"acacia_planks": "planks.4",
+		"dark_oak_planks": "planks.5",
+		"unknown": "info_update", // shows missing_tile.png
+		"normal_stone_double_slab": "normal_stone_slab", // all these double slabs don't appear in blocks.json, so they are "redirected" to the regular slab textures. they should be the same anyway.
+		"smooth_quartz_double_slab": "smooth_quartz_slab",
+		"mossy_stone_brick_double_slab": "mossy_stone_brick_slab",
+		"cut_sandstone_double_slab": "cut_sandstone_slab",
+		"cut_red_sandstone_double_slab": "cut_red_sandstone_slab"
+	},
+	"blocks_to_use_carried_textures": ["acacia_leaves", "birch_leaves", "dark_oak_leaves", "fern", "jungle_leaves", "leaves", "leaves2", "light_block", "light_block_0", "light_block_1", "light_block_2", "light_block_3", "light_block_4", "light_block_5", "light_block_6", "light_block_7", "light_block_8", "light_block_9", "light_block_10", "light_block_11", "light_block_12", "light_block_13", "light_block_14", "light_block_15", "mangrove_leaves", "oak_leaves", "open_eyeblossom", "short_grass", "spruce_leaves", "vine", "waterlily"],
+	"transparent_blocks": {
+		"water": 0.65,
+		"flowing_water": 0.65,
+		"slime": 0.8,
+		"respawn_anchor": 2 // the nether portal in the top of respawn anchors is slightly transparent in the texture for some reason; this just makes it fully opaque
+	},
+	"terrain_texture_patches": {
+		"grass_carried": "textures/blocks/grass_side_carried"
+	},
+	"terrain_texture_tints": {
+		"colors": {
+			"foliage": "#79C05A",
+			"water": "#44AFF5"
+		},
+		"terrain_texture_keys": {
+			"grass_top": "foliage", // the tinting in terrain_texture.json is only for grass_side...
+			"tall_grass_bottom": {
+				"tint": "foliage",
+				"tint_like_png": true
+			},
+			"tall_grass_top": {
+				"tint": "foliage",
+				"tint_like_png": true
+			},
+			"large_fern_bottom": {
+				"tint": "foliage",
+				"tint_like_png": true
+			},
+			"large_fern_top": {
+				"tint": "foliage",
+				"tint_like_png": true
+			},
+			"flowing_water_grey": "water",
+			"flowing_water": "water",
+			"still_water_grey": "water",
+			"still_water": "water"
+		}
+	},
+	"missing_flipbook_textures": ["textures/blocks/soul_lantern"] // https://bugs.mojang.com/browse/MCPE-89643
+}

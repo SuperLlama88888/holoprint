@@ -122,7 +122,7 @@
 									{
 										"description": "A file path to a texture file, without the file extension.",
 										"type": "string",
-										"pattern": "^textures/.+[^/]$"
+										"pattern": "^textures/.*[^/]$"
 									}
 								]
 							}

@@ -82,6 +82,7 @@
 			"additionalProperties": false
 		}
 	},
+	"required": ["texture_variants", "rotations"],
 	"additionalProperties": false,
 	
 	"definitions": {

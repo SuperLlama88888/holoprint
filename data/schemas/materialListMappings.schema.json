@@ -1,0 +1,104 @@
+{
+	"$schema": "http://json-schema.org/draft-07/schema#",
+	"title": "Material list mappings",
+	"description": "Patches and other mappings for MaterialList.js.",
+	"type": "object",
+	"properties": {
+		"$schema": {
+			"type": "string"
+		},
+		"ignored_blocks": {
+			"description": "An array of blocks that will be ignored and will not be put in material lists.",
+			"type": "array",
+			"items": {
+				"description": "Block name",
+				"type": "string",
+				"minLength": 1
+			}
+		},
+		"block_to_item_mappings": {
+			"description": "Blocks that have a different item name.",
+			"type": "object",
+			"patternProperties": {
+				"^\\w+$": {
+					"description": "\"block_name\": \"item_name\"",
+					"type": "string",
+					"minLength": 1
+				}
+			},
+			"additionalProperties": false
+		},
+		"item_count_multipliers": {
+			"description": "Items that will have their count multiplied by a certain amount.",
+			"type": "object",
+			"patternProperties": {
+				"^(\\w+|/[^,]+/)(,(\\w+|/[^,]+/))*$": {
+					"oneOf": [
+						{
+							"description": "Multiplier.",
+							"type": "number",
+							"exclusiveMinimum": 0
+						},
+						{
+							"description": "Item names separated by commas. Regular expressions can be used with /.../.",
+							"type": "object",
+							"properties": {
+								"multiplier": {
+									"description": "Multiplier.",
+									"type": "number",
+									"exclusiveMinimum": 0
+								},
+								"remove": {
+									"description": "Will remove all instances of this from the item name.",
+									"type": "string",
+									"minLength": 1
+								}
+							},
+							"required": ["multiplier", "remove"],
+							"additionalProperties": false
+						}
+					]
+				}
+			},
+			"additionalProperties": false
+		},
+		"serialization_id_patches": {
+			"description": "Remappings for serialization_ids that go to the wrong things in .lang files.",
+			"type": "object",
+			"patternProperties": {
+				"^(tile|item)\\.\\w+$": {
+					"description": "Serialization ID.",
+					"type": "string",
+					"pattern": "^(tile|item)\\.[\\w.]+$"
+				}
+			},
+			"additionalProperties": false
+		},
+		"blocks_missing_serialization_ids": {
+			"description": "Patches for blocks that don't have any serialization ID due to not existing in mojang-blocks.json despite existing in-game.",
+			"type": "object",
+			"patternProperties": {
+				"^\\w+$": {
+					"description": "\"block_name\": \"serialization_id\"",
+					"type": "string",
+					"minLength": 1
+				}
+			},
+			"additionalProperties": false
+		},
+		"translation_patches": {
+			"description": "Translations that don't exist for whatever reason.",
+			"type": "object",
+			"patternProperties": {
+				"^(tile|item)\\.[\\w.]+$": {
+					"description": "\"serialization_id\": \"Translated Item Name\"",
+					"type": "string",
+					"minLength": 1
+				}
+			},
+			"additionalProperties": false
+		}
+	},
+	"required": ["ignored_blocks", "block_to_item_mappings", "item_count_multipliers", "serialization_id_patches", "blocks_missing_serialization_ids", "translation_patches"],
+	"additionalProperties": false
+}
