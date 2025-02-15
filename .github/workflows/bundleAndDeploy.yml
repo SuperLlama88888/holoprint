@@ -25,7 +25,7 @@ jobs:
           find . -type f | while read file; do
             if [[ $file == *.html ]]; then
               echo "Minifying $file"
-              html-minifier --remove-comments --collapse-whitespace --remove-optional-tags ${file} > temp && mv temp ${file}
+              html-minifier --remove-comments --collapse-whitespace ${file} > temp && mv temp ${file}
             elif [[ $file == *.css ]]; then
               echo "Minifying $file"
               cleancss -O2 ${file} > temp && mv temp ${file}
