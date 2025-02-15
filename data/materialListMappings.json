@@ -57,7 +57,17 @@
 		"wall_banner": "standing_banner",
 		"cave_vines": "glow_berries",
 		"cave_vines_body_with_berries": "glow_berries",
-		"cave_vines_head_with_berries": "glow_berries"
+		"cave_vines_head_with_berries": "glow_berries",
+		"brain_coral_wall_fan": "brain_coral_fan",
+		"bubble_coral_wall_fan": "bubble_coral_fan",
+		"fire_coral_wall_fan": "fire_coral_fan",
+		"horn_coral_wall_fan": "horn_coral_fan",
+		"tube_coral_wall_fan": "tube_coral_fan",
+		"dead_brain_coral_wall_fan": "dead_brain_coral_fan",
+		"dead_bubble_coral_wall_fan": "dead_bubble_coral_fan",
+		"dead_fire_coral_wall_fan": "dead_fire_coral_fan",
+		"dead_horn_coral_wall_fan": "dead_horn_coral_fan",
+		"dead_tube_coral_wall_fan": "dead_tube_coral_fan"
 	},
 	"item_count_multipliers": {
 		"/double_.*slab$/": {
