@@ -64,19 +64,10 @@ export function armorStandPreAnimation() {
 			}
 		}
 	}
-	if(!v.hologram_activated) { // even though the subpack is called "punch to activate", changing the pose or giving an item will work as well
+	if(!v.hologram_activated) {
 		t.activate_hologram = false;
 		if(v.last_hurt_direction != q.hurt_direction) {
 			v.last_hurt_direction = q.hurt_direction;
-			t.activate_hologram = true;
-		} else if(v.last_pose != v.armor_stand.pose_index) {
-			v.last_pose = v.armor_stand.pose_index;
-			t.activate_hologram = true;
-		} else if(v.hologram.last_held_item != q.get_equipped_item_name) {
-			v.hologram.last_held_item = q.get_equipped_item_name;
-			t.activate_hologram = true;
-		}
-		if(t.activate_hologram) {
 			v.hologram_activated = true;
 			v.hologram.rendering = true;
 		} else {

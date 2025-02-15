@@ -7,13 +7,12 @@ import MaterialList from "./MaterialList.js";
 import PreviewRenderer from "./PreviewRenderer.js";
 
 import * as entityScripts from "./entityScripts.molang.js";
-import { awaitAllEntries, concatenateFiles, createEnum, exp, hexColorToClampedTriplet, JSONMap, JSONSet, max, min, pi, round, sha256, translate } from "./essential.js";
+import { awaitAllEntries, concatenateFiles, createEnum, exp, floor, hexColorToClampedTriplet, JSONMap, JSONSet, max, min, pi, round, sha256, translate } from "./essential.js";
 import ResourcePackStack from "./ResourcePackStack.js";
 
 const VERSION = "dev";
 
 export const IGNORED_BLOCKS = ["air", "piston_arm_collision", "sticky_piston_arm_collision"]; // blocks to be ignored when scanning the structure file
-export const IGNORED_MATERIAL_LIST_BLOCKS = ["bubble_column"]; // blocks that will always be hidden on the material list
 const IGNORED_BLOCK_ENTITIES = ["Beacon", "Beehive", "Bell", "BrewingStand", "ChiseledBookshelf", "CommandBlock", "Comparator", "Conduit", "EnchantTable", "EndGateway", "JigsawBlock", "Lodestone", "SculkCatalyst", "SculkShrieker", "SculkSensor", "CalibratedSculkSensor", "StructureBlock", "BrushableBlock", "TrialSpawner", "Vault"];
 export const PLAYER_CONTROL_NAMES = {
 	TOGGLE_RENDERING: "player_controls.toggle_rendering",
@@ -219,7 +218,7 @@ export async function makePack(structureFiles, config = {}, resourcePackStack, p
 	let totalBlocksToValidateByStructureByLayer = [];
 	let uniqueBlocksToValidate = new Set();
 	
-	let materialList = new MaterialList(blockMetadata, itemMetadata, translationFile);
+	let materialList = await new MaterialList(blockMetadata, itemMetadata, translationFile);
 	allStructureIndicesByLayer.forEach((structureIndicesByLayer, structureI) => {
 		let structureSize = structureSizes[structureI];
 		let geoShortName = `hologram_${structureI}`;
@@ -538,6 +537,7 @@ export async function makePack(structureFiles, config = {}, resourcePackStack, p
 			"$background_opacity": i % 2 * 0.2
 		}
 	})));
+	let highestItemCount = max(...finalisedMaterialList.map(({ count }) => count));
 	let longestItemNameLength = max(...finalisedMaterialList.map(({ translatedName }) => translatedName.length));
 	let longestCountLength = max(...finalisedMaterialList.map(({ partitionedCount }) => partitionedCount.length));
 	if(longestItemNameLength + longestCountLength >= 47) {
@@ -560,7 +560,7 @@ export async function makePack(structureFiles, config = {}, resourcePackStack, p
 	let inGameControls;
 	if(JSON.stringify(config.CONTROLS) != JSON.stringify(DEFAULT_PLAYER_CONTROLS)) { // add controls to pack description only if they've been changed
 		// make a fake material list for the in-game control items
-		let controlsMaterialList = new MaterialList(blockMetadata, itemMetadata, translationFile);
+		let controlsMaterialList = await new MaterialList(blockMetadata, itemMetadata, translationFile);
 		inGameControls = "";
 		for(let [control, itemCriteria] of Object.entries(config.CONTROLS)) {
 			itemCriteria["names"].forEach(itemName => controlsMaterialList.addItem(itemName));
@@ -629,7 +629,9 @@ export async function makePack(structureFiles, config = {}, resourcePackStack, p
 		packFiles.push([`textures/entity/${textureName}.png`, blob]);
 	});
 	packFiles.push(["ui/hud_screen.json", JSON.stringify(hudScreenUI)]);
-	packFiles.push(["font/glyph_E2.png", await customEmojiFont.toBlob()]);
+	if(highestItemCount >= 1728) {
+		packFiles.push(["font/glyph_E2.png", await customEmojiFont.toBlob()]);
+	}
 	packFiles.push(["texts/languages.json", JSON.stringify(languagesDotJson)]);
 	languageFiles.forEach(([language, languageFile]) => {
 		packFiles.push([`texts/${language}.lang`, languageFile]);
@@ -680,7 +682,9 @@ export async function makePack(structureFiles, config = {}, resourcePackStack, p
 		}
 	}
 	
-	return new File([zippedPack], `${packName}.holoprint.mcpack`);
+	return new File([zippedPack], `${packName}.holoprint.mcpack`, {
+		type: "application/mcpack"
+	});
 }
 /**
  * Retrieves the structure files from a completed HoloPrint resource pack.
@@ -783,13 +787,20 @@ export function addDefaultConfig(config) {
 		...config,
 		...{ // overrides (applied after)
 			IGNORED_BLOCKS: IGNORED_BLOCKS.concat(config.IGNORED_BLOCKS ?? []),
-			IGNORED_MATERIAL_LIST_BLOCKS: IGNORED_MATERIAL_LIST_BLOCKS.concat(config.IGNORED_MATERIAL_LIST_BLOCKS ?? []),
 			CONTROLS: {
 				...DEFAULT_PLAYER_CONTROLS,
 				...config.CONTROLS
 			}
 		}
 	});
+}
+/**
+ * Expands the block version number found in structure NBT into an array.
+ * @param {Number} blockVersion Block version number as found in structure NBT
+ * @returns {Array<Number>}
+ */
+export function parseBlockVersion(blockVersion) {
+	return blockVersion.toString(16).padStart(8, 0).match(/.{2}/g).map(x => parseInt(x, 16));
 }
 
 /**
@@ -866,7 +877,7 @@ function tweakBlockPalette(structure, ignoredBlocks) {
 			delete block["states"]; // easier viewing
 		}
 	});
-	console.log("Block versions:", [...blockVersions], [...blockVersions].map(v => v.toString(16).padStart(8, 0).match(/.{2}/g).map(x => parseInt(x, 16)).join(".")));
+	console.log("Block versions:", [...blockVersions], [...blockVersions].map(v => parseBlockVersion(v).join(".")));
 	
 	// add block entities into the block palette (on layer 0)
 	let indices = structure["block_indices"].map(layer => structuredClone(layer).map(i => +i));
@@ -1202,12 +1213,21 @@ function itemCriteriaToMolang(itemCriteria, slot = "slot.weapon.mainhand") {
 }
 /**
  * Creates a Molang expression that mimics array access. Defaults to the last element if nothing is found.
- * @param {Array} array
+ * @param {Array} array A continuous array
  * @param {String} indexVar
  * @returns {String}
  */
-function arrayToMolang(array, indexVar) {
-	return array.map((el, i) => i == array.length - 1? el : `${i > 0? "(" : ""}${indexVar}==${i}?${el}:`).join("") + ")".repeat(max(array.length - 2, 0));
+export function arrayToMolang(array, indexVar) {
+	let arrayEntries = Object.entries(array); // to handle splitting, original indices need to be preserved, hence looking at index-value pairs
+	return arrayEntriesToMolang(arrayEntries, indexVar);
+}
+function arrayEntriesToMolang(entries, indexVar) {
+	const splittingThreshold = 50;
+	if(entries.length > splittingThreshold) { // large arrays cause Molang stack overflows, so this splits them in half in such a situation.
+		let middle = floor(entries.length / 2);
+		return `${indexVar}<${entries[middle][0]}?(${arrayEntriesToMolang(entries.slice(0, middle), indexVar)}):(${arrayEntriesToMolang(entries.slice(middle), indexVar)})`;
+	}
+	return entries.map(([index, value], i) => i == entries.length - 1? value : `${i > 0? "(" : ""}${indexVar}==${index}?${value}:`).join("") + ")".repeat(max(entries.length - 2, 0));
 }
 /**
  * Creates a Molang expression that mimics 2D array access.
@@ -1469,6 +1489,7 @@ function stringifyWithFixedDecimals(value) {
  * @property {Number} h Height
  * @property {Number} sourceX
  * @property {Number} sourceY
+ * @property {{ x: Number, y: Number, w: Number, h: Number }} crop
  */
 /**
  * An entry in a material list.

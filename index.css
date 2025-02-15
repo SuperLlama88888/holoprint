@@ -170,6 +170,9 @@ summary {
 	font-weight: 500;
 	font-size: 1rem;
 }
+input, button {
+	color: inherit; /* iOS fix */
+}
 button, input[type="checkbox"], input[type="number"], input[type="text"], textarea, input[type="file"]::file-selector-button, select, .buttonlike {
 	padding: 1px 4px;
 	border: 2px solid #D899D8;

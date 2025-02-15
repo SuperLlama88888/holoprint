@@ -1,0 +1,119 @@
+{
+	"$schema": "http://json-schema.org/draft-07/schema#",
+	"title": "Texture atlas mappings",
+	"description": "Patches and other mappings for TextureAtlas.js.",
+	"type": "object",
+	"properties": {
+		"$schema": {
+			"type": "string"
+		},
+		"blocks_dot_json_patches": {
+			"description": "Block names that need to be remapped to something else in blocks.json.",
+			"type": "object",
+			"patternProperties": {
+				"^\\w+$": {
+					"description": "Block names, with _._ meaning variants.",
+					"type": "string",
+					"pattern": "^\\w+(\\.\\d+)?$"
+				}
+			},
+			"additionalProperties": false
+		},
+		"blocks_to_use_carried_textures": {
+			"description": "An array of block names that should use their carried textures.",
+			"type": "array",
+			"items": {
+				"description": "Block name.",
+				"type": "string",
+				"minLength": 1
+			}
+		},
+		"transparent_blocks": {
+			"description": "Blocks that are transparent and need a certain opacity applied to them.",
+			"type": "object",
+			"patternProperties": {
+				"^\\w+$": {
+					"description": "Block name and opacity.",
+					"type": "number",
+					"exclusiveMinimum": 0
+				}
+			},
+			"additionalProperties": false
+		},
+		"terrain_texture_patches": {
+			"description": "Terrain texture keys that should lead to a specified texture path, instead of what's in terrain_texture.json.",
+			"type": "object",
+			"patternProperties": {
+				"^\\w+$": {
+					"description": "Block name and texture path.",
+					"type": "string",
+					"pattern": "^textures/.*[^/]$"
+				}
+			},
+			"additionalProperties": false
+		},
+		"terrain_texture_tints": {
+			"description": "Terrain texture keys that should have their textures tinted.",
+			"type": "object",
+			"properties": {
+				"colors": {
+					"description": "Tint colour definitions.",
+					"type": "object",
+					"patternProperties": {
+						"^\\w+$": {
+							"description": "Tint colour -> 6-digit hex colour.",
+							"type": "string",
+							"pattern": "#[\\da-fA-F]{6}"
+						}
+					},
+					"additionalProperties": false
+				},
+				"terrain_texture_keys": {
+					"description": "The actual terrain texture keys that should have tints applied.",
+					"type": "object",
+					"patternProperties": {
+						"^\\w+$": {
+							"oneOf": [
+								{
+									"description": "A tint colour, as defined in the \"colors\" property.",
+									"type": "string",
+									"pattern": "^\\w+$"
+								},
+								{
+									"description": "A tint colour and a flag to make it be tinted like a PNG image.",
+									"type": "object",
+									"properties": {
+										"tint": {
+											"description": "A tint colour, as defined in the \"colors\" property.",
+											"type": "string",
+											"pattern": "^\\w+$"
+										},
+										"tint_like_png": {
+											"description": "If true, the image will be tinted as if it were a PNG image, despite being a TGA image. (TGA images are tinted different to PNG images.)",
+											"type": "boolean",
+											"default": "true"
+										}
+									},
+									"required": ["tint", "tint_like_png"],
+									"additionalProperties": false
+								}
+							]
+						}
+					}
+				}
+			},
+			"additionalProperties": false
+		},
+		"missing_flipbook_textures": {
+			"description": "File paths of flipbook textures that aren't used in-game because they're missing from flipbook_textures.json. This fixes up their UV coordinates.",
+			"type": "array",
+			"items": {
+				"description": "Texture path.",
+				"type": "string",
+				"pattern": "^textures/.*[^/]$"
+			}
+		}
+	},
+	"required": ["blocks_dot_json_patches", "blocks_to_use_carried_textures", "transparent_blocks", "terrain_texture_patches", "terrain_texture_tints", "missing_flipbook_textures"],
+	"additionalProperties": false
+}

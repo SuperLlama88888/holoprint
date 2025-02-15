@@ -2,73 +2,12 @@
 // READ: this also looks pretty comprehensive: https://github.com/MCBE-Development-Wiki/mcbe-dev-home/blob/main/docs/misc/enums/block_shape.md
 // https://github.com/bricktea/MCStructure/blob/main/docs/1.16.201/enums/B.md
 
-import { awaitAllEntries, clamp, hexColorToClampedTriplet, JSONSet } from "./essential.js";
+import { awaitAllEntries, hexColorToClampedTriplet, JSONSet } from "./essential.js";
 
 // https://wiki.bedrock.dev/visuals/material-creations.html#overlay-color-in-render-controllers
 // https://wiki.bedrock.dev/documentation/materials.html#entity-alphatest
 
 export default class BlockGeoMaker {
-	/** variant numbers tied to specific blocks. they will always have these variant indices. */
-	static #eigenvariants = {
-		"grass_block": 0, // for the tints; this makes it look like the forest or flower forest biomes
-		"grass_path": 0, // down texture uses dirt instead of flattened_dirt :/
-		"unpowered_repeater": 0,
-		"powered_repeater": 1,
-		"unpowered_comparator": 0,
-		"powered_comparator": 1,
-		"daylight_detector": 0,
-		"daylight_detector_inverted": 1,
-		"furnace": 0, // these are strange
-		"lit_furnace": 0,
-		"blast_furnace": 0,
-		"lit_blast_furnace": 0,
-		"smoker": 0,
-		"lit_smoker": 0,
-		"normal_stone_stairs": 0,
-		"stone_button": 0,
-		"stone_pressure_plate": 0,
-		"stone_brick_stairs": 0,
-		"bubble_column": 0,
-		"wooden_button": 0,
-		"wooden_pressure_plate": 0,
-		"wooden_door": 0,
-		"spruce_door": 1,
-		"birch_door": 2,
-		"jungle_door": 3,
-		"acacia_door": 4,
-		"dark_oak_door": 5,
-		"iron_door": 6,
-		"oak_leaves": 0,
-		"spruce_leaves": 0,
-		"birch_leaves": 0,
-		"jungle_leaves": 0,
-		"acacia_leaves": 0,
-		"dark_oak_leaves": 0,
-		"azalea_leaves": 0,
-		"azalea_leaves_flowered": 0,
-		"mangrove_leaves": 0,
-		"cherry_leaves": 0,
-		"pale_oak_leaves": 0,
-		"carved_pumpkin": 0,
-		"lit_pumpkin": 1,
-		"pumpkin": 2,
-		"cave_vines": 0,
-		"cave_vines_body_with_berries": 1,
-		"cave_vines_head_with_berries": 1
-	};
-	
-	static #REDSTONE_DUST_TINTS = function() {
-		// net.minecraft.world.level.block.RedStoneWireBlock
-		let cols = [];
-		for(let i = 0; i < 16; i++) {
-			let f = i / 15;
-			let r = f * 0.6 + (f > 0? 0.4 : 0.3);
-			let g = clamp(f * f * 0.7 - 0.5, 0, 1);
-			cols[i] = [r, g, 0];
-		}
-		return cols;
-	}();
-	
 	/** @type {HoloPrintConfig} */
 	config;
 	textureRefs;
@@ -76,6 +15,7 @@ export default class BlockGeoMaker {
 	#individualBlockShapes;
 	#blockShapePatterns;
 	#blockShapeGeos;
+	#eigenvariants;
 	
 	#globalBlockStateRotations;
 	#blockShapeBlockStateRotations;
@@ -95,14 +35,16 @@ export default class BlockGeoMaker {
 			
 			this.textureRefs = new JSONSet();
 			
-			let { blockShapes, blockShapeGeos, blockStateDefs } = await awaitAllEntries({
+			let { blockShapes, blockShapeGeos, blockStateDefs, eigenvariants } = await awaitAllEntries({
 				blockShapes: fetch("data/blockShapes.json").then(res => res.jsonc()),
 				blockShapeGeos: fetch("data/blockShapeGeos.json").then(res => res.jsonc()),
-				blockStateDefs: fetch("data/blockStateDefinitions.json").then(res => res.jsonc())
+				blockStateDefs: fetch("data/blockStateDefinitions.json").then(res => res.jsonc()),
+				eigenvariants: fetch("data/blockEigenvariants.json").then(res => res.jsonc()),
 			});
 			this.#individualBlockShapes = blockShapes["individual_blocks"];
 			this.#blockShapePatterns = Object.entries(blockShapes["patterns"]).map(([rule, blockShape]) => [new RegExp(rule), blockShape]); // store regular expressions from the start to avoid recompiling them every time
 			this.#blockShapeGeos = blockShapeGeos;
+			this.#eigenvariants = eigenvariants;
 			
 			// console.log(this.#blockShapeGeos)
 			
@@ -571,9 +513,9 @@ export default class BlockGeoMaker {
 	 */
 	#getTextureVariant(block, ignoreEigenvariant = false) {	
 		let blockName = block["name"];
-		let eigenvariantExists = blockName in BlockGeoMaker.#eigenvariants;
+		let eigenvariantExists = blockName in this.#eigenvariants;
 		if(!ignoreEigenvariant && eigenvariantExists) {
-			let variant = BlockGeoMaker.#eigenvariants[blockName];
+			let variant = this.#eigenvariants[blockName];
 			console.debug(`Using eigenvariant ${variant} for block ${blockName}`);
 			return variant;
 		} else if(ignoreEigenvariant && !eigenvariantExists) {

@@ -1,0 +1,30 @@
+name: Deploy Redirect Page
+on:
+  workflow_dispatch:
+permissions: read-all
+jobs:
+  add-redirect-page:
+    name: Add redirect page to https://holoprint-mc.github.io
+    runs-on: ubuntu-latest
+    if: github.repository == 'SuperLlama88888/holoprint'
+    steps:
+      - name: Add redirect page
+        run: echo "<meta http-equiv='refresh' content='0;url=https://holoprint-mc.github.io'>" > index.html
+      - name: Upload files as artifact
+        uses: actions/upload-pages-artifact@v3.0.1
+        with:
+          path: .
+  deploy:
+    name: Deploy to GitHub Pages
+    needs: add-redirect-page
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4.0.5
