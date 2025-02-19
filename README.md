@@ -4,7 +4,7 @@
 HoloPrint is a web app that converts MCBE structure files into resource packs showing holograms of builds. It builds off the work of [Structura](https://github.com/RavinMaddHatter/Structura), a similar project. Both Structura and HoloPrint aim to recreate the experience of Java Edition mods like [Litematica](https://github.com/maruohon/litematica) and [Schematica](https://github.com/Lunatrius/Schematica) for Bedrock Edition users through resource packs.
 
 > [!TIP]
-> View the [wiki](https://github.com/SuperLlama88888/holoprint/wiki/1.-Usage-instructions) for more detailed instructions!
+> View the [wiki](https://holoprint-mc.github.io/wiki) for more detailed instructions!
 
 ### Usage
 > [!NOTE]

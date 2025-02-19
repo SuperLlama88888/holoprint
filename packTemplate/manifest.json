@@ -24,9 +24,9 @@
 	"settings": [
 		{
 			"type": "input",
-			"text": "In-game instructions:", // these strings can be translation keys but the translations won't be loaded until after the pack is applied. this means the first time the player enables the pack they'll see only the raw translation keys which is unideal. it's better to put these links in another UI screen somehow...
-			"default": "https://github.com/SuperLlama88888/holoprint/wiki/1.-Usage-instructions#hologram-controls",
-			"name": "instructions"
+			"text": "§uHoloPrint§r Wiki:", // these strings can be translation keys but the translations won't be loaded until after the pack is applied. this means the first time the player enables the pack they'll see only the raw translation keys which is unideal. it's better to put these links in another UI screen somehow...
+			"default": "https://holoprint-mc.github.io/wiki",
+			"name": "wiki"
 		},
 		{
 			"type": "input",
