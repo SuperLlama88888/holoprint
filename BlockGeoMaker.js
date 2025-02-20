@@ -122,7 +122,7 @@ export default class BlockGeoMaker {
 				console.error(`Block state value ${blockStateValue} for rotation block state ${blockStateName} not found on ${blockName}...`, block);
 				return;
 			}
-			if(bone["rotation"]) {
+			if("rotation" in bone) {
 				console.debug(`Multiple rotation block states for block ${block["name"]}; adding them all together!`);
 				bone["rotation"] = bone["rotation"].map((x, i) => x + rotations[blockStateValue][i]);
 			} else {
@@ -130,6 +130,10 @@ export default class BlockGeoMaker {
 				bone["pivot"] = [8, 8, 8];
 			}
 		});
+		if(bone["rotation"]?.every(x => x == 0)) {
+			delete bone["rotation"];
+			delete bone["pivot"];
+		}
 		return bone;
 	}
 	/**

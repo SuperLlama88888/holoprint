@@ -337,7 +337,7 @@ export async function makePack(structureFiles, config = {}, resourcePackStack, p
 			for(let x = 0; x < structureSize[0]; x++) {
 				for(let z = 0; z < structureSize[2]; z++) {
 					let blockI = (x * structureSize[1] + y) * structureSize[2] + z;
-					let firstBoneForThisBlock = true;
+					let firstBoneForThisCoordinate = true; // second-layer blocks (e.g. water in waterlogged blocks) will be at the same position
 					structureIndicesByLayer.forEach((blockPaletteIndices, layerI) => {
 						let paletteI = blockPaletteIndices[blockI];
 						if(!(paletteI in boneTemplatePalette)) {
@@ -349,8 +349,9 @@ export async function makePack(structureFiles, config = {}, resourcePackStack, p
 						let boneTemplate = boneTemplatePalette[paletteI];
 						// console.table({x, y, z, i, paletteI, boneTemplate});
 						
-						let boneName = `b_${x}_${y}_${z}`;
-						if(!firstBoneForThisBlock) {
+						let blockCoordinateName = `b_${x}_${y}_${z}`;
+						let boneName = blockCoordinateName;
+						if(!firstBoneForThisCoordinate) {
 							boneName += `_${layerI}`;
 						}
 						if(config.DO_SPAWN_ANIMATION && structureI == 0 && structureFiles.length > 1) {
@@ -395,8 +396,8 @@ export async function makePack(structureFiles, config = {}, resourcePackStack, p
 						});
 						geo["bones"].push(...bonesToAdd);
 						
-						if(firstBoneForThisBlock) { // we only need 1 locator for each block position, even though there may be 2 bones in this position because of the 2nd layer
-							hologramGeo["minecraft:geometry"][2]["bones"][1]["locators"][boneName] ??= bonePos.map(x => x + 8);
+						if(firstBoneForThisCoordinate) { // we only need 1 locator for each block position, even though there may be 2 bones in this position because of the 2nd layer
+							hologramGeo["minecraft:geometry"][2]["bones"][1]["locators"][blockCoordinateName] ??= bonePos.map(x => x + 8);
 						}
 						if(config.DO_SPAWN_ANIMATION && structureI == 0) {
 							spawnAnimationAnimatedBones.push([boneName, getSpawnAnimationDelay(x, y, z), bonePos]);
@@ -408,14 +409,14 @@ export async function makePack(structureFiles, config = {}, resourcePackStack, p
 						}
 						if(layerI == 0) { // particle_expire_if_in_blocks only works on the first layer :(
 							blocksToValidate.push({
-								"bone_name": boneName,
+								"locator": blockCoordinateName,
 								"block": blockName,
 								"pos": [x, y, z]
 							});
 							blocksToValidateCurrentLayer++;
 							uniqueBlocksToValidate.add(blockName);
 						}
-						firstBoneForThisBlock = false;
+						firstBoneForThisCoordinate = false;
 						totalBlockCount++;
 					});
 				}
@@ -1046,7 +1047,7 @@ function addBlockValidationParticles(hologramAnimationControllers, structureI, b
 		}
 		let particleEffect = {
 			"effect": `validate_${blockToValidate["block"].replace(":", ".")}`,
-			"locator": blockToValidate["bone_name"],
+			"locator": blockToValidate["locator"],
 			"pre_effect_script": `
 				v.x = ${x};
 				v.y = ${y};
