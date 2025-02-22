@@ -9,6 +9,7 @@ import PreviewRenderer from "./PreviewRenderer.js";
 import * as entityScripts from "./entityScripts.molang.js";
 import { awaitAllEntries, concatenateFiles, createEnum, exp, floor, hexColorToClampedTriplet, JSONMap, JSONSet, max, min, pi, round, sha256, translate } from "./essential.js";
 import ResourcePackStack from "./ResourcePackStack.js";
+import BlockUpdater from "./BlockUpdater.js";
 
 const VERSION = "dev";
 
@@ -109,7 +110,7 @@ export async function makePack(structureFiles, config = {}, resourcePackStack, p
 	
 	let structures = nbts.map(nbt => nbt["structure"]);
 	
-	let palettesAndIndices = structures.map(structure => tweakBlockPalette(structure, config.IGNORED_BLOCKS));
+	let palettesAndIndices = await Promise.all(structures.map(structure => tweakBlockPalette(structure, config.IGNORED_BLOCKS)));
 	let { palette: blockPalette, indices: allStructureIndicesByLayer } = mergeMultiplePalettesAndIndices(palettesAndIndices);
 	console.log("combined palette: ", blockPalette);
 	console.log("remapped indices: ", allStructureIndicesByLayer);
@@ -862,23 +863,35 @@ async function getResponseContents(resPromise) {
  * @param {Object} structure The de-NBT-ed structure file
  * @returns {{ palette: Array<Block>, indices: [Array<Number>, Array<Number>] }}
  */
-function tweakBlockPalette(structure, ignoredBlocks) {
+async function tweakBlockPalette(structure, ignoredBlocks) {
 	let palette = structuredClone(structure["palette"]["default"]["block_palette"]);
 	
 	let blockVersions = new Set(); // version should be constant for all blocks. just wanted to test this
-	palette.forEach((block, i) => {
+	let blockUpdater = new BlockUpdater();
+	let updatedBlocks = 0;
+	for(let [i, block] of Object.entries(palette)) {
+		if(blockUpdater.blockNeedsUpdating(block)) {
+			if(await blockUpdater.update(block)) {
+				updatedBlocks++;
+			}
+		}
 		block["name"] = block["name"].replace(/^minecraft:/, ""); // remove namespace here, right at the start
 		blockVersions.add(+block["version"]);
 		if(ignoredBlocks.includes(block["name"])) {
 			delete palette[i];
-			return;
+			continue;
 		}
 		delete block["version"];
 		if(!Object.keys(block["states"]).length) {
 			delete block["states"]; // easier viewing
 		}
-	});
-	console.log("Block versions:", [...blockVersions], [...blockVersions].map(v => parseBlockVersion(v).join(".")));
+	}
+	let blockVersionsStringified = [...blockVersions].map(v => parseBlockVersion(v).join("."));
+	if(updatedBlocks > 0) {
+		console.info(`Updated ${updatedBlocks} blocks from ${blockVersionsStringified.join(", ")} to ${parseBlockVersion(BlockUpdater.LATEST_VERSION)}!`);
+		console.info(`Note: Updated blocks may not be 100% accurate! If there are some errors, try loading the structure in the latest version of Minecraft then saving it again, so all blocks are up to date.`);
+	}
+	console.log("Block versions:", [...blockVersions], blockVersionsStringified);
 	
 	// add block entities into the block palette (on layer 0)
 	let indices = structure["block_indices"].map(layer => structuredClone(layer).map(i => +i));
@@ -1438,10 +1451,17 @@ function stringifyWithFixedDecimals(value) {
  * @property {Array<String>} tags Item tags the matching item could have. The `minecraft:` namespace will be used if no namespace is specified.
  */
 /**
+ * A block as stored in NBT.
+ * @typedef {Object} NBTBlock
+ * @property {String} name The block's ID
+ * @property {Record<String, Number|String>} states Block states
+ * @property {Number} version
+ */
+/**
  * A block palette entry, similar to how it appears in the NBT, as used in HoloPrint.
  * @typedef {Object} Block
  * @property {String} name The block's ID
- * @property {Object} [states] Block states
+ * @property {Record<String, Number|String>} [states] Block states
  * @property {Object} [block_entity_data] Block entity data
  */
 /**
@@ -1501,6 +1521,52 @@ function stringifyWithFixedDecimals(value) {
  * @property {Number} count How many of this item is required
  * @property {String} partitionedCount A formatted string representing partitions of the total count
  * @property {Number|undefined} auxId The item's aux ID
+ */
+/**
+ * @typedef {Object} TypedBlockStateProperty
+ * @property {Number} [int] - An integer property.
+ * @property {String} [string] - A string property.
+ * @property {Number} [byte] - A byte property.
+ */
+/**
+ * @typedef {Object} BlockUpdateSchemaFlattenRule
+ * @property {String} prefix - The prefix for the flattened property.
+ * @property {String} flattenedProperty - The name of the flattened property.
+ * @property {"int"|"string"|"byte"} [flattenedPropertyType] - The type of the flattened property.
+ * @property {String} suffix - The suffix for the flattened property.
+ * @property {Record<String, String>} [flattenedValueRemaps] - A mapping of flattened values.
+ */
+/**
+ * @typedef {Object} BlockUpdateSchemaRemappedState
+ * @property {Record<String, TypedBlockStateProperty>|null} oldState - The property values before the remapping.
+ * @property {String} [newName] - An optional new name for the block.
+ * @property {BlockUpdateSchemaFlattenRule} [newFlattenedName] - An optional flattened property rule providing a new name.
+ * @property {Record<String, TypedBlockStateProperty>|null} newState - The new property values after the remapping.
+ * @property {Array<String>} [copiedState] - Optional list of property names to copy from the old state.
+ */
+
+/**
+ * @typedef {Object} BlockUpdateSchemaSkeleton
+ * @property {String} filename
+ * @property {Number} maxVersionMajor - The major version (must be >= 0).
+ * @property {Number} maxVersionMinor - The minor version (must be >= 0).
+ * @property {Number} maxVersionPatch - The patch version (must be >= 0).
+ * @property {Number} maxVersionRevision - The revision version (must be >= 0).
+ */
+/**
+ * @typedef {Object} BlockUpdateSchema
+ * @property {Number} maxVersionMajor - The major version (must be >= 0).
+ * @property {Number} maxVersionMinor - The minor version (must be >= 0).
+ * @property {Number} maxVersionPatch - The patch version (must be >= 0).
+ * @property {Number} maxVersionRevision - The revision version (must be >= 0).
+ * @property {Record<String, String>} [renamedIds] - Mapping of renamed IDs.
+ * @property {Object.<String, Record<String, String>>} [renamedProperties] - Mapping of renamed properties.
+ * @property {Object.<String, Record<String, TypedBlockStateProperty>>} [addedProperties] - Mapping of added properties.
+ * @property {Record<String, Array<String>>} [removedProperties] - Mapping of removed properties.
+ * @property {Object.<String, Record<String, String>>} [remappedPropertyValues] - Mapping of remapped property values.
+ * @property {Record<String, Array<{ old: TypedBlockStateProperty, new: TypedBlockStateProperty }>>} [remappedPropertyValuesIndex] - Index of remapped property values.
+ * @property {Record<String, BlockUpdateSchemaFlattenRule>} [flattenedProperties] - Mapping of flattened properties.
+ * @property {Record<String, Array<BlockUpdateSchemaRemappedState>>} [remappedStates] - Mapping of remapped states.
  */
 /**
  * 2D vector.
