@@ -46,5 +46,9 @@
 	"pumpkin": 2,
 	"cave_vines": 0,
 	"cave_vines_body_with_berries": 1,
-	"cave_vines_head_with_berries": 1
+	"cave_vines_head_with_berries": 1,
+	"mycelium": 0,
+	"prismarine_stairs": 0,
+	"sandstone_stairs": 0,
+	"red_sandstone_stairs": 0
 }

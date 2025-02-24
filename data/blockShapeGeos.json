@@ -4993,5 +4993,64 @@
 			"size": [16, 16, 0]
 		}
 	],
+	"template_shulker_box": [ // since this relies on the shulker model, the two halves are split
+		{
+			"pos": [0.01, 0, 0.01], // bottom part must be slightly inset to avoid z-fighting
+			"size": [15.98, 8, 15.98],
+			"uv": {
+				"side": [0, 44],
+				"down": [32, 28]
+			},
+			"uv_sizes": {
+				"side": [16, 8],
+				"down": [16, 16]
+			},
+			"textures": {
+				"up": "none"
+			},
+			"texture_size": [64, 64]
+		},
+		{
+			"pos": [0, 4, 0],
+			"size": [16, 12, 16],
+			"uv": {
+				"side": [0, 16],
+				"up": [16, 0]
+			},
+			"textures": {
+				"down": "none"
+			},
+			"texture_size": [64, 64]
+		}
+	],
+	"shulker_box": [ // this is for all shulker boxes but light grey; the texture path can be extracted from the block name
+		{
+			"copy": "template_shulker_box",
+			"textures": {
+				"*": "textures/entity/shulker/shulker_${#block_name[:-12]}"
+			}
+		}
+	],
+	"textured_shulker_box": [ // this is for light grey shulker boxes only, since their texture path is shulker_silver.png not shulker_light_grey.png :(
+		{
+			"copy": "template_shulker_box",
+			"textures": {
+				"*": "#tex"
+			}
+		}
+	],
+	"jigsaw_block": [
+		{
+			"pos": [0, 0, 0],
+			"size": [16, 16, 16],
+			"textures": {
+				"down": "south",
+				"south": "down",
+				"up": "north",
+				"north": "up"
+			},
+			"rot": [0, 0, 0]
+		}
+	],
 	"debug_auto_uv_4": [{"pos":[0,0,0],"size":[4,4,4]},{"pos":[0,0,4],"size":[4,4,4]},{"pos":[0,0,8],"size":[4,4,4]},{"pos":[0,0,12],"size":[4,4,4]},{"pos":[0,4,0],"size":[4,4,4]},{"pos":[0,4,4],"size":[4,4,4]},{"pos":[0,4,8],"size":[4,4,4]},{"pos":[0,4,12],"size":[4,4,4]},{"pos":[0,8,0],"size":[4,4,4]},{"pos":[0,8,4],"size":[4,4,4]},{"pos":[0,8,8],"size":[4,4,4]},{"pos":[0,8,12],"size":[4,4,4]},{"pos":[0,12,0],"size":[4,4,4]},{"pos":[0,12,4],"size":[4,4,4]},{"pos":[0,12,8],"size":[4,4,4]},{"pos":[0,12,12],"size":[4,4,4]},{"pos":[4,0,0],"size":[4,4,4]},{"pos":[4,0,4],"size":[4,4,4]},{"pos":[4,0,8],"size":[4,4,4]},{"pos":[4,0,12],"size":[4,4,4]},{"pos":[4,4,0],"size":[4,4,4]},{"pos":[4,4,12],"size":[4,4,4]},{"pos":[4,8,0],"size":[4,4,4]},{"pos":[4,8,12],"size":[4,4,4]},{"pos":[4,12,0],"size":[4,4,4]},{"pos":[4,12,4],"size":[4,4,4]},{"pos":[4,12,8],"size":[4,4,4]},{"pos":[4,12,12],"size":[4,4,4]},{"pos":[8,0,0],"size":[4,4,4]},{"pos":[8,0,4],"size":[4,4,4]},{"pos":[8,0,8],"size":[4,4,4]},{"pos":[8,0,12],"size":[4,4,4]},{"pos":[8,4,0],"size":[4,4,4]},{"pos":[8,4,12],"size":[4,4,4]},{"pos":[8,8,0],"size":[4,4,4]},{"pos":[8,8,12],"size":[4,4,4]},{"pos":[8,12,0],"size":[4,4,4]},{"pos":[8,12,4],"size":[4,4,4]},{"pos":[8,12,8],"size":[4,4,4]},{"pos":[8,12,12],"size":[4,4,4]},{"pos":[12,0,0],"size":[4,4,4]},{"pos":[12,0,4],"size":[4,4,4]},{"pos":[12,0,8],"size":[4,4,4]},{"pos":[12,0,12],"size":[4,4,4]},{"pos":[12,4,0],"size":[4,4,4]},{"pos":[12,4,4],"size":[4,4,4]},{"pos":[12,4,8],"size":[4,4,4]},{"pos":[12,4,12],"size":[4,4,4]},{"pos":[12,8,0],"size":[4,4,4]},{"pos":[12,8,4],"size":[4,4,4]},{"pos":[12,8,8],"size":[4,4,4]},{"pos":[12,8,12],"size":[4,4,4]},{"pos":[12,12,0],"size":[4,4,4]},{"pos":[12,12,4],"size":[4,4,4]},{"pos":[12,12,8],"size":[4,4,4]},{"pos":[12,12,12],"size":[4,4,4]}] // function genDebugGeo(step) {let boneCubes = [];for(let x = 0; x < 16; x += step) {for(let y = 0; y < 16; y += step) {for(let z = 0; z < 16; z += step) {if(!x || !y || !z || x == 16 - step || y == 16 - step || z == 16 - step) {boneCubes.push({ pos: [x, y, z], size: [step, step, step] });}}}}return JSON.stringify(boneCubes);}
 }

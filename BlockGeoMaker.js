@@ -112,7 +112,8 @@ export default class BlockGeoMaker {
 		}
 		let blockShapeSpecificRotations = this.#blockShapeBlockStateRotations[blockShape];
 		let blockNameSpecificRotations = this.#blockNameBlockStateRotations[blockName];
-		Object.entries(block["states"] ?? {}).forEach(([blockStateName, blockStateValue]) => {
+		let statesAndBlockEntityData = this.#getBlockStatesAndEntityDataEntries(block);
+		statesAndBlockEntityData.forEach(([blockStateName, blockStateValue]) => {
 			let rotations = blockNameSpecificRotations?.[blockStateName] ?? this.#blockNamePatternBlockStateRotations.find(([pattern, rotations]) => pattern.test(blockName) && blockName in rotations)?.[1] ?? blockShapeSpecificRotations?.[blockStateName] ?? this.#globalBlockStateRotations[blockStateName]; // order: block name (exact match), block name (regular expression pattern), block shape, global
 			if(!rotations) {
 				return; // this block state doesn't control rotation
@@ -218,6 +219,10 @@ export default class BlockGeoMaker {
 				cube["terrain_texture"] = this.#interpolateInBlockValues(cube["block_override"] ?? block, cube["terrain_texture"]);
 			}
 			if("copy" in cube) {
+				if(cube["copy"] == blockShape) { // prevent recursion (sometimes)
+					console.error(`Cannot copy the same block shape: ${blockShape}`);
+					continue;
+				}
 				let copiedCubes = structuredClone(this.#blockShapeGeos[cube["copy"]]);
 				if(!copiedCubes) {
 					console.error(`Could not find geometry for block shape ${blockShape}; defaulting to "block"`);
@@ -472,6 +477,14 @@ export default class BlockGeoMaker {
 		return boneCubes;
 	}
 	/**
+	 * Returns the entries of a block's states and block entity data (prefixed by `entity.`; only first-level properties are supported).
+	 * @param {Block} block
+	 * @returns {Array<[String, any]>}
+	 */
+	#getBlockStatesAndEntityDataEntries(block) {
+		return [...Object.entries(block["states"] ?? {}), ...Object.entries(block["block_entity_data"] ?? {}).map(([key, value]) => [`entity.${key}`, value])];
+	}
+	/**
 	 * Merges cubes together greedily.
 	 * @param {Array<Object>} cubes
 	 * @returns {Array<Object>}
@@ -526,14 +539,15 @@ export default class BlockGeoMaker {
 			console.warn(`Cannot ignore eigenvariant of ${blockName} as it doesn't exist!`);
 		}
 		
-		if(!("states" in block)) {
+		if(!("states" in block || "block_entity_data" in block)) {
 			return -1;
 		}
 		let blockShape = this.#getBlockShape(blockName); // In copied block shapes, we want to look at the original block shape's texture variants, not the copied's. E.g. With candle_cake, we don't want the cake that is copied to look at the texture variants for cake (which includes bite_counter).
+		let statesAndBlockEntityData = this.#getBlockStatesAndEntityDataEntries(block);
 		let blockShapeSpecificVariants = this.#blockShapeBlockStateTextureVariants[blockShape];
 		if(blockShapeSpecificVariants?.["#exclusive_add"]) {
 			let variant = 0;
-			Object.entries(block["states"]).forEach(([blockStateName, blockStateValue]) => {
+			statesAndBlockEntityData.forEach(([blockStateName, blockStateValue]) => {
 				if(blockStateName in blockShapeSpecificVariants) {
 					let blockStateVariants = blockShapeSpecificVariants[blockStateName];
 					if(!(blockStateValue in blockStateVariants)) {
@@ -548,7 +562,7 @@ export default class BlockGeoMaker {
 		let blockNameSpecificVariants = this.#blockNameBlockStateTextureVariants[blockName] ?? this.#blockNamePatternBlockStateTextureVariants.find(([pattern]) => pattern.test(blockName))?.[1];
 		if(blockNameSpecificVariants?.["#exclusive_add"]) {
 			let variant = 0;
-			Object.entries(block["states"]).forEach(([blockStateName, blockStateValue]) => {
+			statesAndBlockEntityData.forEach(([blockStateName, blockStateValue]) => {
 				if(blockStateName in blockNameSpecificVariants) {
 					let blockStateVariants = blockNameSpecificVariants[blockStateName];
 					if(!(blockStateValue in blockStateVariants)) {
@@ -561,7 +575,7 @@ export default class BlockGeoMaker {
 			return variant;
 		}
 		let variant = -1;
-		Object.entries(block["states"]).forEach(([blockStateName, blockStateValue]) => {
+		statesAndBlockEntityData.forEach(([blockStateName, blockStateValue]) => {
 			let blockStateVariants = blockNameSpecificVariants?.[blockStateName] ?? blockShapeSpecificVariants?.[blockStateName] ?? this.#globalBlockStateTextureVariants[blockStateName];
 			if(blockStateVariants == undefined) {
 				return;

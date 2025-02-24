@@ -26,7 +26,8 @@
 		"_tulip$": "cross_texture",
 		"anvil$": "anvil",
 		"command_block$": "command_block",
-		"_glazed_terracotta$": "glazed_terracotta"
+		"_glazed_terracotta$": "glazed_terracotta",
+		"_shulker_box$": "shulker_box"
 	},
 	"individual_blocks": {
 		"bamboo_sapling": "cross_texture",
@@ -63,6 +64,8 @@
 		"crafter": "crafter",
 		"barrel": "barrel",
 		"chiseled_bookshelf": "chiseled_bookshelf",
+		"light_gray_shulker_box": "textured_shulker_box{textures/entity/shulker/shulker_silver}", // all the other shulker boxes have appropriately named textures (e.g. shulker_red.png), but this one is shulker_silver.png because they haven't updated it :(
+		"jigsaw": "jigsaw_block",
 		
 		"furnace": "furnace",
 		"blast_furnace": "furnace",

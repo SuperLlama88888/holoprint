@@ -867,16 +867,16 @@ async function tweakBlockPalette(structure, ignoredBlocks) {
 	let palette = structuredClone(structure["palette"]["default"]["block_palette"]);
 	
 	let blockVersions = new Set(); // version should be constant for all blocks. just wanted to test this
-	let blockUpdater = new BlockUpdater();
+	let blockUpdater = new BlockUpdater(true);
 	let updatedBlocks = 0;
 	for(let [i, block] of Object.entries(palette)) {
+		blockVersions.add(+block["version"]);
 		if(blockUpdater.blockNeedsUpdating(block)) {
 			if(await blockUpdater.update(block)) {
 				updatedBlocks++;
 			}
 		}
 		block["name"] = block["name"].replace(/^minecraft:/, ""); // remove namespace here, right at the start
-		blockVersions.add(+block["version"]);
 		if(ignoredBlocks.includes(block["name"])) {
 			delete palette[i];
 			continue;
@@ -888,7 +888,7 @@ async function tweakBlockPalette(structure, ignoredBlocks) {
 	}
 	let blockVersionsStringified = [...blockVersions].map(v => parseBlockVersion(v).join("."));
 	if(updatedBlocks > 0) {
-		console.info(`Updated ${updatedBlocks} blocks from ${blockVersionsStringified.join(", ")} to ${parseBlockVersion(BlockUpdater.LATEST_VERSION)}!`);
+		console.info(`Updated ${updatedBlocks} blocks from ${blockVersionsStringified.join(", ")} to ${parseBlockVersion(BlockUpdater.LATEST_VERSION).join(".")}!`);
 		console.info(`Note: Updated blocks may not be 100% accurate! If there are some errors, try loading the structure in the latest version of Minecraft then saving it again, so all blocks are up to date.`);
 	}
 	console.log("Block versions:", [...blockVersions], blockVersionsStringified);

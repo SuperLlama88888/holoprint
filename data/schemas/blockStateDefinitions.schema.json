@@ -97,57 +97,71 @@
 			"patternProperties": {
 				"^[\\w:]+$": {
 					"description": "Controls which texture variant is chosen based on the value of this block state.",
-					"oneOf": [
-						{
-							"type": "array",
-							"items": {
-								"description": "The index of the texture variant in terrain_texture.json to use.",
-								"type": "integer",
-								"minimum": 0
-							},
-							"minItems": 1
-						},
-						{
-							"type": "object",
-							"patternProperties": {
-								"^\\w+$": {
-									"description": "The index of the texture variant in terrain_texture.json to use when the block state is this value.",
-									"type": "integer"
-								}
-							},
-							"additionalProperties": false
-						}
-					]
+					"$ref": "#/definitions/variantValue"
+				},
+				"^entity\\.[\\w:]+$": {
+					"description": "Controls which texture variant is chosen based on the value of this block entity property. Only first-level fields are supported.",
+					"$ref": "#/definitions/variantValue"
 				}
 			},
 			"additionalProperties": false
+		},
+		"variantValue": {
+			"oneOf": [
+				{
+					"type": "array",
+					"items": {
+						"description": "The index of the texture variant in terrain_texture.json to use.",
+						"type": "integer",
+						"minimum": 0
+					},
+					"minItems": 1
+				},
+				{
+					"type": "object",
+					"patternProperties": {
+						"^\\w+$": {
+							"description": "The index of the texture variant in terrain_texture.json to use when the block state is this value.",
+							"type": "integer"
+						}
+					},
+					"additionalProperties": false
+				}
+			]
 		},
 		"rotation": {
 			"type": "object",
 			"patternProperties": {
 				"^[\\w:]+$": {
 					"description": "Controls the entire block's rotation based on the value of this block state.",
-					"oneOf": [
-						{
-							"type": "object",
-							"patternProperties": {
-								"^\\w+$": {
-									"$ref": "#/definitions/rotationTriplet"
-								}
-							},
-							"additionalProperties": false
-						},
-						{
-							"type": "array",
-							"items": {
-								"$ref": "#/definitions/rotationTriplet"
-							},
-							"minItems": 1
-						}
-					]
+					"$ref": "#/definitions/rotationValue"
+				},
+				"^entity\\.[\\w:]+$": {
+					"description": "Controls the entire block's rotation based on the value of this block entity property. Only first-level fields are supported.",
+					"$ref": "#/definitions/rotationValue"
 				}
 			},
 			"additionalProperties": false
+		},
+		"rotationValue": {
+			"oneOf": [
+				{
+					"type": "object",
+					"patternProperties": {
+						"^\\w+$": {
+							"$ref": "#/definitions/rotationTriplet"
+						}
+					},
+					"additionalProperties": false
+				},
+				{
+					"type": "array",
+					"items": {
+						"$ref": "#/definitions/rotationTriplet"
+					},
+					"minItems": 1
+				}
+			]
 		},
 		"rotationTriplet": {
 			"type": "array",
