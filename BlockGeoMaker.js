@@ -203,7 +203,7 @@ export default class BlockGeoMaker {
 				let blockOverride = structuredClone(block);
 				for(let blockStateName in cube["block_states"]) {
 					if(typeof cube["block_states"][blockStateName] == "string") {
-						cube["block_states"][blockStateName] = this.#interpolateInBlockValues(block, cube["block_states"][blockStateName]);
+						cube["block_states"][blockStateName] = this.#interpolateInBlockValues(block, cube["block_states"][blockStateName], cube);
 					}
 				}
 				blockOverride["states"] = { ...blockOverride["states"], ...cube["block_states"] };
@@ -216,7 +216,7 @@ export default class BlockGeoMaker {
 				delete cube["if"]; // later on, when determining if a bone cube is mergeable, we only allow cubes with "pos" and "size" keys. I am lazy so it only checks if there are exactly 2 keys in the cube. hence, we need to delete the "if" key here.
 			}
 			if("terrain_texture" in cube) {
-				cube["terrain_texture"] = this.#interpolateInBlockValues(cube["block_override"] ?? block, cube["terrain_texture"]);
+				cube["terrain_texture"] = this.#interpolateInBlockValues(cube["block_override"] ?? block, cube["terrain_texture"], cube);
 			}
 			if("copy" in cube) {
 				if(cube["copy"] == blockShape) { // prevent recursion (sometimes)
@@ -401,7 +401,7 @@ export default class BlockGeoMaker {
 					delete boneCube["uv"][faceName];
 					continue;
 				}
-				textureFace = this.#interpolateInBlockValues(cube["block_override"] ?? block, textureFace);
+				textureFace = this.#interpolateInBlockValues(cube["block_override"] ?? block, textureFace, cube);
 				let textureRef = {
 					"uv": face["uv"].map((x, i) => x / textureSize[i]),
 					"uv_size": face["uv_size"].map((x, i) => x / textureSize[i]),
@@ -687,7 +687,7 @@ export default class BlockGeoMaker {
 	 * Substitutes values from a block into a particular expression.
 	 * @param {Block} block
 	 * @param {String} fullExpression
-	 * @param {Object} [cube]
+	 * @param {Object} cube
 	 * @returns {String}
 	 */
 	#interpolateInBlockValues(block, fullExpression, cube) {
