@@ -62,6 +62,35 @@
 			},
 			"additionalProperties": false
 		},
+		"special_block_entity_properties": {
+			"description": "Definitions for blocks that should be split up based on a numeric block entity property.",
+			"type": "object",
+			"patternProperties": {
+				"^\\w+$": {
+					"description": "Block name.",
+					"type": "object",
+					"properties": {
+						"prop": {
+							"description": "Block entity property name.",
+							"type": "string",
+							"minLength": 1
+						},
+						"serialization_ids": {
+							"description": "Serialization ID remappings.",
+							"type": "array",
+							"items": {
+								"description": "Serialization ID.",
+								"type": "string"
+							},
+							"minItems": 1
+						}
+					},
+					"required": ["prop"],
+					"additionalProperties": false
+				}
+			},
+			"additionalProperties": false
+		},
 		"serialization_id_patches": {
 			"description": "Remappings for serialization_ids that go to the wrong things in .lang files.",
 			"type": "object",

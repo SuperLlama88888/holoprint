@@ -404,18 +404,18 @@ export async function makePack(structureFiles, config = {}, resourcePackStack, p
 							spawnAnimationAnimatedBones.push([boneName, getSpawnAnimationDelay(x, y, z), bonePos]);
 						}
 						
-						let blockName = blockPalette[paletteI]["name"];
-						if(!config.IGNORED_MATERIAL_LIST_BLOCKS.includes(blockName)) {
-							materialList.add(blockName);
+						let block = blockPalette[paletteI];
+						if(!config.IGNORED_MATERIAL_LIST_BLOCKS.includes(block["name"])) {
+							materialList.add(block);
 						}
 						if(layerI == 0) { // particle_expire_if_in_blocks only works on the first layer :(
 							blocksToValidate.push({
 								"locator": blockCoordinateName,
-								"block": blockName,
+								"block": block["name"],
 								"pos": [x, y, z]
 							});
 							blocksToValidateCurrentLayer++;
-							uniqueBlocksToValidate.add(blockName);
+							uniqueBlocksToValidate.add(block["name"]);
 						}
 						firstBoneForThisCoordinate = false;
 						totalBlockCount++;

@@ -1,6 +1,7 @@
 import { floor, nanToUndefined } from "./essential.js";
 
 export default class MaterialList {
+	/** @type {Map<String, Number>} */
 	materials;
 	totalMaterialCount;
 	
@@ -12,6 +13,7 @@ export default class MaterialList {
 	#ignoredBlocks;
 	#blockToItemMappings;
 	#itemCountMultipliers;
+	#specialBlockEntityProperties;
 	#serializationIdPatches;
 	#blocksMissingSerializationIds;
 	#translationPatches;
@@ -62,6 +64,7 @@ export default class MaterialList {
 					return [itemNames, patterns, value["multiplier"], value["remove"]];
 				}
 			});
+			this.#specialBlockEntityProperties = materialListMappings["special_block_entity_properties"];
 			this.#serializationIdPatches = materialListMappings["serialization_id_patches"];
 			this.#blocksMissingSerializationIds = materialListMappings["blocks_missing_serialization_ids"];
 			this.#translationPatches = materialListMappings["translation_patches"];
@@ -71,10 +74,11 @@ export default class MaterialList {
 	}
 	/**
 	 * Adds a block to the material list.
-	 * @param {String} blockName
+	 * @param {String|Block} block
 	 * @param {Number} [count]
 	 */
-	add(blockName, count = 1) {
+	add(block, count = 1) {
+		let blockName = typeof block == "string"? block : block["name"];
 		if(this.#ignoredBlocks.includes(blockName)) {
 			return;
 		}
@@ -87,6 +91,14 @@ export default class MaterialList {
 				}
 			}
 		});
+		if(itemName in this.#specialBlockEntityProperties && typeof block != "string") {
+			let blockEntityProperty = this.#specialBlockEntityProperties[itemName]["prop"];
+			if(blockEntityProperty in (block["block_entity_data"] ?? {})) {
+				itemName += `+${block["block_entity_data"][blockEntityProperty]}`;
+			} else {
+				console.error(`Cannot find block entity property ${blockEntityProperty} on block ${block["name"]}!`);
+			}
+		}
 		this.materials.set(itemName, (this.materials.get(itemName) ?? 0) + count);
 		this.totalMaterialCount += count;
 	}
@@ -105,8 +117,16 @@ export default class MaterialList {
 	 */
 	export() {
 		return [...this.materials].map(([itemName, count]) => {
+			let serializationId;
+			let blockEntityPropertyValue;
+			if(itemName.includes("+")) {
+				let match = itemName.match(/^([^+]+)\+(\d+)$/);
+				itemName = match[1];
+				blockEntityPropertyValue = +match[2];
+				serializationId = this.#specialBlockEntityProperties[itemName]["serialization_ids"]?.[blockEntityPropertyValue];
+			}
 			// try item translation key; if that doesn't work, try block translation key
-			let serializationId = this.#blocksMissingSerializationIds[itemName] ?? this.#findItemSerializationId(itemName);
+			serializationId ??= this.#blocksMissingSerializationIds[itemName] ?? this.#findItemSerializationId(itemName);
 			let translatedName = serializationId && this.#translate(serializationId);
 			if(!translatedName) {
 				let blockSerializationId = this.#findBlockSerializationId(itemName);
@@ -123,13 +143,17 @@ export default class MaterialList {
 					translatedName = serializationId;
 				}
 			}
+			let auxId = this.#findItemAuxId(itemName) ?? this.#findBlockAuxId(itemName); // this is used in the material list UI, so we prefer the item id
+			if(typeof auxId == "number" && typeof blockEntityPropertyValue == "number") {
+				auxId += blockEntityPropertyValue;
+			}
 			return {
 				itemName,
 				translationKey: this.#serializationIdToTranslationKey(serializationId),
 				translatedName,
 				count: count,
 				partitionedCount: this.#partitionCount(count),
-				auxId: this.#findItemAuxId(itemName) ?? this.#findBlockAuxId(itemName) // this is used in the material list UI, so we prefer the item id
+				auxId
 			};
 		}).sort((a, b) => b.count - a.count || a.translatedName > b.translatedName);
 	}
@@ -189,9 +213,19 @@ export default class MaterialList {
 			return `${count} = ${parts.join(" + ")}`; // a custom shulker box emoji (taken from OreUI files) is defined in font/glyph_E2.png
 		}
 	}
+	/**
+	 * Finds the aux id for an item.
+	 * @param {String} itemName
+	 * @returns {Number|undefined}
+	 */
 	#findItemAuxId(itemName) {
 		return nanToUndefined(this.#itemMetadata.get(`minecraft:${itemName}`)?.["raw_id"] * 65536); // undefined * 65536 = NaN, which breaks optional chaining
 	}
+	/**
+	 * Finds the aux id for a block.
+	 * @param {String} blockName
+	 * @returns {Number|undefined}
+	 */
 	#findBlockAuxId(blockName) {
 		return nanToUndefined(this.#blockMetadata.get(`minecraft:${blockName}`)?.["raw_id"] * 65536);
 	}
@@ -199,4 +233,7 @@ export default class MaterialList {
 
 /**
  * @typedef {import("./HoloPrint.js").MaterialListEntry} MaterialListEntry
+ */
+/**
+ * @typedef {import("./BlockGeoMaker.js").Block} Block
  */
