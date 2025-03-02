@@ -236,6 +236,11 @@
 							}
 						},
 						"additionalProperties": false
+					},
+					"disable_merging": {
+						"description": "Disables this cube from being automatically merged with any other cubes.",
+						"type": "boolean",
+						"default": true
 					}
 				},
 				"oneOf": [

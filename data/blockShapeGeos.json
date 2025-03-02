@@ -34,7 +34,8 @@
 	"double_slab": [ // with outlines it will be very apparent that these are double slabs
 		{
 			"pos": [0, 0, 0],
-			"size": [16, 8, 16]
+			"size": [16, 8, 16],
+			"disable_merging": true
 		},
 		{
 			"pos": [0, 8, 0],

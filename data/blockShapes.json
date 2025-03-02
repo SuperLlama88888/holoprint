@@ -3,7 +3,7 @@
 	"$schema": "schemas/blockShapes.schema.json",
 	
 	"patterns": { // Regular expressions that will be tested if no individual block key is found
-		"(?<!double_)_slab$": "slab",
+		"(?<!double.*)_slab$": "slab",
 		"double_.*slab$": "double_slab", // cut copper slabs have the "double" earlier.
 		"_button$": "button",
 		"_door$": "door",
