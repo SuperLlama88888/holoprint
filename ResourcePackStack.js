@@ -16,6 +16,7 @@ export default class ResourcePackStack {
 	cacheEnabled;
 	hash;
 	cacheName;
+	/** @type {Array<LocalResourcePack>} */
 	#localResourcePacks;
 	 /** @type {VanillaDataFetcher} */
 	#vanillaDataFetcher;
@@ -62,12 +63,13 @@ export default class ResourcePackStack {
 		let res = this.cacheEnabled && await this.#cache.match(cacheLink);
 		if(!res) {
 			if(ResourcePackStack.#JSON_FILES_TO_MERGE.includes(resourcePath)) {
-				let vanillaFile = await this.fetchData(filePath).then(res => res.jsonc());
+				let vanillaRes = await this.fetchData(filePath);
+				let vanillaFile = await vanillaRes.clone().jsonc(); // clone it so it can be read later if need be (responses can only be read once)
 				let resourcePackFiles = await Promise.all(this.#localResourcePacks.map(resourcePack => resourcePack.getFile(resourcePath)?.jsonc()));
 				resourcePackFiles.reverse(); // start with the lowest priority pack, so that they get overwritten by higher priority packs
 				let allFiles = [vanillaFile, ...resourcePackFiles.removeFalsies()];
-				if(allFiles.length == 1) {
-					res = new Response(JSON.stringify(vanillaFile)); // aahhh it goes back and forth between an object and json so much.
+				if(allFiles.length == 1) { // if only the vanilla resources had this file, use that response
+					res = vanillaRes;
 				} else {
 					let mergedFile = mergeObjects(allFiles);
 					console.debug(`Merged JSON file ${resourcePath}:`, mergedFile, "From:", allFiles);

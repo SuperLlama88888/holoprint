@@ -824,15 +824,15 @@ async function readStructureNBT(structureFile) {
 async function loadStuff(stuff, resourcePackStack) {
 	let filePromises = {};
 	Object.entries(stuff.packTemplate).forEach(([name, path]) => {
-		filePromises[name] = getResponseContents(fetch(`packTemplate/${path}`));
+		filePromises[name] = getResponseContents(fetch(`packTemplate/${path}`), path);
 	});
 	Object.entries(stuff.resources).forEach(([name, path]) => {
-		filePromises[name] = getResponseContents(resourcePackStack.fetchResource(path));
+		filePromises[name] = getResponseContents(resourcePackStack.fetchResource(path), path);
 	});
 	Object.assign(filePromises, stuff.otherFiles);
 	let dataPromises = {};
 	Object.entries(stuff.data).forEach(([name, path]) => {
-		dataPromises[name] = getResponseContents(resourcePackStack.fetchData(path));
+		dataPromises[name] = getResponseContents(resourcePackStack.fetchData(path), path);
 	});
 	return await awaitAllEntries({
 		files: awaitAllEntries(filePromises),
@@ -842,14 +842,15 @@ async function loadStuff(stuff, resourcePackStack) {
 /**
  * Gets the contents of a response based on the requested file extension (e.g. object from .json, image from .png, etc.).
  * @param {Promise<Response>} resPromise
+ * @param {String} filePath
  * @returns {Promise<String|Blob|Object|HTMLImageElement>}
  */
-async function getResponseContents(resPromise) {
+async function getResponseContents(resPromise, filePath) {
 	let res = await resPromise;
 	if(res.status >= 400) {
 		throw new Error(`HTTP error ${res.status} for ${res.url}`);
 	}
-	let fileExtension = res.url.slice(res.url.lastIndexOf(".") + 1);
+	let fileExtension = filePath.slice(filePath.lastIndexOf(".") + 1);
 	switch(fileExtension) {
 		case "json":
 		case "material": return await res.jsonc();
