@@ -116,7 +116,7 @@
 		"item.creeper_head": "item.skull.creeper",
 		"item.dragon_head": "item.skull.dragon",
 		"item.piglin_head": "item.skull.piglin",
-		"item.player_head": "item.skull.player",
+		"item.player_head": "item.skull.char",
 		"item.skeleton_skull": "item.skull.skeleton",
 		"item.wither_skeleton_skull": "item.skull.wither",
 		"item.zombie_head": "item.skull.zombie",
