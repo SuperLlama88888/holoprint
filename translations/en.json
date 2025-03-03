@@ -54,7 +54,7 @@
 	"settings.opacity_mode": "Opacity mode:",
 	"settings.opacity_mode.fixed_opacity": "Single option",
 	"settings.opacity_mode.in_game_controls": "In-game controls",
-	"settings.player_controls": "In-game controls ([Wiki](https://github.com/SuperLlama88888/holoprint/wiki/1.-Usage-instructions#hologram-controls))",
+	"settings.player_controls": "In-game controls ([Wiki](https://holoprint-mc.github.io/wiki/hologram-controls))",
 	"settings.reset": "Settings reset!",
 	"settings.spawn_animation": "Spawn animation:",
 	"settings.textures": "Textures",

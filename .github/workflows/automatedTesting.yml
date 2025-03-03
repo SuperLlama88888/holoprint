@@ -16,9 +16,20 @@ jobs:
         run: |
           npm install @actions/core ajv strip-json-comments@3.1.1
           node tests/validateJsonData.js
+  check-block-translation-coverage:
+    name: Check Block Translation Coverage
+    needs: validate-json-data
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4.1.1
+      - name: Check block translation coverage
+        run: |
+          npm install @actions/core puppeteer mime-types
+          node tests/checkBlockTranslationCoverage.js
   test-sample-structures:
     name: Test Sample Structures
-    needs: validate-json-data
+    needs: [validate-json-data, check-block-translation-coverage]
     runs-on: ubuntu-latest
     strategy:
       matrix:
@@ -46,13 +57,3 @@ jobs:
         with:
           name: screenshots_${{ matrix.browser }}
           path: tests/screenshots
-  check-block-translation-coverage:
-    name: Check Block Translation Coverage
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4.1.1
-      - name: Check block translation coverage
-        run: |
-          npm install @actions/core puppeteer mime-types
-          node tests/checkBlockTranslationCoverage.js

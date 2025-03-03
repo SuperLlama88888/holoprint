@@ -34,7 +34,8 @@
 	"double_slab": [ // with outlines it will be very apparent that these are double slabs
 		{
 			"pos": [0, 0, 0],
-			"size": [16, 8, 16]
+			"size": [16, 8, 16],
+			"disable_merging": true
 		},
 		{
 			"pos": [0, 8, 0],
@@ -4991,6 +4992,314 @@
 		{
 			"pos": [0, 0, 8],
 			"size": [16, 16, 0]
+		}
+	],
+	"template_shulker_box": [ // since this relies on the shulker model, the two halves are split
+		{
+			"pos": [0.01, 0, 0.01], // bottom part must be slightly inset to avoid z-fighting
+			"size": [15.98, 8, 15.98],
+			"uv": {
+				"side": [0, 44],
+				"down": [32, 28]
+			},
+			"uv_sizes": {
+				"side": [16, 8],
+				"down": [16, 16]
+			},
+			"textures": {
+				"up": "none"
+			},
+			"texture_size": [64, 64]
+		},
+		{
+			"pos": [0, 4, 0],
+			"size": [16, 12, 16],
+			"uv": {
+				"side": [0, 16],
+				"up": [16, 0]
+			},
+			"textures": {
+				"down": "none"
+			},
+			"texture_size": [64, 64]
+		}
+	],
+	"shulker_box": [ // this is for all shulker boxes but light grey; the texture path can be extracted from the block name
+		{
+			"copy": "template_shulker_box",
+			"textures": {
+				"*": "textures/entity/shulker/shulker_${#block_name[:-12]}"
+			}
+		}
+	],
+	"textured_shulker_box": [ // this is for light grey shulker boxes only, since their texture path is shulker_silver.png not shulker_light_grey.png :(
+		{
+			"copy": "template_shulker_box",
+			"textures": {
+				"*": "#tex"
+			}
+		}
+	],
+	"jigsaw_block": [
+		{
+			"pos": [0, 0, 0],
+			"size": [16, 16, 16],
+			"textures": {
+				"down": "south",
+				"south": "down",
+				"up": "north",
+				"north": "up"
+			},
+			"rot": [0, 0, 0]
+		}
+	],
+	"template_bed_leg": [
+		{
+			"pos": [0, 0, 0],
+			"size": [3, 3, 3],
+			"pivot": [1.5, 1.5, 1.5],
+			"textures": {
+				"up": "none"
+			},
+			"uv": {
+				"down": [3, 41],
+				"west": [0, 41],
+				"east": [15, 38],
+				"north": [3, 38],
+				"south": [0, 41]
+			},
+			"texture_size": [64, 64]
+		}
+	],
+	"template_bed": [ // todo: make this read from models/mobs.json so resource packs that customise beds work. the problem is that if we take the geometry straight from there the bed will be standing up (I think it's because the side textures have to be rotated)
+		{
+			"pos": [0, 3, 0],
+			"size": [16, 6, 32],
+			"textures": {
+				"west": "none",
+				"east": "none"
+			},
+			"uv": {
+				"down": [28, 6],
+				"up": [6, 6],
+				"west": [0, 6],
+				"east": [0, 6],
+				"north": [6, 0],
+				"south": [22, 0]
+			},
+			"flip_textures_horizontally": ["north", "south", "down"],
+			"flip_textures_vertically": ["north", "south", "down"],
+			"texture_size": [64, 64]
+		},
+		{
+			"pos": [0, 3, 0],
+			"size": [16, 32, 6],
+			"rot": [-90, 0, 0], // side textures must be rotated since they are vertical in the texture :(
+			"pivot": [0, 6, 3],
+			"textures": {
+				"down": "none",
+				"up": "none",
+				"north": "none",
+				"south": "none"
+			},
+			"uv": {
+				"west": [0, 6],
+				"east": [0, 6]
+			},
+			"flip_textures_horizontally": ["west"],
+			"flip_textures_vertically": ["west", "east"],
+			"texture_size": [64, 64]
+		},
+		{
+			"copy": "template_bed_leg"
+		},
+		{
+			"copy": "template_bed_leg",
+			"rot": [0, -90, 0],
+			"translate": [13, 0, 0]
+		},
+		{
+			"copy": "template_bed_leg",
+			"rot": [0, 180, 0],
+			"translate": [13, 0, 29]
+		},
+		{
+			"copy": "template_bed_leg",
+			"rot": [0, 90, 0],
+			"translate": [0, 0, 29]
+		}
+	],
+	"bed": [
+		{
+			"if": "head_piece_bit == 1",
+			"copy": "template_bed",
+			"textures": {
+				"*": "textures/entity/bed/${Array.colors[entity.color]}"
+			},
+			"arrays": {
+				"colors": ["white", "orange", "magenta", "light_blue", "yellow", "lime", "pink", "gray", "silver", "cyan", "purple", "blue", "brown", "green", "red", "black"] // https://minecraft.wiki/w/Bed#Metadata
+			}
+		}
+	],
+	"template_unpositioned_skull": [
+		{
+			"pos": [4, 0, 4],
+			"size": [8, 8, 8],
+			"box_uv": [0, 0],
+			"textures": {
+				"*": "#tex"
+			}
+		}
+	],
+	"template_skull": [
+		{
+			"if": "facing_direction == 1",
+			"copy": "template_unpositioned_skull"
+		},
+		{
+			"if": "facing_direction > 1",
+			"copy": "template_unpositioned_skull",
+			"translate": [0, 4, 4]
+		}
+	],
+	"skull": [
+		{
+			"copy": "template_skull",
+			"texture_size": [64, 32]
+		}
+	],
+	"player_head": [
+		{
+			"copy": "template_skull",
+			"texture_size": [64, 64]
+		}
+	],
+	"template_dragon_head_ear": [
+		{
+			"pos": [0, 0, 0],
+			"size": [1.5, 3, 4.5],
+			"box_uv": [0, 0],
+			"box_uv_size": [2, 4, 6]
+		}
+	],
+	"template_dragon_head_nostril": [
+		{
+			"pos": [0, 0, 0],
+			"size": [1.5, 1.5, 3],
+			"box_uv": [112, 0],
+			"box_uv_size": [2, 2, 4]
+		}
+	],
+	"template_dragon_head": [
+		{
+			"pos": [2, 0, 0.5],
+			"size": [12, 12, 12],
+			"box_uv": [112, 30],
+			"box_uv_size": [16, 16, 16]
+		},
+		{
+			"copy": "template_dragon_head_ear",
+			"translate": [4.25, 12, 5]
+		},
+		{
+			"copy": "template_dragon_head_ear",
+			"translate": [10.25, 12, 5]
+		},
+		{
+			"pos": [3.5, 3, -10],
+			"size": [9, 3.75, 12],
+			"box_uv": [176, 44],
+			"box_uv_size": [12, 5, 16]
+		},
+		{
+			"copy": "template_dragon_head_nostril",
+			"translate": [4.25, 6.75, -8.5]
+		},
+		{
+			"copy": "template_dragon_head_nostril",
+			"translate": [10.25, 6.75, -8.5]
+		},
+		{
+			"pos": [3.5, 0, -10],
+			"size": [9, 3, 12],
+			"rot": [15, 0, 0],
+			"pivot": [8, 3, 2],
+			"box_uv": [176, 65],
+			"box_uv_size": [12, 4, 16]
+		}
+	],
+	"dragon_head": [
+		{
+			"if": "facing_direction == 1",
+			"copy": "template_dragon_head",
+			"textures": {
+				"*": "textures/entity/dragon/dragon"
+			},
+			"texture_size": [256, 256]
+		},
+		{
+			"if": "facing_direction > 1",
+			"copy": "template_dragon_head",
+			"translate": [0, 4, 4],
+			"textures": {
+				"*": "textures/entity/dragon/dragon"
+			},
+			"texture_size": [256, 256]
+		}
+	],
+	"template_piglin_head": [
+		{
+			"pos": [3, 0, 4],
+			"size": [10, 8, 8],
+			"box_uv": [0, 0]
+		},
+		{
+			"pos": [6, 0, 3],
+			"size": [4, 4, 1],
+			"box_uv": [31, 1]
+		},
+		{
+			"pos": [5, 0, 3],
+			"size": [1, 2, 1],
+			"box_uv": [2, 0]
+		},
+		{
+			"pos": [10, 0, 3],
+			"size": [1, 2, 1],
+			"box_uv": [2, 4]
+		},
+		{
+			"pos": [3, 1, 6],
+			"size": [1, 5, 4],
+			"pivot": [3, 6, 8],
+			"rot": [0, 0, 30],
+			"box_uv": [39, 6]
+		},
+		{
+			"pos": [12, 1, 6],
+			"size": [1, 5, 4],
+			"pivot": [13, 6, 8],
+			"rot": [0, 0, -30],
+			"box_uv": [51, 6]
+		}
+	],
+	"piglin_head": [
+		{
+			"if": "facing_direction == 1",
+			"copy": "template_piglin_head",
+			"textures": {
+				"*": "textures/entity/piglin/piglin"
+			},
+			"texture_size": [64, 64]
+		},
+		{
+			"if": "facing_direction > 1",
+			"copy": "template_piglin_head",
+			"translate": [0, 4, 4],
+			"textures": {
+				"*": "textures/entity/piglin/piglin"
+			},
+			"texture_size": [64, 64]
 		}
 	],
 	"debug_auto_uv_4": [{"pos":[0,0,0],"size":[4,4,4]},{"pos":[0,0,4],"size":[4,4,4]},{"pos":[0,0,8],"size":[4,4,4]},{"pos":[0,0,12],"size":[4,4,4]},{"pos":[0,4,0],"size":[4,4,4]},{"pos":[0,4,4],"size":[4,4,4]},{"pos":[0,4,8],"size":[4,4,4]},{"pos":[0,4,12],"size":[4,4,4]},{"pos":[0,8,0],"size":[4,4,4]},{"pos":[0,8,4],"size":[4,4,4]},{"pos":[0,8,8],"size":[4,4,4]},{"pos":[0,8,12],"size":[4,4,4]},{"pos":[0,12,0],"size":[4,4,4]},{"pos":[0,12,4],"size":[4,4,4]},{"pos":[0,12,8],"size":[4,4,4]},{"pos":[0,12,12],"size":[4,4,4]},{"pos":[4,0,0],"size":[4,4,4]},{"pos":[4,0,4],"size":[4,4,4]},{"pos":[4,0,8],"size":[4,4,4]},{"pos":[4,0,12],"size":[4,4,4]},{"pos":[4,4,0],"size":[4,4,4]},{"pos":[4,4,12],"size":[4,4,4]},{"pos":[4,8,0],"size":[4,4,4]},{"pos":[4,8,12],"size":[4,4,4]},{"pos":[4,12,0],"size":[4,4,4]},{"pos":[4,12,4],"size":[4,4,4]},{"pos":[4,12,8],"size":[4,4,4]},{"pos":[4,12,12],"size":[4,4,4]},{"pos":[8,0,0],"size":[4,4,4]},{"pos":[8,0,4],"size":[4,4,4]},{"pos":[8,0,8],"size":[4,4,4]},{"pos":[8,0,12],"size":[4,4,4]},{"pos":[8,4,0],"size":[4,4,4]},{"pos":[8,4,12],"size":[4,4,4]},{"pos":[8,8,0],"size":[4,4,4]},{"pos":[8,8,12],"size":[4,4,4]},{"pos":[8,12,0],"size":[4,4,4]},{"pos":[8,12,4],"size":[4,4,4]},{"pos":[8,12,8],"size":[4,4,4]},{"pos":[8,12,12],"size":[4,4,4]},{"pos":[12,0,0],"size":[4,4,4]},{"pos":[12,0,4],"size":[4,4,4]},{"pos":[12,0,8],"size":[4,4,4]},{"pos":[12,0,12],"size":[4,4,4]},{"pos":[12,4,0],"size":[4,4,4]},{"pos":[12,4,4],"size":[4,4,4]},{"pos":[12,4,8],"size":[4,4,4]},{"pos":[12,4,12],"size":[4,4,4]},{"pos":[12,8,0],"size":[4,4,4]},{"pos":[12,8,4],"size":[4,4,4]},{"pos":[12,8,8],"size":[4,4,4]},{"pos":[12,8,12],"size":[4,4,4]},{"pos":[12,12,0],"size":[4,4,4]},{"pos":[12,12,4],"size":[4,4,4]},{"pos":[12,12,8],"size":[4,4,4]},{"pos":[12,12,12],"size":[4,4,4]}] // function genDebugGeo(step) {let boneCubes = [];for(let x = 0; x < 16; x += step) {for(let y = 0; y < 16; y += step) {for(let z = 0; z < 16; z += step) {if(!x || !y || !z || x == 16 - step || y == 16 - step || z == 16 - step) {boneCubes.push({ pos: [x, y, z], size: [step, step, step] });}}}}return JSON.stringify(boneCubes);}

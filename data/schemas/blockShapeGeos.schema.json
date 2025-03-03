@@ -106,6 +106,26 @@
 						},
 						"additionalProperties": false
 					},
+					"box_uv": {
+						"description": "UV coordinates for box UV.",
+						"type": "array",
+						"items": {
+							"type": "integer",
+							"minimum": 0
+						},
+						"minItems": 2,
+						"maxItems": 2
+					},
+					"box_uv_size": {
+						"description": "Size override for box UV.",
+						"type": "array",
+						"items": {
+							"type": "integer",
+							"exclusiveMinimum": 0
+						},
+						"minItems": 3,
+						"maxItems": 3
+					},
 					"textures": {
 						"description": "Forces a face to use the texture of another face, or a texture located at a given file path.",
 						"type": "object",
@@ -207,10 +227,20 @@
 						"type": "object",
 						"patternProperties": {
 							"^\\w+$": {
-								"description": "Array name"
+								"description": "Array name",
+								"type": "array",
+								"minItems": 1,
+								"items": {
+									"type": "string"
+								}
 							}
 						},
 						"additionalProperties": false
+					},
+					"disable_merging": {
+						"description": "Disables this cube from being automatically merged with any other cubes.",
+						"type": "boolean",
+						"default": true
 					}
 				},
 				"oneOf": [

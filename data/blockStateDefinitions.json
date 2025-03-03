@@ -30,7 +30,8 @@
 			"bloom": [0, 1], // sculk catalyst (hardly noticeable in-game)
 			"can_summon": [0, 1], // sculk shrieker
 			"respawn_anchor_charge": [0, 1, 2, 3, 4],
-			"huge_mushroom_bits": [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15]
+			"huge_mushroom_bits": [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15],
+			"brushed_progress": [0, 1, 2, 3] // suspicious sand/gravel
 		},
 		"block_shapes": {
 			"cake": {
@@ -157,7 +158,7 @@
 				"south": [90, 180, 0],
 				"north": [90, 0, 0]
 			},
-			"direction": { // fence gates
+			"direction": {
 				"0": [0, 0, 0], // south
 				"1": [0, 90, 0], // west
 				"2": [0, 180, 0], // north
@@ -278,7 +279,7 @@
 			"barrel": {
 				"facing_direction": [[180, 0, 0], [0, 0, 0], [90, 0, 0], [90, 180, 0], [90, -90, 0], [90, 90, 0]]
 			},
-			"repeater,comparator": {
+			"repeater,comparator,fence_gate,bamboo_fence_gate": {
 				"minecraft:cardinal_direction": { // this is opposite to how it is usually
 					"north": [0, 180, 0],
 					"south": [0, 0, 0],
@@ -287,12 +288,54 @@
 				}
 			},
 			"door": {
-				"direction": {
-					"0": [0, -90, 0],
-					"1": [0, 0, 0],
-					"2": [0, 90, 0],
-					"3": [0, 180, 0]
+				"minecraft:cardinal_direction": {
+					"south": [0, -90, 0],
+					"west": [0, 0, 0],
+					"north": [0, 90, 0],
+					"east": [0, 180, 0]
 				}
+			},
+			"shulker_box,textured_shulker_box": {
+				"entity.facing": { // ok I lied, it also can look at block entity data... (this is the only block that doesn't store rotation in block states)
+					"0": [180, 0, 0],
+					"1": [0, 0, 0],
+					"2": [90, 0, 0],
+					"3": [90, 180, 0],
+					"4": [90, -90, 0],
+					"5": [90, 90, 0]
+				}
+			},
+			"jigsaw_block": {
+				"rotation": [[0, 0, 0], [0, 90, 0], [0, 180, 0], [0, -90, 0]],
+				"facing_direction": [[0, 0, 180], [0, 0, 0], [90, 0, 180], [90, 180, 180], [90, 90, 180], [90, -90, 180]]
+			},
+			"bed": {
+				"direction": {
+					"0": [0, 180, 0], // south
+					"1": [0, -90, 0], // west
+					"2": [0, 0, 0], // north
+					"3": [0, 90, 0] // east
+				}
+			},
+			"skull,player_head,dragon_head,piglin_head": {
+				"entity.Rotation": {
+					"-180": [0, -180, 0],
+					"-157.5": [0, -157.5, 0],
+					"-112.5": [0, -112.5, 0],
+					"-90": [0, -90, 0],
+					"-67.5": [0, -67.5, 0],
+					"-45": [0, -45, 0],
+					"-22.5": [0, -22.5, 0],
+					"0": [0, 0, 0],
+					"45": [0, 45, 0],
+					"90": [0, 90, 0],
+					"135": [0, 135, 0],
+					"22.5": [0, 22.5, 0],
+					"67.5": [0, 67.5, 0],
+					"112.5": [0, 112.5, 0],
+					"157.5": [0, 157.5, 0]
+				},
+				"facing_direction": [[42, 42, 42], [0, 0, 0], [0, 0, 0], [0, 180, 0], [0, -90, 0], [0, 90, 0]]			
 			}
 		},
 		"block_names": {

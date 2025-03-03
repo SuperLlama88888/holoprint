@@ -112,7 +112,8 @@ export default class BlockGeoMaker {
 		}
 		let blockShapeSpecificRotations = this.#blockShapeBlockStateRotations[blockShape];
 		let blockNameSpecificRotations = this.#blockNameBlockStateRotations[blockName];
-		Object.entries(block["states"] ?? {}).forEach(([blockStateName, blockStateValue]) => {
+		let statesAndBlockEntityData = this.#getBlockStatesAndEntityDataEntries(block);
+		statesAndBlockEntityData.forEach(([blockStateName, blockStateValue]) => {
 			let rotations = blockNameSpecificRotations?.[blockStateName] ?? this.#blockNamePatternBlockStateRotations.find(([pattern, rotations]) => pattern.test(blockName) && blockName in rotations)?.[1] ?? blockShapeSpecificRotations?.[blockStateName] ?? this.#globalBlockStateRotations[blockStateName]; // order: block name (exact match), block name (regular expression pattern), block shape, global
 			if(!rotations) {
 				return; // this block state doesn't control rotation
@@ -122,7 +123,7 @@ export default class BlockGeoMaker {
 				console.error(`Block state value ${blockStateValue} for rotation block state ${blockStateName} not found on ${blockName}...`, block);
 				return;
 			}
-			if(bone["rotation"]) {
+			if("rotation" in bone) {
 				console.debug(`Multiple rotation block states for block ${block["name"]}; adding them all together!`);
 				bone["rotation"] = bone["rotation"].map((x, i) => x + rotations[blockStateValue][i]);
 			} else {
@@ -130,6 +131,10 @@ export default class BlockGeoMaker {
 				bone["pivot"] = [8, 8, 8];
 			}
 		});
+		if(bone["rotation"]?.every(x => x == 0)) {
+			delete bone["rotation"];
+			delete bone["pivot"];
+		}
 		return bone;
 	}
 	/**
@@ -198,7 +203,7 @@ export default class BlockGeoMaker {
 				let blockOverride = structuredClone(block);
 				for(let blockStateName in cube["block_states"]) {
 					if(typeof cube["block_states"][blockStateName] == "string") {
-						cube["block_states"][blockStateName] = this.#interpolateInBlockValues(block, cube["block_states"][blockStateName]);
+						cube["block_states"][blockStateName] = this.#interpolateInBlockValues(block, cube["block_states"][blockStateName], cube);
 					}
 				}
 				blockOverride["states"] = { ...blockOverride["states"], ...cube["block_states"] };
@@ -211,9 +216,13 @@ export default class BlockGeoMaker {
 				delete cube["if"]; // later on, when determining if a bone cube is mergeable, we only allow cubes with "pos" and "size" keys. I am lazy so it only checks if there are exactly 2 keys in the cube. hence, we need to delete the "if" key here.
 			}
 			if("terrain_texture" in cube) {
-				cube["terrain_texture"] = this.#interpolateInBlockValues(cube["block_override"] ?? block, cube["terrain_texture"]);
+				cube["terrain_texture"] = this.#interpolateInBlockValues(cube["block_override"] ?? block, cube["terrain_texture"], cube);
 			}
 			if("copy" in cube) {
+				if(cube["copy"] == blockShape) { // prevent recursion (sometimes)
+					console.error(`Cannot copy the same block shape: ${blockShape}`);
+					continue;
+				}
 				let copiedCubes = structuredClone(this.#blockShapeGeos[cube["copy"]]);
 				if(!copiedCubes) {
 					console.error(`Could not find geometry for block shape ${blockShape}; defaulting to "block"`);
@@ -307,42 +316,10 @@ export default class BlockGeoMaker {
 		let variantWithoutEigenvariant;
 		
 		cubes.forEach(cube => {
-			// In MCBE most non-full-block textures look at where the part that is being rendered is in relation to the entire cube space it's in - like it's being projected onto a full face then cut out. Kinda hard to explain sorry, I recommend messing around with fence textures so you understand how it works.
-			let westUvOffset = [cube.z, 16 - cube.y - cube.h];
-			let eastUvOffset = [16 - cube.z - cube.d, 16 - cube.y - cube.h];
-			let downUvOffset = [16 - cube.x - cube.w, 16 - cube.z - cube.d];
-			let upUvOffset = [16 - cube.x - cube.w, cube.z];
-			let northUvOffset = [cube.x, 16 - cube.y - cube.h];
-			let southUvOffset = [16 - cube.x - cube.w, 16 - cube.y - cube.h];
 			let boneCube = {
 				"origin": cube["pos"],
 				"size": cube["size"],
-				"uv": {
-					"west": {
-						"uv": cube["uv"]?.["west"] ?? cube["uv"]?.["side"] ?? cube["uv"]?.["*"] ?? westUvOffset,
-						"uv_size": cube["uv_sizes"]?.["west"] ?? cube["uv_sizes"]?.["side"] ?? cube["uv_sizes"]?.["*"] ?? [cube.d, cube.h]
-					},
-					"east": {
-						"uv": cube["uv"]?.["east"] ?? cube["uv"]?.["side"] ?? cube["uv"]?.["*"] ?? eastUvOffset,
-						"uv_size": cube["uv_sizes"]?.["east"] ?? cube["uv_sizes"]?.["side"] ?? cube["uv_sizes"]?.["*"] ?? [cube.d, cube.h]
-					},
-					"down": {
-						"uv": cube["uv"]?.["down"] ?? cube["uv"]?.["*"] ?? downUvOffset,
-						"uv_size": cube["uv_sizes"]?.["down"] ?? cube["uv_sizes"]?.["*"] ?? [cube.w, cube.d]
-					},
-					"up": {
-						"uv": cube["uv"]?.["up"] ?? cube["uv"]?.["*"] ?? upUvOffset,
-						"uv_size": cube["uv_sizes"]?.["up"] ?? cube["uv_sizes"]?.["*"] ?? [cube.w, cube.d]
-					},
-					"north": {
-						"uv": cube["uv"]?.["north"] ?? cube["uv"]?.["side"] ?? cube["uv"]?.["*"] ?? northUvOffset,
-						"uv_size": cube["uv_sizes"]?.["north"] ?? cube["uv_sizes"]?.["side"] ?? cube["uv_sizes"]?.["*"] ?? [cube.w, cube.h]
-					},
-					"south": {
-						"uv": cube["uv"]?.["south"] ?? cube["uv"]?.["side"] ?? cube["uv"]?.["*"] ?? southUvOffset,
-						"uv_size": cube["uv_sizes"]?.["south"] ?? cube["uv_sizes"]?.["side"] ?? cube["uv_sizes"]?.["*"] ?? [cube.w, cube.h]
-					}
-				}
+				"uv": this.#calculateUv(cube)
 			};
 			
 			let croppable = false;
@@ -392,7 +369,7 @@ export default class BlockGeoMaker {
 					delete boneCube["uv"][faceName];
 					continue;
 				}
-				textureFace = this.#interpolateInBlockValues(cube["block_override"] ?? block, textureFace);
+				textureFace = this.#interpolateInBlockValues(cube["block_override"] ?? block, textureFace, cube);
 				let textureRef = {
 					"uv": face["uv"].map((x, i) => x / textureSize[i]),
 					"uv_size": face["uv_size"].map((x, i) => x / textureSize[i]),
@@ -437,6 +414,10 @@ export default class BlockGeoMaker {
 				this.textureRefs.add(textureRef);
 				let flipTextureHorizontally = cube["flip_textures_horizontally"]?.includes(faceName) ^ (isSideFace && cube["flip_textures_horizontally"]?.includes("side")) ^ cube["flip_textures_horizontally"]?.includes("*");
 				let flipTextureVertically = cube["flip_textures_vertically"]?.includes(faceName) ^ (isSideFace && cube["flip_textures_vertically"]?.includes("side")) ^ cube["flip_textures_vertically"]?.includes("*");
+				if("box_uv" in cube) { // box uv does some flipping automatically
+					flipTextureHorizontally ^= faceName != "north" && faceName != "south";
+					flipTextureVertically ^= faceName == "up";
+				}
 				boneCube["uv"][faceName] = {
 					"index": this.textureRefs.indexOf(textureRef),
 					"flip_horizontally": (faceName == "down" || faceName == "up") ^ flipTextureHorizontally, // in MC the down/up faces are rotated 180 degrees compared to how they are in geometry; this can be faked by flipping both axes. I don't want to use uv_rotation since that's a 1.21 thing and I want support back to 1.16.
@@ -466,6 +447,14 @@ export default class BlockGeoMaker {
 			boneCubes.push(boneCube);
 		});
 		return boneCubes;
+	}
+	/**
+	 * Returns the entries of a block's states and block entity data (prefixed by `entity.`; only first-level properties are supported).
+	 * @param {Block} block
+	 * @returns {Array<[String, any]>}
+	 */
+	#getBlockStatesAndEntityDataEntries(block) {
+		return [...Object.entries(block["states"] ?? {}), ...Object.entries(block["block_entity_data"] ?? {}).map(([key, value]) => [`entity.${key}`, value])];
 	}
 	/**
 	 * Merges cubes together greedily.
@@ -522,14 +511,15 @@ export default class BlockGeoMaker {
 			console.warn(`Cannot ignore eigenvariant of ${blockName} as it doesn't exist!`);
 		}
 		
-		if(!("states" in block)) {
+		if(!("states" in block || "block_entity_data" in block)) {
 			return -1;
 		}
 		let blockShape = this.#getBlockShape(blockName); // In copied block shapes, we want to look at the original block shape's texture variants, not the copied's. E.g. With candle_cake, we don't want the cake that is copied to look at the texture variants for cake (which includes bite_counter).
+		let statesAndBlockEntityData = this.#getBlockStatesAndEntityDataEntries(block);
 		let blockShapeSpecificVariants = this.#blockShapeBlockStateTextureVariants[blockShape];
 		if(blockShapeSpecificVariants?.["#exclusive_add"]) {
 			let variant = 0;
-			Object.entries(block["states"]).forEach(([blockStateName, blockStateValue]) => {
+			statesAndBlockEntityData.forEach(([blockStateName, blockStateValue]) => {
 				if(blockStateName in blockShapeSpecificVariants) {
 					let blockStateVariants = blockShapeSpecificVariants[blockStateName];
 					if(!(blockStateValue in blockStateVariants)) {
@@ -544,7 +534,7 @@ export default class BlockGeoMaker {
 		let blockNameSpecificVariants = this.#blockNameBlockStateTextureVariants[blockName] ?? this.#blockNamePatternBlockStateTextureVariants.find(([pattern]) => pattern.test(blockName))?.[1];
 		if(blockNameSpecificVariants?.["#exclusive_add"]) {
 			let variant = 0;
-			Object.entries(block["states"]).forEach(([blockStateName, blockStateValue]) => {
+			statesAndBlockEntityData.forEach(([blockStateName, blockStateValue]) => {
 				if(blockStateName in blockNameSpecificVariants) {
 					let blockStateVariants = blockNameSpecificVariants[blockStateName];
 					if(!(blockStateValue in blockStateVariants)) {
@@ -557,7 +547,7 @@ export default class BlockGeoMaker {
 			return variant;
 		}
 		let variant = -1;
-		Object.entries(block["states"]).forEach(([blockStateName, blockStateValue]) => {
+		statesAndBlockEntityData.forEach(([blockStateName, blockStateValue]) => {
 			let blockStateVariants = blockNameSpecificVariants?.[blockStateName] ?? blockShapeSpecificVariants?.[blockStateName] ?? this.#globalBlockStateTextureVariants[blockStateName];
 			if(blockStateVariants == undefined) {
 				return;
@@ -574,6 +564,80 @@ export default class BlockGeoMaker {
 			variant = newVariant;
 		});
 		return variant;
+	}
+	/**
+	 * Calculates the UV for a cube.
+	 * @param {Object} cube
+	 * @returns {Object}
+	 */
+	#calculateUv(cube) {
+		if("box_uv" in cube) { // this is where a singular uv coordinate is specified, and the rest is calculated as below. used primarily in entity models.
+			let boxUvSize = cube["box_uv_size"] ?? cube["size"];
+			let uv = {
+				"up": {
+					"uv": [boxUvSize[2], 0],
+					"uv_size": [boxUvSize[0], boxUvSize[2]]
+				},
+				"down": {
+					"uv": [boxUvSize[0] + boxUvSize[2], 0],
+					"uv_size": [boxUvSize[0], boxUvSize[2]]
+				},
+				"west": {
+					"uv": [0, boxUvSize[2]],
+					"uv_size": [boxUvSize[2], boxUvSize[1]]
+				},
+				"north": {
+					"uv": [boxUvSize[2], boxUvSize[2]],
+					"uv_size": [boxUvSize[0], boxUvSize[1]]
+				},
+				"east": {
+					"uv": [boxUvSize[0] + boxUvSize[2], boxUvSize[2]],
+					"uv_size": [boxUvSize[2], boxUvSize[1]]
+				},
+				"south": {
+					"uv": [boxUvSize[0] + boxUvSize[2] * 2, boxUvSize[2]],
+					"uv_size": [boxUvSize[0], boxUvSize[1]]
+				}
+			};
+			Object.values(uv).forEach(face => {
+				face["uv"] = face["uv"].map((x, i) => x + cube["box_uv"][i]);
+			});
+			return uv;
+		} else {
+			// In MCBE most non-full-block textures look at where the part that is being rendered is in relation to the entire cube space it's in - like it's being projected onto a full face then cut out. Kinda hard to explain sorry, I recommend messing around with fence textures so you understand how it works.
+			let westUvOffset = [cube.z, 16 - cube.y - cube.h];
+			let eastUvOffset = [16 - cube.z - cube.d, 16 - cube.y - cube.h];
+			let downUvOffset = [16 - cube.x - cube.w, 16 - cube.z - cube.d];
+			let upUvOffset = [16 - cube.x - cube.w, cube.z];
+			let northUvOffset = [cube.x, 16 - cube.y - cube.h];
+			let southUvOffset = [16 - cube.x - cube.w, 16 - cube.y - cube.h];
+			return {
+				"west": {
+					"uv": cube["uv"]?.["west"] ?? cube["uv"]?.["side"] ?? cube["uv"]?.["*"] ?? westUvOffset,
+					"uv_size": cube["uv_sizes"]?.["west"] ?? cube["uv_sizes"]?.["side"] ?? cube["uv_sizes"]?.["*"] ?? [cube.d, cube.h]
+				},
+				"east": {
+					"uv": cube["uv"]?.["east"] ?? cube["uv"]?.["side"] ?? cube["uv"]?.["*"] ?? eastUvOffset,
+					"uv_size": cube["uv_sizes"]?.["east"] ?? cube["uv_sizes"]?.["side"] ?? cube["uv_sizes"]?.["*"] ?? [cube.d, cube.h]
+				},
+				"down": {
+					"uv": cube["uv"]?.["down"] ?? cube["uv"]?.["*"] ?? downUvOffset,
+					"uv_size": cube["uv_sizes"]?.["down"] ?? cube["uv_sizes"]?.["*"] ?? [cube.w, cube.d]
+				},
+				"up": {
+					"uv": cube["uv"]?.["up"] ?? cube["uv"]?.["*"] ?? upUvOffset,
+					"uv_size": cube["uv_sizes"]?.["up"] ?? cube["uv_sizes"]?.["*"] ?? [cube.w, cube.d]
+				},
+				"north": {
+					"uv": cube["uv"]?.["north"] ?? cube["uv"]?.["side"] ?? cube["uv"]?.["*"] ?? northUvOffset,
+					"uv_size": cube["uv_sizes"]?.["north"] ?? cube["uv_sizes"]?.["side"] ?? cube["uv_sizes"]?.["*"] ?? [cube.w, cube.h]
+				},
+				"south": {
+					"uv": cube["uv"]?.["south"] ?? cube["uv"]?.["side"] ?? cube["uv"]?.["*"] ?? southUvOffset,
+					"uv_size": cube["uv_sizes"]?.["south"] ?? cube["uv_sizes"]?.["side"] ?? cube["uv_sizes"]?.["*"] ?? [cube.w, cube.h]
+				}
+			};
+		}
 	}
 	/** Scales a bone cube towards (8, 8, 8).
 	 * @param {Object} boneCube
@@ -669,7 +733,7 @@ export default class BlockGeoMaker {
 	 * Substitutes values from a block into a particular expression.
 	 * @param {Block} block
 	 * @param {String} fullExpression
-	 * @param {Object} [cube]
+	 * @param {Object} cube
 	 * @returns {String}
 	 */
 	#interpolateInBlockValues(block, fullExpression, cube) {

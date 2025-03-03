@@ -75,7 +75,14 @@
 			"remove": "double_"
 		},
 		"/_door$/": 0.5,
-		"peony,rose_bush,sunflower,lilac,large_fern,tall_grass,pitcher_plant": 0.5
+		"peony,rose_bush,sunflower,lilac,large_fern,tall_grass,pitcher_plant": 0.5,
+		"bed": 0.5
+	},
+	"special_block_entity_properties": {
+		"bed": {
+			"prop": "color",
+			"serialization_ids": ["item.bed.white", "item.bed.orange", "item.bed.magenta", "item.bed.lightBlue", "item.bed.yellow", "item.bed.lime", "item.bed.pink", "item.bed.gray", "item.bed.silver", "item.bed.cyan", "item.bed.purple", "item.bed.blue", "item.bed.brown", "item.bed.green", "item.bed.red", "item.bed.black"]
+		}
 	},
 	"serialization_id_patches": {
 		"tile.oak_planks": "tile.planks.oak",
@@ -109,7 +116,7 @@
 		"item.creeper_head": "item.skull.creeper",
 		"item.dragon_head": "item.skull.dragon",
 		"item.piglin_head": "item.skull.piglin",
-		"item.player_head": "item.skull.player",
+		"item.player_head": "item.skull.char",
 		"item.skeleton_skull": "item.skull.skeleton",
 		"item.wither_skeleton_skull": "item.skull.wither",
 		"item.zombie_head": "item.skull.zombie",

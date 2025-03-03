@@ -91,7 +91,7 @@
 										"tint_like_png": {
 											"description": "If true, the image will be tinted as if it were a PNG image, despite being a TGA image. (TGA images are tinted different to PNG images.)",
 											"type": "boolean",
-											"default": "true"
+											"default": true
 										}
 									},
 									"required": ["tint", "tint_like_png"],

@@ -3,7 +3,7 @@
 	"$schema": "schemas/blockShapes.schema.json",
 	
 	"patterns": { // Regular expressions that will be tested if no individual block key is found
-		"(?<!double_)_slab$": "slab",
+		"(?<!double.*)_slab$": "slab",
 		"double_.*slab$": "double_slab", // cut copper slabs have the "double" earlier.
 		"_button$": "button",
 		"_door$": "door",
@@ -26,7 +26,8 @@
 		"_tulip$": "cross_texture",
 		"anvil$": "anvil",
 		"command_block$": "command_block",
-		"_glazed_terracotta$": "glazed_terracotta"
+		"_glazed_terracotta$": "glazed_terracotta",
+		"_shulker_box$": "shulker_box"
 	},
 	"individual_blocks": {
 		"bamboo_sapling": "cross_texture",
@@ -63,6 +64,8 @@
 		"crafter": "crafter",
 		"barrel": "barrel",
 		"chiseled_bookshelf": "chiseled_bookshelf",
+		"light_gray_shulker_box": "textured_shulker_box{textures/entity/shulker/shulker_silver}", // all the other shulker boxes have appropriately named textures (e.g. shulker_red.png), but this one is shulker_silver.png because they haven't updated it :(
+		"jigsaw": "jigsaw_block",
 		
 		"furnace": "furnace",
 		"blast_furnace": "furnace",
@@ -220,6 +223,14 @@
 		"pink_petals": "pink_petals",
 		"slime": "slime_block",
 		"honey_block": "honey_block",
+		"skeleton_skull": "skull{textures/entity/skulls/skeleton}",
+		"wither_skeleton_skull": "skull{textures/entity/skulls/wither_skeleton}",
+		"player_head": "player_head{textures/entity/steve}",
+		// "player_head": "player_head{textures/entity/villager/villager}",
+		"zombie_head": "skull{textures/entity/skulls/zombie}",
+		"creeper_head": "skull{textures/entity/skulls/creeper}",
+		"dragon_head": "dragon_head",
+		"piglin_head": "piglin_head",
 		
 		"azalea": "azalea",
 		"flowering_azalea": "azalea",
