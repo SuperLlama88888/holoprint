@@ -38,7 +38,7 @@ jobs:
       - name: Remove unnecessary files
         run: |
           rm *.md
-          rm *.gif
+          rm assets/*.gif
           rm -r tests
           rm -r supabase
           rm -r data/schemas
