@@ -43,6 +43,7 @@ let packNameInput;
 let completedPacksCont;
 let logger;
 let languageSelector;
+let defaultResourcePackStackPromise;
 
 let supabaseLogger;
 
@@ -65,6 +66,7 @@ document.onEvent("DOMContentLoaded", () => {
 	structureFilesInput.onEventAndNow("input", updatePackNameInputPlaceholder);
 	completedPacksCont = selectEl("#completedPacksCont");
 	texturePreviewImageCont = selectEl("#texturePreviewImageCont");
+	defaultResourcePackStackPromise = new ResourcePackStack();
 	
 	if(location.search == "?loadFile") {
 		window.launchQueue?.setConsumer(async launchParams => {
@@ -187,7 +189,7 @@ document.onEvent("DOMContentLoaded", () => {
 	});
 	
 	let materialListLanguageSelector = selectEl("#materialListLanguageSelector");
-	(new ResourcePackStack()).then(rps => rps.fetchResource("texts/language_names.json")).then(res => res.json()).then(languages => {
+	defaultResourcePackStackPromise.then(rps => rps.fetchResource("texts/language_names.json")).then(res => res.json()).then(languages => {
 		materialListLanguageSelector.firstElementChild.remove();
 		languages.forEach(([languageCode, languageName]) => {
 			materialListLanguageSelector.appendChild(new Option(languageName, languageCode, false, languageCode.replace("_", "-") == navigator.language));
@@ -266,7 +268,7 @@ function updatePackNameInputPlaceholder() {
 	packNameInput.setAttribute("placeholder", HoloPrint.getDefaultPackName([...structureFilesInput.files]));
 }
 async function updateTexturePreview() {
-	texturePreviewImage ??= await (new ResourcePackStack()).then(rps => rps.fetchResource(`textures/blocks/${random(["crafting_table_front", "diamond_ore", "blast_furnace_front_off", "brick", "cherry_planks", "chiseled_copper", "cobblestone", "wool_colored_white", "stonebrick", "stone_granite_smooth"])}.png`)).then(res => res.toImage());
+	texturePreviewImage ??= await defaultResourcePackStackPromise.then(rps => rps.fetchResource(`textures/blocks/${random(["crafting_table_front", "diamond_ore", "blast_furnace_front_off", "brick", "cherry_planks", "chiseled_copper", "cobblestone", "wool_colored_white", "stonebrick", "stone_granite_smooth"])}.png`)).then(res => res.toImage());
 	let can = new OffscreenCanvas(texturePreviewImage.width, texturePreviewImage.height);
 	let ctx = can.getContext("2d");
 	ctx.drawImage(texturePreviewImage, 0, 0);
