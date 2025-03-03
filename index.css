@@ -205,7 +205,7 @@ input[type="text"]:invalid {
 button:not(:disabled):not(.packInfoButton):hover, input[type="file"]:not(:disabled):hover::file-selector-button, select:not(:disabled):hover, .buttonlike:hover {
 	background: #E8C8E8;
 }
-button:disabled, input[type="file"]:disabled::file-selector-button, selector:disabled, .buttonlike:disabled {
+button:disabled, input[type="file"]:disabled::file-selector-button, select:disabled, .buttonlike:disabled {
 	cursor: not-allowed;
 }
 input[type="number"]:hover, input[type="text"]:hover, input[type="color"]:hover, textarea:hover {

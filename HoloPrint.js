@@ -796,14 +796,6 @@ export function addDefaultConfig(config) {
 		}
 	});
 }
-/**
- * Expands the block version number found in structure NBT into an array.
- * @param {Number} blockVersion Block version number as found in structure NBT
- * @returns {Array<Number>}
- */
-export function parseBlockVersion(blockVersion) {
-	return blockVersion.toString(16).padStart(8, 0).match(/.{2}/g).map(x => parseInt(x, 16));
-}
 
 /**
  * Reads the NBT of a structure file, returning a JSON object.
@@ -887,9 +879,9 @@ async function tweakBlockPalette(structure, ignoredBlocks) {
 			delete block["states"]; // easier viewing
 		}
 	}
-	let blockVersionsStringified = [...blockVersions].map(v => parseBlockVersion(v).join("."));
+	let blockVersionsStringified = [...blockVersions].map(v => BlockUpdater.parseBlockVersion(v).join("."));
 	if(updatedBlocks > 0) {
-		console.info(`Updated ${updatedBlocks} blocks from ${blockVersionsStringified.join(", ")} to ${parseBlockVersion(BlockUpdater.LATEST_VERSION).join(".")}!`);
+		console.info(`Updated ${updatedBlocks} block${updatedBlocks > 1? "s" : ""} from ${blockVersionsStringified.join(", ")} to ${BlockUpdater.parseBlockVersion(BlockUpdater.LATEST_VERSION).join(".")}!`);
 		console.info(`Note: Updated blocks may not be 100% accurate! If there are some errors, try loading the structure in the latest version of Minecraft then saving it again, so all blocks are up to date.`);
 	}
 	console.log("Block versions:", [...blockVersions], blockVersionsStringified);

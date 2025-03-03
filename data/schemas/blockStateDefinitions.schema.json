@@ -148,7 +148,7 @@
 				{
 					"type": "object",
 					"patternProperties": {
-						"^\\w+$": {
+						"^(\\w+|-?\\d+(\\.\\d+)?)$": {
 							"$ref": "#/definitions/rotationTriplet"
 						}
 					},
