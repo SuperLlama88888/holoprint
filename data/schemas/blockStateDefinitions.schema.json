@@ -99,7 +99,7 @@
 					"description": "Controls which texture variant is chosen based on the value of this block state.",
 					"$ref": "#/definitions/variantValue"
 				},
-				"^entity\\.[\\w:]+$": {
+				"^entity\\.\\w+$": {
 					"description": "Controls which texture variant is chosen based on the value of this block entity property. Only first-level fields are supported.",
 					"$ref": "#/definitions/variantValue"
 				}
@@ -122,7 +122,8 @@
 					"patternProperties": {
 						"^\\w+$": {
 							"description": "The index of the texture variant in terrain_texture.json to use when the block state is this value.",
-							"type": "integer"
+							"type": "integer",
+							"minimum": 0
 						}
 					},
 					"additionalProperties": false
@@ -136,7 +137,7 @@
 					"description": "Controls the entire block's rotation based on the value of this block state.",
 					"$ref": "#/definitions/rotationValue"
 				},
-				"^entity\\.[\\w:]+$": {
+				"^entity\\.\\w+$": {
 					"description": "Controls the entire block's rotation based on the value of this block entity property. Only first-level fields are supported.",
 					"$ref": "#/definitions/rotationValue"
 				}

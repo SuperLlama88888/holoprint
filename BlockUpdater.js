@@ -195,6 +195,7 @@ export default class BlockUpdater {
 	 * @mutating
 	 * @param {BlockUpdateSchemaFlattenRule} flattenRule
 	 * @param {NBTBlock} block
+	 * @returns {Boolean} If the block state was successfully flattened
 	 */
 	#applyFlattenedProperty(flattenRule, block) {
 		let blockStateName = flattenRule["flattenedProperty"];
