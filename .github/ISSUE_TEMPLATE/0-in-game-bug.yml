@@ -1,0 +1,75 @@
+name: Bug report - in-game bug
+description: Something doesn't work properly in-game
+title: "Bug: "
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: >
+        ### Thank you for filling out this report!
+        
+        Before you start, please [check for similar issues](https://github.com/SuperLlama88888/holoprint/issues) to avoid duplicates!
+  - type: textarea
+    id: description
+    attributes:
+      label: Describe your issue
+      description: Explain everything specific to your issue.
+    validations:
+      required: true
+  - type: textarea
+    id: screenshots
+    attributes:
+      label: Attach screenshots or screen recordings
+      description: Upload screenshots/screen recordings of the issue.
+  - type: textarea
+    id: pack
+    attributes:
+      label: Attach HoloPrint pack
+      description: If a specific HoloPrint pack causes this bug, upload the pack here.
+  - type: input
+    id: version
+    attributes:
+      label: HoloPrint version
+      description: What version of HoloPrint are you using?
+      placeholder: v1.x.x
+    validations:
+      required: true
+  - type: input
+    id: mcversion
+    attributes:
+      label: Minecraft version
+      description: What version of Minecraft are you playing on?
+      placeholder: 1.x.x
+    validations:
+      required: true
+  - type: dropdown
+    id: os
+    attributes:
+      label: Operating system
+      description: What type of device are you on?
+      options:
+        - Android
+        - Windows
+        - Linux (any)
+        - macOS
+        - iOS / iPadOS
+        - Xbox
+        - Playstation
+        - Console (other)
+        - Desktop (other)
+        - Smartphone (other)
+        - Tablet (other)
+    validations:
+      required: true
+  - type: checkboxes
+    attributes:
+      label: I have checked for similar issues
+      description: This issue may have been reported already. Please [check for similar issues](https://github.com/SuperLlama88888/holoprint/issues) to avoid duplicates!
+      options:
+        - label: I have looked for similar issues
+          required: true
+    validations:
+      required: true
+  - type: markdown
+    attributes:
+      value: "### Thank you for using HoloPrint! Your issue will be attended to quickly."
