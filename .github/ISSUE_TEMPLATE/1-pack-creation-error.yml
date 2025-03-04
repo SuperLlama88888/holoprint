@@ -1,0 +1,77 @@
+name: Bug report - pack creation error
+description: Your resource pack failed to generate
+title: "Pack creation error: "
+labels: ["pack creation error", "bug"]
+body:
+  - type: markdown
+    attributes:
+      value: >
+        ### Thank you for filling out this report!
+        
+        Before you start, please [check for similar issues](https://github.com/SuperLlama88888/holoprint/issues) to avoid duplicates!
+  - type: textarea
+    id: description
+    attributes:
+      label: Describe your issue
+      description: Explain anything specific to your issue.
+  - type: textarea
+    id: structurefile
+    attributes:
+      label: Attach structure file
+      description: If a specific structure causes this error, upload the structure file(s) here.
+  - type: textarea
+    id: logs
+    attributes:
+      label: Attach logs
+      description: Press "Download all logs" and attach `holoprint_logs.json` here.
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: HoloPrint version
+      description: What version of HoloPrint are you using?
+      placeholder: v1.x.x
+    validations:
+      required: true
+  - type: dropdown
+    id: os
+    attributes:
+      label: Operating system
+      description: What type of device are you on?
+      options:
+        - Android
+        - Windows
+        - Linux (any)
+        - macOS
+        - iOS / iPadOS
+        - Other
+    validations:
+      required: true
+  - type: dropdown
+    id: browser
+    attributes:
+      label: Browser
+      description: Which web browser are you using?
+      options:
+        - Chrome
+        - Safari
+        - Edge
+        - Firefox
+        - Samsung Internet
+        - Opera
+        - Other
+    validations:
+      required: true
+  - type: checkboxes
+    attributes:
+      label: I have checked for similar issues
+      description: This issue may have been reported already. Please [check for similar issues](https://github.com/SuperLlama88888/holoprint/issues) to avoid duplicates!
+      options:
+        - label: I have looked for similar issues
+          required: true
+    validations:
+      required: true
+  - type: markdown
+    attributes:
+      value: "### Thank you for using HoloPrint! Your issue will be attended to quickly."

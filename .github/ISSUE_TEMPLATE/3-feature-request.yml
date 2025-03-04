@@ -1,0 +1,15 @@
+name: Feature request
+description: Suggest anything you'd like to be added to HoloPrint
+title: "Enhancement: "
+labels: ["enhancement"]
+body:
+  - type: textarea
+    id: description
+    attributes:
+      label: Description
+      description: Describe everything related to your feature request here
+    validations:
+      required: true
+  - type: markdown
+    attributes:
+      value: "### Thank you for filling out this report! Your feature request will be looked at shortly."
