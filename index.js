@@ -457,6 +457,23 @@ async function makePack(structureFiles, localResourcePacks) {
 	return pack;
 }
 
+let itemsDatalistPromise = (new VanillaDataFetcher()).then(async fetcher => {
+	let mojangItems = await fetcher.fetch("metadata/vanilladata_modules/mojang-items.json").then(res => res.json());
+	let itemNames = mojangItems["data_items"].map(item => item["name"].replace(/^minecraft:/, ""))
+	let datalist = document.createElement("datalist");
+	datalist.id = "itemNamesDatalist";
+	datalist.append(...itemNames.map(itemName => new Option(itemName)));
+	return datalist;
+});
+let itemTagsDatalistPromise = (new CachingFetcher("BedrockData@3.0.0+bedrock-1.21.60", "https://raw.githubusercontent.com/pmmp/BedrockData/refs/tags/3.0.0+bedrock-1.21.60/")).then(async fetcher => {
+	let data = await fetcher.fetch("item_tags.json").then(res => res.json());
+	let itemTags = Object.keys(data).map(tag => tag.replace(/^minecraft:/, ""));
+	let datalist = document.createElement("datalist");
+	datalist.id = "itemTagsDatalist";
+	datalist.append(...itemTags.map(tag => new Option(tag)));
+	return datalist;
+});
+
 customElements.define("item-criteria-input", class extends HTMLElement {
 	static formAssociated = true;
 	static observedAttributes = ["value-items", "value-tags"];
@@ -467,8 +484,6 @@ customElements.define("item-criteria-input", class extends HTMLElement {
 	#connected;
 	#tasksPendingConnection;
 	
-	#vanillaItemsPromise;
-	#vanillaItemTagsPromise;
 	#criteriaInputsCont;
 	
 	constructor() {
@@ -480,9 +495,6 @@ customElements.define("item-criteria-input", class extends HTMLElement {
 		
 		this.#connected = false;
 		this.#tasksPendingConnection = [];
-		
-		this.#vanillaItemsPromise = (new VanillaDataFetcher()).then(fetcher => fetcher.fetch("metadata/vanilladata_modules/mojang-items.json")).then(res => res.json()).then(data => data["data_items"].map(item => item["name"].replace(/^minecraft:/, "")));
-		this.#vanillaItemTagsPromise = (new CachingFetcher("BedrockData@3.0.0+bedrock-1.21.60", "https://raw.githubusercontent.com/pmmp/BedrockData/refs/tags/3.0.0+bedrock-1.21.60/")).then(fetcher => fetcher.fetch("item_tags.json")).then(res => res.json()).then(data => Object.keys(data).map(tag => tag.replace(/^minecraft:/, "")));
 	}
 	connectedCallback() {
 		if(this.#connected) {
@@ -534,21 +546,7 @@ customElements.define("item-criteria-input", class extends HTMLElement {
 			<label id="criteriaInputs" data-empty-text="Nothing" data-translate-data-empty-text="item_criteria_input.nothing"></label>
 			<button id="addItemButton">+ <span data-translate="item_criteria_input.item_name">Item name</span></button>
 			<button id="addTagButton">+ <span data-translate="item_criteria_input.item_tag">Item tag</span></button>
-			<datalist id="itemNamesDatalist"></datalist>
-			<datalist id="itemTagsDatalist"></datalist>
 		`;
-		this.#vanillaItemsPromise.then(itemNames => {
-			let itemNamesDatalist = this.shadowRoot.selectEl("#itemNamesDatalist");
-			itemNames.forEach(itemName => {
-				itemNamesDatalist.appendChild(new Option(itemName));
-			});
-		});
-		this.#vanillaItemTagsPromise.then(tags => {
-			let itemTagsDatalist = this.shadowRoot.selectEl("#itemTagsDatalist");
-			tags.forEach(tag => {
-				itemTagsDatalist.appendChild(new Option(tag));
-			});
-		})
 		this.#criteriaInputsCont = this.shadowRoot.selectEl("#criteriaInputs");
 		this.shadowRoot.selectEl("#addItemButton").onEvent("click", () => {
 			this.#addNewInput("item");
@@ -563,16 +561,19 @@ customElements.define("item-criteria-input", class extends HTMLElement {
 		}
 		
 		this.#criteriaInputsCont.onEventAndNow("input", () => this.#reportFormState());
-		this.onEvent("focus", e => {
+		this.onEvent("focus", async e => {
 			if(e.composedPath()[0] instanceof this.constructor) { // If this event was triggered from an element in the shadow DOM being .focus()ed, we don't want to focus something else
 				(this.shadowRoot.selectEl("input:invalid") ?? this.shadowRoot.selectEl("input:last-child") ?? this.shadowRoot.selectEl("#addItemButton")).focus();
 			}
+			this.shadowRoot.append(await itemsDatalistPromise, await itemTagsDatalistPromise);
 		});
-		this.onEvent("blur", () => { // remove empty inputs when focus is lost
+		this.onEvent("blur", async () => { // remove empty inputs when focus is lost
 			if([...this.#criteriaInputsCont.selectEls("input")].filter(input => input.value.trim() == "").map(input => input.remove()).length) {
 				this.#reportFormState();
 				this.#removeConsecutiveOrSpacers();
 			}
+			this.shadowRoot.removeChild(await itemsDatalistPromise);
+			this.shadowRoot.removeChild(await itemTagsDatalistPromise);
 		});
 	}
 	attributeChangedCallback(...args) { // called for all attributes in the tag before connectedCallback(), so we schedule them to be handled later
