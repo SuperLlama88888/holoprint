@@ -327,8 +327,8 @@ img:not(#languageSelectorButton), canvas {
 	text-align: center;
 }
 .previewCont > * {
-	width: 40vw;
-	height: 40vw;
+	width: min(80vmin, 100%);
+	aspect-ratio: 1;
 }
 .previewCont canvas {
 	touch-action: none;
