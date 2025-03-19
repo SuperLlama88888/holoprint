@@ -1,3 +1,4 @@
+/* This can only be described as functional. */
 body {
 	background-image: linear-gradient(#FFFB, #FFFB), url("assets/logo_background.png");
 	background-size: 100px;
@@ -202,7 +203,11 @@ input[type="text"]:invalid {
 	border-color: #E24436;
 	outline-color: #E24436;
 }
-button:not(:disabled):not(.packInfoButton):hover, input[type="file"]:not(:disabled):hover::file-selector-button, select:not(:disabled):hover, .buttonlike:hover {
+a.buttonlike {
+	color: initial;
+	text-decoration: initial;
+}
+button:not(:disabled):not(.packInfoButton):hover, input[type="file"]:not(:disabled):hover::file-selector-button, select:not(:disabled):hover, .buttonlike:not(.packInfoButton):hover {
 	background: #E8C8E8;
 }
 button:disabled, input[type="file"]:disabled::file-selector-button, select:disabled, .buttonlike:disabled {
@@ -211,7 +216,7 @@ button:disabled, input[type="file"]:disabled::file-selector-button, select:disab
 input[type="number"]:hover, input[type="text"]:hover, input[type="color"]:hover, textarea:hover {
 	background: #EAD5EA;
 }
-button:not(.packInfoButton):active, input[type="file"]:active::file-selector-button, select:active, .buttonlike:active {
+button:not(.packInfoButton):active, input[type="file"]:active::file-selector-button, select:active, .buttonlike:not(.packInfoButton):active {
 	background: #DABADA;
 }
 input[type="checkbox"] {
@@ -286,8 +291,12 @@ input[type="checkbox"] {
 	--bg-col-2: #D899D8;
 	background-image: repeating-linear-gradient(150deg, var(--bg-col-1) 0, var(--bg-col-1) 10px, var(--bg-col-2) 10px, var(--bg-col-2) 20px);
 	background-size: 200% !important;
+	border-color: var(--bg-col-2);
 	transition: transform 0.15s;
 	min-width: min-content;
+}
+.packInfoButton:not(.finished) {
+	cursor: wait;
 }
 .packInfoButton.completed {
 	animation: moveButtonBackground 1s linear infinite;
@@ -300,12 +309,26 @@ input[type="checkbox"] {
 .packInfoButton.completed:hover {
 	transform: scale(1.05);
 }
+.packInfoButton.reportIssue:hover {
+	transform: scale(1.035);
+}
 .packInfoButton.completed:active {
 	transform: scale(1.02);
 }
-.packInfoButton:not(.completed) {
-	pointer-events: none;
+.packInfoButton.reportIssue:active {
+	transform: scale(1.01);
 }
+.packInfoButton.failed, .packInfoButton.reportIssue {
+	--bg-col-1: #ee5350;
+	--bg-col-2: #e43b37;
+}
+.packInfoButton.failed {
+	cursor: initial;
+}
+.packInfoButton.reportIssue {
+	cursor: pointer;
+}
+
 #termsOfUseNotice {
 	display: block;
 	text-align: center;

@@ -1,4 +1,4 @@
-import { selectEl, downloadBlob, sleep, selectEls, htmlCodeToElement, CachingFetcher, loadTranslationLanguage, translate, getStackTrace, random } from "./essential.js";
+import { selectEl, downloadBlob, sleep, selectEls, htmlCodeToElement, CachingFetcher, loadTranslationLanguage, translate, getStackTrace, random, UserError } from "./essential.js";
 import * as HoloPrint from "./HoloPrint.js";
 import SimpleLogger from "./SimpleLogger.js";
 import SupabaseLogger from "./SupabaseLogger.js";
@@ -379,6 +379,7 @@ async function temporarilyChangeText(el, translationKey, duration = 2000) {
 }
 
 async function makePack(structureFiles, localResourcePacks) {
+	// this is a mess. all it does is get the settings, call HoloPrint.makePack(), and show the download button.
 	generatePackFormSubmitButton.disabled = true;
 	
 	if(IN_PRODUCTION) {
@@ -422,23 +423,25 @@ async function makePack(structureFiles, localResourcePacks) {
 	let pack;
 	logger?.setOriginTime(performance.now());
 	
+	let generationFailedError;
 	if(ACTUAL_CONSOLE_LOG) {
 		pack = await HoloPrint.makePack(structureFiles, config, resourcePackStack, previewCont);
 	} else {
 		try {
 			pack = await HoloPrint.makePack(structureFiles, config, resourcePackStack, previewCont);
 		} catch(e) {
-			console.error(`Pack creation failed: ${e}`);
+			console.error(`Pack creation failed!\n${e}`);
+			if(!(e instanceof UserError)) {
+				generationFailedError = e;
+			}
 			if(!(e instanceof DOMException)) { // DOMExceptions can also be thrown, which don't have stack traces and hence can't be tracked if caught. HOWEVER they extend Error...
 				console.debug(getStackTrace(e).join("\n"));
 			}
 		}
 	}
 	
+	infoButton.classList.add("finished");
 	if(pack) {
-		infoButton.dataset.translationSubstitutions = JSON.stringify({
-			"{PACK_NAME}": pack.name
-		});
 		infoButton.dataset.translate = "download";
 		infoButton.classList.add("completed");
 		let hasLoggedPackCreation = false;
@@ -450,6 +453,18 @@ async function makePack(structureFiles, localResourcePacks) {
 			}
 			downloadBlob(pack, pack.name);
 		};
+	} else {
+		if(generationFailedError) {
+			let bugReportAnchor = document.createElement("a");
+			bugReportAnchor.classList.add("buttonlike", "packInfoButton", "reportIssue");
+			bugReportAnchor.href = `https://github.com/SuperLlama88888/holoprint/issues/new?template=1-pack-creation-error.yml&title=Pack creation error: ${encodeURIComponent(generationFailedError.toString().replaceAll("\n", " "))}&version=${HoloPrint.VERSION}`;
+			bugReportAnchor.target = "_blank";
+			bugReportAnchor.dataset.translate = "pack_generation_failed.report_github_issue";
+			infoButton.parentNode.replaceChild(bugReportAnchor, infoButton);
+		} else {
+			infoButton.classList.add("failed");
+			infoButton.dataset.translate = "pack_generation_failed";
+		}
 	}
 	
 	generatePackFormSubmitButton.disabled = false;

@@ -1,7 +1,7 @@
 {
 	"app_name": "HoloPrint",
 	"change_language": "Change language",
-	"download": "Download {PACK_NAME}",
+	"download": "Download pack",
 	"generate": "Generate pack",
 	"generate_heading": "Generate HoloPrint resource pack (`*.mcpack`)",
 	"item_criteria_input.item_name": "Item name",
@@ -21,6 +21,8 @@
 	"metadata.reset": "Metadata reset!",
 	"metadata.structure_author": "Structure author:",
 	"metadata.structure_author.placeholder": "MinecraftLover123",
+	"pack_generation_failed": "Pack generation failed!",
+	"pack_generation_failed.report_github_issue": "Pack generation failed!<br/><small>Report issue on GitHub</small>",
 	"player_controls.toggle_rendering": "Toggle rendering",
 	"player_controls.change_opacity": "Change opacity",
 	"player_controls.toggle_tint": "Toggle overlay tint",

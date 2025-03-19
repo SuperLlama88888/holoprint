@@ -7,12 +7,11 @@ import MaterialList from "./MaterialList.js";
 import PreviewRenderer from "./PreviewRenderer.js";
 
 import * as entityScripts from "./entityScripts.molang.js";
-import { awaitAllEntries, concatenateFiles, createEnum, exp, floor, hexColorToClampedTriplet, JSONMap, JSONSet, max, min, pi, round, sha256, translate } from "./essential.js";
+import { awaitAllEntries, concatenateFiles, createEnum, exp, floor, hexColorToClampedTriplet, JSONMap, JSONSet, max, min, pi, round, sha256, translate, UserError } from "./essential.js";
 import ResourcePackStack from "./ResourcePackStack.js";
 import BlockUpdater from "./BlockUpdater.js";
 
-const VERSION = "dev";
-
+export const VERSION = "dev";
 export const IGNORED_BLOCKS = ["air", "piston_arm_collision", "sticky_piston_arm_collision"]; // blocks to be ignored when scanning the structure file
 const IGNORED_BLOCK_ENTITIES = ["Beacon", "Beehive", "Bell", "BrewingStand", "ChiseledBookshelf", "CommandBlock", "Comparator", "Conduit", "EnchantTable", "EndGateway", "JigsawBlock", "Lodestone", "SculkCatalyst", "SculkShrieker", "SculkSensor", "CalibratedSculkSensor", "StructureBlock", "BrushableBlock", "TrialSpawner", "Vault"];
 export const PLAYER_CONTROL_NAMES = {
@@ -717,7 +716,7 @@ export async function extractStructureFilesFromPack(resourcePack) {
 export async function updatePack(resourcePack, config, resourcePackStack, previewCont) {
 	let structureFiles = extractStructureFilesFromPack(resourcePack);
 	if(!structureFiles) {
-		throw new Error(`No structure files found inside resource pack ${resourcePack.name}; cannot update pack!`);
+		throw new UserError(`No structure files found inside resource pack ${resourcePack.name}; cannot update pack!`);
 	}
 	return await makePack(structureFiles, config, resourcePackStack, previewCont);
 }
@@ -803,8 +802,12 @@ export function addDefaultConfig(config) {
  * @returns {Promise<Object>}
  */
 async function readStructureNBT(structureFile) {
-	let arrayBuffer = await structureFile.arrayBuffer().catch(e => { throw new Error(`Could not read bytes of structure file ${structureFile.name}!\n${e}`); });
-	let nbt = await NBT.read(arrayBuffer).catch(e => { throw new Error(`Could not parse NBT of structure file ${structureFile.name}!\n${e}`); });
+	await new Promise(res => setTimeout(res, 100))
+	if(structureFile.size == 0) {
+		throw new UserError(`"${structureFile.name}" is an empty file! Please try exporting your structure again.\nIf you play on a version below 1.20.50, exporting to OneDrive will cause your structure file to be empty.`);
+	}
+	let arrayBuffer = await structureFile.arrayBuffer().catch(e => { throw new Error(`Could not read contents of structure file "${structureFile.name}"!\n${e}`); });
+	let nbt = await NBT.read(arrayBuffer).catch(e => { throw new Error(`Invalid NBT in structure file "${structureFile.name}"!\n${e}`); });
 	return nbt.data;
 }
 /**
