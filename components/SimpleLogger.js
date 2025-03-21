@@ -1,9 +1,10 @@
 // Simple logger.
-import { ceil, downloadBlob, getStackTrace } from "./essential.js";
+import { ceil, downloadBlob, getStackTrace } from "../essential.js";
 
-export default class SimpleLogger {
+export default class SimpleLogger extends HTMLElement {
 	#originTime;
 	
+	shadowRoot;
 	node;
 	allLogs = [];
 	
@@ -13,38 +14,92 @@ export default class SimpleLogger {
 	#errorCountNode;
 	#warningCountNode;
 	
-	constructor(node) {
-		this.node = node;
-		this.node.classList.add("simpleLogger");
-		
-		let logHeader = document.createElement("div");
-		logHeader.classList.add("logHeader");
-		logHeader.innerText = "Logs";
-		this.#errorCountNode = document.createElement("span");
-		this.#errorCountNode.innerText = "\u{1F6A8}0";
-		logHeader.appendChild(this.#errorCountNode);
-		this.#warningCountNode = document.createElement("span");
-		this.#warningCountNode.innerText = "\u26A0\uFE0F0";
-		logHeader.appendChild(this.#warningCountNode);
-		let downloadLogsButton = document.createElement("button");
-		downloadLogsButton.innerText = "Download all logs";
-		downloadLogsButton.setAttribute("type", "button");
-		downloadLogsButton.onEvent("click", () => {
+	constructor() {
+		super();
+		this.shadowRoot = this.attachShadow({
+			mode: "open"
+		});
+	}
+	connectedCallback() {
+		this.shadowRoot.innerHTML = `
+			<style>
+				#root {
+					margin: 15px;
+					display: block;
+					color: white;
+					font-family: monospace;
+					font-size: 14px;
+					max-height: 300px;
+					overflow: auto;
+					text-align: left;
+					position: relative;
+				}
+				.logHeader {
+					padding: 2px 2px 2px 12px;
+					position: sticky;
+					top: 0;
+					height: 20px;
+					background: #556;
+				}
+				.logHeader * {
+					margin-left: 30px;
+				}
+				#downloadLogsButton {
+					background: inherit;
+					border: 1px solid #CCC;
+					border-radius: 7px;
+					color: white;
+					float: right;
+					box-sizing: border-box;
+					cursor: pointer;
+					font: inherit;
+				}
+				#downloadLogsButton:hover {
+					background: #4D4D5D;
+				}
+				#downloadLogsButton:active {
+					background: #445;
+				}
+				.log {
+					margin: 0;
+					padding: 2px 12px;
+					background: #223;
+					overflow-wrap: break-word;
+				}
+				.log:nth-child(2n) {
+					background: #334;
+				}
+				.warning > .logText::before {
+					content: "\u26A0\uFE0F";
+				}
+				.error > .logText::before {
+					content: "\u{1F6A8}";
+				}
+				.info > .logText::before {
+					content: "\u2139\uFE0F";
+				}
+				.timestamp {
+					margin-right: 5px;
+					padding: 0 2px;
+					background: #556;
+					color: #CCC;
+				}
+			</style>
+			<div id="root">
+				<div class="logHeader">Logs<span id="errorCount">\u{1F6A8}0</span><span id="warningCount">\u26A0\uFE0F0</span><button type="button" id="downloadLogsButton">Download logs</button></div>
+			</div>
+		`;
+		this.node = this.shadowRoot.selectEl("#root");
+		this.node.selectEl("#downloadLogsButton").onEvent("click", () => {
 			downloadBlob(new Blob([JSON.stringify(this.allLogs)]), "holoprint_logs.json");
 		});
-		logHeader.appendChild(downloadLogsButton);
-		this.node.appendChild(logHeader);
+		this.#warningCountNode = this.node.selectEl("#warningCount");
+		this.#errorCountNode = this.node.selectEl("#errorCount");
 		
 		this.#errorCount = 0;
 		this.#warningCount = 0;
 		
 		this.#originTime = performance.now();
-		if(!document.querySelector(`link[href="SimpleLogger.css"]`)) {
-			let l = document.createElement("link");
-			l.rel = "stylesheet";
-			l.href = "SimpleLogger.css";
-			document.head.appendChild(l);
-		}
 	}
 	warn(text) {
 		if(this.#genericLogWithClass(text, "warning")) {
