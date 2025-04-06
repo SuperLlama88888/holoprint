@@ -1,5 +1,6 @@
 ![HoloPrint](assets/banner.png)
 
+[![简体中文](https://img.shields.io/badge/Language-简体中文-blue)](README.zh-CN.md)
 ### About
 HoloPrint is a web app that converts MCBE structure files into resource packs showing holograms of builds. It builds off the work of [Structura](https://github.com/RavinMaddHatter/Structura), a similar project. Both Structura and HoloPrint aim to recreate the experience of Java Edition mods like [Litematica](https://github.com/maruohon/litematica) and [Schematica](https://github.com/Lunatrius/Schematica) for Bedrock Edition users through resource packs.
 
@@ -19,7 +20,7 @@ HoloPrint is a web app that converts MCBE structure files into resource packs sh
 4. Apply your resource pack and place an armour stand in your world.  
 ![Placing armour stand](assets/placingArmourStand.gif)
 
-### Hologram controls ([Wiki](https://github.com/SuperLlama88888/holoprint/wiki/1.-Usage-instructions#hologram-controls))
+### Hologram controls ([Wiki](https://holoprint-mc.github.io/wiki/hologram-controls))
 - Toggle rendering: Brick  
 ![Toggling rendering](assets/togglingRendering.gif)
 - Change transparency: Amethyst shard (sneak to decrease, stand to increase)  
