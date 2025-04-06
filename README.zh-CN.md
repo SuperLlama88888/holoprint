@@ -1,4 +1,5 @@
 ![HoloPrint](assets/banner.png)
+
 [![English](https://img.shields.io/badge/Language-English-blue)](README.md)
 ### 关于
 全息打印 (HoloPrint) 是一款网页应用，可将我的世界基岩版 (MCBE) 的结构文件（`.mcstructure`）转换为显示建筑全息影像 (也称之为投影) 的资源包。本项目基于 [Structura](https://github.com/RavinMaddHatter/Structura)（一个类似项目）开发，旨在为基岩版玩家提供类似 Java 版模组 [Litematica](https://github.com/maruohon/litematica) 和 [Schematica](https://github.com/Lunatrius/Schematica) 的全息建造体验。
@@ -19,7 +20,7 @@
 4. 在你的世界中放置盔甲架以显示全息影像。  
 ![放置盔甲架](assets/placingArmourStand.gif)
 
-### 控制全息影像（[Wiki](https://github.com/SuperLlama88888/holoprint/wiki/1.-Usage-instructions#hologram-controls))
+### 控制全息影像（[Wiki](https://holoprint-mc.github.io/wiki/zh-cn/hologram-controls))
 - **切换渲染**：砖块  
 ![切换渲染](assets/togglingRendering.gif)
 - **调整透明度**：紫水晶碎片（潜行降低，反之提高）  
