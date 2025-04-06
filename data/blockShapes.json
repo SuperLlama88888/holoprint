@@ -114,7 +114,6 @@
 		"redstone_torch": "redstone_torch", // a different block shape is needed for the "glow" outline.
 		
 		// flowers
-		"red_flower": "cross_texture", // legacy
 		"fern": "cross_texture",
 		"dandelion": "cross_texture",
 		"poppy": "cross_texture",
@@ -146,7 +145,6 @@
 		"tall_grass": "double_plant",
 		"lilac": "double_plant",
 		"peony": "double_plant",
-		"double_plant": "double_plant", // legacy
 		
 		"wall_banner": "wall_banner",
 		"standing_banner": "standing_banner",
@@ -244,7 +242,15 @@
 		"pale_moss_carpet": "pale_moss_carpet",
 		"closed_eyeblossom": "cross_texture",
 		"open_eyeblossom": "cross_texture",
-		"resin_clump": "multi_face"
+		"resin_clump": "multi_face",
+		
+		"bush": "cross_texture",
+		"firefly_bush": "cross_texture",
+		"short_dry_grass": "cross_texture",
+		"tall_dry_grass": "cross_texture",
+		"cactus_flower": "cross_texture",
+		"leaf_litter": "leaf_litter",
+		"wildflowers": "pink_petals"
 		
 		// "dirt": "debug_auto_uv_4" // must disable geometry merging
 	}

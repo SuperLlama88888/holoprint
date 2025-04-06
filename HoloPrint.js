@@ -158,7 +158,7 @@ export async function makePack(structureFiles, config = {}, resourcePackStack, p
 						cube["size"][1] *= crop["h"];
 					} else if(cube["size"][1] == 0) {
 						cube["origin"][0] += cube["size"][0] * (face["flip_horizontally"]? cropXRem : crop["x"]);
-						cube["origin"][2] += cube["size"][2] * (face["flip_vertically"]? cropYRem: crop["y"]);
+						cube["origin"][2] += cube["size"][2] * (face["flip_vertically"]? cropYRem : crop["y"]);
 						cube["size"][0] *= crop["w"];
 						cube["size"][2] *= crop["h"];
 					} else if(cube["size"][2] == 0) {

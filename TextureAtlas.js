@@ -108,10 +108,12 @@ export default class TextureAtlas {
 						tintLikePng = tintColor["tint_like_png"];
 						tintColor = tintColor["tint"];
 					}
-					if(tintColor in this.#terrainTextureTints["colors"]) {
+					if(tintColor.startsWith("#")) {
+						tint = hexColorToClampedTriplet(tintColor);
+					} else if(tintColor in this.#terrainTextureTints["colors"]) {
 						tint = hexColorToClampedTriplet(this.#terrainTextureTints["colors"][tintColor]);
 					} else {
-						console.error(`No tint color ${tintColor}`)
+						console.error(`No tint color ${tintColor}`);
 					}
 				}
 				if(blockName in this.#transparentBlocks) {
