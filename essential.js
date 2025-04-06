@@ -165,10 +165,11 @@ export function random(arr) {
 }
 /**
  * Create a pseudo-enumeration using numbers.
- * @param {Array<String>} keys
- * @returns {Readonly<Record<String, Number>>}
+ * @template {string[]} T
+ * @param {[...T]} keys - An array of string literals to use as keys.
+ * @returns {Record<T[number], number>}
  */
-export function createEnum(keys) {
+export function createNumericEnum(keys) {
 	return Object.freeze(Object.fromEntries(keys.map((key, i) => [key, i])));
 }
 

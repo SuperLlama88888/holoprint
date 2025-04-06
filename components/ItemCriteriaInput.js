@@ -10,7 +10,8 @@ let itemsDatalistPromise = (new VanillaDataFetcher()).then(async fetcher => {
 	datalist.append(...itemNames.map(itemName => new Option(itemName)));
 	return datalist;
 });
-let itemTagsDatalistPromise = (new CachingFetcher("BedrockData@3.0.0+bedrock-1.21.60", "https://raw.githubusercontent.com/pmmp/BedrockData/refs/tags/3.0.0+bedrock-1.21.60/")).then(async fetcher => {
+const pmmpBedrockDataVersion = "4.1.0+bedrock-1.21.70";
+let itemTagsDatalistPromise = (new CachingFetcher(`BedrockData@${pmmpBedrockDataVersion}`, `https://raw.githubusercontent.com/pmmp/BedrockData/refs/tags/${pmmpBedrockDataVersion}/`)).then(async fetcher => {
 	let data = await fetcher.fetch("item_tags.json").then(res => res.json());
 	let itemTags = Object.keys(data).map(tag => tag.replace(/^minecraft:/, ""));
 	let datalist = document.createElement("datalist");

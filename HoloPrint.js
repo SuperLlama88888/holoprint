@@ -7,7 +7,7 @@ import MaterialList from "./MaterialList.js";
 import PreviewRenderer from "./PreviewRenderer.js";
 
 import * as entityScripts from "./entityScripts.molang.js";
-import { awaitAllEntries, concatenateFiles, createEnum, exp, floor, hexColorToClampedTriplet, JSONMap, JSONSet, max, min, pi, round, sha256, translate, UserError } from "./essential.js";
+import { awaitAllEntries, concatenateFiles, createNumericEnum, exp, floor, hexColorToClampedTriplet, JSONMap, JSONSet, max, min, pi, round, sha256, translate, UserError } from "./essential.js";
 import ResourcePackStack from "./ResourcePackStack.js";
 import BlockUpdater from "./BlockUpdater.js";
 
@@ -43,7 +43,7 @@ export const DEFAULT_PLAYER_CONTROLS = {
 	BACKUP_HOLOGRAM: createItemCriteria("paper")
 };
 
-const HOLOGRAM_LAYER_MODES = createEnum(["SINGLE", "ALL_BELOW"]);
+const HOLOGRAM_LAYER_MODES = createNumericEnum(["SINGLE", "ALL_BELOW"]);
 
 /**
  * Makes a HoloPrint resource pack from a structure file.
@@ -482,7 +482,8 @@ export async function makePack(structureFiles, config = {}, resourcePackStack, p
 		rotateHologram: itemCriteriaToMolang(config.CONTROLS.ROTATE_HOLOGRAM),
 		disablePlayerControls: itemCriteriaToMolang(config.CONTROLS.DISABLE_PLAYER_CONTROLS),
 		backupHologram: itemCriteriaToMolang(config.CONTROLS.BACKUP_HOLOGRAM),
-		singleLayerMode: HOLOGRAM_LAYER_MODES.SINGLE
+		singleLayerMode: HOLOGRAM_LAYER_MODES.SINGLE,
+		ACTIONS: entityScripts.ACTIONS
 	}));
 	entityDescription["geometry"]["hologram.wrong_block_overlay"] = "geometry.armor_stand.hologram.wrong_block_overlay";
 	entityDescription["geometry"]["hologram.valid_structure_overlay"] = "geometry.armor_stand.hologram.valid_structure_overlay";
@@ -1096,7 +1097,8 @@ function addPlayerControlsToRenderControllers(config, defaultPlayerRenderControl
 		moveHologram: itemCriteriaToMolang(config.CONTROLS.MOVE_HOLOGRAM),
 		rotateHologram: itemCriteriaToMolang(config.CONTROLS.ROTATE_HOLOGRAM),
 		changeStructure: itemCriteriaToMolang(config.CONTROLS.CHANGE_STRUCTURE),
-		backupHologram: itemCriteriaToMolang(config.CONTROLS.BACKUP_HOLOGRAM)
+		backupHologram: itemCriteriaToMolang(config.CONTROLS.BACKUP_HOLOGRAM),
+		ACTIONS: entityScripts.ACTIONS
 	});
 	let broadcastActions = functionToMolang(entityScripts.playerBroadcastActions, {
 		backupSlotCount: config.BACKUP_SLOT_COUNT
@@ -1286,9 +1288,10 @@ function functionToMolang(func, vars = {}) {
 	let mathedCode = expandedElseIfCode.replaceAll(`"`, `'`).replaceAll(/([\w\.]+)(\+|-){2};/g, "$1=$1$21;").replaceAll(/([\w\.]+)--;/g, "$1=$1-1;").replaceAll(/([\w\.\$\[\]]+)(\+|-|\*|\/|\?\?)=([^;]+);/g, "$1=$1$2$3;");
 	
 	// Yay more fun regular expressions, this time to work with variable substitution ($[...])
-	let substituteInVariables = (code, vars) => code.replaceAll(/\$\[(\w+)(?:\[(\d+)\])?(?:(\+|-|\*|\/)(\d+))?\]/g, (match, varName, index, operator, operand) => {
+	let substituteInVariables = (code, vars) => code.replaceAll(/\$\[(\w+)(?:\[(\d+)\]|\.(\w+))?(?:(\+|-|\*|\/)(\d+))?\]/g, (match, varName, index, key, operator, operand) => {
 		if(varName in vars) {
 			let value = vars[varName];
+			index ??= key;
 			if(index != undefined) {
 				if(index in value) {
 					value = value[index];

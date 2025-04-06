@@ -477,4 +477,3 @@ async function makePack(structureFiles, localResourcePacks) {
 	
 	return pack;
 }
-
