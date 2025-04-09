@@ -7,7 +7,7 @@ import MaterialList from "./MaterialList.js";
 import PreviewRenderer from "./PreviewRenderer.js";
 
 import * as entityScripts from "./entityScripts.molang.js";
-import { awaitAllEntries, concatenateFiles, createNumericEnum, exp, floor, hexColorToClampedTriplet, JSONMap, JSONSet, max, min, pi, round, sha256, translate, UserError } from "./essential.js";
+import { awaitAllEntries, concatenateFiles, createNumericEnum, exp, floor, hexColorToClampedTriplet, JSONMap, JSONSet, loadTranslationLanguage, max, min, pi, round, sha256, translate, UserError } from "./essential.js";
 import ResourcePackStack from "./ResourcePackStack.js";
 import BlockUpdater from "./BlockUpdater.js";
 
@@ -93,8 +93,7 @@ export async function makePack(structureFiles, config = {}, resourcePackStack, p
 		},
 		resources: {
 			entityFile: "entity/armor_stand.entity.json",
-			defaultPlayerRenderControllers: config.PLAYER_CONTROLS_ENABLED? "render_controllers/player.render_controllers.json" : undefined,
-			translationFile: `texts/${config.MATERIAL_LIST_LANGUAGE}.lang`
+			defaultPlayerRenderControllers: config.PLAYER_CONTROLS_ENABLED? "render_controllers/player.render_controllers.json" : undefined
 		},
 		otherFiles: {
 			packIcon: config.PACK_ICON_BLOB ?? makePackIcon(concatenateFiles(structureFiles)),
@@ -104,8 +103,11 @@ export async function makePack(structureFiles, config = {}, resourcePackStack, p
 			itemMetadata: "metadata/vanilladata_modules/mojang-items.json"
 		}
 	}, resourcePackStack);
-	let { manifest, packIcon, entityFile, hologramRenderControllers, defaultPlayerRenderControllers, hologramGeo, hologramMaterial, hologramAnimationControllers, hologramAnimations, boundingBoxOutlineParticle, blockValidationParticle, savingBackupParticle, singleWhitePixelTexture, exclamationMarkTexture, saveIconTexture, hudScreenUI, customEmojiFont, languagesDotJson, translationFile } = loadedStuff.files;
+	let { manifest, packIcon, entityFile, hologramRenderControllers, defaultPlayerRenderControllers, hologramGeo, hologramMaterial, hologramAnimationControllers, hologramAnimations, boundingBoxOutlineParticle, blockValidationParticle, savingBackupParticle, singleWhitePixelTexture, exclamationMarkTexture, saveIconTexture, hudScreenUI, customEmojiFont, languagesDotJson } = loadedStuff.files;
 	let { blockMetadata, itemMetadata } = loadedStuff.data;
+	let resourceLangFiles = (await loadStuff({
+		resources: Object.fromEntries(languagesDotJson.map(language => [language, `texts/${language}.lang`])) // load the language file resources for each language
+	}, resourcePackStack)).files;
 	
 	let structures = nbts.map(nbt => nbt["structure"]);
 	
@@ -218,7 +220,7 @@ export async function makePack(structureFiles, config = {}, resourcePackStack, p
 	let totalBlocksToValidateByStructureByLayer = [];
 	let uniqueBlocksToValidate = new Set();
 	
-	let materialList = await new MaterialList(blockMetadata, itemMetadata, translationFile);
+	let materialList = await new MaterialList(blockMetadata, itemMetadata);
 	allStructureIndicesByLayer.forEach((structureIndicesByLayer, structureI) => {
 		let structureSize = structureSizes[structureI];
 		let geoShortName = `hologram_${structureI}`;
@@ -526,7 +528,11 @@ export async function makePack(structureFiles, config = {}, resourcePackStack, p
 	let playerRenderControllers = defaultPlayerRenderControllers && addPlayerControlsToRenderControllers(config, defaultPlayerRenderControllers);
 	
 	console.log("Block counts map:", materialList.materials);
-	let finalisedMaterialList = materialList.export();
+	let finalisedMaterialLists = Object.fromEntries(languagesDotJson.map(language => {
+		materialList.setLanguage(resourceLangFiles[language]); // we could make the material list export to multiple languages simultaneously, but I'm assuming here that there could be gaps between language files so they have to be done separately (for whatever reason... maybe international relations deteriorate and they refuse to translate the new update to Chinese... idk)
+		return [language, materialList.export()];
+	}));
+	let finalisedMaterialList = finalisedMaterialLists["en_US"]; // all languages have the same translation keys, which are used in the material list UI. the translated item names (which are different for every language) are used in the pack description only.
 	console.log("Finalised material list:", finalisedMaterialList);
 	
 	// console.log(partitionedBlockCounts);
@@ -564,14 +570,20 @@ export async function makePack(structureFiles, config = {}, resourcePackStack, p
 	}
 	let inGameControls;
 	if(JSON.stringify(config.CONTROLS) != JSON.stringify(DEFAULT_PLAYER_CONTROLS)) { // add controls to pack description only if they've been changed
-		// make a fake material list for the in-game control items
-		let controlsMaterialList = await new MaterialList(blockMetadata, itemMetadata, translationFile);
-		inGameControls = "";
-		Object.entries(config.CONTROLS).forEach(([control, itemCriteria]) => {
-			itemCriteria["names"].forEach(itemName => controlsMaterialList.addItem(itemName));
-			let itemInfo = controlsMaterialList.export();
-			controlsMaterialList.clear();
-			inGameControls += `\n${translate(PLAYER_CONTROL_NAMES[control], "en")}: ${[itemInfo.map(item => `§3${item.translatedName}§r`).join(", "), itemCriteria.tags.map(tag => `§p${tag}§r`).join(", ")].removeFalsies().join("; ")}`;
+		// make a fake material list for the in-game control items (just to translate it lol)
+		let controlsMaterialList = await new MaterialList(blockMetadata, itemMetadata);
+		inGameControls = {};
+		await Promise.all(languagesDotJson.map(language => loadTranslationLanguage(language)));
+		languagesDotJson.forEach(language => {
+			inGameControls[language] = "";
+			Object.entries(config.CONTROLS).forEach(([control, itemCriteria]) => {
+				controlsMaterialList.clear();
+				controlsMaterialList.setLanguage(resourceLangFiles[language]);
+				itemCriteria["names"].forEach(itemName => controlsMaterialList.addItem(itemName));
+				let itemInfo = controlsMaterialList.export();
+				controlsMaterialList.clear();
+				inGameControls[language] += `\n${translate(PLAYER_CONTROL_NAMES[control], language)}: ${[itemInfo.map(item => `§3${item.translatedName}§r`).join(", "), itemCriteria.tags.map(tag => `§p${tag}§r`).join(", ")].removeFalsies().join("; ")}`;
+			});
 		});
 	}
 	
@@ -589,9 +601,9 @@ export async function makePack(structureFiles, config = {}, resourcePackStack, p
 		languageFile = languageFile.replaceAll("{PACK_GENERATION_TIME}", packGenerationTime);
 		languageFile = languageFile.replaceAll(/\{STRUCTURE_AUTHORS\[([^)]+)\]\}/g, (useless, delimiter) => config.AUTHORS.join(delimiter));
 		languageFile = languageFile.replaceAll("{DESCRIPTION}", config.DESCRIPTION?.replaceAll("\n", "\\n"));
-		languageFile = languageFile.replaceAll("{CONTROLS}", inGameControls?.replaceAll("\n", "\\n"));
+		languageFile = languageFile.replaceAll("{CONTROLS}", inGameControls?.[language].replaceAll("\n", "\\n"));
 		languageFile = languageFile.replaceAll("{TOTAL_MATERIAL_COUNT}", totalMaterialCount);
-		languageFile = languageFile.replaceAll("{MATERIAL_LIST}", finalisedMaterialList.map(({ translatedName, count }) => `${count} ${translatedName}`).join(", "));
+		languageFile = languageFile.replaceAll("{MATERIAL_LIST}", finalisedMaterialLists[language].map(({ translatedName, count }) => `${count} ${translatedName}`).join(", "));
 		let translatedDisabledFeatures = Object.entries(disabledFeatureTranslations).filter(([feature]) => !config[feature]).map(([feature, translation]) => languageFile.match(new RegExp(`pack\\.description\\.${translation}=([^\\t#\\n]+)`))[1]).join("\\n");
 		languageFile = languageFile.replaceAll("{DISABLED_FEATURES}", translatedDisabledFeatures);
 		
@@ -602,6 +614,7 @@ export async function makePack(structureFiles, config = {}, resourcePackStack, p
 		languageFile = languageFile.replaceAll("{CONTROLS_SECTION}", inGameControls? languageFile.match(/pack\.description\.controls=([^\t#\n]+)/)[1] : "");
 		
 		languageFile = languageFile.replaceAll(/pack\.description\..+\s*/g, ""); // remove all the description sections
+		languageFile = languageFile.replaceAll(/\t*#.+/g, ""); // remove comments
 		
 		return [language, languageFile];
 	}));
@@ -793,7 +806,6 @@ export function addDefaultConfig(config) {
 			PLAYER_CONTROLS_ENABLED: true,
 			CONTROLS: {},
 			MATERIAL_LIST_ENABLED: true,
-			MATERIAL_LIST_LANGUAGE: "en_US",
 			RETEXTURE_CONTROL_ITEMS: true,
 			RENAME_CONTROL_ITEMS: true,
 			WRONG_BLOCK_OVERLAY_COLOR: [1, 0, 0, 0.3],
@@ -832,21 +844,25 @@ async function readStructureNBT(structureFile) {
 }
 /**
  * Loads many files from different sources.
- * @param {Object} stuff
+ * @template TPackTemplate
+ * @template TResources
+ * @template TOtherFiles
+ * @template TData
+ * @param {{ packTemplate?: TPackTemplate, resources?: TResources, otherFiles?: TOtherFiles, data?: TData }} stuff
  * @param {ResourcePackStack} resourcePackStack
- * @returns {Promise<Object>}
- */
+ * @returns {Promise<{ files: { [K in keyof TPackTemplate | keyof TResources | keyof TOtherFiles]?: String|Blob|Record<String, any>|HTMLImageElement }, data: { [K in keyof TData]?: String|Blob|Record<String, any>|HTMLImageElement } }>}
+*/
 async function loadStuff(stuff, resourcePackStack) {
 	let filePromises = {};
-	Object.entries(stuff.packTemplate).forEach(([name, path]) => {
+	Object.entries(stuff.packTemplate ?? {}).forEach(([name, path]) => {
 		filePromises[name] = path && getResponseContents(fetch(`packTemplate/${path}`), path);
 	});
-	Object.entries(stuff.resources).forEach(([name, path]) => {
+	Object.entries(stuff.resources ?? {}).forEach(([name, path]) => {
 		filePromises[name] = path && getResponseContents(resourcePackStack.fetchResource(path), path);
 	});
-	Object.assign(filePromises, stuff.otherFiles);
+	Object.assign(filePromises, stuff.otherFiles ?? {});
 	let dataPromises = {};
-	Object.entries(stuff.data).forEach(([name, path]) => {
+	Object.entries(stuff.data ?? {}).forEach(([name, path]) => {
 		dataPromises[name] = path && getResponseContents(resourcePackStack.fetchData(path), path);
 	});
 	return await awaitAllEntries({
@@ -856,9 +872,31 @@ async function loadStuff(stuff, resourcePackStack) {
 }
 /**
  * Gets the contents of a response based on the requested file extension (e.g. object from .json, image from .png, etc.).
+ * @overload
+ * @param {Promise<Response>} resPromise
+ * @param {`${String}.${"json"|"material"}`} filePath
+ * @returns {Promise<Record<String, any>>}
+ */
+/**
+ * Gets the contents of a response based on the requested file extension (e.g. object from .json, image from .png, etc.).
+ * @overload
+ * @param {Promise<Response>} resPromise
+ * @param {`${String}.lang`} filePath
+ * @returns {Promise<String>}
+ */
+/**
+ * Gets the contents of a response based on the requested file extension (e.g. object from .json, image from .png, etc.).
+ * @overload
+ * @param {Promise<Response>} resPromise
+ * @param {`${String}.png`} filePath
+ * @returns {Promise<HTMLImageElement>}
+ */
+/**
+ * Gets the contents of a response based on the requested file extension (e.g. object from .json, image from .png, etc.).
+ * @overload
  * @param {Promise<Response>} resPromise
  * @param {String} filePath
- * @returns {Promise<String|Blob|Object|HTMLImageElement>}
+ * @returns {Promise<Blob>}
  */
 async function getResponseContents(resPromise, filePath) {
 	let res = await resPromise;
@@ -1437,7 +1475,6 @@ function stringifyWithFixedDecimals(value) {
  * @property {Boolean} PLAYER_CONTROLS_ENABLED
  * @property {HoloPrintControlsConfig} CONTROLS
  * @property {Boolean} MATERIAL_LIST_ENABLED
- * @property {String} MATERIAL_LIST_LANGUAGE The language code, as appearing in `texts/languages.json`
  * @property {Boolean} RETEXTURE_CONTROL_ITEMS
  * @property {Boolean} RENAME_CONTROL_ITEMS
  * @property {Array<Number>} WRONG_BLOCK_OVERLAY_COLOR Clamped colour quartet
@@ -1598,3 +1635,13 @@ function stringifyWithFixedDecimals(value) {
  * 3D vector.
  * @typedef {[Number, Number, Number]} Vec3
  */
+/**
+ * Infers the return type from a given file path string.
+ * @template {string} T
+ * @typedef {
+*   T extends `${string}.${"json"|"material"}` ? Record<string, any> :
+*   T extends `${string}.lang` ? string :
+*   T extends `${string}.png` ? HTMLImageElement :
+*   Blob
+* } InferFileType
+*/

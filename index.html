@@ -105,9 +105,6 @@
 							<label for="settingsTab" class="buttonlike" data-translate="settings.heading">Settings</label>
 							<fieldset>
 								<legend data-translate="settings.heading">Settings</legend>
-								<label><span data-translate="settings.material_list_language">Language (material list):</span> <select name="materialListLanguage" id="materialListLanguageSelector">
-									<option value="en_US" selected>English (United States)</option>
-								</select></label>
 								<label><span data-translate="settings.ghost_block_scale">Ghost block scale:</span> <input type="number" min="70" max="100" step="1" value="95" name="scale"/>%</label>
 								<fieldset class="expandable textureSettings">
 									<legend><label><span data-translate="settings.textures">Textures</span><input type="checkbox"/></label></legend>
@@ -189,7 +186,7 @@
 			<div id="languageSelectorCont" title="Change language" data-translate-title="change_language">
 				<div id="languageSelectorButton"></div>
 				<select id="languageSelector">
-					<option value="en">English</option> <!-- Other options will be added later in JS -->
+					<option value="en_US">English</option> <!-- Other options will be added later in JS -->
 				</select>
 			</div>
 		</main>

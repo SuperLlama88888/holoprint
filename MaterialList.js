@@ -22,7 +22,7 @@ export default class MaterialList {
 	 * Creates a material list manager to count a list of items.
 	 * @param {Object} blockMetadata `Mojang/bedrock-samples/metadata/vanilladata_modules/mojang-blocks.json`
 	 * @param {Object} itemMetadata `Mojang/bedrock-samples/metadata/vanilladata_modules/mojang-items.json`
-	 * @param {String} translations The text contents of a `.lang` file
+	 * @param {String} [translations] The text contents of a `.lang` file
 	 */
 	constructor(blockMetadata, itemMetadata, translations) {
 		this.materials = new Map();
@@ -30,19 +30,9 @@ export default class MaterialList {
 		
 		this.#blockMetadata = new Map(blockMetadata["data_items"].map(block => [block["name"], block]));
 		this.#itemMetadata = new Map(itemMetadata["data_items"].map(item => [item["name"], item]));
-		this.#translations = new Map();
-		translations.split("\n").forEach(line => {
-			let hashI = line.indexOf("#");
-			if(hashI > -1) {
-				line = line.slice(0, hashI);
-			}
-			line = line.trim();
-			if(line == "") {
-				return;
-			}
-			let eqI = line.indexOf("=");
-			this.#translations.set(line.slice(0, eqI), line.slice(eqI + 1));
-		});
+		if(translations) {
+			this.setLanguage(translations);
+		}
 		
 		return (async () => {
 			let materialListMappings = await fetch("data/materialListMappings.json").then(res => res.jsonc());
@@ -116,6 +106,9 @@ export default class MaterialList {
 	 * @returns {Array<MaterialListEntry>}
 	 */
 	export() {
+		if(this.#translations == undefined) {
+			throw new Error("Cannot export a material list without providing translations! Use setLanguage()");
+		}
 		return [...this.materials].map(([itemName, count]) => {
 			let serializationId;
 			let blockEntityPropertyValue;
@@ -151,11 +144,30 @@ export default class MaterialList {
 				itemName,
 				translationKey: this.#serializationIdToTranslationKey(serializationId),
 				translatedName,
-				count: count,
+				count,
 				partitionedCount: this.#partitionCount(count),
 				auxId
 			};
 		}).sort((a, b) => b.count - a.count || a.translatedName > b.translatedName);
+	}
+	/**
+	 * Sets the language of the material list for exporting.
+	 * @param {String} translations The text contents of a `.lang` file
+	 */
+	setLanguage(translations) {
+		this.#translations = new Map();
+		translations.split("\n").forEach(line => {
+			let hashI = line.indexOf("#");
+			if(hashI > -1) {
+				line = line.slice(0, hashI);
+			}
+			line = line.trim();
+			if(line == "") {
+				return;
+			}
+			let eqI = line.indexOf("=");
+			this.#translations.set(line.slice(0, eqI), line.slice(eqI + 1));
+		});
 	}
 	/**
 	 * Clears the material list.

@@ -121,7 +121,8 @@
 		"item.wither_skeleton_skull": "item.skull.wither",
 		"item.zombie_head": "item.skull.zombie",
 		"item.cocoa_beans": "item.dye.brown",
-		"item.white_dye": "item.dye.white_new"
+		"item.white_dye": "item.dye.white_new",
+		"item.bone_meal": "item.dye.white"
 	},
 	"blocks_missing_serialization_ids": {
 		"end_gateway": "tile.end_gateway" // despite still existing, end gateways were removed from mojang-blocks.json in 1.21.50...

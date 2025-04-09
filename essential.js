@@ -248,10 +248,10 @@ CacheStorage.prototype.clear = async function() {
 };
 
 /**
- * 
+ * Promise.all() but for objects
+ * @template T
  * @param {T} object
  * @returns {Promise<{[K in keyof T]: Awaited<T[K]>}>}
- * @template T
  */
 export async function awaitAllEntries(object) {
 	await Promise.all(Object.entries(object).map(async ([key, promise]) => {

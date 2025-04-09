@@ -194,16 +194,6 @@ document.onEvent("DOMContentLoaded", () => {
 		});
 	});
 	
-	let materialListLanguageSelector = selectEl("#materialListLanguageSelector");
-	defaultResourcePackStackPromise.then(rps => rps.fetchResource("texts/language_names.json")).then(res => res.json()).then(languages => {
-		materialListLanguageSelector.firstElementChild.remove();
-		languages.forEach(([languageCode, languageName]) => {
-			materialListLanguageSelector.appendChild(new Option(languageName, languageCode, false, languageCode.replace("_", "-") == navigator.language));
-		});
-	}).catch(e => {
-		console.warn("Couldn't load language_names.json:", e);
-	});
-	
 	languageSelector = selectEl("#languageSelector");
 	fetch("translations/languages.json").then(res => res.jsonc()).then(languagesAndNames => {
 		languagesAndNames = Object.fromEntries(Object.entries(languagesAndNames).sort((a, b) => a[1] > b[1])); // sort alphabeticallly
@@ -215,7 +205,7 @@ document.onEvent("DOMContentLoaded", () => {
 		let defaultLanguage = navigator.languages.find(navigatorLanguage => {
 			let navigatorBaseLanguage = navigatorLanguage.split("-")[0];
 			return availableLanguages.find(availableLanguage => availableLanguage == navigatorLanguage) ?? availableLanguages.find(availableLanguage => availableLanguage == navigatorBaseLanguage) ?? availableLanguages.find(availableLanguage => availableLanguage.split(/-|_/)[0] == navigatorBaseLanguage);
-		})?.split("-")?.[0] ?? "en";
+		}) ?? "en_US";
 		languageSelector.textContent = "";
 		for(let language in languagesAndNames) {
 			languageSelector.appendChild(new Option(languagesAndNames[language], language, false, language == defaultLanguage));
@@ -251,7 +241,7 @@ document.onEvent("DOMContentLoaded", () => {
 });
 window.onEvent("load", () => { // shadow DOMs aren't populated in the DOMContentLoaded event yet
 	if(location.search == "?generateEnglishTranslations") {
-		translatePage("en", true);
+		translatePage("en_US", true);
 	}
 });
 
@@ -315,7 +305,7 @@ async function translatePage(language, generateTranslations = false) {
 				} else {
 					console.warn(`Couldn't find translation for ${translationKey} for language ${language}!`);
 					if(el.innerHTML == "") {
-						let englishTranslation = translate(translationKey, "en");
+						let englishTranslation = translate(translationKey, "en_US");
 						if(englishTranslation) {
 							el.innerHTML = performTranslationSubstitutions(el, englishTranslation);
 						} else {
@@ -337,7 +327,7 @@ async function translatePage(language, generateTranslations = false) {
 				} else {
 					console.warn(`Couldn't find translation for ${translationKey} for language ${language}!`);
 					if(!el.hasAttribute(targetAttrName)) {
-						let englishTranslation = translate(translationKey, "en");
+						let englishTranslation = translate(translationKey, "en_US");
 						if(englishTranslation) {
 							el.setAttribute(targetAttrName, performTranslationSubstitutions(el, englishTranslation));
 						} else {
@@ -364,7 +354,7 @@ function performTranslationSubstitutions(el, translation) {
 function translateCurrentLanguage(translationKey) {
 	let translation = translate(translationKey, languageSelector.value);
 	if(!translation) {
-		translation = translate(translationKey, "en");
+		translation = translate(translationKey, "en_US");
 		if(translation) {
 			console.warn(`Couldn't find translation for ${translationKey} for language ${languageSelector.value}!`);
 		} else {
@@ -412,7 +402,6 @@ async function makePack(structureFiles, localResourcePacks) {
 		RENAME_CONTROL_ITEMS: formData.get("renameControlItems"),
 		CONTROLS: Object.fromEntries([...formData].filter(([key]) => key.startsWith("control.")).map(([key, value]) => [key.replace(/^control./, ""), JSON.parse(value)])),
 		BACKUP_SLOT_COUNT: +formData.get("backupSlotCount"),
-		MATERIAL_LIST_LANGUAGE: formData.get("materialListLanguage"),
 		PACK_NAME: formData.get("packName") || undefined,
 		PACK_ICON_BLOB: formData.get("packIcon").size? formData.get("packIcon") : undefined,
 		AUTHORS: authors,
