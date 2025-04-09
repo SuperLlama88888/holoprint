@@ -1,9 +1,9 @@
-import { selectEl, downloadBlob, sleep, selectEls, htmlCodeToElement, CachingFetcher, loadTranslationLanguage, translate, getStackTrace, random, UserError } from "./essential.js";
+import { selectEl, downloadBlob, sleep, selectEls, loadTranslationLanguage, translate, getStackTrace, random, UserError } from "./essential.js";
 import * as HoloPrint from "./HoloPrint.js";
 import SimpleLogger from "./components/SimpleLogger.js";
 import SupabaseLogger from "./SupabaseLogger.js";
 
-import ResourcePackStack, { VanillaDataFetcher } from "./ResourcePackStack.js";
+import ResourcePackStack from "./ResourcePackStack.js";
 import LocalResourcePack from "./LocalResourcePack.js";
 import TextureAtlas from "./TextureAtlas.js";
 import ItemCriteriaInput from "./components/ItemCriteriaInput.js";
@@ -405,7 +405,11 @@ async function makePack(structureFiles, localResourcePacks) {
 		TEXTURE_OUTLINE_WIDTH: +formData.get("textureOutlineWidth"),
 		TEXTURE_OUTLINE_COLOR: formData.get("textureOutlineColor"),
 		TEXTURE_OUTLINE_OPACITY: formData.get("textureOutlineOpacity") / 100,
-		DO_SPAWN_ANIMATION: formData.get("spawnAnimationEnabled"),
+		SPAWN_ANIMATION_ENABLED: formData.get("spawnAnimationEnabled"),
+		PLAYER_CONTROLS_ENABLED: formData.get("playerControlsEnabled"),
+		MATERIAL_LIST_ENABLED: formData.get("materialListEnabled"),
+		RETEXTURE_CONTROL_ITEMS: formData.get("retextureControlItems"),
+		RENAME_CONTROL_ITEMS: formData.get("renameControlItems"),
 		CONTROLS: Object.fromEntries([...formData].filter(([key]) => key.startsWith("control.")).map(([key, value]) => [key.replace(/^control./, ""), JSON.parse(value)])),
 		BACKUP_SLOT_COUNT: +formData.get("backupSlotCount"),
 		MATERIAL_LIST_LANGUAGE: formData.get("materialListLanguage"),

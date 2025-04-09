@@ -129,7 +129,7 @@ async function test() {
 				let structureFile = new File([await fetch(structurePath).then(res => res.blob())], structureFileName);
 				let startTime = performance.now();
 				let pack = await HoloPrint.makePack(structureFile, {
-					DO_SPAWN_ANIMATION: false,
+					SPAWN_ANIMATION_ENABLED: false,
 					PREVIEW_BLOCK_LIMIT: browserEngine == "chrome"? Infinity : 0, // preview renderer doesn't work on headless Firefox
 					SHOW_PREVIEW_SKYBOX: false
 				}, undefined, previewCont);

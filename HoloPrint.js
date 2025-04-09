@@ -87,13 +87,13 @@ export async function makePack(structureFiles, config = {}, resourcePackStack, p
 			singleWhitePixelTexture: "textures/particle/single_white_pixel.png",
 			exclamationMarkTexture: "textures/particle/exclamation_mark.png",
 			saveIconTexture: "textures/particle/save_icon.png",
-			hudScreenUI: "ui/hud_screen.json",
+			hudScreenUI: config.MATERIAL_LIST_ENABLED? "ui/hud_screen.json" : undefined,
 			customEmojiFont: "font/glyph_E2.png",
 			languagesDotJson: "texts/languages.json"
 		},
 		resources: {
 			entityFile: "entity/armor_stand.entity.json",
-			defaultPlayerRenderControllers: "render_controllers/player.render_controllers.json",
+			defaultPlayerRenderControllers: config.PLAYER_CONTROLS_ENABLED? "render_controllers/player.render_controllers.json" : undefined,
 			translationFile: `texts/${config.MATERIAL_LIST_LANGUAGE}.lang`
 		},
 		otherFiles: {
@@ -185,7 +185,7 @@ export async function makePack(structureFiles, config = {}, resourcePackStack, p
 	let structureHMolang = arrayToMolang(structureSizes.map(structureSize => structureSize[1]), "v.hologram.structure_index");
 	let structureDMolang = arrayToMolang(structureSizes.map(structureSize => structureSize[2]), "v.hologram.structure_index");
 	
-	if(!config.DO_SPAWN_ANIMATION) {
+	if(!config.SPAWN_ANIMATION_ENABLED) {
 		// Totally empty animation
 		delete hologramAnimations["animations"]["animation.armor_stand.hologram.spawn"]["loop"];
 		delete hologramAnimations["animations"]["animation.armor_stand.hologram.spawn"]["bones"];
@@ -234,7 +234,7 @@ export async function makePack(structureFiles, config = {}, resourcePackStack, p
 		let animationTimingFunc;
 		let makeHologramSpawnAnimation;
 		let spawnAnimationAnimatedBones = [];
-		if(config.DO_SPAWN_ANIMATION) {
+		if(config.SPAWN_ANIMATION_ENABLED) {
 			let totalVolume = structureSize.reduce((a, b) => a * b);
 			let totalAnimationLength = 0;
 			getSpawnAnimationDelay = (x, y, z) => {
@@ -354,7 +354,7 @@ export async function makePack(structureFiles, config = {}, resourcePackStack, p
 						if(!firstBoneForThisCoordinate) {
 							boneName += `_${layerI}`;
 						}
-						if(config.DO_SPAWN_ANIMATION && structureI == 0 && structureFiles.length > 1) {
+						if(config.SPAWN_ANIMATION_ENABLED && structureI == 0 && structureFiles.length > 1) {
 							boneName += "_a"; // different bone name in order for the animation to not affect blocks in the same position in other structures
 						}
 						let bonePos = [-16 * x - 8, 16 * y, 16 * z - 8]; // I got these values from trial and error with blockbench (which makes the x negative I think. it's weird.)
@@ -399,7 +399,7 @@ export async function makePack(structureFiles, config = {}, resourcePackStack, p
 						if(firstBoneForThisCoordinate) { // we only need 1 locator for each block position, even though there may be 2 bones in this position because of the 2nd layer
 							hologramGeo["minecraft:geometry"][2]["bones"][1]["locators"][blockCoordinateName] ??= bonePos.map(x => x + 8);
 						}
-						if(config.DO_SPAWN_ANIMATION && structureI == 0) {
+						if(config.SPAWN_ANIMATION_ENABLED && structureI == 0) {
 							spawnAnimationAnimatedBones.push([boneName, getSpawnAnimationDelay(x, y, z), bonePos]);
 						}
 						
@@ -425,7 +425,7 @@ export async function makePack(structureFiles, config = {}, resourcePackStack, p
 		}
 		hologramGeo["minecraft:geometry"].push(geo);
 		
-		if(config.DO_SPAWN_ANIMATION && structureI == 0) {
+		if(config.SPAWN_ANIMATION_ENABLED && structureI == 0) {
 			let minDelay = min(...spawnAnimationAnimatedBones.map(([, delay]) => delay));
 			spawnAnimationAnimatedBones.forEach(([boneName, delay, bonePos]) => {
 				delay -= minDelay - 0.05;
@@ -523,31 +523,34 @@ export async function makePack(structureFiles, config = {}, resourcePackStack, p
 		entityDescription["particle_effects"][particleName] = `holoprint:${particleName}`;
 	});
 	
-	let playerRenderControllers = addPlayerControlsToRenderControllers(config, defaultPlayerRenderControllers);
+	let playerRenderControllers = defaultPlayerRenderControllers && addPlayerControlsToRenderControllers(config, defaultPlayerRenderControllers);
 	
 	console.log("Block counts map:", materialList.materials);
 	let finalisedMaterialList = materialList.export();
 	console.log("Finalised material list:", finalisedMaterialList);
 	
 	// console.log(partitionedBlockCounts);
-	let missingItemAux = blockMetadata["data_items"].find(block => block.name == "minecraft:reserved6")?.["raw_id"] ?? 0;
-	hudScreenUI["material_list_entries"]["controls"].push(...finalisedMaterialList.map(({ translationKey, partitionedCount, auxId }, i) => ({
-		[`material_list_${i}@hud.material_list_entry`]: {
-			"$item_translation_key": translationKey,
-			"$item_count": partitionedCount,
-			"$item_id_aux": auxId ?? missingItemAux,
-			"$background_opacity": i % 2 * 0.2
+	let highestItemCount;
+	if(config.MATERIAL_LIST_ENABLED) {
+		let missingItemAux = blockMetadata["data_items"].find(block => block.name == "minecraft:reserved6")?.["raw_id"] ?? 0;
+		hudScreenUI["material_list_entries"]["controls"].push(...finalisedMaterialList.map(({ translationKey, partitionedCount, auxId }, i) => ({
+			[`material_list_${i}@hud.material_list_entry`]: {
+				"$item_translation_key": translationKey,
+				"$item_count": partitionedCount,
+				"$item_id_aux": auxId ?? missingItemAux,
+				"$background_opacity": i % 2 * 0.2
+			}
+		})));
+		highestItemCount = max(...finalisedMaterialList.map(({ count }) => count));
+		let longestItemNameLength = max(...finalisedMaterialList.map(({ translatedName }) => translatedName.length));
+		let longestCountLength = max(...finalisedMaterialList.map(({ partitionedCount }) => partitionedCount.length));
+		if(longestItemNameLength + longestCountLength >= 47) {
+			hudScreenUI["material_list"]["size"][0] = "50%"; // up from 40%
+			hudScreenUI["material_list"]["max_size"][0] = "50%";
 		}
-	})));
-	let highestItemCount = max(...finalisedMaterialList.map(({ count }) => count));
-	let longestItemNameLength = max(...finalisedMaterialList.map(({ translatedName }) => translatedName.length));
-	let longestCountLength = max(...finalisedMaterialList.map(({ partitionedCount }) => partitionedCount.length));
-	if(longestItemNameLength + longestCountLength >= 47) {
-		hudScreenUI["material_list"]["size"][0] = "50%"; // up from 40%
-		hudScreenUI["material_list"]["max_size"][0] = "50%";
+		hudScreenUI["material_list"]["size"][1] = finalisedMaterialList.length * 12 + 12; // 12px for each item + 12px for the heading
+		hudScreenUI["material_list_entry"]["controls"][0]["content"]["controls"][3]["item_name"]["size"][0] += `${round(longestCountLength * 4.2 + 10)}px`;
 	}
-	hudScreenUI["material_list"]["size"][1] = finalisedMaterialList.length * 12 + 12; // 12px for each item + 12px for the heading
-	hudScreenUI["material_list_entry"]["controls"][0]["content"]["controls"][3]["item_name"]["size"][0] += `${round(longestCountLength * 4.2 + 10)}px`;
 	
 	manifest["header"]["name"] = packName;
 	manifest["header"]["uuid"] = crypto.randomUUID();
@@ -564,16 +567,22 @@ export async function makePack(structureFiles, config = {}, resourcePackStack, p
 		// make a fake material list for the in-game control items
 		let controlsMaterialList = await new MaterialList(blockMetadata, itemMetadata, translationFile);
 		inGameControls = "";
-		for(let [control, itemCriteria] of Object.entries(config.CONTROLS)) {
+		Object.entries(config.CONTROLS).forEach(([control, itemCriteria]) => {
 			itemCriteria["names"].forEach(itemName => controlsMaterialList.addItem(itemName));
 			let itemInfo = controlsMaterialList.export();
 			controlsMaterialList.clear();
-			inGameControls += `\n${await translate(PLAYER_CONTROL_NAMES[control], "en")}: ${[itemInfo.map(item => `§3${item.translatedName}§r`).join(", "), itemCriteria.tags.map(tag => `§p${tag}§r`).join(", ")].removeFalsies().join("; ")}`;
-		}
+			inGameControls += `\n${translate(PLAYER_CONTROL_NAMES[control], "en")}: ${[itemInfo.map(item => `§3${item.translatedName}§r`).join(", "), itemCriteria.tags.map(tag => `§p${tag}§r`).join(", ")].removeFalsies().join("; ")}`;
+		});
 	}
 	
 	let packGenerationTime = (new Date()).toLocaleString();
-	
+	const disabledFeatureTranslations = { // these look at the .lang RP files
+		"SPAWN_ANIMATION_ENABLED": "spawn_animation_disabled",
+		"PLAYER_CONTROLS_ENABLED": "player_controls_disabled",
+		"MATERIAL_LIST_ENABLED": "material_list_disabled",
+		"RETEXTURE_CONTROL_ITEMS": "retextured_control_items_disabled",
+		"RENAME_CONTROL_ITEMS": "renamed_control_items_disabled"
+	};
 	let languageFiles = await Promise.all(languagesDotJson.map(async language => {
 		let languageFile = (await fetch(`packTemplate/texts/${language}.lang`).then(res => res.text())).replaceAll("\r\n", "\n"); // I hate windows sometimes (actually quite often now because of windows 11)
 		languageFile = languageFile.replaceAll("{PACK_NAME}", packName);
@@ -583,10 +592,13 @@ export async function makePack(structureFiles, config = {}, resourcePackStack, p
 		languageFile = languageFile.replaceAll("{CONTROLS}", inGameControls?.replaceAll("\n", "\\n"));
 		languageFile = languageFile.replaceAll("{TOTAL_MATERIAL_COUNT}", totalMaterialCount);
 		languageFile = languageFile.replaceAll("{MATERIAL_LIST}", finalisedMaterialList.map(({ translatedName, count }) => `${count} ${translatedName}`).join(", "));
+		let translatedDisabledFeatures = Object.entries(disabledFeatureTranslations).filter(([feature]) => !config[feature]).map(([feature, translation]) => languageFile.match(new RegExp(`pack\\.description\\.${translation}=([^\\t#\\n]+)`))[1]).join("\\n");
+		languageFile = languageFile.replaceAll("{DISABLED_FEATURES}", translatedDisabledFeatures);
 		
 		// now substitute in the extra bits into the main description if needed
 		languageFile = languageFile.replaceAll("{AUTHORS_SECTION}", config.AUTHORS.length? languageFile.match(/pack\.description\.authors=([^\t#\n]+)/)[1] : "");
 		languageFile = languageFile.replaceAll("{DESCRIPTION_SECTION}", config.DESCRIPTION? languageFile.match(/pack\.description\.description=([^\t#\n]+)/)[1] : "");
+		languageFile = languageFile.replaceAll("{DISABLED_FEATURES_SECTION}", translatedDisabledFeatures? languageFile.match(/pack\.description\.disabled_features=([^\t#\n]+)/)[1] : "");
 		languageFile = languageFile.replaceAll("{CONTROLS_SECTION}", inGameControls? languageFile.match(/pack\.description\.controls=([^\t#\n]+)/)[1] : "");
 		
 		languageFile = languageFile.replaceAll(/pack\.description\..+\s*/g, ""); // remove all the description sections
@@ -609,7 +621,9 @@ export async function makePack(structureFiles, config = {}, resourcePackStack, p
 	packFiles.push(["entity/armor_stand.entity.json", JSON.stringify(entityFile).replaceAll("HOLOGRAM_INITIAL_ACTIVATION", true)]);
 	packFiles.push(["subpacks/punch_to_activate/entity/armor_stand.entity.json", JSON.stringify(entityFile).replaceAll("HOLOGRAM_INITIAL_ACTIVATION", false)]);
 	packFiles.push(["render_controllers/armor_stand.hologram.render_controllers.json", JSON.stringify(hologramRenderControllers)]);
-	packFiles.push(["render_controllers/player.render_controllers.json", JSON.stringify(playerRenderControllers)]);
+	if(config.PLAYER_CONTROLS_ENABLED) {
+		packFiles.push(["render_controllers/player.render_controllers.json", JSON.stringify(playerRenderControllers)]);
+	}
 	packFiles.push(["models/entity/armor_stand.hologram.geo.json", stringifyWithFixedDecimals(hologramGeo)]);
 	packFiles.push(["materials/entity.material", JSON.stringify(hologramMaterial)]);
 	packFiles.push(["animation_controllers/armor_stand.hologram.animation_controllers.json", JSON.stringify(hologramAnimationControllers)]);
@@ -630,9 +644,11 @@ export async function makePack(structureFiles, config = {}, resourcePackStack, p
 	textureBlobs.forEach(([textureName, blob]) => {
 		packFiles.push([`textures/entity/${textureName}.png`, blob]);
 	});
-	packFiles.push(["ui/hud_screen.json", JSON.stringify(hudScreenUI)]);
-	if(highestItemCount >= 1728) {
-		packFiles.push(["font/glyph_E2.png", await customEmojiFont.toBlob()]);
+	if(config.MATERIAL_LIST_ENABLED) {
+		packFiles.push(["ui/hud_screen.json", JSON.stringify(hudScreenUI)]);
+		if(highestItemCount >= 1728) {
+			packFiles.push(["font/glyph_E2.png", await customEmojiFont.toBlob()]);
+		}
 	}
 	packFiles.push(["texts/languages.json", JSON.stringify(languagesDotJson)]);
 	languageFiles.forEach(([language, languageFile]) => {
@@ -772,12 +788,16 @@ export function addDefaultConfig(config) {
 			TEXTURE_OUTLINE_OPACITY: 0.65,
 			TEXTURE_OUTLINE_ALPHA_DIFFERENCE_MODE: "threshold", // difference: will compare alpha channel difference; threshold: will only look at the second pixel
 			TEXTURE_OUTLINE_ALPHA_THRESHOLD: 0, // if using difference mode, will draw outline between pixels with at least this much alpha difference; else, will draw outline on pixels next to pixels with an alpha less than or equal to this
-			DO_SPAWN_ANIMATION: true,
+			SPAWN_ANIMATION_ENABLED: true,
 			SPAWN_ANIMATION_LENGTH: 0.4, // in seconds
-			WRONG_BLOCK_OVERLAY_COLOR: [1, 0, 0, 0.3],
+			PLAYER_CONTROLS_ENABLED: true,
 			CONTROLS: {},
-			BACKUP_SLOT_COUNT: 10,
+			MATERIAL_LIST_ENABLED: true,
 			MATERIAL_LIST_LANGUAGE: "en_US",
+			RETEXTURE_CONTROL_ITEMS: true,
+			RENAME_CONTROL_ITEMS: true,
+			WRONG_BLOCK_OVERLAY_COLOR: [1, 0, 0, 0.3],
+			BACKUP_SLOT_COUNT: 10,
 			PACK_NAME: undefined,
 			PACK_ICON_BLOB: undefined,
 			AUTHORS: [],
@@ -803,7 +823,6 @@ export function addDefaultConfig(config) {
  * @returns {Promise<Object>}
  */
 async function readStructureNBT(structureFile) {
-	await new Promise(res => setTimeout(res, 100))
 	if(structureFile.size == 0) {
 		throw new UserError(`"${structureFile.name}" is an empty file! Please try exporting your structure again.\nIf you play on a version below 1.20.50, exporting to OneDrive will cause your structure file to be empty.`);
 	}
@@ -820,15 +839,15 @@ async function readStructureNBT(structureFile) {
 async function loadStuff(stuff, resourcePackStack) {
 	let filePromises = {};
 	Object.entries(stuff.packTemplate).forEach(([name, path]) => {
-		filePromises[name] = getResponseContents(fetch(`packTemplate/${path}`), path);
+		filePromises[name] = path && getResponseContents(fetch(`packTemplate/${path}`), path);
 	});
 	Object.entries(stuff.resources).forEach(([name, path]) => {
-		filePromises[name] = getResponseContents(resourcePackStack.fetchResource(path), path);
+		filePromises[name] = path && getResponseContents(resourcePackStack.fetchResource(path), path);
 	});
 	Object.assign(filePromises, stuff.otherFiles);
 	let dataPromises = {};
 	Object.entries(stuff.data).forEach(([name, path]) => {
-		dataPromises[name] = getResponseContents(resourcePackStack.fetchData(path), path);
+		dataPromises[name] = path && getResponseContents(resourcePackStack.fetchData(path), path);
 	});
 	return await awaitAllEntries({
 		files: awaitAllEntries(filePromises),
@@ -1413,12 +1432,16 @@ function stringifyWithFixedDecimals(value) {
  * @property {Number} TEXTURE_OUTLINE_OPACITY 0-1
  * @property {("threshold"|"difference")} TEXTURE_OUTLINE_ALPHA_DIFFERENCE_MODE difference: will compare alpha channel difference; threshold: will only look at the second pixel
  * @property {Number} TEXTURE_OUTLINE_ALPHA_THRESHOLD If using difference mode, will draw outline between pixels with at least this much alpha difference; if using threshold mode, will draw outline on pixels next to pixels with an alpha less than or equal to this
- * @property {Boolean} DO_SPAWN_ANIMATION
+ * @property {Boolean} SPAWN_ANIMATION_ENABLED
  * @property {Number} SPAWN_ANIMATION_LENGTH Length of each individual block's spawn animation (seconds)
- * @property {Array<Number>} WRONG_BLOCK_OVERLAY_COLOR Clamped colour quartet
+ * @property {Boolean} PLAYER_CONTROLS_ENABLED
  * @property {HoloPrintControlsConfig} CONTROLS
- * @property {Number} BACKUP_SLOT_COUNT
+ * @property {Boolean} MATERIAL_LIST_ENABLED
  * @property {String} MATERIAL_LIST_LANGUAGE The language code, as appearing in `texts/languages.json`
+ * @property {Boolean} RETEXTURE_CONTROL_ITEMS
+ * @property {Boolean} RENAME_CONTROL_ITEMS
+ * @property {Array<Number>} WRONG_BLOCK_OVERLAY_COLOR Clamped colour quartet
+ * @property {Number} BACKUP_SLOT_COUNT
  * @property {String|undefined} PACK_NAME The name of the completed pack; will default to the structure file names
  * @property {Blob} PACK_ICON_BLOB Blob for `pack_icon.png`
  * @property {Array<String>} AUTHORS

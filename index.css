@@ -118,7 +118,7 @@ fieldset.expandable {
 	grid-template-rows: 0fr;
 	transition: grid-template-rows 0.35s;
 }
-fieldset.expandable:has(input:checked) {
+fieldset.expandable:has(legend input:checked) {
 	grid-template-rows: 1fr;
 }
 fieldset.expandable > *:not(legend) {
@@ -150,7 +150,7 @@ fieldset.expandable > legend::before {
 	transform-origin: 75% 25%;
 	transition: transform 0.35s;
 }
-fieldset.expandable:has(input:checked) > legend::before {
+fieldset.expandable:has(legend input:checked) > legend::before {
 	transform: rotate(135deg);
 }
 label {
