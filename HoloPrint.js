@@ -7,7 +7,7 @@ import MaterialList from "./MaterialList.js";
 import PreviewRenderer from "./PreviewRenderer.js";
 
 import * as entityScripts from "./entityScripts.molang.js";
-import { awaitAllEntries, concatenateFiles, createNumericEnum, exp, floor, hexColorToClampedTriplet, JSONMap, JSONSet, loadTranslationLanguage, max, min, pi, round, sha256, translate, UserError } from "./essential.js";
+import { awaitAllEntries, CachingFetcher, concatenateFiles, createNumericEnum, exp, floor, hexColorToClampedTriplet, JSONMap, JSONSet, loadTranslationLanguage, max, min, pi, round, sha256, translate, UserError } from "./essential.js";
 import ResourcePackStack from "./ResourcePackStack.js";
 import BlockUpdater from "./BlockUpdater.js";
 
@@ -568,24 +568,8 @@ export async function makePack(structureFiles, config = {}, resourcePackStack, p
 	if(config.AUTHORS.length) {
 		manifest["metadata"]["authors"].push(...config.AUTHORS);
 	}
-	let inGameControls;
-	if(JSON.stringify(config.CONTROLS) != JSON.stringify(DEFAULT_PLAYER_CONTROLS)) { // add controls to pack description only if they've been changed
-		// make a fake material list for the in-game control items (just to translate it lol)
-		let controlsMaterialList = await new MaterialList(blockMetadata, itemMetadata);
-		inGameControls = {};
-		await Promise.all(languagesDotJson.map(language => loadTranslationLanguage(language)));
-		languagesDotJson.forEach(language => {
-			inGameControls[language] = "";
-			Object.entries(config.CONTROLS).forEach(([control, itemCriteria]) => {
-				controlsMaterialList.clear();
-				controlsMaterialList.setLanguage(resourceLangFiles[language]);
-				itemCriteria["names"].forEach(itemName => controlsMaterialList.addItem(itemName));
-				let itemInfo = controlsMaterialList.export();
-				controlsMaterialList.clear();
-				inGameControls[language] += `\n${translate(PLAYER_CONTROL_NAMES[control], language)}: ${[itemInfo.map(item => `§3${item.translatedName}§r`).join(", "), itemCriteria.tags.map(tag => `§p${tag}§r`).join(", ")].removeFalsies().join("; ")}`;
-			});
-		});
-	}
+	let controlsHaveBeenCustomised = JSON.stringify(config.CONTROLS) != JSON.stringify(DEFAULT_PLAYER_CONTROLS);
+	let { inGameControls, controlItemTranslations } = controlsHaveBeenCustomised || config.RENAME_CONTROL_ITEMS? await translateControlItems(config, blockMetadata, itemMetadata, languagesDotJson, resourceLangFiles) : {};
 	
 	let packGenerationTime = (new Date()).toLocaleString();
 	const disabledFeatureTranslations = { // these look at the .lang RP files
@@ -599,22 +583,42 @@ export async function makePack(structureFiles, config = {}, resourcePackStack, p
 		let languageFile = (await fetch(`packTemplate/texts/${language}.lang`).then(res => res.text())).replaceAll("\r\n", "\n"); // I hate windows sometimes (actually quite often now because of windows 11)
 		languageFile = languageFile.replaceAll("{PACK_NAME}", packName);
 		languageFile = languageFile.replaceAll("{PACK_GENERATION_TIME}", packGenerationTime);
-		languageFile = languageFile.replaceAll(/\{STRUCTURE_AUTHORS\[([^)]+)\]\}/g, (useless, delimiter) => config.AUTHORS.join(delimiter));
-		languageFile = languageFile.replaceAll("{DESCRIPTION}", config.DESCRIPTION?.replaceAll("\n", "\\n"));
-		languageFile = languageFile.replaceAll("{CONTROLS}", inGameControls?.[language].replaceAll("\n", "\\n"));
 		languageFile = languageFile.replaceAll("{TOTAL_MATERIAL_COUNT}", totalMaterialCount);
 		languageFile = languageFile.replaceAll("{MATERIAL_LIST}", finalisedMaterialLists[language].map(({ translatedName, count }) => `${count} ${translatedName}`).join(", "));
-		let translatedDisabledFeatures = Object.entries(disabledFeatureTranslations).filter(([feature]) => !config[feature]).map(([feature, translation]) => languageFile.match(new RegExp(`pack\\.description\\.${translation}=([^\\t#\\n]+)`))[1]).join("\\n");
-		languageFile = languageFile.replaceAll("{DISABLED_FEATURES}", translatedDisabledFeatures);
 		
 		// now substitute in the extra bits into the main description if needed
-		languageFile = languageFile.replaceAll("{AUTHORS_SECTION}", config.AUTHORS.length? languageFile.match(/pack\.description\.authors=([^\t#\n]+)/)[1] : "");
-		languageFile = languageFile.replaceAll("{DESCRIPTION_SECTION}", config.DESCRIPTION? languageFile.match(/pack\.description\.description=([^\t#\n]+)/)[1] : "");
-		languageFile = languageFile.replaceAll("{DISABLED_FEATURES_SECTION}", translatedDisabledFeatures? languageFile.match(/pack\.description\.disabled_features=([^\t#\n]+)/)[1] : "");
-		languageFile = languageFile.replaceAll("{CONTROLS_SECTION}", inGameControls? languageFile.match(/pack\.description\.controls=([^\t#\n]+)/)[1] : "");
+		if(config.AUTHORS.length) {
+			languageFile = languageFile.replaceAll(/\{STRUCTURE_AUTHORS\[([^)]+)\]\}/g, (useless, delimiter) => config.AUTHORS.join(delimiter));
+			languageFile = languageFile.replaceAll("{AUTHORS_SECTION}", languageFile.match(/pack\.description\.authors=([^\t#\n]+)/)[1]);
+		} else {
+			languageFile = languageFile.replaceAll("{AUTHORS_SECTION}", "");
+		}
+		if(config.DESCRIPTION) {
+			languageFile = languageFile.replaceAll("{DESCRIPTION}", config.DESCRIPTION.replaceAll("\n", "\\n"));
+			languageFile = languageFile.replaceAll("{DESCRIPTION_SECTION}", languageFile.match(/pack\.description\.description=([^\t#\n]+)/)[1]);
+		} else {
+			languageFile = languageFile.replaceAll("{DESCRIPTION_SECTION}", "");
+		}
+		let translatedDisabledFeatures = Object.entries(disabledFeatureTranslations).filter(([feature]) => !config[feature]).map(([feature, translationKey]) => languageFile.match(new RegExp(`pack\\.description\\.${translationKey}=([^\\t#\\n]+)`))[1]).join("\\n");
+		if(translatedDisabledFeatures) {
+			languageFile = languageFile.replaceAll("{DISABLED_FEATURES}", translatedDisabledFeatures);
+			languageFile = languageFile.replaceAll("{DISABLED_FEATURES_SECTION}", languageFile.match(/pack\.description\.disabled_features=([^\t#\n]+)/)[1]);
+		} else {
+			languageFile = languageFile.replaceAll("{DISABLED_FEATURES_SECTION}", "");
+		}
+		if(controlsHaveBeenCustomised) {
+			languageFile = languageFile.replaceAll("{CONTROLS}", inGameControls[language].replaceAll("\n", "\\n"));
+			languageFile = languageFile.replaceAll("{CONTROLS_SECTION}", languageFile.match(/pack\.description\.controls=([^\t#\n]+)/)[1]);
+		} else {
+			languageFile = languageFile.replaceAll("{CONTROLS_SECTION}", "");
+		}
 		
-		languageFile = languageFile.replaceAll(/pack\.description\..+\s*/g, ""); // remove all the description sections
+		languageFile = languageFile.replaceAll(/pack\.description\..+\s*/g, ""); // remove all the description template sections
 		languageFile = languageFile.replaceAll(/\t*#.+/g, ""); // remove comments
+		
+		if(config.RENAME_CONTROL_ITEMS) {
+			languageFile += controlItemTranslations[language];
+		}
 		
 		return [language, languageFile];
 	}));
@@ -761,7 +765,7 @@ export function getDefaultPackName(structureFiles) {
 		defaultName = `${defaultName.slice(0, 19)}...${defaultName.slice(-19)}`
 	}
 	if(defaultName.trim() == "") {
-		defaultName = "HoloPrint";
+		defaultName = "hologram";
 	}
 	return defaultName;
 }
@@ -828,6 +832,14 @@ export function addDefaultConfig(config) {
 		}
 	});
 }
+/**
+ * Creates a CachingFetcher to read pmmp/BedrockData.
+ * @returns {Promise<CachingFetcher>}
+ */
+export async function createPmmpBedrockDataFetcher() {
+	const pmmpBedrockDataVersion = "4.1.0+bedrock-1.21.70";
+	return await new CachingFetcher(`BedrockData@${pmmpBedrockDataVersion}`, `https://raw.githubusercontent.com/pmmp/BedrockData/refs/tags/${pmmpBedrockDataVersion}/`);
+}
 
 /**
  * Reads the NBT of a structure file, returning a JSON object.
@@ -850,7 +862,7 @@ async function readStructureNBT(structureFile) {
  * @template TData
  * @param {{ packTemplate?: TPackTemplate, resources?: TResources, otherFiles?: TOtherFiles, data?: TData }} stuff
  * @param {ResourcePackStack} resourcePackStack
- * @returns {Promise<{ files: { [K in keyof TPackTemplate | keyof TResources | keyof TOtherFiles]?: String|Blob|Record<String, any>|HTMLImageElement }, data: { [K in keyof TData]?: String|Blob|Record<String, any>|HTMLImageElement } }>}
+ * @returns {Promise<{ files: { [K in keyof TPackTemplate | keyof TResources | keyof TOtherFiles]?: String|Blob|Record<String, any>|Array<any>|HTMLImageElement }, data: { [K in keyof TData]?: String|Blob|Record<String, any>|Array<any>|HTMLImageElement } }>}
 */
 async function loadStuff(stuff, resourcePackStack) {
 	let filePromises = {};
@@ -875,7 +887,7 @@ async function loadStuff(stuff, resourcePackStack) {
  * @overload
  * @param {Promise<Response>} resPromise
  * @param {`${String}.${"json"|"material"}`} filePath
- * @returns {Promise<Record<String, any>>}
+ * @returns {Promise<Record<String, any>|Array<any>>}
  */
 /**
  * Gets the contents of a response based on the requested file extension (e.g. object from .json, image from .png, etc.).
@@ -913,8 +925,8 @@ async function getResponseContents(resPromise, filePath) {
 	return await res.blob();
 }
 /**
- * Removes ignored blocks from the block palette, and adds block entities as separate entries.
- * @param {Object} structure The de-NBT-ed structure file
+ * Removes ignored blocks from the block palette, updates old blocks, and adds block entities as separate entries.
+ * @param {Record<String, any>} structure The de-NBT-ed structure file
  * @returns {{ palette: Array<Block>, indices: [Array<Number>, Array<Number>] }}
  */
 async function tweakBlockPalette(structure, ignoredBlocks) {
@@ -1022,7 +1034,7 @@ function mergeMultiplePalettesAndIndices(palettesAndIndices) {
 }
 /**
  * Adds bounding box particles for a single structure to the hologram animation controllers in-place.
- * @param {Object} hologramAnimationControllers
+ * @param {Record<String, any>} hologramAnimationControllers
  * @param {Number} structureI
  * @param {Vec3} structureSize
  */
@@ -1064,9 +1076,9 @@ function addBoundingBoxParticles(hologramAnimationControllers, structureI, struc
 }
 /**
  * Adds block validation particles for a single structure to the hologram animation controllers in-place.
- * @param {Object} hologramAnimationControllers
+ * @param {Record<String, any>} hologramAnimationControllers
  * @param {Number} structureI
- * @param {Array<Object>} blocksToValidate
+ * @param {Array<Record<String, any>>} blocksToValidate
  * @param {Vec3} structureSize
  */
 function addBlockValidationParticles(hologramAnimationControllers, structureI, blocksToValidate, structureSize) {
@@ -1138,8 +1150,8 @@ function addBlockValidationParticles(hologramAnimationControllers, structureI, b
 /**
  * Add player controls. These are done entirely in the render controller so character creator skins aren't disabled.
  * @param {HoloPrintConfig} config
- * @param {Object} defaultPlayerRenderControllers
- * @returns {Object}
+ * @param {Record<String, any>} defaultPlayerRenderControllers
+ * @returns {Record<String, any>}
  */
 function addPlayerControlsToRenderControllers(config, defaultPlayerRenderControllers) {
 	let initVariables = functionToMolang(entityScripts.playerInitVariables);
@@ -1167,9 +1179,9 @@ function addPlayerControlsToRenderControllers(config, defaultPlayerRenderControl
 }
 /**
  * Patches a set of render controllers with some extra Molang code. Returns a new set of render controllers.
- * @param {Object} renderControllers
- * @param {Object} patches
- * @returns {Object}
+ * @param {Record<String, any>} renderControllers
+ * @param {Record<String, any>} patches
+ * @returns {Record<String, any>}
  */
 function patchRenderControllers(renderControllers, patches) {
 	return {
@@ -1193,6 +1205,55 @@ function patchRenderControllers(renderControllers, patches) {
 			}];
 		}).removeFalsies())
 	};
+}
+/**
+ * Translates control items by making a fake material list.
+ * @param {HoloPrintConfig} config
+ * @param {Record<String, any>} blockMetadata
+ * @param {Record<String, any>} itemMetadata
+ * @param {Array<String>} languagesDotJson
+ * @param {Record<String, String>} resourceLangFiles
+ * @returns {Promise<{ inGameControls: Record<String, String>, controlItemTranslations: Record<String, String> }>}
+ */
+async function translateControlItems(config, blockMetadata, itemMetadata, languagesDotJson, resourceLangFiles) {
+	// make a fake material list for the in-game control items (just to translate them lol)
+	let controlsMaterialList = await new MaterialList(blockMetadata, itemMetadata);
+	let inGameControls = {};
+	let controlItemTranslations = {};
+	await Promise.all(languagesDotJson.map(language => loadTranslationLanguage(language)));
+	let itemTags = await createPmmpBedrockDataFetcher().then(fetcher => fetcher.fetch("item_tags.json").then(res => res.json()));
+	languagesDotJson.forEach(language => {
+		inGameControls[language] = "";
+		let translatedControlNames = {};
+		let translatedControlItems = {};
+		/** @type {Record<String, Set<String>>} */
+		let controlItemTranslationKeys = {};
+		Object.entries(config.CONTROLS).forEach(([control, itemCriteria]) => {
+			controlsMaterialList.clear();
+			controlsMaterialList.setLanguage(resourceLangFiles[language]);
+			itemCriteria["names"].forEach(itemName => controlsMaterialList.addItem(itemName));
+			
+			let itemInfo = controlsMaterialList.export();
+			let translatedControlName = translate(PLAYER_CONTROL_NAMES[control], language);
+			translatedControlNames[control] = translatedControlName;
+			inGameControls[language] += `\n${translatedControlName}: ${[itemInfo.map(item => `§3${item.translatedName}§r`).join(", "), itemCriteria.tags.map(tag => `§p${tag}§r`).join(", ")].removeFalsies().join("; ")}`;
+			
+			let itemsInTags = itemCriteria.tags.filter(tag => !tag.includes(":")).map(tag => itemTags[`minecraft:${tag}`]).flat().map(itemName => itemName.replace(/^minecraft:/, ""));
+			itemsInTags.forEach(itemName => controlsMaterialList.addItem(itemName));
+			controlItemTranslationKeys[control] = new Set();
+			controlsMaterialList.export().forEach(({ translationKey, translatedName }) => {
+				controlItemTranslationKeys[control].add(translationKey);
+				translatedControlItems[translationKey] = translatedName;
+			}); // these items will be renamed, and includes all the items in the tags specified. e.g. if "planks" is added as a tag for a control, then all plank types need to be renamed.
+		});
+		controlItemTranslations[language] = "";
+		Object.entries(controlItemTranslationKeys).forEach(([control, itemTranslationKeys]) => {
+			itemTranslationKeys.forEach(itemTranslationKey => {
+				controlItemTranslations[language] += `\n${itemTranslationKey}=${translatedControlItems[itemTranslationKey]}~LINEBREAK~§u${translatedControlNames[control]}§r`; // don't question, it works. and yes, ~LINEBREAK~ is an actual thing: https://harryf1204.github.io/Bedrock-Notebook/Text%20Localization.html#newlines-in-lang-files
+			});
+		});
+	});
+	return { inGameControls, controlItemTranslations };
 }
 /**
  * Makes a blob for pack_icon.png based on a structure file's SHA256 hash
@@ -1311,7 +1372,7 @@ function array2DToMolang(array, indexVar1, indexVar2) {
 /**
  * Converts a function into minified Molang code. Variables can be referenced with $[...].
  * @param {Function} func
- * @param {Object} [vars]
+ * @param {Record<String, any>} [vars]
  * @returns {String} Molang code
  */
 function functionToMolang(func, vars = {}) {
@@ -1619,10 +1680,10 @@ function stringifyWithFixedDecimals(value) {
  * @property {Number} maxVersionPatch - The patch version (must be >= 0).
  * @property {Number} maxVersionRevision - The revision version (must be >= 0).
  * @property {Record<String, String>} [renamedIds] - Mapping of renamed IDs.
- * @property {Object.<String, Record<String, String>>} [renamedProperties] - Mapping of renamed properties.
- * @property {Object.<String, Record<String, TypedBlockStateProperty>>} [addedProperties] - Mapping of added properties.
+ * @property {Record<String, Record<String, TypedBlockStateProperty>>} [addedProperties] - Mapping of added properties.
+ * @property {Record<String, Record<String, String>>} [renamedProperties] - Mapping of renamed properties.
  * @property {Record<String, Array<String>>} [removedProperties] - Mapping of removed properties.
- * @property {Object.<String, Record<String, String>>} [remappedPropertyValues] - Mapping of remapped property values.
+ * @property {Record<String, Record<String, String>>} [remappedPropertyValues] - Mapping of remapped property values.
  * @property {Record<String, Array<{ old: TypedBlockStateProperty, new: TypedBlockStateProperty }>>} [remappedPropertyValuesIndex] - Index of remapped property values.
  * @property {Record<String, BlockUpdateSchemaFlattenRule>} [flattenedProperties] - Mapping of flattened properties.
  * @property {Record<String, Array<BlockUpdateSchemaRemappedState>>} [remappedStates] - Mapping of remapped states.

@@ -1,4 +1,4 @@
-import { CachingFetcher, htmlCodeToElement } from "../essential.js";
+import { htmlCodeToElement } from "../essential.js";
 import * as HoloPrint from "../HoloPrint.js";
 import { VanillaDataFetcher } from "../ResourcePackStack.js";
 
@@ -10,8 +10,7 @@ let itemsDatalistPromise = (new VanillaDataFetcher()).then(async fetcher => {
 	datalist.append(...itemNames.map(itemName => new Option(itemName)));
 	return datalist;
 });
-const pmmpBedrockDataVersion = "4.1.0+bedrock-1.21.70";
-let itemTagsDatalistPromise = (new CachingFetcher(`BedrockData@${pmmpBedrockDataVersion}`, `https://raw.githubusercontent.com/pmmp/BedrockData/refs/tags/${pmmpBedrockDataVersion}/`)).then(async fetcher => {
+let itemTagsDatalistPromise = HoloPrint.createPmmpBedrockDataFetcher().then(async fetcher => {
 	let data = await fetcher.fetch("item_tags.json").then(res => res.json());
 	let itemTags = Object.keys(data).map(tag => tag.replace(/^minecraft:/, ""));
 	let datalist = document.createElement("datalist");
