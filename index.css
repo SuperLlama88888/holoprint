@@ -182,7 +182,7 @@ button, input[type="checkbox"], input[type="number"], input[type="text"], textar
 	background: #EEDEEE;
 	font-family: inherit;
 	cursor: pointer;
-	transition: background 0.15s;
+	transition: background 0.15s, border-color 0.225s;
 }
 input[type="color"] {
 	border: 2px solid #D899D8;
@@ -212,15 +212,47 @@ button:not(:disabled):not(.packInfoButton):hover, input[type="file"]:not(:disabl
 }
 button:disabled, input[type="file"]:disabled::file-selector-button, select:disabled, .buttonlike:disabled {
 	cursor: not-allowed;
+	background: #CCC;
+	border-color: #9A9A9A;
 }
 input[type="number"]:hover, input[type="text"]:hover, input[type="color"]:hover, textarea:hover {
 	background: #EAD5EA;
 }
-button:not(.packInfoButton):active, input[type="file"]:active::file-selector-button, select:active, .buttonlike:not(.packInfoButton):active {
+button:not(.packInfoButton):not(:disabled):active, input[type="file"]:not(:disabled):active::file-selector-button, select:not(:disabled):active, .buttonlike:not(.packInfoButton):not(:disabled):active {
 	background: #DABADA;
 }
 input[type="checkbox"] {
 	display: inline-block;
+	appearance: none;
+	width: 40px;
+	height: 20px;
+	border-radius: 10px;
+}
+input[type="checkbox"]:checked {
+	background: #E0BEE0;
+}
+input[type="checkbox"]::after {
+	display: inline-block;
+	width: 12px;
+	height: 12px;
+	position: relative;
+	bottom: 2px;
+	left: -2px;
+	background: #C889C8;
+	border-radius: 50%;
+	content: "\2716"; /* cross */
+	color: transparent;
+	font-size: 11px;
+	text-shadow: 21px -2px 0 black; /* effectively move the text */
+	transition: left 0.2s, text-shadow 0.2s, background 0.15s;
+}
+input[type="checkbox"]:checked::after {
+	left: 18px;
+	content: "\2714"; /* tick */
+	text-shadow: -18px -2px 0 black;
+}
+input[type="checkbox"]:hover::after {
+	background: #B778B7;
 }
 .resetButton {
 	position: absolute;

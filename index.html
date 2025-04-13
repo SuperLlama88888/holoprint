@@ -137,11 +137,13 @@
 								<fieldset class="expandable">
 									<legend><label><span data-translate="settings.features">Features</span><input type="checkbox"/></label></legend>
 									<div>
-										<label><span data-translate="settings.features.spawn_animation">Spawn animation:</span> <input type="checkbox" name="spawnAnimationEnabled" checked/></label>
-										<label><span data-translate="settings.features.player_controls">Player controls:</span> <input type="checkbox" name="playerControlsEnabled" checked/></label>
-										<label><span data-translate="settings.features.material_list">Material list:</span> <input type="checkbox" name="materialListEnabled" checked/></label>
-										<label><span data-translate="settings.features.retexture_control_items">Retexture control items:</span> <input type="checkbox" name="retextureControlItems" checked/></label>
-										<label><span data-translate="settings.features.rename_control_items">Rename control items:</span> <input type="checkbox" name="renameControlItems" checked/></label>
+										<table>
+											<tr><td><label data-translate="settings.features.spawn_animation" for="c1">Spawn animation:</label></td><td><input type="checkbox" name="spawnAnimationEnabled" checked id="c1"/></td></tr>
+											<tr><td><label data-translate="settings.features.player_controls" for="c2">Player controls:</label></td><td><input type="checkbox" name="playerControlsEnabled" checked id="c2"/></td></tr>
+											<tr><td><label data-translate="settings.features.material_list" for="c3">Material list:</label></td><td><input type="checkbox" name="materialListEnabled" checked id="c3"/></td></tr>
+											<tr><td><label data-translate="settings.features.retexture_control_items" for="c4">Retexture control items:</label></td><td><input type="checkbox" name="retextureControlItems" checked id="c4"/></td></tr>
+											<tr><td><label data-translate="settings.features.rename_control_items" for="c5">Rename control items:</label></td><td><input type="checkbox" name="renameControlItems" checked id="c5"/></td></tr>
+										</table>
 									</div>
 								</fieldset>
 								<label><span data-translate="settings.ignored_blocks">Ignored blocks:</span> <input type="text" name="ignoredBlocks" placeholder="block_1 block_2 etc." data-translate-placeholder="settings.ignored_blocks.placeholder"/></label>
