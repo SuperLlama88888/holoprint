@@ -29,28 +29,8 @@
 		"carrots": "carrot",
 		"wall_sign": "oak_sign", // I should probably have written a regex to handle these...
 		"standing_sign": "oak_sign",
-		"spruce_wall_sign": "spruce_sign",
-		"spruce_standing_sign": "spruce_sign",
-		"birch_wall_sign": "birch_sign",
-		"birch_standing_sign": "birch_sign",
-		"jungle_wall_sign": "jungle_sign",
-		"jungle_standing_sign": "jungle_sign",
-		"acacia_wall_sign": "acacia_sign",
-		"acacia_standing_sign": "acacia_sign",
 		"darkoak_wall_sign": "dark_oak_sign",
 		"darkoak_standing_sign": "dark_oak_sign",
-		"mangrove_wall_sign": "mangrove_sign",
-		"mangrove_standing_sign": "mangrove_sign",
-		"bamboo_wall_sign": "bamboo_sign",
-		"bamboo_standing_sign": "bamboo_sign",
-		"cherry_wall_sign": "cherry_sign",
-		"cherry_standing_sign": "cherry_sign",
-		"pale_oak_wall_sign": "pale_oak_sign",
-		"pale_oak_standing_sign": "pale_oak_sign",
-		"crimson_wall_sign": "crimson_sign",
-		"crimson_standing_sign": "crimson_sign",
-		"warped_wall_sign": "warped_sign",
-		"warped_standing_sign": "warped_sign",
 		"bamboo_sapling": "bamboo",
 		"trip_wire": "string",
 		"cocoa": "cocoa_beans",
@@ -58,16 +38,9 @@
 		"cave_vines": "glow_berries",
 		"cave_vines_body_with_berries": "glow_berries",
 		"cave_vines_head_with_berries": "glow_berries",
-		"brain_coral_wall_fan": "brain_coral_fan",
-		"bubble_coral_wall_fan": "bubble_coral_fan",
-		"fire_coral_wall_fan": "fire_coral_fan",
-		"horn_coral_wall_fan": "horn_coral_fan",
-		"tube_coral_wall_fan": "tube_coral_fan",
-		"dead_brain_coral_wall_fan": "dead_brain_coral_fan",
-		"dead_bubble_coral_wall_fan": "dead_bubble_coral_fan",
-		"dead_fire_coral_wall_fan": "dead_fire_coral_fan",
-		"dead_horn_coral_wall_fan": "dead_horn_coral_fan",
-		"dead_tube_coral_wall_fan": "dead_tube_coral_fan"
+		"/^(\\w+)_wall_sign$/": "$1_sign",
+		"/^(\\w+)_standing_sign$/": "$1_sign",
+		"/^(\\w+)_coral_wall_fan$/": "$1_coral_fan"
 	},
 	"item_count_multipliers": {
 		"/double_.*slab$/": {
@@ -122,7 +95,11 @@
 		"item.zombie_head": "item.skull.zombie",
 		"item.cocoa_beans": "item.dye.brown",
 		"item.white_dye": "item.dye.white_new",
-		"item.bone_meal": "item.dye.white"
+		"item.bone_meal": "item.dye.white",
+		"item.dark_oak_boat": "item.boat.big_oak",
+		"item.dark_oak_chest_boat": "item.chest_boat.big_oak",
+		"/^item.(?!.*chest_)(\\w+)_(boat|raft)$/": "item.boat.$1",
+		"/^item.(\\w+)_chest_(boat|raft)$/": "item.chest_boat.$1"
 	},
 	"blocks_missing_serialization_ids": {
 		"end_gateway": "tile.end_gateway" // despite still existing, end gateways were removed from mojang-blocks.json in 1.21.50...
@@ -132,3 +109,16 @@
 		"tile.end_gateway.name": "End Gateway"
 	}
 }
+/*
+➖🟩🟩🟩
+➖🟩🟩⬛
+➖🟩🟩🟩
+➖➖🟦➖⬜⬜
+➖➖🟦🟩⬜⬛
+➖➖🟦➖⬜⬜🟧
+⬜⬜⬜🟦⬜⬜🟥
+⬜⬜⬜⬜⬜
+⬜⬜⬜⬜⬜
+➖➖🟨
+➖➖🟨🟨
+*/

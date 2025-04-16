@@ -196,6 +196,49 @@ export function stringToImageData(text, textCol = "black", backgroundCol = "whit
 	ctx.fillText(text, 0, 15);
 	return ctx.getImageData(0, 0, can.width, can.height);
 }
+/**
+ * Adds transparent padding around an image.
+ * @param {HTMLImageElement} image
+ * @param {{ left: Number|undefined, right: Number|undefined, top: Number|undefined, bottom: Number|undefined }} padding Pixels
+ * @returns {Promise<HTMLImageElement>}
+ */
+export async function addPaddingToImage(image, padding) {
+	let { left = 0, right = 0, top = 0, bottom = 0 } = padding;
+	let can = new OffscreenCanvas(image.width + left + right, image.height + top + bottom);
+	let ctx = can.getContext("2d");
+	ctx.drawImage(image, left, top);
+	let blob = await can.convertToBlob();
+	return await blob.toImage();
+}
+/**
+ * Overlays square images together, with the first image being the base. They can be different dimensions and will be resized to not lose quality.
+ * @param  {...HTMLImageElement} images
+ * @returns {Promise<Blob>}
+ */
+export async function overlaySquareImages(...images) {
+	let outputSize = images.map(image => image.width).reduce((a, b) => lcm(a, b));
+	let can = new OffscreenCanvas(outputSize, outputSize);
+	let ctx = can.getContext("2d");
+	ctx.imageSmoothingEnabled = false;
+	images.forEach(image => {
+		ctx.drawImage(image, 0, 0, outputSize, outputSize);
+	});
+	return await can.convertToBlob();
+}
+/**
+ * Resizes an image to a specific size without image smoothing.
+ * @param {HTMLImageElement} image
+ * @param {Number} width
+ * @param {Number} [height]
+ * @returns {Promise<Blob>}
+ */
+export async function resizeImageToBlob(image, width, height = width) {
+	let can = new OffscreenCanvas(width, height);
+	let ctx = can.getContext("2d");
+	ctx.imageSmoothingEnabled = false;
+	ctx.drawImage(image, 0, 0, width, height);
+	return await can.convertToBlob();
+}
 
 let translationLanguages = {};
 export async function loadTranslationLanguage(language) {
@@ -269,6 +312,28 @@ export function closestFactorPair(n) {
 	let x = ceil(sqrt(n));
 	while(n % x) x++;
 	return [x, n / x];
+}
+/**
+ * Calculates the GCD of two numbers
+ * @param {Number} a
+ * @param {Number} b
+ * @returns {Number}
+ */
+export function gcd(a, b) {
+	while(b != 0) {
+		if(!(a >= 1 && b >= 1)) throw new Error(`Cannot find GCD of ${a} and ${b}`);
+		[a, b] = [b, a % b]; // Euclidean algorithm
+	}
+	return a;
+}
+/**
+ * Calculates the LCM of two numbers
+ * @param {Number} a
+ * @param {Number} b
+ * @returns {Number}
+ */
+export function lcm(a, b) {
+	return a * b / gcd(a, b);
 }
 
 export function downloadBlob(blob, fileName) {

@@ -47,6 +47,7 @@
 	"resource_packs.upload_local": "Upload a local resource pack:",
 	"settings.advanced": "Advanced",
 	"settings.backup_slot_count": "Backup slot count:",
+	"settings.control_item_texture_scale": "Control item texture scale:",
 	"settings.heading": "Settings",
 	"settings.features": "Features",
 	"settings.features.spawn_animation": "Spawn animation:",

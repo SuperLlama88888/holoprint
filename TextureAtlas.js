@@ -502,7 +502,11 @@ export default class TextureAtlas {
 		ctx.fillStyle = config.TEXTURE_OUTLINE_COLOR;
 		ctx.globalAlpha = config.TEXTURE_OUTLINE_OPACITY;
 		
-		const compareAlpha = (currentPixel, otherPixel) => config.TEXTURE_OUTLINE_ALPHA_DIFFERENCE_MODE == "difference"? currentPixel - otherPixel >= config.TEXTURE_OUTLINE_ALPHA_THRESHOLD : otherPixel <= config.TEXTURE_OUTLINE_ALPHA_THRESHOLD;
+		/** difference: will compare alpha channel difference; threshold: will only look at the second pixel @type {("threshold"|"difference")} */
+		const TEXTURE_OUTLINE_ALPHA_DIFFERENCE_MODE = "threshold";
+		/** If using difference mode, will draw outline between pixels with at least this much alpha difference; if using threshold mode, will draw outline on pixels next to pixels with an alpha less than or equal to this @type {Number} */
+		const TEXTURE_OUTLINE_ALPHA_THRESHOLD = 0;
+		const compareAlpha = (currentPixel, otherPixel) => TEXTURE_OUTLINE_ALPHA_DIFFERENCE_MODE == "difference"? currentPixel - otherPixel >= TEXTURE_OUTLINE_ALPHA_THRESHOLD : otherPixel <= TEXTURE_OUTLINE_ALPHA_THRESHOLD;
 		
 		imagePositions.forEach(({ x: startX, y: startY, w, h }) => {
 			let endX = startX + w;

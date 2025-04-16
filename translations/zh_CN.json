@@ -47,6 +47,7 @@
   "resource_packs.upload_local": "上传本地资源包：",
   "settings.advanced": "高级",
   "settings.backup_slot_count": "Backup slot count:",
+  "settings.control_item_texture_scale": "Control item texture scale:",
   "settings.heading": "设置",
   "settings.features": "Features",
   "settings.features.spawn_animation": "生成动画：",

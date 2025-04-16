@@ -7,7 +7,7 @@ import MaterialList from "./MaterialList.js";
 import PreviewRenderer from "./PreviewRenderer.js";
 
 import * as entityScripts from "./entityScripts.molang.js";
-import { awaitAllEntries, CachingFetcher, concatenateFiles, createNumericEnum, exp, floor, hexColorToClampedTriplet, JSONMap, JSONSet, loadTranslationLanguage, max, min, pi, round, sha256, translate, UserError } from "./essential.js";
+import { addPaddingToImage, awaitAllEntries, CachingFetcher, concatenateFiles, createNumericEnum, exp, floor, hexColorToClampedTriplet, JSONMap, JSONSet, lcm, loadTranslationLanguage, max, min, overlaySquareImages, pi, resizeImageToBlob, round, sha256, translate, UserError } from "./essential.js";
 import ResourcePackStack from "./ResourcePackStack.js";
 import BlockUpdater from "./BlockUpdater.js";
 
@@ -57,7 +57,7 @@ export async function makePack(structureFiles, config = {}, resourcePackStack, p
 	console.info(`Running HoloPrint ${VERSION}`);
 	if(!resourcePackStack) {
 		console.debug("Waiting for resource pack stack initialisation...");
-		resourcePackStack = await new ResourcePackStack()
+		resourcePackStack = await new ResourcePackStack();
 		console.debug("Resource pack stack initialised!");
 	}
 	let startTime = performance.now();
@@ -87,13 +87,15 @@ export async function makePack(structureFiles, config = {}, resourcePackStack, p
 			singleWhitePixelTexture: "textures/particle/single_white_pixel.png",
 			exclamationMarkTexture: "textures/particle/exclamation_mark.png",
 			saveIconTexture: "textures/particle/save_icon.png",
+			itemTexture: config.RETEXTURE_CONTROL_ITEMS? "textures/item_texture.json" : undefined,
 			hudScreenUI: config.MATERIAL_LIST_ENABLED? "ui/hud_screen.json" : undefined,
 			customEmojiFont: "font/glyph_E2.png",
 			languagesDotJson: "texts/languages.json"
 		},
 		resources: {
 			entityFile: "entity/armor_stand.entity.json",
-			defaultPlayerRenderControllers: config.PLAYER_CONTROLS_ENABLED? "render_controllers/player.render_controllers.json" : undefined
+			defaultPlayerRenderControllers: config.PLAYER_CONTROLS_ENABLED? "render_controllers/player.render_controllers.json" : undefined,
+			resourceItemTexture: config.RETEXTURE_CONTROL_ITEMS? "textures/item_texture.json" : undefined
 		},
 		otherFiles: {
 			packIcon: config.PACK_ICON_BLOB ?? makePackIcon(concatenateFiles(structureFiles)),
@@ -103,7 +105,7 @@ export async function makePack(structureFiles, config = {}, resourcePackStack, p
 			itemMetadata: "metadata/vanilladata_modules/mojang-items.json"
 		}
 	}, resourcePackStack);
-	let { manifest, packIcon, entityFile, hologramRenderControllers, defaultPlayerRenderControllers, hologramGeo, hologramMaterial, hologramAnimationControllers, hologramAnimations, boundingBoxOutlineParticle, blockValidationParticle, savingBackupParticle, singleWhitePixelTexture, exclamationMarkTexture, saveIconTexture, hudScreenUI, customEmojiFont, languagesDotJson } = loadedStuff.files;
+	let { manifest, packIcon, entityFile, hologramRenderControllers, defaultPlayerRenderControllers, hologramGeo, hologramMaterial, hologramAnimationControllers, hologramAnimations, boundingBoxOutlineParticle, blockValidationParticle, savingBackupParticle, singleWhitePixelTexture, exclamationMarkTexture, saveIconTexture, itemTexture, hudScreenUI, customEmojiFont, languagesDotJson, resourceItemTexture } = loadedStuff.files;
 	let { blockMetadata, itemMetadata } = loadedStuff.data;
 	let resourceLangFiles = (await loadStuff({
 		resources: Object.fromEntries(languagesDotJson.map(language => [language, `texts/${language}.lang`])) // load the language file resources for each language
@@ -568,8 +570,11 @@ export async function makePack(structureFiles, config = {}, resourcePackStack, p
 	if(config.AUTHORS.length) {
 		manifest["metadata"]["authors"].push(...config.AUTHORS);
 	}
+	
 	let controlsHaveBeenCustomised = JSON.stringify(config.CONTROLS) != JSON.stringify(DEFAULT_PLAYER_CONTROLS);
-	let { inGameControls, controlItemTranslations } = controlsHaveBeenCustomised || config.RENAME_CONTROL_ITEMS? await translateControlItems(config, blockMetadata, itemMetadata, languagesDotJson, resourceLangFiles) : {};
+	let pmmpBedrockDataFetcher = config.RENAME_CONTROL_ITEMS || config.RETEXTURE_CONTROL_ITEMS? await createPmmpBedrockDataFetcher() : undefined;
+	let itemTags = config.RENAME_CONTROL_ITEMS || config.RETEXTURE_CONTROL_ITEMS? await pmmpBedrockDataFetcher.fetch("item_tags.json").then(res => res.json()) : undefined;
+	let { inGameControls, controlItemTranslations } = controlsHaveBeenCustomised || config.RENAME_CONTROL_ITEMS? await translateControlItems(config, blockMetadata, itemMetadata, languagesDotJson, resourceLangFiles, itemTags) : {};
 	
 	let packGenerationTime = (new Date()).toLocaleString();
 	const disabledFeatureTranslations = { // these look at the .lang RP files
@@ -623,6 +628,114 @@ export async function makePack(structureFiles, config = {}, resourcePackStack, p
 		return [language, languageFile];
 	}));
 	
+	let controlItemTextures = [];
+	if(config.RETEXTURE_CONTROL_ITEMS) {
+		let legacyItemMappings;
+		let loadingLegacyItemMappingsPromise;
+		await Promise.all(Object.entries(config.CONTROLS).map(async ([control, itemCriteria]) => {
+			let controlTexturePath = `textures/items/~${control.toLowerCase()}.png`; // because texture compositing works alphabetically not in array order, the ~ forces the control texture to always go on top of the actual item texture
+			let controlTexture = await fetch(`packTemplate/${controlTexturePath}`).then(res => res.toImage());
+			let paddedTexture = await addPaddingToImage(controlTexture, { // make it small in the top-left corner
+				right: 16,
+				bottom: 16
+			});
+			let controlItemTextureSizes = new Set();
+			let allItems = expandItemCriteria(itemCriteria, itemTags);
+			await Promise.all(allItems.map(async itemName => {
+				let originalTexturePath = resourceItemTexture["texture_data"][itemName]?.["textures"];
+				if(originalTexturePath) {
+					if(Array.isArray(originalTexturePath)) {
+						if(originalTexturePath.length > 1) {
+							console.warn(`Cannot safely override control item texture ${itemName} for ${control}!`);
+						}
+						originalTexturePath = originalTexturePath[0];
+					}
+				} else {
+					loadingLegacyItemMappingsPromise ??= new Promise(async (res, rej) => {
+						try {
+							// these mappings are from the old ids to the new ids. we want to go the other way, because bugrock still uses some old ids in item_texture.json
+							legacyItemMappings = new Map();
+							let updateMappings = await pmmpBedrockDataFetcher.fetch("r16_to_current_item_map.json").then(res => res.json());
+							Object.entries(updateMappings["simple"]).forEach(([oldName, newName]) => {
+								legacyItemMappings.set(newName.slice(10), [oldName.slice(10), -1]); // first 10 characters are "minecraft:"
+							});
+							Object.entries(updateMappings["complex"]).forEach(([oldName, newNames]) => { // complex mappings have indices, used in boats among others
+								Object.entries(newNames).forEach(([index, newName]) => {
+									legacyItemMappings.set(newName.slice(10), [oldName.slice(10), index]);
+								});
+							});
+							res();
+						} catch(e) {
+							rej(e);
+						}
+					});
+					try {
+						await loadingLegacyItemMappingsPromise;
+					} catch(e) {
+						console.error("Somehow failed loading legacy item mappings. Please report this on GitHub!", e);
+						return;
+					}
+					if(!legacyItemMappings.has(itemName)) {
+						console.warn(`Can't find control item texture for ${itemName}`);
+						return;
+					}
+					let [oldItemName, index] = legacyItemMappings.get(itemName);
+					originalTexturePath = resourceItemTexture["texture_data"][oldItemName]?.["textures"];
+					if(!originalTexturePath) {
+						console.warn(`Can't find control item texture for ${itemName} (${oldItemName})`);
+						return;
+					}
+					if(Array.isArray(originalTexturePath)) { // if it's an array (like boats), we need to load the item texture and manually edit it here.
+						if(index == -1) {
+							console.warn(`Don't know which texture to use for control item texture for ${itemName} (${oldItemName})`);
+							return;
+						}
+						itemTexture["texture_data"][oldItemName] ??= {
+							"textures": [...originalTexturePath] // clone the whole thing here. this is so we can edit it directly, which means that if we're modifying multiple textures in the same array all can be applied.
+						};
+						let specificOriginalTexturePath = `${itemTexture["texture_data"][oldItemName]["textures"][index]}.png`;
+						let originalImage;
+						try {
+							originalImage = await resourcePackStack.fetchResource(specificOriginalTexturePath).then(res => res.toImage());
+						} catch(e) {
+							console.warn(`Failed to load texture ${specificOriginalTexturePath} for control item retexturing!`);
+							return;
+						}
+						let overlayedImageBlob = await overlaySquareImages(originalImage, paddedTexture);
+						let newTexturePath = `${specificOriginalTexturePath.slice(0, -4)}_${control.toLowerCase()}.png`;
+						controlItemTextures.push([newTexturePath, overlayedImageBlob]);
+						itemTexture["texture_data"][oldItemName]["textures"][index] = newTexturePath.slice(0, -4);
+						console.debug(`Overlayed control texture for ${control} onto ${specificOriginalTexturePath}`);
+						return;
+					} else {
+						itemName = oldItemName; // if the legacy item id has a single item_texture.json texture, we're fine here - just use the old name
+					}
+				}
+				let itemTextureSize = 16;
+				if(resourcePackStack.hasResourcePacks) {
+					try {
+						let originalImage = await resourcePackStack.fetchResource(originalTexturePath).then(res => res.toImage());
+						itemTexture = originalImage.width;
+					} catch(e) {
+						console.warn(`Could not load item texture ${originalTexturePath} for overlay texture scaling calculations!`, e);
+					}
+				}
+				let safeSize = lcm(paddedTexture.width, itemTextureSize) * config.CONTROL_ITEM_TEXTURE_SCALE; // When compositing textures, MCBE scales all textures to the maximum, so the size of the overlay control texture has to be the LCM of itself and in-game items. Hence, if in-game items have a higher resolution than expected, they will probably be scaled wrong. The control item texture scale setting will scale them more (but they ge)
+				controlItemTextureSizes.add(safeSize);
+				
+				itemTexture["texture_data"][itemName] = {
+					"textures": [originalTexturePath, `${controlTexturePath.slice(0, -4)}_${safeSize}`],
+					"additive": true // texture compositing means resource packs that change the item textures will still work
+				};
+			}));
+			await Promise.all([...controlItemTextureSizes].map(async size => {
+				let resizedImagePath = `${controlTexturePath.slice(0, -4)}_${size}.png`;
+				let resizedTextureBlob = await resizeImageToBlob(paddedTexture, size);
+				controlItemTextures.push([resizedImagePath, resizedTextureBlob])
+			}));
+		}));
+	}
+	
 	console.info("Finished making all pack files!");
 	
 	let packFileWriter = new BlobWriter();
@@ -661,6 +774,10 @@ export async function makePack(structureFiles, config = {}, resourcePackStack, p
 	textureBlobs.forEach(([textureName, blob]) => {
 		packFiles.push([`textures/entity/${textureName}.png`, blob]);
 	});
+	if(config.RETEXTURE_CONTROL_ITEMS) {
+		packFiles.push(["textures/item_texture.json", JSON.stringify(itemTexture)]);
+		packFiles.push(...controlItemTextures);
+	}
 	if(config.MATERIAL_LIST_ENABLED) {
 		packFiles.push(["ui/hud_screen.json", JSON.stringify(hudScreenUI)]);
 		if(highestItemCount >= 1728) {
@@ -803,14 +920,13 @@ export function addDefaultConfig(config) {
 			TEXTURE_OUTLINE_WIDTH: 0.25, // pixels, x ∈ [0, 1], x ∈ 2^ℝ
 			TEXTURE_OUTLINE_COLOR: "#00F",
 			TEXTURE_OUTLINE_OPACITY: 0.65,
-			TEXTURE_OUTLINE_ALPHA_DIFFERENCE_MODE: "threshold", // difference: will compare alpha channel difference; threshold: will only look at the second pixel
-			TEXTURE_OUTLINE_ALPHA_THRESHOLD: 0, // if using difference mode, will draw outline between pixels with at least this much alpha difference; else, will draw outline on pixels next to pixels with an alpha less than or equal to this
 			SPAWN_ANIMATION_ENABLED: true,
 			SPAWN_ANIMATION_LENGTH: 0.4, // in seconds
 			PLAYER_CONTROLS_ENABLED: true,
 			CONTROLS: {},
 			MATERIAL_LIST_ENABLED: true,
 			RETEXTURE_CONTROL_ITEMS: true,
+			CONTROL_ITEM_TEXTURE_SCALE: 1,
 			RENAME_CONTROL_ITEMS: true,
 			WRONG_BLOCK_OVERLAY_COLOR: [1, 0, 0, 0.3],
 			BACKUP_SLOT_COUNT: 10,
@@ -1213,15 +1329,15 @@ function patchRenderControllers(renderControllers, patches) {
  * @param {Record<String, any>} itemMetadata
  * @param {Array<String>} languagesDotJson
  * @param {Record<String, String>} resourceLangFiles
+ * @param {Record<String, Array<String>>} itemTags
  * @returns {Promise<{ inGameControls: Record<String, String>, controlItemTranslations: Record<String, String> }>}
  */
-async function translateControlItems(config, blockMetadata, itemMetadata, languagesDotJson, resourceLangFiles) {
+async function translateControlItems(config, blockMetadata, itemMetadata, languagesDotJson, resourceLangFiles, itemTags) {
 	// make a fake material list for the in-game control items (just to translate them lol)
 	let controlsMaterialList = await new MaterialList(blockMetadata, itemMetadata);
 	let inGameControls = {};
 	let controlItemTranslations = {};
 	await Promise.all(languagesDotJson.map(language => loadTranslationLanguage(language)));
-	let itemTags = await createPmmpBedrockDataFetcher().then(fetcher => fetcher.fetch("item_tags.json").then(res => res.json()));
 	languagesDotJson.forEach(language => {
 		inGameControls[language] = "";
 		let translatedControlNames = {};
@@ -1238,7 +1354,7 @@ async function translateControlItems(config, blockMetadata, itemMetadata, langua
 			translatedControlNames[control] = translatedControlName;
 			inGameControls[language] += `\n${translatedControlName}: ${[itemInfo.map(item => `§3${item.translatedName}§r`).join(", "), itemCriteria.tags.map(tag => `§p${tag}§r`).join(", ")].removeFalsies().join("; ")}`;
 			
-			let itemsInTags = itemCriteria.tags.filter(tag => !tag.includes(":")).map(tag => itemTags[`minecraft:${tag}`]).flat().map(itemName => itemName.replace(/^minecraft:/, ""));
+			let itemsInTags = itemCriteria.tags.filter(tag => !tag.includes(":")).map(tag => itemTags[`minecraft:${tag}`]).removeFalsies().flat().map(itemName => itemName.replace(/^minecraft:/, ""));
 			itemsInTags.forEach(itemName => controlsMaterialList.addItem(itemName));
 			controlItemTranslationKeys[control] = new Set();
 			controlsMaterialList.export().forEach(({ translationKey, translatedName }) => {
@@ -1249,7 +1365,7 @@ async function translateControlItems(config, blockMetadata, itemMetadata, langua
 		controlItemTranslations[language] = "";
 		Object.entries(controlItemTranslationKeys).forEach(([control, itemTranslationKeys]) => {
 			itemTranslationKeys.forEach(itemTranslationKey => {
-				controlItemTranslations[language] += `\n${itemTranslationKey}=${translatedControlItems[itemTranslationKey]}~LINEBREAK~§u${translatedControlNames[control]}§r`; // don't question, it works. and yes, ~LINEBREAK~ is an actual thing: https://harryf1204.github.io/Bedrock-Notebook/Text%20Localization.html#newlines-in-lang-files
+				controlItemTranslations[language] += `\n${itemTranslationKey}=${translatedControlItems[itemTranslationKey]}\\n§u${translatedControlNames[control]}§r`; // don't question, it works
 			});
 		});
 	});
@@ -1328,6 +1444,17 @@ async function makePackIcon(structureFile) {
 	ctx.fillRect(0, 0, can.width, can.height);
 	
 	return await can.convertToBlob();
+}
+/**
+ * Expands item criteria into an array of item names by expanding all item tags.
+ * @param {ItemCriteria} itemCriteria
+ * @param {Record<String, Array<String>>} itemTags
+ * @returns {Array<String>}
+ */
+function expandItemCriteria(itemCriteria, itemTags) {
+	let minecraftTags = itemCriteria["tags"].filter(tag => !tag.includes(":")); // we can't find which items are used in custom tags
+	let namespacedItemsFromTags = minecraftTags.map(tag => itemTags[`minecraft:${tag}`]).flat().removeFalsies();
+	return [...itemCriteria["names"], ...namespacedItemsFromTags.map(itemName => itemName.replace(/^minecraft:/, ""))];
 }
 /**
  * Converts an item filter into a Molang expression representation.
@@ -1529,14 +1656,13 @@ function stringifyWithFixedDecimals(value) {
  * @property {Number} TEXTURE_OUTLINE_WIDTH Measured in pixels, x ∈ [0, 1], x ∈ 2^ℝ
  * @property {String} TEXTURE_OUTLINE_COLOR A colour string
  * @property {Number} TEXTURE_OUTLINE_OPACITY 0-1
- * @property {("threshold"|"difference")} TEXTURE_OUTLINE_ALPHA_DIFFERENCE_MODE difference: will compare alpha channel difference; threshold: will only look at the second pixel
- * @property {Number} TEXTURE_OUTLINE_ALPHA_THRESHOLD If using difference mode, will draw outline between pixels with at least this much alpha difference; if using threshold mode, will draw outline on pixels next to pixels with an alpha less than or equal to this
  * @property {Boolean} SPAWN_ANIMATION_ENABLED
  * @property {Number} SPAWN_ANIMATION_LENGTH Length of each individual block's spawn animation (seconds)
  * @property {Boolean} PLAYER_CONTROLS_ENABLED
  * @property {HoloPrintControlsConfig} CONTROLS
  * @property {Boolean} MATERIAL_LIST_ENABLED
  * @property {Boolean} RETEXTURE_CONTROL_ITEMS
+ * @property {Number} CONTROL_ITEM_TEXTURE_SCALE How much to scale control item overlay textures. When compositing textures, MCBE scales all textures to the maximum, so the size of the overlay control texture has to be the LCM of itself and in-game items. Hence, if in-game items have a higher resolution than expected, they will probably be scaled wrong. The solution is to scale the overlay textures even more, which can be adjusted with this.
  * @property {Boolean} RENAME_CONTROL_ITEMS
  * @property {Array<Number>} WRONG_BLOCK_OVERLAY_COLOR Clamped colour quartet
  * @property {Number} BACKUP_SLOT_COUNT
@@ -1696,13 +1822,3 @@ function stringifyWithFixedDecimals(value) {
  * 3D vector.
  * @typedef {[Number, Number, Number]} Vec3
  */
-/**
- * Infers the return type from a given file path string.
- * @template {string} T
- * @typedef {
-*   T extends `${string}.${"json"|"material"}` ? Record<string, any> :
-*   T extends `${string}.lang` ? string :
-*   T extends `${string}.png` ? HTMLImageElement :
-*   Blob
-* } InferFileType
-*/

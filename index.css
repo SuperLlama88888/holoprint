@@ -212,6 +212,8 @@ button:not(:disabled):not(.packInfoButton):hover, input[type="file"]:not(:disabl
 }
 button:disabled, input[type="file"]:disabled::file-selector-button, select:disabled, .buttonlike:disabled {
 	cursor: not-allowed;
+}
+button:not(#generatePackButton):disabled {
 	background: #CCC;
 	border-color: #9A9A9A;
 }
