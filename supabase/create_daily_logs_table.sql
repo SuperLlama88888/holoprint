@@ -2,8 +2,8 @@
 
 CREATE TABLE public.daily_logs (
 	day date NOT NULL DEFAULT now(),
-	structure_count smallint NULL,
-	pack_count smallint NULL,
-	CONSTRAINT daily_logs_pkey PRIMARY KEY (day),
-	CONSTRAINT daily_logs_day_key UNIQUE (day)
-) tablespace pg_default;
+	structure_count integer NULL,
+	structure_combination_count integer NULL,
+	pack_count integer NULL,
+	CONSTRAINT daily_logs_pkey primary key (day)
+) TABLESPACE pg_default;
