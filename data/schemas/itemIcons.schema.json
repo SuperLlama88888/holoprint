@@ -1,0 +1,24 @@
+{
+	"$schema": "http://json-schema.org/draft-07/schema#",
+	"title": "Item icons",
+	"description": "Mappings from item names to their entries in item_texture.json.",
+	"type": "object",
+	"properties": {
+		"$schema": {
+			"type": "string"
+		}
+	},
+	"patternProperties": {
+		"^\\w+$": {
+			"description": "Item name -> item_texture.json key.",
+			"type": "string",
+			"pattern": "^[\\w]+(\\.\\d+)?$"
+		},
+		"^/.+/$": {
+			"description": "Regular expressions to match item names. They will be processed last.",
+			"type": "string",
+			"minLength": 1
+		}
+	},
+	"additionalProperties": false
+}

@@ -10,8 +10,8 @@ export default class TextureAtlas {
 	#terrainTexturePatches;
 	#terrainTextureTints;
 	
-	#blocksDotJson;
-	#terrainTexture;
+	blocksDotJson;
+	terrainTexture;
 	
 	#flipbookTexturesAndSizes;
 	
@@ -50,8 +50,8 @@ export default class TextureAtlas {
 				/** @type {import("./data/textureAtlasMappings.json")} */
 				textureAtlasMappings: fetch("data/textureAtlasMappings.json").then(res => res.jsonc())
 			})
-			this.#blocksDotJson = blocksDotJson;
-			this.#terrainTexture = terrainTexture;
+			this.blocksDotJson = blocksDotJson;
+			this.terrainTexture = terrainTexture;
 			
 			this.#blocksDotJsonPatches = textureAtlasMappings["blocks_dot_json_patches"];
 			this.#blocksToUseCarriedTextures = textureAtlasMappings["blocks_to_use_carried_textures"];
@@ -162,7 +162,7 @@ export default class TextureAtlas {
 			return textureRef["terrain_texture_override"];
 		}
 		let blockName = textureRef["block_name"];
-		if(!(blockName in this.#blocksDotJson) && blockName in this.#blocksDotJsonPatches) {
+		if(!(blockName in this.blocksDotJson) && blockName in this.#blocksDotJsonPatches) {
 			blockName = this.#blocksDotJsonPatches[blockName];
 			if(blockName?.includes(".")) {
 				// This is only from this.blocksDotJsonPatches to indicate patches
@@ -170,7 +170,7 @@ export default class TextureAtlas {
 				blockName = blockName.split(".")[0];
 			}
 		}
-		let blockEntry = this.#blocksDotJson[blockName];
+		let blockEntry = this.blocksDotJson[blockName];
 		let terrainTextureKeys;
 		if(!blockEntry) {
 			// console.log(textureRef, blockName, textureRef["block_name"]);
@@ -245,7 +245,7 @@ export default class TextureAtlas {
 			console.debug(`Terrain texture key ${terrainTextureKey} remapped to texture path ${texturePath}`);
 			return texturePath;
 		}
-		let texturePath = this.#terrainTexture["texture_data"][terrainTextureKey]?.["textures"];
+		let texturePath = this.terrainTexture["texture_data"][terrainTextureKey]?.["textures"];
 		if(!texturePath) {
 			console.warn(`No terrain_texture.json entry for key ${terrainTextureKey}`);
 			return;

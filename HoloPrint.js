@@ -88,6 +88,7 @@ export async function makePack(structureFiles, config = {}, resourcePackStack, p
 			exclamationMarkTexture: "textures/particle/exclamation_mark.png",
 			saveIconTexture: "textures/particle/save_icon.png",
 			itemTexture: config.RETEXTURE_CONTROL_ITEMS? "textures/item_texture.json" : undefined,
+			terrainTexture: config.RETEXTURE_CONTROL_ITEMS? "textures/terrain_texture.json" : undefined,
 			hudScreenUI: config.MATERIAL_LIST_ENABLED? "ui/hud_screen.json" : undefined,
 			customEmojiFont: "font/glyph_E2.png",
 			languagesDotJson: "texts/languages.json"
@@ -99,13 +100,14 @@ export async function makePack(structureFiles, config = {}, resourcePackStack, p
 		},
 		otherFiles: {
 			packIcon: config.PACK_ICON_BLOB ?? makePackIcon(concatenateFiles(structureFiles)),
+			itemIcons: config.RETEXTURE_CONTROL_ITEMS? fetch("data/itemIcons.json").then(res => res.jsonc()) : undefined
 		},
 		data: { // these will not be put into the pack
 			blockMetadata: "metadata/vanilladata_modules/mojang-blocks.json",
 			itemMetadata: "metadata/vanilladata_modules/mojang-items.json"
 		}
 	}, resourcePackStack);
-	let { manifest, packIcon, entityFile, hologramRenderControllers, defaultPlayerRenderControllers, hologramGeo, hologramMaterial, hologramAnimationControllers, hologramAnimations, boundingBoxOutlineParticle, blockValidationParticle, savingBackupParticle, singleWhitePixelTexture, exclamationMarkTexture, saveIconTexture, itemTexture, hudScreenUI, customEmojiFont, languagesDotJson, resourceItemTexture } = loadedStuff.files;
+	let { manifest, packIcon, entityFile, hologramRenderControllers, defaultPlayerRenderControllers, hologramGeo, hologramMaterial, hologramAnimationControllers, hologramAnimations, boundingBoxOutlineParticle, blockValidationParticle, savingBackupParticle, singleWhitePixelTexture, exclamationMarkTexture, saveIconTexture, itemTexture, hudScreenUI, customEmojiFont, languagesDotJson, resourceItemTexture, terrainTexture, itemIcons } = loadedStuff.files;
 	let { blockMetadata, itemMetadata } = loadedStuff.data;
 	let resourceLangFiles = (await loadStuff({
 		resources: Object.fromEntries(languagesDotJson.map(language => [language, `texts/${language}.lang`])) // load the language file resources for each language
@@ -628,10 +630,12 @@ export async function makePack(structureFiles, config = {}, resourcePackStack, p
 		return [language, languageFile];
 	}));
 	
+	let hasModifiedTerrainTexture = false;
 	let controlItemTextures = [];
 	if(config.RETEXTURE_CONTROL_ITEMS) {
 		let legacyItemMappings;
 		let loadingLegacyItemMappingsPromise;
+		let itemIconPatterns = Object.entries(itemIcons).filter(([key]) => key.startsWith("/") && key.endsWith("/")).map(([pattern, itemName]) => [new RegExp(pattern.slice(1, -1), "g"), itemName]);
 		await Promise.all(Object.entries(config.CONTROLS).map(async ([control, itemCriteria]) => {
 			let controlTexturePath = `textures/items/~${control.toLowerCase()}.png`; // because texture compositing works alphabetically not in array order, the ~ forces the control texture to always go on top of the actual item texture
 			let controlTexture = await fetch(`packTemplate/${controlTexturePath}`).then(res => res.toImage());
@@ -642,13 +646,37 @@ export async function makePack(structureFiles, config = {}, resourcePackStack, p
 			let controlItemTextureSizes = new Set();
 			let allItems = expandItemCriteria(itemCriteria, itemTags);
 			await Promise.all(allItems.map(async itemName => {
+				if(itemName in itemIcons) {
+					itemName = itemIcons[itemName];
+				} else {
+					let matchingPatternAndReplacement = itemIconPatterns.find(([pattern]) => pattern.test(itemName));
+					if(matchingPatternAndReplacement) {
+						itemName = itemName.replaceAll(...matchingPatternAndReplacement);
+					}
+				}
+				let variant = -1;
+				if(itemName.includes(".")) {
+					let dotIndex = itemName.indexOf(".");
+					variant = +itemName.slice(dotIndex + 1);
+					itemName = itemName.slice(0, dotIndex);
+				}
+				let usingTerrainAtlas = false;
 				let originalTexturePath = resourceItemTexture["texture_data"][itemName]?.["textures"];
 				if(originalTexturePath) {
 					if(Array.isArray(originalTexturePath)) {
-						if(originalTexturePath.length > 1) {
-							console.warn(`Cannot safely override control item texture ${itemName} for ${control}!`);
+						if(originalTexturePath.length == 1) {
+							variant = 0;
 						}
-						originalTexturePath = originalTexturePath[0];
+					}
+				} else if(itemName in textureAtlas.blocksDotJson) {
+					if(typeof textureAtlas.blocksDotJson[itemName]["carried_textures"] == "string" && textureAtlas.terrainTexture["texture_data"][textureAtlas.blocksDotJson[itemName]["carried_textures"]]["textures"].startsWith?.("textures/items/")) {
+						hasModifiedTerrainTexture = true;
+						usingTerrainAtlas = true;
+						originalTexturePath = textureAtlas.terrainTexture["texture_data"][textureAtlas.blocksDotJson[itemName]["carried_textures"]]["textures"];
+						itemName = textureAtlas.blocksDotJson[itemName]["carried_textures"];
+					} else {
+						console.warn(`Cannot retexture control item "${itemName}" because it is a block, and retexturing block items is currently unsupported.`);
+						return;
 					}
 				} else {
 					loadingLegacyItemMappingsPromise ??= new Promise(async (res, rej) => {
@@ -679,54 +707,59 @@ export async function makePack(structureFiles, config = {}, resourcePackStack, p
 						console.warn(`Can't find control item texture for ${itemName}`);
 						return;
 					}
-					let [oldItemName, index] = legacyItemMappings.get(itemName);
+					let [oldItemName, legacyVariant] = legacyItemMappings.get(itemName);
+					variant = legacyVariant;
 					originalTexturePath = resourceItemTexture["texture_data"][oldItemName]?.["textures"];
 					if(!originalTexturePath) {
 						console.warn(`Can't find control item texture for ${itemName} (${oldItemName})`);
 						return;
 					}
-					if(Array.isArray(originalTexturePath)) { // if it's an array (like boats), we need to load the item texture and manually edit it here.
-						if(index == -1) {
-							console.warn(`Don't know which texture to use for control item texture for ${itemName} (${oldItemName})`);
-							return;
-						}
-						itemTexture["texture_data"][oldItemName] ??= {
-							"textures": [...originalTexturePath] // clone the whole thing here. this is so we can edit it directly, which means that if we're modifying multiple textures in the same array all can be applied.
-						};
-						let specificOriginalTexturePath = `${itemTexture["texture_data"][oldItemName]["textures"][index]}.png`;
-						let originalImage;
-						try {
-							originalImage = await resourcePackStack.fetchResource(specificOriginalTexturePath).then(res => res.toImage());
-						} catch(e) {
-							console.warn(`Failed to load texture ${specificOriginalTexturePath} for control item retexturing!`);
-							return;
-						}
-						let overlayedImageBlob = await overlaySquareImages(originalImage, paddedTexture);
-						let newTexturePath = `${specificOriginalTexturePath.slice(0, -4)}_${control.toLowerCase()}.png`;
-						controlItemTextures.push([newTexturePath, overlayedImageBlob]);
-						itemTexture["texture_data"][oldItemName]["textures"][index] = newTexturePath.slice(0, -4);
-						console.debug(`Overlayed control texture for ${control} onto ${specificOriginalTexturePath}`);
-						return;
-					} else {
-						itemName = oldItemName; // if the legacy item id has a single item_texture.json texture, we're fine here - just use the old name
-					}
+					itemName = oldItemName; // if the legacy item id has a single item_texture.json texture, we're fine here - just use the old name
 				}
-				let itemTextureSize = 16;
-				if(resourcePackStack.hasResourcePacks) {
-					try {
-						let originalImage = await resourcePackStack.fetchResource(originalTexturePath).then(res => res.toImage());
-						itemTexture = originalImage.width;
-					} catch(e) {
-						console.warn(`Could not load item texture ${originalTexturePath} for overlay texture scaling calculations!`, e);
-					}
-				}
-				let safeSize = lcm(paddedTexture.width, itemTextureSize) * config.CONTROL_ITEM_TEXTURE_SCALE; // When compositing textures, MCBE scales all textures to the maximum, so the size of the overlay control texture has to be the LCM of itself and in-game items. Hence, if in-game items have a higher resolution than expected, they will probably be scaled wrong. The control item texture scale setting will scale them more (but they ge)
-				controlItemTextureSizes.add(safeSize);
 				
-				itemTexture["texture_data"][itemName] = {
-					"textures": [originalTexturePath, `${controlTexturePath.slice(0, -4)}_${safeSize}`],
-					"additive": true // texture compositing means resource packs that change the item textures will still work
-				};
+				if(Array.isArray(originalTexturePath)) { // if it's an array (like boats), we need to load the item texture and manually edit it here.
+					if(variant == -1) {
+						console.warn(`Don't know which texture to use for control item texture for ${itemName}`);
+						console.log(originalTexturePath)
+						return;
+					}
+					if(!(variant in originalTexturePath)) {
+						console.error(`Item texture variant ${variant} for ${itemName} does not exist!`);
+						return;
+					}
+					itemTexture["texture_data"][itemName] ??= {
+						"textures": [...originalTexturePath] // clone the whole thing here. this is so we can edit it directly, which means that if we're modifying multiple textures in the same array all can be applied.
+					};
+					let specificOriginalTexturePath = `${itemTexture["texture_data"][itemName]["textures"][variant]}.png`;
+					let originalImage;
+					try {
+						originalImage = await resourcePackStack.fetchResource(specificOriginalTexturePath).then(res => res.toImage());
+					} catch(e) {
+						console.warn(`Failed to load texture ${specificOriginalTexturePath} for control item retexturing!`);
+						return;
+					}
+					let overlayedImageBlob = await overlaySquareImages(originalImage, paddedTexture);
+					let newTexturePath = `${specificOriginalTexturePath.slice(0, -4)}_${control.toLowerCase()}.png`;
+					controlItemTextures.push([newTexturePath, overlayedImageBlob]);
+					itemTexture["texture_data"][itemName]["textures"][variant] = newTexturePath.slice(0, -4);
+					console.debug(`Overlayed control texture for ${control} onto ${specificOriginalTexturePath}`);
+				} else {
+					let itemTextureSize = 16;
+					if(resourcePackStack.hasResourcePacks) {
+						try {
+							let originalImage = await resourcePackStack.fetchResource(`${originalTexturePath}.png`).then(res => res.toImage());
+							itemTextureSize = originalImage.width;
+						} catch(e) {
+							console.warn(`Could not load item texture ${originalTexturePath} for overlay texture scaling calculations!`, e);
+						}
+					}
+					let safeSize = lcm(paddedTexture.width, itemTextureSize) * config.CONTROL_ITEM_TEXTURE_SCALE; // When compositing textures, MCBE scales all textures to the maximum, so the size of the overlay control texture has to be the LCM of itself and in-game items. Hence, if in-game items have a higher resolution than expected, they will probably be scaled wrong. The control item texture scale setting will scale them more (but they get reaaaaally big and make the item texture atlas huuuge)
+					controlItemTextureSizes.add(safeSize);
+					(usingTerrainAtlas? terrainTexture : itemTexture)["texture_data"][itemName] = {
+						"textures": [originalTexturePath, `${controlTexturePath.slice(0, -4)}_${safeSize}`],
+						"additive": true // texture compositing means resource packs that change the item textures will still work
+					};
+				}
 			}));
 			await Promise.all([...controlItemTextureSizes].map(async size => {
 				let resizedImagePath = `${controlTexturePath.slice(0, -4)}_${size}.png`;
@@ -776,6 +809,9 @@ export async function makePack(structureFiles, config = {}, resourcePackStack, p
 	});
 	if(config.RETEXTURE_CONTROL_ITEMS) {
 		packFiles.push(["textures/item_texture.json", JSON.stringify(itemTexture)]);
+		if(hasModifiedTerrainTexture) {
+			packFiles.push(["textures/terrain_texture.json", JSON.stringify(terrainTexture)]);
+		}
 		packFiles.push(...controlItemTextures);
 	}
 	if(config.MATERIAL_LIST_ENABLED) {
