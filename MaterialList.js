@@ -11,10 +11,12 @@ export default class MaterialList {
 	
 	// I wish I could use import...with to import these from materialListMappings.json, which would have worked with esbuild, but it doesn't let me load JSONC... sad...
 	#ignoredBlocks;
-	#blockToItemMappings;
+	#individualBlockToItemMappings;
+	#blockToItemPatternMappings;
 	#itemCountMultipliers;
 	#specialBlockEntityProperties;
-	#serializationIdPatches;
+	#individualSerializationIdPatches;
+	#serializationIdPatternPatches;
 	#blocksMissingSerializationIds;
 	#translationPatches;
 	
@@ -22,7 +24,7 @@ export default class MaterialList {
 	 * Creates a material list manager to count a list of items.
 	 * @param {Object} blockMetadata `Mojang/bedrock-samples/metadata/vanilladata_modules/mojang-blocks.json`
 	 * @param {Object} itemMetadata `Mojang/bedrock-samples/metadata/vanilladata_modules/mojang-items.json`
-	 * @param {String} translations The text contents of a `.lang` file
+	 * @param {String} [translations] The text contents of a `.lang` file
 	 */
 	constructor(blockMetadata, itemMetadata, translations) {
 		this.materials = new Map();
@@ -30,24 +32,16 @@ export default class MaterialList {
 		
 		this.#blockMetadata = new Map(blockMetadata["data_items"].map(block => [block["name"], block]));
 		this.#itemMetadata = new Map(itemMetadata["data_items"].map(item => [item["name"], item]));
-		this.#translations = new Map();
-		translations.split("\n").forEach(line => {
-			let hashI = line.indexOf("#");
-			if(hashI > -1) {
-				line = line.slice(0, hashI);
-			}
-			line = line.trim();
-			if(line == "") {
-				return;
-			}
-			let eqI = line.indexOf("=");
-			this.#translations.set(line.slice(0, eqI), line.slice(eqI + 1));
-		});
+		if(translations) {
+			this.setLanguage(translations);
+		}
 		
 		return (async () => {
 			let materialListMappings = await fetch("data/materialListMappings.json").then(res => res.jsonc());
 			this.#ignoredBlocks = materialListMappings["ignored_blocks"];
-			this.#blockToItemMappings = materialListMappings["block_to_item_mappings"];
+			let blockToItemMappings = Object.entries(materialListMappings["block_to_item_mappings"]);
+			this.#individualBlockToItemMappings = new Map(blockToItemMappings.filter(([blockName]) => !blockName.startsWith("/") && !blockName.endsWith("/")));
+			this.#blockToItemPatternMappings = blockToItemMappings.filter(([pattern]) => pattern.startsWith("/") && pattern.endsWith("/")).map(([pattern, item]) => [new RegExp(pattern.slice(1, -1), "g"), item]);
 			this.#itemCountMultipliers = Object.entries(materialListMappings["item_count_multipliers"]).map(([key, value]) => {
 				let itemNames = [];
 				let patterns = [];
@@ -65,7 +59,9 @@ export default class MaterialList {
 				}
 			});
 			this.#specialBlockEntityProperties = materialListMappings["special_block_entity_properties"];
-			this.#serializationIdPatches = materialListMappings["serialization_id_patches"];
+			let serializationIdPatches = Object.entries(materialListMappings["serialization_id_patches"]);
+			this.#individualSerializationIdPatches = new Map(serializationIdPatches.filter(([serializationId]) => !serializationId.startsWith("/") && !serializationId.endsWith("/")));
+			this.#serializationIdPatternPatches = serializationIdPatches.filter(([pattern]) => pattern.startsWith("/") && pattern.endsWith("/")).map(([pattern, serializationId]) => [new RegExp(pattern.slice(1, -1), "g"), serializationId]);
 			this.#blocksMissingSerializationIds = materialListMappings["blocks_missing_serialization_ids"];
 			this.#translationPatches = materialListMappings["translation_patches"];
 			
@@ -82,7 +78,15 @@ export default class MaterialList {
 		if(this.#ignoredBlocks.includes(blockName)) {
 			return;
 		}
-		let itemName = this.#blockToItemMappings[blockName] ?? blockName;
+		let itemName = this.#individualBlockToItemMappings.get(blockName);
+		if(!itemName) {
+			let matchingPatternAndReplacement = this.#blockToItemPatternMappings.find(([pattern]) => pattern.test(blockName));
+			if(matchingPatternAndReplacement) {
+				itemName = blockName.replaceAll(...matchingPatternAndReplacement);
+			} else {
+				itemName = blockName;
+			}
+		}
 		this.#itemCountMultipliers.forEach(([itemNames, patterns, multiplier, substringToRemove]) => {
 			if(itemNames.includes(itemName) || patterns.some(pattern => pattern.test(itemName))) {
 				count *= multiplier;
@@ -116,6 +120,9 @@ export default class MaterialList {
 	 * @returns {Array<MaterialListEntry>}
 	 */
 	export() {
+		if(this.#translations == undefined) {
+			throw new Error("Cannot export a material list without providing translations! Use setLanguage()");
+		}
 		return [...this.materials].map(([itemName, count]) => {
 			let serializationId;
 			let blockEntityPropertyValue;
@@ -151,11 +158,30 @@ export default class MaterialList {
 				itemName,
 				translationKey: this.#serializationIdToTranslationKey(serializationId),
 				translatedName,
-				count: count,
+				count,
 				partitionedCount: this.#partitionCount(count),
 				auxId
 			};
 		}).sort((a, b) => b.count - a.count || a.translatedName > b.translatedName);
+	}
+	/**
+	 * Sets the language of the material list for exporting.
+	 * @param {String} translations The text contents of a `.lang` file
+	 */
+	setLanguage(translations) {
+		this.#translations = new Map();
+		translations.split("\n").forEach(line => {
+			let hashI = line.indexOf("#");
+			if(hashI > -1) {
+				line = line.slice(0, hashI);
+			}
+			line = line.trim();
+			if(line == "") {
+				return;
+			}
+			let eqI = line.indexOf("=");
+			this.#translations.set(line.slice(0, eqI), line.slice(eqI + 1));
+		});
 	}
 	/**
 	 * Clears the material list.
@@ -181,13 +207,18 @@ export default class MaterialList {
 		return this.#blockMetadata.get(`minecraft:${blockName}`)?.["serialization_id"];
 	}
 	/**
-	 * Converts a serialisation id into a translation key.
+	 * Converts a serialisation id into a translation key, also applying a patch if required.
 	 * @param {String} serializationId
 	 * @returns {String}
 	 */
 	#serializationIdToTranslationKey(serializationId) {
-		if(serializationId in this.#serializationIdPatches) {
-			serializationId = this.#serializationIdPatches[serializationId];
+		if(this.#individualSerializationIdPatches.has(serializationId)) {
+			serializationId = this.#individualSerializationIdPatches.get(serializationId);
+		} else {
+			let matchingPatternAndReplacement = this.#serializationIdPatternPatches.find(([pattern]) => pattern.test(serializationId));
+			if(matchingPatternAndReplacement) {
+				serializationId = serializationId.replaceAll(...matchingPatternAndReplacement);
+			}
 		}
 		return serializationId.endsWith(".name")? serializationId : `${serializationId}.name`; // apple, breeze rod, trial keys, warped fungus on a stick, and wind charges end with .name already smh :/
 	}

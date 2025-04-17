@@ -227,7 +227,7 @@
 						"type": "object",
 						"patternProperties": {
 							"^\\w+$": {
-								"description": "Array name",
+								"description": "Array name.",
 								"type": "array",
 								"minItems": 1,
 								"items": {

@@ -7,12 +7,11 @@ import MaterialList from "./MaterialList.js";
 import PreviewRenderer from "./PreviewRenderer.js";
 
 import * as entityScripts from "./entityScripts.molang.js";
-import { awaitAllEntries, concatenateFiles, createEnum, exp, floor, hexColorToClampedTriplet, JSONMap, JSONSet, max, min, pi, round, sha256, translate } from "./essential.js";
+import { addPaddingToImage, awaitAllEntries, CachingFetcher, concatenateFiles, createNumericEnum, exp, floor, hexColorToClampedTriplet, JSONMap, JSONSet, lcm, loadTranslationLanguage, max, min, overlaySquareImages, pi, resizeImageToBlob, round, sha256, translate, UserError } from "./essential.js";
 import ResourcePackStack from "./ResourcePackStack.js";
 import BlockUpdater from "./BlockUpdater.js";
 
-const VERSION = "dev";
-
+export const VERSION = "dev";
 export const IGNORED_BLOCKS = ["air", "piston_arm_collision", "sticky_piston_arm_collision"]; // blocks to be ignored when scanning the structure file
 const IGNORED_BLOCK_ENTITIES = ["Beacon", "Beehive", "Bell", "BrewingStand", "ChiseledBookshelf", "CommandBlock", "Comparator", "Conduit", "EnchantTable", "EndGateway", "JigsawBlock", "Lodestone", "SculkCatalyst", "SculkShrieker", "SculkSensor", "CalibratedSculkSensor", "StructureBlock", "BrushableBlock", "TrialSpawner", "Vault"];
 export const PLAYER_CONTROL_NAMES = {
@@ -44,7 +43,7 @@ export const DEFAULT_PLAYER_CONTROLS = {
 	BACKUP_HOLOGRAM: createItemCriteria("paper")
 };
 
-const HOLOGRAM_LAYER_MODES = createEnum(["SINGLE", "ALL_BELOW"]);
+const HOLOGRAM_LAYER_MODES = createNumericEnum(["SINGLE", "ALL_BELOW"]);
 
 /**
  * Makes a HoloPrint resource pack from a structure file.
@@ -58,7 +57,7 @@ export async function makePack(structureFiles, config = {}, resourcePackStack, p
 	console.info(`Running HoloPrint ${VERSION}`);
 	if(!resourcePackStack) {
 		console.debug("Waiting for resource pack stack initialisation...");
-		resourcePackStack = await new ResourcePackStack()
+		resourcePackStack = await new ResourcePackStack();
 		console.debug("Resource pack stack initialised!");
 	}
 	let startTime = performance.now();
@@ -88,25 +87,31 @@ export async function makePack(structureFiles, config = {}, resourcePackStack, p
 			singleWhitePixelTexture: "textures/particle/single_white_pixel.png",
 			exclamationMarkTexture: "textures/particle/exclamation_mark.png",
 			saveIconTexture: "textures/particle/save_icon.png",
-			hudScreenUI: "ui/hud_screen.json",
+			itemTexture: config.RETEXTURE_CONTROL_ITEMS? "textures/item_texture.json" : undefined,
+			terrainTexture: config.RETEXTURE_CONTROL_ITEMS? "textures/terrain_texture.json" : undefined,
+			hudScreenUI: config.MATERIAL_LIST_ENABLED? "ui/hud_screen.json" : undefined,
 			customEmojiFont: "font/glyph_E2.png",
 			languagesDotJson: "texts/languages.json"
 		},
 		resources: {
 			entityFile: "entity/armor_stand.entity.json",
-			defaultPlayerRenderControllers: "render_controllers/player.render_controllers.json",
-			translationFile: `texts/${config.MATERIAL_LIST_LANGUAGE}.lang`
+			defaultPlayerRenderControllers: config.PLAYER_CONTROLS_ENABLED? "render_controllers/player.render_controllers.json" : undefined,
+			resourceItemTexture: config.RETEXTURE_CONTROL_ITEMS? "textures/item_texture.json" : undefined
 		},
 		otherFiles: {
 			packIcon: config.PACK_ICON_BLOB ?? makePackIcon(concatenateFiles(structureFiles)),
+			itemIcons: config.RETEXTURE_CONTROL_ITEMS? fetch("data/itemIcons.json").then(res => res.jsonc()) : undefined
 		},
 		data: { // these will not be put into the pack
 			blockMetadata: "metadata/vanilladata_modules/mojang-blocks.json",
 			itemMetadata: "metadata/vanilladata_modules/mojang-items.json"
 		}
 	}, resourcePackStack);
-	let { manifest, packIcon, entityFile, hologramRenderControllers, defaultPlayerRenderControllers, hologramGeo, hologramMaterial, hologramAnimationControllers, hologramAnimations, boundingBoxOutlineParticle, blockValidationParticle, savingBackupParticle, singleWhitePixelTexture, exclamationMarkTexture, saveIconTexture, hudScreenUI, customEmojiFont, languagesDotJson, translationFile } = loadedStuff.files;
+	let { manifest, packIcon, entityFile, hologramRenderControllers, defaultPlayerRenderControllers, hologramGeo, hologramMaterial, hologramAnimationControllers, hologramAnimations, boundingBoxOutlineParticle, blockValidationParticle, savingBackupParticle, singleWhitePixelTexture, exclamationMarkTexture, saveIconTexture, itemTexture, hudScreenUI, customEmojiFont, languagesDotJson, resourceItemTexture, terrainTexture, itemIcons } = loadedStuff.files;
 	let { blockMetadata, itemMetadata } = loadedStuff.data;
+	let resourceLangFiles = (await loadStuff({
+		resources: Object.fromEntries(languagesDotJson.map(language => [language, `texts/${language}.lang`])) // load the language file resources for each language
+	}, resourcePackStack)).files;
 	
 	let structures = nbts.map(nbt => nbt["structure"]);
 	
@@ -159,7 +164,7 @@ export async function makePack(structureFiles, config = {}, resourcePackStack, p
 						cube["size"][1] *= crop["h"];
 					} else if(cube["size"][1] == 0) {
 						cube["origin"][0] += cube["size"][0] * (face["flip_horizontally"]? cropXRem : crop["x"]);
-						cube["origin"][2] += cube["size"][2] * (face["flip_vertically"]? cropYRem: crop["y"]);
+						cube["origin"][2] += cube["size"][2] * (face["flip_vertically"]? cropYRem : crop["y"]);
 						cube["size"][0] *= crop["w"];
 						cube["size"][2] *= crop["h"];
 					} else if(cube["size"][2] == 0) {
@@ -186,7 +191,7 @@ export async function makePack(structureFiles, config = {}, resourcePackStack, p
 	let structureHMolang = arrayToMolang(structureSizes.map(structureSize => structureSize[1]), "v.hologram.structure_index");
 	let structureDMolang = arrayToMolang(structureSizes.map(structureSize => structureSize[2]), "v.hologram.structure_index");
 	
-	if(!config.DO_SPAWN_ANIMATION) {
+	if(!config.SPAWN_ANIMATION_ENABLED) {
 		// Totally empty animation
 		delete hologramAnimations["animations"]["animation.armor_stand.hologram.spawn"]["loop"];
 		delete hologramAnimations["animations"]["animation.armor_stand.hologram.spawn"]["bones"];
@@ -219,7 +224,7 @@ export async function makePack(structureFiles, config = {}, resourcePackStack, p
 	let totalBlocksToValidateByStructureByLayer = [];
 	let uniqueBlocksToValidate = new Set();
 	
-	let materialList = await new MaterialList(blockMetadata, itemMetadata, translationFile);
+	let materialList = await new MaterialList(blockMetadata, itemMetadata);
 	allStructureIndicesByLayer.forEach((structureIndicesByLayer, structureI) => {
 		let structureSize = structureSizes[structureI];
 		let geoShortName = `hologram_${structureI}`;
@@ -235,7 +240,7 @@ export async function makePack(structureFiles, config = {}, resourcePackStack, p
 		let animationTimingFunc;
 		let makeHologramSpawnAnimation;
 		let spawnAnimationAnimatedBones = [];
-		if(config.DO_SPAWN_ANIMATION) {
+		if(config.SPAWN_ANIMATION_ENABLED) {
 			let totalVolume = structureSize.reduce((a, b) => a * b);
 			let totalAnimationLength = 0;
 			getSpawnAnimationDelay = (x, y, z) => {
@@ -355,7 +360,7 @@ export async function makePack(structureFiles, config = {}, resourcePackStack, p
 						if(!firstBoneForThisCoordinate) {
 							boneName += `_${layerI}`;
 						}
-						if(config.DO_SPAWN_ANIMATION && structureI == 0 && structureFiles.length > 1) {
+						if(config.SPAWN_ANIMATION_ENABLED && structureI == 0 && structureFiles.length > 1) {
 							boneName += "_a"; // different bone name in order for the animation to not affect blocks in the same position in other structures
 						}
 						let bonePos = [-16 * x - 8, 16 * y, 16 * z - 8]; // I got these values from trial and error with blockbench (which makes the x negative I think. it's weird.)
@@ -400,7 +405,7 @@ export async function makePack(structureFiles, config = {}, resourcePackStack, p
 						if(firstBoneForThisCoordinate) { // we only need 1 locator for each block position, even though there may be 2 bones in this position because of the 2nd layer
 							hologramGeo["minecraft:geometry"][2]["bones"][1]["locators"][blockCoordinateName] ??= bonePos.map(x => x + 8);
 						}
-						if(config.DO_SPAWN_ANIMATION && structureI == 0) {
+						if(config.SPAWN_ANIMATION_ENABLED && structureI == 0) {
 							spawnAnimationAnimatedBones.push([boneName, getSpawnAnimationDelay(x, y, z), bonePos]);
 						}
 						
@@ -426,7 +431,7 @@ export async function makePack(structureFiles, config = {}, resourcePackStack, p
 		}
 		hologramGeo["minecraft:geometry"].push(geo);
 		
-		if(config.DO_SPAWN_ANIMATION && structureI == 0) {
+		if(config.SPAWN_ANIMATION_ENABLED && structureI == 0) {
 			let minDelay = min(...spawnAnimationAnimatedBones.map(([, delay]) => delay));
 			spawnAnimationAnimatedBones.forEach(([boneName, delay, bonePos]) => {
 				delay -= minDelay - 0.05;
@@ -483,7 +488,8 @@ export async function makePack(structureFiles, config = {}, resourcePackStack, p
 		rotateHologram: itemCriteriaToMolang(config.CONTROLS.ROTATE_HOLOGRAM),
 		disablePlayerControls: itemCriteriaToMolang(config.CONTROLS.DISABLE_PLAYER_CONTROLS),
 		backupHologram: itemCriteriaToMolang(config.CONTROLS.BACKUP_HOLOGRAM),
-		singleLayerMode: HOLOGRAM_LAYER_MODES.SINGLE
+		singleLayerMode: HOLOGRAM_LAYER_MODES.SINGLE,
+		ACTIONS: entityScripts.ACTIONS
 	}));
 	entityDescription["geometry"]["hologram.wrong_block_overlay"] = "geometry.armor_stand.hologram.wrong_block_overlay";
 	entityDescription["geometry"]["hologram.valid_structure_overlay"] = "geometry.armor_stand.hologram.valid_structure_overlay";
@@ -523,31 +529,38 @@ export async function makePack(structureFiles, config = {}, resourcePackStack, p
 		entityDescription["particle_effects"][particleName] = `holoprint:${particleName}`;
 	});
 	
-	let playerRenderControllers = addPlayerControlsToRenderControllers(config, defaultPlayerRenderControllers);
+	let playerRenderControllers = defaultPlayerRenderControllers && addPlayerControlsToRenderControllers(config, defaultPlayerRenderControllers);
 	
 	console.log("Block counts map:", materialList.materials);
-	let finalisedMaterialList = materialList.export();
+	let finalisedMaterialLists = Object.fromEntries(languagesDotJson.map(language => {
+		materialList.setLanguage(resourceLangFiles[language]); // we could make the material list export to multiple languages simultaneously, but I'm assuming here that there could be gaps between language files so they have to be done separately (for whatever reason... maybe international relations deteriorate and they refuse to translate the new update to Chinese... idk)
+		return [language, materialList.export()];
+	}));
+	let finalisedMaterialList = finalisedMaterialLists["en_US"]; // all languages have the same translation keys, which are used in the material list UI. the translated item names (which are different for every language) are used in the pack description only.
 	console.log("Finalised material list:", finalisedMaterialList);
 	
 	// console.log(partitionedBlockCounts);
-	let missingItemAux = blockMetadata["data_items"].find(block => block.name == "minecraft:reserved6")?.["raw_id"] ?? 0;
-	hudScreenUI["material_list_entries"]["controls"].push(...finalisedMaterialList.map(({ translationKey, partitionedCount, auxId }, i) => ({
-		[`material_list_${i}@hud.material_list_entry`]: {
-			"$item_translation_key": translationKey,
-			"$item_count": partitionedCount,
-			"$item_id_aux": auxId ?? missingItemAux,
-			"$background_opacity": i % 2 * 0.2
+	let highestItemCount;
+	if(config.MATERIAL_LIST_ENABLED) {
+		let missingItemAux = blockMetadata["data_items"].find(block => block.name == "minecraft:reserved6")?.["raw_id"] ?? 0;
+		hudScreenUI["material_list_entries"]["controls"].push(...finalisedMaterialList.map(({ translationKey, partitionedCount, auxId }, i) => ({
+			[`material_list_${i}@hud.material_list_entry`]: {
+				"$item_translation_key": translationKey,
+				"$item_count": partitionedCount,
+				"$item_id_aux": auxId ?? missingItemAux,
+				"$background_opacity": i % 2 * 0.2
+			}
+		})));
+		highestItemCount = max(...finalisedMaterialList.map(({ count }) => count));
+		let longestItemNameLength = max(...finalisedMaterialList.map(({ translatedName }) => translatedName.length));
+		let longestCountLength = max(...finalisedMaterialList.map(({ partitionedCount }) => partitionedCount.length));
+		if(longestItemNameLength + longestCountLength >= 47) {
+			hudScreenUI["material_list"]["size"][0] = "50%"; // up from 40%
+			hudScreenUI["material_list"]["max_size"][0] = "50%";
 		}
-	})));
-	let highestItemCount = max(...finalisedMaterialList.map(({ count }) => count));
-	let longestItemNameLength = max(...finalisedMaterialList.map(({ translatedName }) => translatedName.length));
-	let longestCountLength = max(...finalisedMaterialList.map(({ partitionedCount }) => partitionedCount.length));
-	if(longestItemNameLength + longestCountLength >= 47) {
-		hudScreenUI["material_list"]["size"][0] = "50%"; // up from 40%
-		hudScreenUI["material_list"]["max_size"][0] = "50%";
+		hudScreenUI["material_list"]["size"][1] = finalisedMaterialList.length * 12 + 12; // 12px for each item + 12px for the heading
+		hudScreenUI["material_list_entry"]["controls"][0]["content"]["controls"][3]["item_name"]["size"][0] += `${round(longestCountLength * 4.2 + 10)}px`;
 	}
-	hudScreenUI["material_list"]["size"][1] = finalisedMaterialList.length * 12 + 12; // 12px for each item + 12px for the heading
-	hudScreenUI["material_list_entry"]["controls"][0]["content"]["controls"][3]["item_name"]["size"][0] += `${round(longestCountLength * 4.2 + 10)}px`;
 	
 	manifest["header"]["name"] = packName;
 	manifest["header"]["uuid"] = crypto.randomUUID();
@@ -559,40 +572,201 @@ export async function makePack(structureFiles, config = {}, resourcePackStack, p
 	if(config.AUTHORS.length) {
 		manifest["metadata"]["authors"].push(...config.AUTHORS);
 	}
-	let inGameControls;
-	if(JSON.stringify(config.CONTROLS) != JSON.stringify(DEFAULT_PLAYER_CONTROLS)) { // add controls to pack description only if they've been changed
-		// make a fake material list for the in-game control items
-		let controlsMaterialList = await new MaterialList(blockMetadata, itemMetadata, translationFile);
-		inGameControls = "";
-		for(let [control, itemCriteria] of Object.entries(config.CONTROLS)) {
-			itemCriteria["names"].forEach(itemName => controlsMaterialList.addItem(itemName));
-			let itemInfo = controlsMaterialList.export();
-			controlsMaterialList.clear();
-			inGameControls += `\n${await translate(PLAYER_CONTROL_NAMES[control], "en")}: ${[itemInfo.map(item => `§3${item.translatedName}§r`).join(", "), itemCriteria.tags.map(tag => `§p${tag}§r`).join(", ")].removeFalsies().join("; ")}`;
-		}
-	}
+	
+	let controlsHaveBeenCustomised = JSON.stringify(config.CONTROLS) != JSON.stringify(DEFAULT_PLAYER_CONTROLS);
+	let pmmpBedrockDataFetcher = config.RENAME_CONTROL_ITEMS || config.RETEXTURE_CONTROL_ITEMS? await createPmmpBedrockDataFetcher() : undefined;
+	let itemTags = config.RENAME_CONTROL_ITEMS || config.RETEXTURE_CONTROL_ITEMS? await pmmpBedrockDataFetcher.fetch("item_tags.json").then(res => res.json()) : undefined;
+	let { inGameControls, controlItemTranslations } = controlsHaveBeenCustomised || config.RENAME_CONTROL_ITEMS? await translateControlItems(config, blockMetadata, itemMetadata, languagesDotJson, resourceLangFiles, itemTags) : {};
 	
 	let packGenerationTime = (new Date()).toLocaleString();
-	
+	const disabledFeatureTranslations = { // these look at the .lang RP files
+		"SPAWN_ANIMATION_ENABLED": "spawn_animation_disabled",
+		"PLAYER_CONTROLS_ENABLED": "player_controls_disabled",
+		"MATERIAL_LIST_ENABLED": "material_list_disabled",
+		"RETEXTURE_CONTROL_ITEMS": "retextured_control_items_disabled",
+		"RENAME_CONTROL_ITEMS": "renamed_control_items_disabled"
+	};
 	let languageFiles = await Promise.all(languagesDotJson.map(async language => {
 		let languageFile = (await fetch(`packTemplate/texts/${language}.lang`).then(res => res.text())).replaceAll("\r\n", "\n"); // I hate windows sometimes (actually quite often now because of windows 11)
 		languageFile = languageFile.replaceAll("{PACK_NAME}", packName);
 		languageFile = languageFile.replaceAll("{PACK_GENERATION_TIME}", packGenerationTime);
-		languageFile = languageFile.replaceAll(/\{STRUCTURE_AUTHORS\[([^)]+)\]\}/g, (useless, delimiter) => config.AUTHORS.join(delimiter));
-		languageFile = languageFile.replaceAll("{DESCRIPTION}", config.DESCRIPTION?.replaceAll("\n", "\\n"));
-		languageFile = languageFile.replaceAll("{CONTROLS}", inGameControls?.replaceAll("\n", "\\n"));
 		languageFile = languageFile.replaceAll("{TOTAL_MATERIAL_COUNT}", totalMaterialCount);
-		languageFile = languageFile.replaceAll("{MATERIAL_LIST}", finalisedMaterialList.map(({ translatedName, count }) => `${count} ${translatedName}`).join(", "));
+		languageFile = languageFile.replaceAll("{MATERIAL_LIST}", finalisedMaterialLists[language].map(({ translatedName, count }) => `${count} ${translatedName}`).join(", "));
 		
 		// now substitute in the extra bits into the main description if needed
-		languageFile = languageFile.replaceAll("{AUTHORS_SECTION}", config.AUTHORS.length? languageFile.match(/pack\.description\.authors=([^\t#\n]+)/)[1] : "");
-		languageFile = languageFile.replaceAll("{DESCRIPTION_SECTION}", config.DESCRIPTION? languageFile.match(/pack\.description\.description=([^\t#\n]+)/)[1] : "");
-		languageFile = languageFile.replaceAll("{CONTROLS_SECTION}", inGameControls? languageFile.match(/pack\.description\.controls=([^\t#\n]+)/)[1] : "");
+		if(config.AUTHORS.length) {
+			languageFile = languageFile.replaceAll(/\{STRUCTURE_AUTHORS\[([^)]+)\]\}/g, (useless, delimiter) => config.AUTHORS.join(delimiter));
+			languageFile = languageFile.replaceAll("{AUTHORS_SECTION}", languageFile.match(/pack\.description\.authors=([^\t#\n]+)/)[1]);
+		} else {
+			languageFile = languageFile.replaceAll("{AUTHORS_SECTION}", "");
+		}
+		if(config.DESCRIPTION) {
+			languageFile = languageFile.replaceAll("{DESCRIPTION}", config.DESCRIPTION.replaceAll("\n", "\\n"));
+			languageFile = languageFile.replaceAll("{DESCRIPTION_SECTION}", languageFile.match(/pack\.description\.description=([^\t#\n]+)/)[1]);
+		} else {
+			languageFile = languageFile.replaceAll("{DESCRIPTION_SECTION}", "");
+		}
+		let translatedDisabledFeatures = Object.entries(disabledFeatureTranslations).filter(([feature]) => !config[feature]).map(([feature, translationKey]) => languageFile.match(new RegExp(`pack\\.description\\.${translationKey}=([^\\t#\\n]+)`))[1]).join("\\n");
+		if(translatedDisabledFeatures) {
+			languageFile = languageFile.replaceAll("{DISABLED_FEATURES}", translatedDisabledFeatures);
+			languageFile = languageFile.replaceAll("{DISABLED_FEATURES_SECTION}", languageFile.match(/pack\.description\.disabled_features=([^\t#\n]+)/)[1]);
+		} else {
+			languageFile = languageFile.replaceAll("{DISABLED_FEATURES_SECTION}", "");
+		}
+		if(controlsHaveBeenCustomised) {
+			languageFile = languageFile.replaceAll("{CONTROLS}", inGameControls[language].replaceAll("\n", "\\n"));
+			languageFile = languageFile.replaceAll("{CONTROLS_SECTION}", languageFile.match(/pack\.description\.controls=([^\t#\n]+)/)[1]);
+		} else {
+			languageFile = languageFile.replaceAll("{CONTROLS_SECTION}", "");
+		}
 		
-		languageFile = languageFile.replaceAll(/pack\.description\..+\s*/g, ""); // remove all the description sections
+		languageFile = languageFile.replaceAll(/pack\.description\..+\s*/g, ""); // remove all the description template sections
+		languageFile = languageFile.replaceAll(/\t*#.+/g, ""); // remove comments
+		
+		if(config.RENAME_CONTROL_ITEMS) {
+			languageFile += controlItemTranslations[language];
+		}
 		
 		return [language, languageFile];
 	}));
+	
+	let hasModifiedTerrainTexture = false;
+	let controlItemTextures = [];
+	if(config.RETEXTURE_CONTROL_ITEMS) {
+		let legacyItemMappings;
+		let loadingLegacyItemMappingsPromise;
+		let itemIconPatterns = Object.entries(itemIcons).filter(([key]) => key.startsWith("/") && key.endsWith("/")).map(([pattern, itemName]) => [new RegExp(pattern.slice(1, -1), "g"), itemName]);
+		await Promise.all(Object.entries(config.CONTROLS).map(async ([control, itemCriteria]) => {
+			let controlTexturePath = `textures/items/~${control.toLowerCase()}.png`; // because texture compositing works alphabetically not in array order, the ~ forces the control texture to always go on top of the actual item texture
+			let controlTexture = await fetch(`packTemplate/${controlTexturePath}`).then(res => res.toImage());
+			let paddedTexture = await addPaddingToImage(controlTexture, { // make it small in the top-left corner
+				right: 16,
+				bottom: 16
+			});
+			let controlItemTextureSizes = new Set();
+			let allItems = expandItemCriteria(itemCriteria, itemTags);
+			await Promise.all(allItems.map(async itemName => {
+				if(itemName in itemIcons) {
+					itemName = itemIcons[itemName];
+				} else {
+					let matchingPatternAndReplacement = itemIconPatterns.find(([pattern]) => pattern.test(itemName));
+					if(matchingPatternAndReplacement) {
+						itemName = itemName.replaceAll(...matchingPatternAndReplacement);
+					}
+				}
+				let variant = -1;
+				if(itemName.includes(".")) {
+					let dotIndex = itemName.indexOf(".");
+					variant = +itemName.slice(dotIndex + 1);
+					itemName = itemName.slice(0, dotIndex);
+				}
+				let usingTerrainAtlas = false;
+				let originalTexturePath = resourceItemTexture["texture_data"][itemName]?.["textures"];
+				if(originalTexturePath) {
+					if(Array.isArray(originalTexturePath)) {
+						if(originalTexturePath.length == 1) {
+							variant = 0;
+						}
+					}
+				} else if(itemName in textureAtlas.blocksDotJson) {
+					if(typeof textureAtlas.blocksDotJson[itemName]["carried_textures"] == "string" && textureAtlas.terrainTexture["texture_data"][textureAtlas.blocksDotJson[itemName]["carried_textures"]]["textures"].startsWith?.("textures/items/")) {
+						hasModifiedTerrainTexture = true;
+						usingTerrainAtlas = true;
+						originalTexturePath = textureAtlas.terrainTexture["texture_data"][textureAtlas.blocksDotJson[itemName]["carried_textures"]]["textures"];
+						itemName = textureAtlas.blocksDotJson[itemName]["carried_textures"];
+					} else {
+						console.warn(`Cannot retexture control item "${itemName}" because it is a block, and retexturing block items is currently unsupported.`);
+						return;
+					}
+				} else {
+					loadingLegacyItemMappingsPromise ??= new Promise(async (res, rej) => {
+						try {
+							// these mappings are from the old ids to the new ids. we want to go the other way, because bugrock still uses some old ids in item_texture.json
+							legacyItemMappings = new Map();
+							let updateMappings = await pmmpBedrockDataFetcher.fetch("r16_to_current_item_map.json").then(res => res.json());
+							Object.entries(updateMappings["simple"]).forEach(([oldName, newName]) => {
+								legacyItemMappings.set(newName.slice(10), [oldName.slice(10), -1]); // first 10 characters are "minecraft:"
+							});
+							Object.entries(updateMappings["complex"]).forEach(([oldName, newNames]) => { // complex mappings have indices, used in boats among others
+								Object.entries(newNames).forEach(([index, newName]) => {
+									legacyItemMappings.set(newName.slice(10), [oldName.slice(10), index]);
+								});
+							});
+							res();
+						} catch(e) {
+							rej(e);
+						}
+					});
+					try {
+						await loadingLegacyItemMappingsPromise;
+					} catch(e) {
+						console.error("Somehow failed loading legacy item mappings. Please report this on GitHub!", e);
+						return;
+					}
+					if(!legacyItemMappings.has(itemName)) {
+						console.warn(`Can't find control item texture for ${itemName}`);
+						return;
+					}
+					let [oldItemName, legacyVariant] = legacyItemMappings.get(itemName);
+					variant = legacyVariant;
+					originalTexturePath = resourceItemTexture["texture_data"][oldItemName]?.["textures"];
+					if(!originalTexturePath) {
+						console.warn(`Can't find control item texture for ${itemName} (${oldItemName})`);
+						return;
+					}
+					itemName = oldItemName; // if the legacy item id has a single item_texture.json texture, we're fine here - just use the old name
+				}
+				
+				if(Array.isArray(originalTexturePath)) { // if it's an array (like boats), we need to load the item texture and manually edit it here.
+					if(variant == -1) {
+						console.warn(`Don't know which texture to use for control item texture for ${itemName}: [${originalTexturePath}]`);
+						return;
+					}
+					if(!(variant in originalTexturePath)) {
+						console.error(`Item texture variant ${variant} for ${itemName} does not exist!`);
+						return;
+					}
+					itemTexture["texture_data"][itemName] ??= {
+						"textures": [...originalTexturePath] // clone the whole thing here. this is so we can edit it directly, which means that if we're modifying multiple textures in the same array all can be applied.
+					};
+					let specificOriginalTexturePath = `${itemTexture["texture_data"][itemName]["textures"][variant]}.png`;
+					let originalImage;
+					try {
+						originalImage = await resourcePackStack.fetchResource(specificOriginalTexturePath).then(res => res.toImage());
+					} catch(e) {
+						console.warn(`Failed to load texture ${specificOriginalTexturePath} for control item retexturing!`);
+						return;
+					}
+					let overlayedImageBlob = await overlaySquareImages(originalImage, paddedTexture);
+					let newTexturePath = `${specificOriginalTexturePath.slice(0, -4)}_${control.toLowerCase()}.png`;
+					controlItemTextures.push([newTexturePath, overlayedImageBlob]);
+					itemTexture["texture_data"][itemName]["textures"][variant] = newTexturePath.slice(0, -4);
+					console.debug(`Overlayed control texture for ${control} onto ${specificOriginalTexturePath}`);
+				} else {
+					let itemTextureSize = 16;
+					if(resourcePackStack.hasResourcePacks) {
+						try {
+							let originalImage = await resourcePackStack.fetchResource(`${originalTexturePath}.png`).then(res => res.toImage());
+							itemTextureSize = originalImage.width;
+						} catch(e) {
+							console.warn(`Could not load item texture ${originalTexturePath} for overlay texture scaling calculations!`, e);
+						}
+					}
+					let safeSize = lcm(paddedTexture.width, itemTextureSize) * config.CONTROL_ITEM_TEXTURE_SCALE; // When compositing textures, MCBE scales all textures to the maximum, so the size of the overlay control texture has to be the LCM of itself and in-game items. Hence, if in-game items have a higher resolution than expected, they will probably be scaled wrong. The control item texture scale setting will scale them more (but they get reaaaaally big and make the item texture atlas huuuge)
+					controlItemTextureSizes.add(safeSize);
+					(usingTerrainAtlas? terrainTexture : itemTexture)["texture_data"][itemName] = {
+						"textures": [originalTexturePath, `${controlTexturePath.slice(0, -4)}_${safeSize}`],
+						"additive": true // texture compositing means resource packs that change the item textures will still work
+					};
+				}
+			}));
+			await Promise.all([...controlItemTextureSizes].map(async size => {
+				let resizedImagePath = `${controlTexturePath.slice(0, -4)}_${size}.png`;
+				let resizedTextureBlob = await resizeImageToBlob(paddedTexture, size);
+				controlItemTextures.push([resizedImagePath, resizedTextureBlob]);
+			}));
+		}));
+	}
 	
 	console.info("Finished making all pack files!");
 	
@@ -609,7 +783,9 @@ export async function makePack(structureFiles, config = {}, resourcePackStack, p
 	packFiles.push(["entity/armor_stand.entity.json", JSON.stringify(entityFile).replaceAll("HOLOGRAM_INITIAL_ACTIVATION", true)]);
 	packFiles.push(["subpacks/punch_to_activate/entity/armor_stand.entity.json", JSON.stringify(entityFile).replaceAll("HOLOGRAM_INITIAL_ACTIVATION", false)]);
 	packFiles.push(["render_controllers/armor_stand.hologram.render_controllers.json", JSON.stringify(hologramRenderControllers)]);
-	packFiles.push(["render_controllers/player.render_controllers.json", JSON.stringify(playerRenderControllers)]);
+	if(config.PLAYER_CONTROLS_ENABLED) {
+		packFiles.push(["render_controllers/player.render_controllers.json", JSON.stringify(playerRenderControllers)]);
+	}
 	packFiles.push(["models/entity/armor_stand.hologram.geo.json", stringifyWithFixedDecimals(hologramGeo)]);
 	packFiles.push(["materials/entity.material", JSON.stringify(hologramMaterial)]);
 	packFiles.push(["animation_controllers/armor_stand.hologram.animation_controllers.json", JSON.stringify(hologramAnimationControllers)]);
@@ -630,9 +806,18 @@ export async function makePack(structureFiles, config = {}, resourcePackStack, p
 	textureBlobs.forEach(([textureName, blob]) => {
 		packFiles.push([`textures/entity/${textureName}.png`, blob]);
 	});
-	packFiles.push(["ui/hud_screen.json", JSON.stringify(hudScreenUI)]);
-	if(highestItemCount >= 1728) {
-		packFiles.push(["font/glyph_E2.png", await customEmojiFont.toBlob()]);
+	if(config.RETEXTURE_CONTROL_ITEMS) {
+		packFiles.push(["textures/item_texture.json", JSON.stringify(itemTexture)]);
+		if(hasModifiedTerrainTexture) {
+			packFiles.push(["textures/terrain_texture.json", JSON.stringify(terrainTexture)]);
+		}
+		packFiles.push(...controlItemTextures);
+	}
+	if(config.MATERIAL_LIST_ENABLED) {
+		packFiles.push(["ui/hud_screen.json", JSON.stringify(hudScreenUI)]);
+		if(highestItemCount >= 1728) {
+			packFiles.push(["font/glyph_E2.png", await customEmojiFont.toBlob()]);
+		}
 	}
 	packFiles.push(["texts/languages.json", JSON.stringify(languagesDotJson)]);
 	languageFiles.forEach(([language, languageFile]) => {
@@ -717,7 +902,7 @@ export async function extractStructureFilesFromPack(resourcePack) {
 export async function updatePack(resourcePack, config, resourcePackStack, previewCont) {
 	let structureFiles = extractStructureFilesFromPack(resourcePack);
 	if(!structureFiles) {
-		throw new Error(`No structure files found inside resource pack ${resourcePack.name}; cannot update pack!`);
+		throw new UserError(`No structure files found inside resource pack ${resourcePack.name}; cannot update pack!`);
 	}
 	return await makePack(structureFiles, config, resourcePackStack, previewCont);
 }
@@ -732,7 +917,7 @@ export function getDefaultPackName(structureFiles) {
 		defaultName = `${defaultName.slice(0, 19)}...${defaultName.slice(-19)}`
 	}
 	if(defaultName.trim() == "") {
-		defaultName = "HoloPrint";
+		defaultName = "hologram";
 	}
 	return defaultName;
 }
@@ -770,14 +955,16 @@ export function addDefaultConfig(config) {
 			TEXTURE_OUTLINE_WIDTH: 0.25, // pixels, x ∈ [0, 1], x ∈ 2^ℝ
 			TEXTURE_OUTLINE_COLOR: "#00F",
 			TEXTURE_OUTLINE_OPACITY: 0.65,
-			TEXTURE_OUTLINE_ALPHA_DIFFERENCE_MODE: "threshold", // difference: will compare alpha channel difference; threshold: will only look at the second pixel
-			TEXTURE_OUTLINE_ALPHA_THRESHOLD: 0, // if using difference mode, will draw outline between pixels with at least this much alpha difference; else, will draw outline on pixels next to pixels with an alpha less than or equal to this
-			DO_SPAWN_ANIMATION: true,
+			SPAWN_ANIMATION_ENABLED: true,
 			SPAWN_ANIMATION_LENGTH: 0.4, // in seconds
-			WRONG_BLOCK_OVERLAY_COLOR: [1, 0, 0, 0.3],
+			PLAYER_CONTROLS_ENABLED: true,
 			CONTROLS: {},
+			MATERIAL_LIST_ENABLED: true,
+			RETEXTURE_CONTROL_ITEMS: true,
+			CONTROL_ITEM_TEXTURE_SCALE: 1,
+			RENAME_CONTROL_ITEMS: true,
+			WRONG_BLOCK_OVERLAY_COLOR: [1, 0, 0, 0.3],
 			BACKUP_SLOT_COUNT: 10,
-			MATERIAL_LIST_LANGUAGE: "en_US",
 			PACK_NAME: undefined,
 			PACK_ICON_BLOB: undefined,
 			AUTHORS: [],
@@ -796,6 +983,14 @@ export function addDefaultConfig(config) {
 		}
 	});
 }
+/**
+ * Creates a CachingFetcher to read pmmp/BedrockData.
+ * @returns {Promise<CachingFetcher>}
+ */
+export async function createPmmpBedrockDataFetcher() {
+	const pmmpBedrockDataVersion = "4.1.0+bedrock-1.21.70";
+	return await new CachingFetcher(`BedrockData@${pmmpBedrockDataVersion}`, `https://raw.githubusercontent.com/pmmp/BedrockData/refs/tags/${pmmpBedrockDataVersion}/`);
+}
 
 /**
  * Reads the NBT of a structure file, returning a JSON object.
@@ -803,28 +998,35 @@ export function addDefaultConfig(config) {
  * @returns {Promise<Object>}
  */
 async function readStructureNBT(structureFile) {
-	let arrayBuffer = await structureFile.arrayBuffer().catch(e => { throw new Error(`Could not read bytes of structure file ${structureFile.name}!\n${e}`); });
-	let nbt = await NBT.read(arrayBuffer).catch(e => { throw new Error(`Could not parse NBT of structure file ${structureFile.name}!\n${e}`); });
+	if(structureFile.size == 0) {
+		throw new UserError(`"${structureFile.name}" is an empty file! Please try exporting your structure again.\nIf you play on a version below 1.20.50, exporting to OneDrive will cause your structure file to be empty.`);
+	}
+	let arrayBuffer = await structureFile.arrayBuffer().catch(e => { throw new Error(`Could not read contents of structure file "${structureFile.name}"!\n${e}`); });
+	let nbt = await NBT.read(arrayBuffer).catch(e => { throw new Error(`Invalid NBT in structure file "${structureFile.name}"!\n${e}`); });
 	return nbt.data;
 }
 /**
  * Loads many files from different sources.
- * @param {Object} stuff
+ * @template TPackTemplate
+ * @template TResources
+ * @template TOtherFiles
+ * @template TData
+ * @param {{ packTemplate?: TPackTemplate, resources?: TResources, otherFiles?: TOtherFiles, data?: TData }} stuff
  * @param {ResourcePackStack} resourcePackStack
- * @returns {Promise<Object>}
- */
+ * @returns {Promise<{ files: { [K in keyof TPackTemplate | keyof TResources | keyof TOtherFiles]?: String|Blob|Record<String, any>|Array<any>|HTMLImageElement }, data: { [K in keyof TData]?: String|Blob|Record<String, any>|Array<any>|HTMLImageElement } }>}
+*/
 async function loadStuff(stuff, resourcePackStack) {
 	let filePromises = {};
-	Object.entries(stuff.packTemplate).forEach(([name, path]) => {
-		filePromises[name] = getResponseContents(fetch(`packTemplate/${path}`), path);
+	Object.entries(stuff.packTemplate ?? {}).forEach(([name, path]) => {
+		filePromises[name] = path && getResponseContents(fetch(`packTemplate/${path}`), path);
 	});
-	Object.entries(stuff.resources).forEach(([name, path]) => {
-		filePromises[name] = getResponseContents(resourcePackStack.fetchResource(path), path);
+	Object.entries(stuff.resources ?? {}).forEach(([name, path]) => {
+		filePromises[name] = path && getResponseContents(resourcePackStack.fetchResource(path), path);
 	});
-	Object.assign(filePromises, stuff.otherFiles);
+	Object.assign(filePromises, stuff.otherFiles ?? {});
 	let dataPromises = {};
-	Object.entries(stuff.data).forEach(([name, path]) => {
-		dataPromises[name] = getResponseContents(resourcePackStack.fetchData(path), path);
+	Object.entries(stuff.data ?? {}).forEach(([name, path]) => {
+		dataPromises[name] = path && getResponseContents(resourcePackStack.fetchData(path), path);
 	});
 	return await awaitAllEntries({
 		files: awaitAllEntries(filePromises),
@@ -833,9 +1035,31 @@ async function loadStuff(stuff, resourcePackStack) {
 }
 /**
  * Gets the contents of a response based on the requested file extension (e.g. object from .json, image from .png, etc.).
+ * @overload
+ * @param {Promise<Response>} resPromise
+ * @param {`${String}.${"json"|"material"}`} filePath
+ * @returns {Promise<Record<String, any>|Array<any>>}
+ */
+/**
+ * Gets the contents of a response based on the requested file extension (e.g. object from .json, image from .png, etc.).
+ * @overload
+ * @param {Promise<Response>} resPromise
+ * @param {`${String}.lang`} filePath
+ * @returns {Promise<String>}
+ */
+/**
+ * Gets the contents of a response based on the requested file extension (e.g. object from .json, image from .png, etc.).
+ * @overload
+ * @param {Promise<Response>} resPromise
+ * @param {`${String}.png`} filePath
+ * @returns {Promise<HTMLImageElement>}
+ */
+/**
+ * Gets the contents of a response based on the requested file extension (e.g. object from .json, image from .png, etc.).
+ * @overload
  * @param {Promise<Response>} resPromise
  * @param {String} filePath
- * @returns {Promise<String|Blob|Object|HTMLImageElement>}
+ * @returns {Promise<Blob>}
  */
 async function getResponseContents(resPromise, filePath) {
 	let res = await resPromise;
@@ -852,8 +1076,8 @@ async function getResponseContents(resPromise, filePath) {
 	return await res.blob();
 }
 /**
- * Removes ignored blocks from the block palette, and adds block entities as separate entries.
- * @param {Object} structure The de-NBT-ed structure file
+ * Removes ignored blocks from the block palette, updates old blocks, and adds block entities as separate entries.
+ * @param {Record<String, any>} structure The de-NBT-ed structure file
  * @returns {{ palette: Array<Block>, indices: [Array<Number>, Array<Number>] }}
  */
 async function tweakBlockPalette(structure, ignoredBlocks) {
@@ -961,7 +1185,7 @@ function mergeMultiplePalettesAndIndices(palettesAndIndices) {
 }
 /**
  * Adds bounding box particles for a single structure to the hologram animation controllers in-place.
- * @param {Object} hologramAnimationControllers
+ * @param {Record<String, any>} hologramAnimationControllers
  * @param {Number} structureI
  * @param {Vec3} structureSize
  */
@@ -1003,9 +1227,9 @@ function addBoundingBoxParticles(hologramAnimationControllers, structureI, struc
 }
 /**
  * Adds block validation particles for a single structure to the hologram animation controllers in-place.
- * @param {Object} hologramAnimationControllers
+ * @param {Record<String, any>} hologramAnimationControllers
  * @param {Number} structureI
- * @param {Array<Object>} blocksToValidate
+ * @param {Array<Record<String, any>>} blocksToValidate
  * @param {Vec3} structureSize
  */
 function addBlockValidationParticles(hologramAnimationControllers, structureI, blocksToValidate, structureSize) {
@@ -1077,8 +1301,8 @@ function addBlockValidationParticles(hologramAnimationControllers, structureI, b
 /**
  * Add player controls. These are done entirely in the render controller so character creator skins aren't disabled.
  * @param {HoloPrintConfig} config
- * @param {Object} defaultPlayerRenderControllers
- * @returns {Object}
+ * @param {Record<String, any>} defaultPlayerRenderControllers
+ * @returns {Record<String, any>}
  */
 function addPlayerControlsToRenderControllers(config, defaultPlayerRenderControllers) {
 	let initVariables = functionToMolang(entityScripts.playerInitVariables);
@@ -1093,7 +1317,8 @@ function addPlayerControlsToRenderControllers(config, defaultPlayerRenderControl
 		moveHologram: itemCriteriaToMolang(config.CONTROLS.MOVE_HOLOGRAM),
 		rotateHologram: itemCriteriaToMolang(config.CONTROLS.ROTATE_HOLOGRAM),
 		changeStructure: itemCriteriaToMolang(config.CONTROLS.CHANGE_STRUCTURE),
-		backupHologram: itemCriteriaToMolang(config.CONTROLS.BACKUP_HOLOGRAM)
+		backupHologram: itemCriteriaToMolang(config.CONTROLS.BACKUP_HOLOGRAM),
+		ACTIONS: entityScripts.ACTIONS
 	});
 	let broadcastActions = functionToMolang(entityScripts.playerBroadcastActions, {
 		backupSlotCount: config.BACKUP_SLOT_COUNT
@@ -1105,9 +1330,9 @@ function addPlayerControlsToRenderControllers(config, defaultPlayerRenderControl
 }
 /**
  * Patches a set of render controllers with some extra Molang code. Returns a new set of render controllers.
- * @param {Object} renderControllers
- * @param {Object} patches
- * @returns {Object}
+ * @param {Record<String, any>} renderControllers
+ * @param {Record<String, any>} patches
+ * @returns {Record<String, any>}
  */
 function patchRenderControllers(renderControllers, patches) {
 	return {
@@ -1131,6 +1356,55 @@ function patchRenderControllers(renderControllers, patches) {
 			}];
 		}).removeFalsies())
 	};
+}
+/**
+ * Translates control items by making a fake material list.
+ * @param {HoloPrintConfig} config
+ * @param {Record<String, any>} blockMetadata
+ * @param {Record<String, any>} itemMetadata
+ * @param {Array<String>} languagesDotJson
+ * @param {Record<String, String>} resourceLangFiles
+ * @param {Record<String, Array<String>>} itemTags
+ * @returns {Promise<{ inGameControls: Record<String, String>, controlItemTranslations: Record<String, String> }>}
+ */
+async function translateControlItems(config, blockMetadata, itemMetadata, languagesDotJson, resourceLangFiles, itemTags) {
+	// make a fake material list for the in-game control items (just to translate them lol)
+	let controlsMaterialList = await new MaterialList(blockMetadata, itemMetadata);
+	let inGameControls = {};
+	let controlItemTranslations = {};
+	await Promise.all(languagesDotJson.map(language => loadTranslationLanguage(language)));
+	languagesDotJson.forEach(language => {
+		inGameControls[language] = "";
+		let translatedControlNames = {};
+		let translatedControlItems = {};
+		/** @type {Record<String, Set<String>>} */
+		let controlItemTranslationKeys = {};
+		Object.entries(config.CONTROLS).forEach(([control, itemCriteria]) => {
+			controlsMaterialList.clear();
+			controlsMaterialList.setLanguage(resourceLangFiles[language]);
+			itemCriteria["names"].forEach(itemName => controlsMaterialList.addItem(itemName));
+			
+			let itemInfo = controlsMaterialList.export();
+			let translatedControlName = translate(PLAYER_CONTROL_NAMES[control], language);
+			translatedControlNames[control] = translatedControlName;
+			inGameControls[language] += `\n${translatedControlName}: ${[itemInfo.map(item => `§3${item.translatedName}§r`).join(", "), itemCriteria.tags.map(tag => `§p${tag}§r`).join(", ")].removeFalsies().join("; ")}`;
+			
+			let itemsInTags = itemCriteria.tags.filter(tag => !tag.includes(":")).map(tag => itemTags[`minecraft:${tag}`]).removeFalsies().flat().map(itemName => itemName.replace(/^minecraft:/, ""));
+			itemsInTags.forEach(itemName => controlsMaterialList.addItem(itemName));
+			controlItemTranslationKeys[control] = new Set();
+			controlsMaterialList.export().forEach(({ translationKey, translatedName }) => {
+				controlItemTranslationKeys[control].add(translationKey);
+				translatedControlItems[translationKey] = translatedName;
+			}); // these items will be renamed, and includes all the items in the tags specified. e.g. if "planks" is added as a tag for a control, then all plank types need to be renamed.
+		});
+		controlItemTranslations[language] = "";
+		Object.entries(controlItemTranslationKeys).forEach(([control, itemTranslationKeys]) => {
+			itemTranslationKeys.forEach(itemTranslationKey => {
+				controlItemTranslations[language] += `\n${itemTranslationKey}=${translatedControlItems[itemTranslationKey]}\\n§u${translatedControlNames[control]}§r`; // don't question, it works
+			});
+		});
+	});
+	return { inGameControls, controlItemTranslations };
 }
 /**
  * Makes a blob for pack_icon.png based on a structure file's SHA256 hash
@@ -1207,6 +1481,17 @@ async function makePackIcon(structureFile) {
 	return await can.convertToBlob();
 }
 /**
+ * Expands item criteria into an array of item names by expanding all item tags.
+ * @param {ItemCriteria} itemCriteria
+ * @param {Record<String, Array<String>>} itemTags
+ * @returns {Array<String>}
+ */
+function expandItemCriteria(itemCriteria, itemTags) {
+	let minecraftTags = itemCriteria["tags"].filter(tag => !tag.includes(":")); // we can't find which items are used in custom tags
+	let namespacedItemsFromTags = minecraftTags.map(tag => itemTags[`minecraft:${tag}`]).flat().removeFalsies();
+	return [...itemCriteria["names"], ...namespacedItemsFromTags.map(itemName => itemName.replace(/^minecraft:/, ""))];
+}
+/**
  * Converts an item filter into a Molang expression representation.
  * @param {ItemCriteria} itemCriteria
  * @returns {String}
@@ -1249,7 +1534,7 @@ function array2DToMolang(array, indexVar1, indexVar2) {
 /**
  * Converts a function into minified Molang code. Variables can be referenced with $[...].
  * @param {Function} func
- * @param {Object} [vars]
+ * @param {Record<String, any>} [vars]
  * @returns {String} Molang code
  */
 function functionToMolang(func, vars = {}) {
@@ -1283,9 +1568,10 @@ function functionToMolang(func, vars = {}) {
 	let mathedCode = expandedElseIfCode.replaceAll(`"`, `'`).replaceAll(/([\w\.]+)(\+|-){2};/g, "$1=$1$21;").replaceAll(/([\w\.]+)--;/g, "$1=$1-1;").replaceAll(/([\w\.\$\[\]]+)(\+|-|\*|\/|\?\?)=([^;]+);/g, "$1=$1$2$3;");
 	
 	// Yay more fun regular expressions, this time to work with variable substitution ($[...])
-	let substituteInVariables = (code, vars) => code.replaceAll(/\$\[(\w+)(?:\[(\d+)\])?(?:(\+|-|\*|\/)(\d+))?\]/g, (match, varName, index, operator, operand) => {
+	let substituteInVariables = (code, vars) => code.replaceAll(/\$\[(\w+)(?:\[(\d+)\]|\.(\w+))?(?:(\+|-|\*|\/)(\d+))?\]/g, (match, varName, index, key, operator, operand) => {
 		if(varName in vars) {
 			let value = vars[varName];
+			index ??= key;
 			if(index != undefined) {
 				if(index in value) {
 					value = value[index];
@@ -1405,14 +1691,16 @@ function stringifyWithFixedDecimals(value) {
  * @property {Number} TEXTURE_OUTLINE_WIDTH Measured in pixels, x ∈ [0, 1], x ∈ 2^ℝ
  * @property {String} TEXTURE_OUTLINE_COLOR A colour string
  * @property {Number} TEXTURE_OUTLINE_OPACITY 0-1
- * @property {("threshold"|"difference")} TEXTURE_OUTLINE_ALPHA_DIFFERENCE_MODE difference: will compare alpha channel difference; threshold: will only look at the second pixel
- * @property {Number} TEXTURE_OUTLINE_ALPHA_THRESHOLD If using difference mode, will draw outline between pixels with at least this much alpha difference; if using threshold mode, will draw outline on pixels next to pixels with an alpha less than or equal to this
- * @property {Boolean} DO_SPAWN_ANIMATION
+ * @property {Boolean} SPAWN_ANIMATION_ENABLED
  * @property {Number} SPAWN_ANIMATION_LENGTH Length of each individual block's spawn animation (seconds)
- * @property {Array<Number>} WRONG_BLOCK_OVERLAY_COLOR Clamped colour quartet
+ * @property {Boolean} PLAYER_CONTROLS_ENABLED
  * @property {HoloPrintControlsConfig} CONTROLS
+ * @property {Boolean} MATERIAL_LIST_ENABLED
+ * @property {Boolean} RETEXTURE_CONTROL_ITEMS
+ * @property {Number} CONTROL_ITEM_TEXTURE_SCALE How much to scale control item overlay textures. When compositing textures, MCBE scales all textures to the maximum, so the size of the overlay control texture has to be the LCM of itself and in-game items. Hence, if in-game items have a higher resolution than expected, they will probably be scaled wrong. The solution is to scale the overlay textures even more, which can be adjusted with this.
+ * @property {Boolean} RENAME_CONTROL_ITEMS
+ * @property {Array<Number>} WRONG_BLOCK_OVERLAY_COLOR Clamped colour quartet
  * @property {Number} BACKUP_SLOT_COUNT
- * @property {String} MATERIAL_LIST_LANGUAGE The language code, as appearing in `texts/languages.json`
  * @property {String|undefined} PACK_NAME The name of the completed pack; will default to the structure file names
  * @property {Blob} PACK_ICON_BLOB Blob for `pack_icon.png`
  * @property {Array<String>} AUTHORS
@@ -1553,10 +1841,10 @@ function stringifyWithFixedDecimals(value) {
  * @property {Number} maxVersionPatch - The patch version (must be >= 0).
  * @property {Number} maxVersionRevision - The revision version (must be >= 0).
  * @property {Record<String, String>} [renamedIds] - Mapping of renamed IDs.
- * @property {Object.<String, Record<String, String>>} [renamedProperties] - Mapping of renamed properties.
- * @property {Object.<String, Record<String, TypedBlockStateProperty>>} [addedProperties] - Mapping of added properties.
+ * @property {Record<String, Record<String, TypedBlockStateProperty>>} [addedProperties] - Mapping of added properties.
+ * @property {Record<String, Record<String, String>>} [renamedProperties] - Mapping of renamed properties.
  * @property {Record<String, Array<String>>} [removedProperties] - Mapping of removed properties.
- * @property {Object.<String, Record<String, String>>} [remappedPropertyValues] - Mapping of remapped property values.
+ * @property {Record<String, Record<String, String>>} [remappedPropertyValues] - Mapping of remapped property values.
  * @property {Record<String, Array<{ old: TypedBlockStateProperty, new: TypedBlockStateProperty }>>} [remappedPropertyValuesIndex] - Index of remapped property values.
  * @property {Record<String, BlockUpdateSchemaFlattenRule>} [flattenedProperties] - Mapping of flattened properties.
  * @property {Record<String, Array<BlockUpdateSchemaRemappedState>>} [remappedStates] - Mapping of remapped states.

@@ -10,8 +10,8 @@ export default class TextureAtlas {
 	#terrainTexturePatches;
 	#terrainTextureTints;
 	
-	#blocksDotJson;
-	#terrainTexture;
+	blocksDotJson;
+	terrainTexture;
 	
 	#flipbookTexturesAndSizes;
 	
@@ -50,8 +50,8 @@ export default class TextureAtlas {
 				/** @type {import("./data/textureAtlasMappings.json")} */
 				textureAtlasMappings: fetch("data/textureAtlasMappings.json").then(res => res.jsonc())
 			})
-			this.#blocksDotJson = blocksDotJson;
-			this.#terrainTexture = terrainTexture;
+			this.blocksDotJson = blocksDotJson;
+			this.terrainTexture = terrainTexture;
 			
 			this.#blocksDotJsonPatches = textureAtlasMappings["blocks_dot_json_patches"];
 			this.#blocksToUseCarriedTextures = textureAtlasMappings["blocks_to_use_carried_textures"];
@@ -108,10 +108,12 @@ export default class TextureAtlas {
 						tintLikePng = tintColor["tint_like_png"];
 						tintColor = tintColor["tint"];
 					}
-					if(tintColor in this.#terrainTextureTints["colors"]) {
+					if(tintColor.startsWith("#")) {
+						tint = hexColorToClampedTriplet(tintColor);
+					} else if(tintColor in this.#terrainTextureTints["colors"]) {
 						tint = hexColorToClampedTriplet(this.#terrainTextureTints["colors"][tintColor]);
 					} else {
-						console.error(`No tint color ${tintColor}`)
+						console.error(`No tint color ${tintColor}`);
 					}
 				}
 				if(blockName in this.#transparentBlocks) {
@@ -160,7 +162,7 @@ export default class TextureAtlas {
 			return textureRef["terrain_texture_override"];
 		}
 		let blockName = textureRef["block_name"];
-		if(!(blockName in this.#blocksDotJson) && blockName in this.#blocksDotJsonPatches) {
+		if(!(blockName in this.blocksDotJson) && blockName in this.#blocksDotJsonPatches) {
 			blockName = this.#blocksDotJsonPatches[blockName];
 			if(blockName?.includes(".")) {
 				// This is only from this.blocksDotJsonPatches to indicate patches
@@ -168,7 +170,7 @@ export default class TextureAtlas {
 				blockName = blockName.split(".")[0];
 			}
 		}
-		let blockEntry = this.#blocksDotJson[blockName];
+		let blockEntry = this.blocksDotJson[blockName];
 		let terrainTextureKeys;
 		if(!blockEntry) {
 			// console.log(textureRef, blockName, textureRef["block_name"]);
@@ -243,7 +245,7 @@ export default class TextureAtlas {
 			console.debug(`Terrain texture key ${terrainTextureKey} remapped to texture path ${texturePath}`);
 			return texturePath;
 		}
-		let texturePath = this.#terrainTexture["texture_data"][terrainTextureKey]?.["textures"];
+		let texturePath = this.terrainTexture["texture_data"][terrainTextureKey]?.["textures"];
 		if(!texturePath) {
 			console.warn(`No terrain_texture.json entry for key ${terrainTextureKey}`);
 			return;
@@ -500,7 +502,11 @@ export default class TextureAtlas {
 		ctx.fillStyle = config.TEXTURE_OUTLINE_COLOR;
 		ctx.globalAlpha = config.TEXTURE_OUTLINE_OPACITY;
 		
-		const compareAlpha = (currentPixel, otherPixel) => config.TEXTURE_OUTLINE_ALPHA_DIFFERENCE_MODE == "difference"? currentPixel - otherPixel >= config.TEXTURE_OUTLINE_ALPHA_THRESHOLD : otherPixel <= config.TEXTURE_OUTLINE_ALPHA_THRESHOLD;
+		/** difference: will compare alpha channel difference; threshold: will only look at the second pixel @type {("threshold"|"difference")} */
+		const TEXTURE_OUTLINE_ALPHA_DIFFERENCE_MODE = "threshold";
+		/** If using difference mode, will draw outline between pixels with at least this much alpha difference; if using threshold mode, will draw outline on pixels next to pixels with an alpha less than or equal to this @type {Number} */
+		const TEXTURE_OUTLINE_ALPHA_THRESHOLD = 0;
+		const compareAlpha = (currentPixel, otherPixel) => TEXTURE_OUTLINE_ALPHA_DIFFERENCE_MODE == "difference"? currentPixel - otherPixel >= TEXTURE_OUTLINE_ALPHA_THRESHOLD : otherPixel <= TEXTURE_OUTLINE_ALPHA_THRESHOLD;
 		
 		imagePositions.forEach(({ x: startX, y: startY, w, h }) => {
 			let endX = startX + w;

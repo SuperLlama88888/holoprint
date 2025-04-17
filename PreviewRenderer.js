@@ -1,5 +1,5 @@
 import TextureAtlas from "./TextureAtlas.js";
-import { max } from "./essential.js";
+import { max, min } from "./essential.js";
 
 let THREE;
 let StandaloneModelViewer;
@@ -44,8 +44,8 @@ export default class PreviewRenderer {
 			let imageBlob = textureAtlas.imageBlobs.at(-1)[1];
 			let imageUrl = URL.createObjectURL(imageBlob);
 			this.viewer = new StandaloneModelViewer(can, geo, imageUrl, {
-				width: window.innerWidth * 0.6,
-				height: window.innerWidth * 0.6,
+				width: min(window.innerWidth, window.innerHeight) * 0.8,
+				height: min(window.innerWidth, window.innerHeight) * 0.8,
 				antialias: true,
 				alpha: !showSkybox
 			});
@@ -58,6 +58,8 @@ export default class PreviewRenderer {
 			await this.viewer.loadedModel;
 			URL.revokeObjectURL(imageUrl);
 			this.viewer.positionCamera(1.7);
+			this.viewer.camera.far = 5000;
+			this.viewer.camera.updateProjectionMatrix();
 			this.viewer.requestRendering();
 			loadingMessage.replaceWith(can);
 			this.viewer.controls.minDistance = 10;

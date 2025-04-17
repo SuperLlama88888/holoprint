@@ -11,17 +11,22 @@
 			"description": "An array of blocks that will be ignored and will not be put in material lists.",
 			"type": "array",
 			"items": {
-				"description": "Block name",
+				"description": "Block name.",
 				"type": "string",
 				"minLength": 1
 			}
 		},
 		"block_to_item_mappings": {
-			"description": "Blocks that have a different item name.",
+			"description": "Mappings for blocks that have different item names. If a block isn't found here, the item name is assumed to be the same as the block name. Regular expressions will be checked only if no individual match is found.",
 			"type": "object",
 			"patternProperties": {
 				"^\\w+$": {
 					"description": "\"block_name\": \"item_name\"",
+					"type": "string",
+					"minLength": 1
+				},
+				"^/.+/$": {
+					"description": "\"regular expression\": \"item_name\"",
 					"type": "string",
 					"minLength": 1
 				}
@@ -92,13 +97,18 @@
 			"additionalProperties": false
 		},
 		"serialization_id_patches": {
-			"description": "Remappings for serialization_ids that go to the wrong things in .lang files.",
+			"description": "Remappings for serialization_ids that go to the wrong things in .lang files. Regular expressions will be checked only if no individual match is found.",
 			"type": "object",
 			"patternProperties": {
 				"^(tile|item)\\.\\w+$": {
 					"description": "Serialization ID.",
 					"type": "string",
 					"pattern": "^(tile|item)\\.[\\w.]+$"
+				},
+				"^/.+/$": {
+					"description": "Regular expressions to match serialization IDs.",
+					"type": "string",
+					"minLength": 1
 				}
 			},
 			"additionalProperties": false

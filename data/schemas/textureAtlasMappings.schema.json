@@ -63,7 +63,7 @@
 						"^\\w+$": {
 							"description": "Tint colour -> 6-digit hex colour.",
 							"type": "string",
-							"pattern": "#[\\da-fA-F]{6}"
+							"pattern": "^#[\\da-fA-F]{6}$"
 						}
 					},
 					"additionalProperties": false
@@ -75,18 +75,14 @@
 						"^\\w+$": {
 							"oneOf": [
 								{
-									"description": "A tint colour, as defined in the \"colors\" property.",
-									"type": "string",
-									"pattern": "^\\w+$"
+									"$ref": "#/definitions/tintColor"
 								},
 								{
 									"description": "A tint colour and a flag to make it be tinted like a PNG image.",
 									"type": "object",
 									"properties": {
 										"tint": {
-											"description": "A tint colour, as defined in the \"colors\" property.",
-											"type": "string",
-											"pattern": "^\\w+$"
+											"$ref": "#/definitions/tintColor"
 										},
 										"tint_like_png": {
 											"description": "If true, the image will be tinted as if it were a PNG image, despite being a TGA image. (TGA images are tinted different to PNG images.)",
@@ -115,5 +111,22 @@
 		}
 	},
 	"required": ["blocks_dot_json_patches", "blocks_to_use_carried_textures", "transparent_blocks", "terrain_texture_patches", "terrain_texture_tints", "missing_flipbook_textures"],
-	"additionalProperties": false
+	"additionalProperties": false,
+	
+	"definitions": {
+		"tintColor": {
+			"oneOf": [
+				{
+					"description": "A tint colour, as defined in the \"colors\" property.",
+					"type": "string",
+					"pattern": "^\\w+$"
+				},
+				{
+					"description": "A tint colour.",
+					"type": "string",
+					"pattern": "^#[\\da-fA-F]{6}$"
+				}
+			]
+		}
+	}
 }

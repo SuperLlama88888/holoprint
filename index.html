@@ -105,9 +105,6 @@
 							<label for="settingsTab" class="buttonlike" data-translate="settings.heading">Settings</label>
 							<fieldset>
 								<legend data-translate="settings.heading">Settings</legend>
-								<label><span data-translate="settings.material_list_language">Language (material list):</span> <select name="materialListLanguage" id="materialListLanguageSelector">
-									<option value="en_US" selected>English (United States)</option>
-								</select></label>
 								<label><span data-translate="settings.ghost_block_scale">Ghost block scale:</span> <input type="number" min="70" max="100" step="1" value="95" name="scale"/>%</label>
 								<fieldset class="expandable textureSettings">
 									<legend><label><span data-translate="settings.textures">Textures</span><input type="checkbox"/></label></legend>
@@ -137,11 +134,23 @@
 									<legend><label><span data-translate="settings.player_controls">In-game controls (<a href="https://holoprint-mc.github.io/wiki/hologram-controls" target="_blank">Wiki</a>)</span><input type="checkbox"/></label></legend>
 									<div id="playerControlsInputCont"></div>
 								</fieldset>
-								<label><span data-translate="settings.spawn_animation">Spawn animation:</span> <input type="checkbox" name="spawnAnimationEnabled" checked/></label>
+								<fieldset class="expandable">
+									<legend><label><span data-translate="settings.features">Features</span><input type="checkbox"/></label></legend>
+									<div>
+										<table>
+											<tr><td><label data-translate="settings.features.spawn_animation" for="c1">Spawn animation:</label></td><td><input type="checkbox" name="spawnAnimationEnabled" checked id="c1"/></td></tr>
+											<tr><td><label data-translate="settings.features.player_controls" for="c2">Player controls:</label></td><td><input type="checkbox" name="playerControlsEnabled" checked id="c2"/></td></tr>
+											<tr><td><label data-translate="settings.features.material_list" for="c3">Material list:</label></td><td><input type="checkbox" name="materialListEnabled" checked id="c3"/></td></tr>
+											<tr><td><label data-translate="settings.features.retexture_control_items" for="c4">Retexture control items:</label></td><td><input type="checkbox" name="retextureControlItems" checked id="c4"/></td></tr>
+											<tr><td><label data-translate="settings.features.rename_control_items" for="c5">Rename control items:</label></td><td><input type="checkbox" name="renameControlItems" checked id="c5"/></td></tr>
+										</table>
+									</div>
+								</fieldset>
 								<label><span data-translate="settings.ignored_blocks">Ignored blocks:</span> <input type="text" name="ignoredBlocks" placeholder="block_1 block_2 etc." data-translate-placeholder="settings.ignored_blocks.placeholder"/></label>
 								<details>
 									<summary data-translate="settings.advanced">Advanced</summary>
 									<label><span data-translate="settings.backup_slot_count">Backup slot count:</span> <input type="number" min="0" max="30" step="1" value="10" name="backupSlotCount"/></label>
+									<label><span data-translate="settings.control_item_texture_scale">Control item texture scale:</span> <input type="number" min="1" max="64" step="1" value="1" name="controlItemTextureScale"/></label>
 									<label><span data-translate="settings.opacity_mode">Opacity mode:</span> <select name="opacityMode">
 										<option value="multiple" selected data-translate="settings.opacity_mode.in_game_controls">In-game controls</option>
 										<option value="single" data-translate="settings.opacity_mode.fixed_opacity">Single option</option>
@@ -175,12 +184,12 @@
 					</fieldset>
 				</form>
 				<div id="completedPacksCont"></div>
-				<div id="log"></div>
+				<simple-logger id="log"></simple-logger>
 			</div>
 			<div id="languageSelectorCont" title="Change language" data-translate-title="change_language">
 				<div id="languageSelectorButton"></div>
 				<select id="languageSelector">
-					<option value="en">English</option> <!-- Other options will be added later in JS -->
+					<option value="en_US">English</option> <!-- Other options will be added later in JS -->
 				</select>
 			</div>
 		</main>

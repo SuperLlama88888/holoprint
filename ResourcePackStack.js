@@ -8,7 +8,7 @@ import "./essential.js";
 import LocalResourcePack from "./LocalResourcePack.js";
 import { CachingFetcher, sha256text } from "./essential.js";
 
-const defaultVanillaDataVersion = "v1.21.60.28-preview";
+const defaultVanillaDataVersion = "v1.21.70.26-preview";
 
 export default class ResourcePackStack {
 	static #JSON_FILES_TO_MERGE = ["blocks.json", "textures/terrain_texture.json", "textures/flipbook_textures.json"];
@@ -16,6 +16,8 @@ export default class ResourcePackStack {
 	cacheEnabled;
 	hash;
 	cacheName;
+	/** Whether or not there are any resource packs attached (apart from vanilla ofc) @type {Boolean} */
+	hasResourcePacks;
 	/** @type {Array<LocalResourcePack>} */
 	#localResourcePacks;
 	 /** @type {VanillaDataFetcher} */
@@ -32,6 +34,7 @@ export default class ResourcePackStack {
 		return (async () => {
 			this.hash = (await sha256text([vanillaDataVersion, ...localResourcePacks.map(lrp => lrp.hash)].join("\n"))).toHexadecimalString();
 			this.cacheName = `ResourcePackStack_${this.hash}`;
+			this.hasResourcePacks = localResourcePacks.length > 0;
 			this.#localResourcePacks = localResourcePacks;
 			this.#vanillaDataFetcher = await new VanillaDataFetcher(vanillaDataVersion);
 			this.cacheEnabled = enableCache;

@@ -29,6 +29,12 @@ declare global {
 		setOpacity(opacity: Number): Promise<HTMLImageElement>;
 		addTint(col: [Number, Number, Number]): Promise<HTMLImageElement>;
 	}
+	interface HTMLImageElement {
+		toImageData(): ImageData;
+		toBlob(): Promise<Blob>;
+		setOpacity(opacity: Number): Promise<HTMLImageElement>;
+		addTint(col: [Number, Number, Number]): Promise<HTMLImageElement>;
+	}
 	interface ImageData {
 		toImage(): Promise<HTMLImageElement>;
 	}

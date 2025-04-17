@@ -8,7 +8,7 @@ export default class BlockUpdater {
 	static #UPGRADE_SCHEMA_VERSION = "5.1.0+bedrock-1.21.60"; // specifically, the tag name
 	
 	#fetcher;
-	/** @type {Object.<String, Array<BlockUpdateSchemaSkeleton>>} */
+	/** @type {Record<String, Array<BlockUpdateSchemaSkeleton>>} */
 	#schemaIndex;
 	/** @type {Map<String, BlockUpdateSchema>} */
 	#schemas;
@@ -33,7 +33,7 @@ export default class BlockUpdater {
 	 * Upgrades a block from older Minecraft versions to the latest Minecraft version.
 	 * @mutating
 	 * @param {NBTBlock} block
-	 * @returns {Boolean} Whether or not the block was updated. (The version number will always be updated.)
+	 * @returns {Promise<Boolean>} Whether or not the block was updated. (The version number will always be updated.)
 	 */
 	async update(block) {
 		let oldBlockStringified = BlockUpdater.stringifyBlock(block);

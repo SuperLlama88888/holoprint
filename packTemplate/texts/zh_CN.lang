@@ -1,6 +1,13 @@
-pack.description=§u★全息打印§r 资源包生成于 §o{PACK_GENERATION_TIME}§r\n开发者： §l§6SuperLlama88888§r{AUTHORS_SECTION}{DESCRIPTION_SECTION}{CONTROLS_SECTION}\n\n§l总方块数： {TOTAL_MATERIAL_COUNT}\n§r{MATERIAL_LIST}	## ★ at the start forces unicode font which makes it smaller so more text fits in
+pack.description=§u★全息打印§r 资源包生成于 §o{PACK_GENERATION_TIME}§r\n开发者： §l§6SuperLlama88888§r{AUTHORS_SECTION}{DESCRIPTION_SECTION}{DISABLED_FEATURES_SECTION}{CONTROLS_SECTION}\n\n§l总方块数： {TOTAL_MATERIAL_COUNT}\n§r{MATERIAL_LIST}	## ★ at the start forces unicode font which makes it smaller so more text fits in
 pack.description.authors=\n结构作者： {STRUCTURE_AUTHORS[ and ]}	## Authors/Description/Controls will be substituted into the actual description by the JS
 pack.description.description=\n{DESCRIPTION}
+pack.description.disabled_features=\n§4§o{DISABLED_FEATURES}§r
 pack.description.controls=\n\n§l控制：§r{CONTROLS}
+
+pack.description.spawn_animation_disabled=Spawn animation disabled
+pack.description.player_controls_disabled=Player controls disabled
+pack.description.material_list_disabled=Material list disabled
+pack.description.retextured_control_items_disabled=Retextured control items disabled
+pack.description.renamed_control_items_disabled=Renamed control items disabled
 	
 holoprint.material_list.heading={PACK_NAME} 的材料清单

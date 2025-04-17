@@ -1,11 +1,12 @@
-import { selectEl, downloadBlob, sleep, selectEls, htmlCodeToElement, CachingFetcher, loadTranslationLanguage, translate, getStackTrace, random } from "./essential.js";
+import { selectEl, downloadBlob, sleep, selectEls, loadTranslationLanguage, translate, getStackTrace, random, UserError } from "./essential.js";
 import * as HoloPrint from "./HoloPrint.js";
-import SimpleLogger from "./SimpleLogger.js";
+import SimpleLogger from "./components/SimpleLogger.js";
 import SupabaseLogger from "./SupabaseLogger.js";
 
-import ResourcePackStack, { VanillaDataFetcher } from "./ResourcePackStack.js";
+import ResourcePackStack from "./ResourcePackStack.js";
 import LocalResourcePack from "./LocalResourcePack.js";
 import TextureAtlas from "./TextureAtlas.js";
+import ItemCriteriaInput from "./components/ItemCriteriaInput.js";
 
 const IN_PRODUCTION = false;
 const ACTUAL_CONSOLE_LOG = false;
@@ -99,9 +100,14 @@ document.onEvent("DOMContentLoaded", () => {
 		handleInputFiles(files);
 	});
 	
+	customElements.define("item-criteria-input", class extends ItemCriteriaInput {
+		constructor() {
+			super(translateCurrentLanguage);
+		}
+	});
+	customElements.define("simple-logger", SimpleLogger);
 	if(!ACTUAL_CONSOLE_LOG) {
-		let logCont = selectEl("#log");
-		logger = new SimpleLogger(logCont);
+		logger = selectEl("#log");
 		logger.patchConsoleMethods();
 	}
 	
@@ -188,16 +194,6 @@ document.onEvent("DOMContentLoaded", () => {
 		});
 	});
 	
-	let materialListLanguageSelector = selectEl("#materialListLanguageSelector");
-	defaultResourcePackStackPromise.then(rps => rps.fetchResource("texts/language_names.json")).then(res => res.json()).then(languages => {
-		materialListLanguageSelector.firstElementChild.remove();
-		languages.forEach(([languageCode, languageName]) => {
-			materialListLanguageSelector.appendChild(new Option(languageName, languageCode, false, languageCode.replace("_", "-") == navigator.language));
-		});
-	}).catch(e => {
-		console.warn("Couldn't load language_names.json:", e);
-	});
-	
 	languageSelector = selectEl("#languageSelector");
 	fetch("translations/languages.json").then(res => res.jsonc()).then(languagesAndNames => {
 		languagesAndNames = Object.fromEntries(Object.entries(languagesAndNames).sort((a, b) => a[1] > b[1])); // sort alphabeticallly
@@ -209,7 +205,7 @@ document.onEvent("DOMContentLoaded", () => {
 		let defaultLanguage = navigator.languages.find(navigatorLanguage => {
 			let navigatorBaseLanguage = navigatorLanguage.split("-")[0];
 			return availableLanguages.find(availableLanguage => availableLanguage == navigatorLanguage) ?? availableLanguages.find(availableLanguage => availableLanguage == navigatorBaseLanguage) ?? availableLanguages.find(availableLanguage => availableLanguage.split(/-|_/)[0] == navigatorBaseLanguage);
-		})?.split("-")?.[0] ?? "en";
+		}) ?? "en_US";
 		languageSelector.textContent = "";
 		for(let language in languagesAndNames) {
 			languageSelector.appendChild(new Option(languagesAndNames[language], language, false, language == defaultLanguage));
@@ -245,7 +241,7 @@ document.onEvent("DOMContentLoaded", () => {
 });
 window.onEvent("load", () => { // shadow DOMs aren't populated in the DOMContentLoaded event yet
 	if(location.search == "?generateEnglishTranslations") {
-		translatePage("en", true);
+		translatePage("en_US", true);
 	}
 });
 
@@ -309,7 +305,7 @@ async function translatePage(language, generateTranslations = false) {
 				} else {
 					console.warn(`Couldn't find translation for ${translationKey} for language ${language}!`);
 					if(el.innerHTML == "") {
-						let englishTranslation = translate(translationKey, "en");
+						let englishTranslation = translate(translationKey, "en_US");
 						if(englishTranslation) {
 							el.innerHTML = performTranslationSubstitutions(el, englishTranslation);
 						} else {
@@ -331,7 +327,7 @@ async function translatePage(language, generateTranslations = false) {
 				} else {
 					console.warn(`Couldn't find translation for ${translationKey} for language ${language}!`);
 					if(!el.hasAttribute(targetAttrName)) {
-						let englishTranslation = translate(translationKey, "en");
+						let englishTranslation = translate(translationKey, "en_US");
 						if(englishTranslation) {
 							el.setAttribute(targetAttrName, performTranslationSubstitutions(el, englishTranslation));
 						} else {
@@ -358,7 +354,7 @@ function performTranslationSubstitutions(el, translation) {
 function translateCurrentLanguage(translationKey) {
 	let translation = translate(translationKey, languageSelector.value);
 	if(!translation) {
-		translation = translate(translationKey, "en");
+		translation = translate(translationKey, "en_US");
 		if(translation) {
 			console.warn(`Couldn't find translation for ${translationKey} for language ${languageSelector.value}!`);
 		} else {
@@ -379,6 +375,7 @@ async function temporarilyChangeText(el, translationKey, duration = 2000) {
 }
 
 async function makePack(structureFiles, localResourcePacks) {
+	// this is a mess. all it does is get the settings, call HoloPrint.makePack(), and show the download button.
 	generatePackFormSubmitButton.disabled = true;
 	
 	if(IN_PRODUCTION) {
@@ -398,10 +395,13 @@ async function makePack(structureFiles, localResourcePacks) {
 		TEXTURE_OUTLINE_WIDTH: +formData.get("textureOutlineWidth"),
 		TEXTURE_OUTLINE_COLOR: formData.get("textureOutlineColor"),
 		TEXTURE_OUTLINE_OPACITY: formData.get("textureOutlineOpacity") / 100,
-		DO_SPAWN_ANIMATION: formData.get("spawnAnimationEnabled"),
+		SPAWN_ANIMATION_ENABLED: !!formData.get("spawnAnimationEnabled"),
+		PLAYER_CONTROLS_ENABLED: !!formData.get("playerControlsEnabled"),
+		MATERIAL_LIST_ENABLED: !!formData.get("materialListEnabled"),
+		RETEXTURE_CONTROL_ITEMS: !!formData.get("retextureControlItems"),
+		RENAME_CONTROL_ITEMS: !!formData.get("renameControlItems"),
 		CONTROLS: Object.fromEntries([...formData].filter(([key]) => key.startsWith("control.")).map(([key, value]) => [key.replace(/^control./, ""), JSON.parse(value)])),
 		BACKUP_SLOT_COUNT: +formData.get("backupSlotCount"),
-		MATERIAL_LIST_LANGUAGE: formData.get("materialListLanguage"),
 		PACK_NAME: formData.get("packName") || undefined,
 		PACK_ICON_BLOB: formData.get("packIcon").size? formData.get("packIcon") : undefined,
 		AUTHORS: authors,
@@ -422,23 +422,25 @@ async function makePack(structureFiles, localResourcePacks) {
 	let pack;
 	logger?.setOriginTime(performance.now());
 	
+	let generationFailedError; // generation failed or generational failure?
 	if(ACTUAL_CONSOLE_LOG) {
 		pack = await HoloPrint.makePack(structureFiles, config, resourcePackStack, previewCont);
 	} else {
 		try {
 			pack = await HoloPrint.makePack(structureFiles, config, resourcePackStack, previewCont);
 		} catch(e) {
-			console.error(`Pack creation failed: ${e}`);
+			console.error(`Pack creation failed!\n${e}`);
+			if(!(e instanceof UserError)) {
+				generationFailedError = e;
+			}
 			if(!(e instanceof DOMException)) { // DOMExceptions can also be thrown, which don't have stack traces and hence can't be tracked if caught. HOWEVER they extend Error...
 				console.debug(getStackTrace(e).join("\n"));
 			}
 		}
 	}
 	
+	infoButton.classList.add("finished");
 	if(pack) {
-		infoButton.dataset.translationSubstitutions = JSON.stringify({
-			"{PACK_NAME}": pack.name
-		});
 		infoButton.dataset.translate = "download";
 		infoButton.classList.add("completed");
 		let hasLoggedPackCreation = false;
@@ -450,238 +452,21 @@ async function makePack(structureFiles, localResourcePacks) {
 			}
 			downloadBlob(pack, pack.name);
 		};
+	} else {
+		if(generationFailedError) {
+			let bugReportAnchor = document.createElement("a");
+			bugReportAnchor.classList.add("buttonlike", "packInfoButton", "reportIssue");
+			bugReportAnchor.href = `https://github.com/SuperLlama88888/holoprint/issues/new?template=1-pack-creation-error.yml&title=Pack creation error: ${encodeURIComponent(generationFailedError.toString().replaceAll("\n", " "))}&version=${HoloPrint.VERSION}`;
+			bugReportAnchor.target = "_blank";
+			bugReportAnchor.dataset.translate = "pack_generation_failed.report_github_issue";
+			infoButton.parentNode.replaceChild(bugReportAnchor, infoButton);
+		} else {
+			infoButton.classList.add("failed");
+			infoButton.dataset.translate = "pack_generation_failed";
+		}
 	}
 	
 	generatePackFormSubmitButton.disabled = false;
 	
 	return pack;
 }
-
-customElements.define("item-criteria-input", class extends HTMLElement {
-	static formAssociated = true;
-	static observedAttributes = ["value-items", "value-tags"];
-	
-	shadowRoot;
-	internals;
-	
-	#connected;
-	#tasksPendingConnection;
-	
-	#vanillaItemsPromise;
-	#vanillaItemTagsPromise;
-	#criteriaInputsCont;
-	
-	constructor() {
-		super();
-		this.shadowRoot = this.attachShadow({
-			mode: "open"
-		});
-		this.internals = this.attachInternals();
-		
-		this.#connected = false;
-		this.#tasksPendingConnection = [];
-		
-		this.#vanillaItemsPromise = (new VanillaDataFetcher()).then(fetcher => fetcher.fetch("metadata/vanilladata_modules/mojang-items.json")).then(res => res.json()).then(data => data["data_items"].map(item => item["name"].replace(/^minecraft:/, "")));
-		this.#vanillaItemTagsPromise = (new CachingFetcher("BedrockData@3.0.0+bedrock-1.21.60", "https://raw.githubusercontent.com/pmmp/BedrockData/refs/tags/3.0.0+bedrock-1.21.60/")).then(fetcher => fetcher.fetch("item_tags.json")).then(res => res.json()).then(data => Object.keys(data).map(tag => tag.replace(/^minecraft:/, "")));
-	}
-	connectedCallback() {
-		if(this.#connected) {
-			return;
-		}
-		this.#connected = true;
-		
-		this.tabIndex = 0;
-		this.shadowRoot.innerHTML = `
-			<style>
-				:host {
-					display: block;
-					padding-left: 15px;
-					font-size: 0.8rem;
-				}
-				#criteriaInputs:empty::before {
-					content: attr(data-empty-text);
-				}
-				button {
-					background: color-mix(in srgb, var(--accent-col) 50%, white);
-					cursor: pointer;
-					font-family: inherit;
-					line-height: inherit;
-				}
-				input, button {
-					box-sizing: border-box;
-					border-style: solid;
-					border-color: var(--accent-col);
-					outline-color: var(--accent-col);
-					accent-color: var(--accent-col);
-				}
-				input {
-					font-family: monospace;
-				}
-				input.itemNameInput, #addItemButton {
-					--accent-col: #01808C;
-				}
-				input.itemTagInput, #addTagButton {
-					--accent-col: #E6BE1A;
-				}
-				/* input:valid {
-					--accent-col: #70B80B;
-				} */
-				input:invalid:not(:placeholder-shown) {
-					--accent-col: #E24436;
-				}
-			</style>
-			<label for="latestInput" data-translate="item_criteria_input.matching">Matching:</label>
-			<label id="criteriaInputs" data-empty-text="Nothing" data-translate-data-empty-text="item_criteria_input.nothing"></label>
-			<button id="addItemButton">+ <span data-translate="item_criteria_input.item_name">Item name</span></button>
-			<button id="addTagButton">+ <span data-translate="item_criteria_input.item_tag">Item tag</span></button>
-			<datalist id="itemNamesDatalist"></datalist>
-			<datalist id="itemTagsDatalist"></datalist>
-		`;
-		this.#vanillaItemsPromise.then(itemNames => {
-			let itemNamesDatalist = this.shadowRoot.selectEl("#itemNamesDatalist");
-			itemNames.forEach(itemName => {
-				itemNamesDatalist.appendChild(new Option(itemName));
-			});
-		});
-		this.#vanillaItemTagsPromise.then(tags => {
-			let itemTagsDatalist = this.shadowRoot.selectEl("#itemTagsDatalist");
-			tags.forEach(tag => {
-				itemTagsDatalist.appendChild(new Option(tag));
-			});
-		})
-		this.#criteriaInputsCont = this.shadowRoot.selectEl("#criteriaInputs");
-		this.shadowRoot.selectEl("#addItemButton").onEvent("click", () => {
-			this.#addNewInput("item");
-		});
-		this.shadowRoot.selectEl("#addTagButton").onEvent("click", () => {
-			this.#addNewInput("tag");
-		});
-		
-		let task;
-		while(task = this.#tasksPendingConnection.shift()) {
-			task();
-		}
-		
-		this.#criteriaInputsCont.onEventAndNow("input", () => this.#reportFormState());
-		this.onEvent("focus", e => {
-			if(e.composedPath()[0] instanceof this.constructor) { // If this event was triggered from an element in the shadow DOM being .focus()ed, we don't want to focus something else
-				(this.shadowRoot.selectEl("input:invalid") ?? this.shadowRoot.selectEl("input:last-child") ?? this.shadowRoot.selectEl("#addItemButton")).focus();
-			}
-		});
-		this.onEvent("blur", () => { // remove empty inputs when focus is lost
-			if([...this.#criteriaInputsCont.selectEls("input")].filter(input => input.value.trim() == "").map(input => input.remove()).length) {
-				this.#reportFormState();
-				this.#removeConsecutiveOrSpacers();
-			}
-		});
-	}
-	attributeChangedCallback(...args) { // called for all attributes in the tag before connectedCallback(), so we schedule them to be handled later
-		if(this.#connected) {
-			this.#handleAttributeChange(...args);
-		} else {
-			this.#tasksPendingConnection.push(() => {
-				this.#handleAttributeChange(...args);
-			});
-		}
-	}
-	formResetCallback() {
-		this.value = this.getAttribute("default") ?? "{}";
-	}
-	get form() {
-		return this.internals.form;
-	}
-	get name() {
-		return this.getAttribute("name");
-	}
-	get type() {
-		return this.localName;
-	}
-	get value() {
-		let itemNames = [...this.#criteriaInputsCont.selectEls(".itemNameInput")].map(input => input.value.trim());
-		let tagNames = [...this.#criteriaInputsCont.selectEls(".itemTagInput")].map(input => input.value.trim());
-		return JSON.stringify(HoloPrint.createItemCriteria(itemNames, tagNames));
-	}
-	set value(stringifiedValue) {
-		this.#criteriaInputsCont.innerHTML = "";
-		let itemCriteria = JSON.parse(stringifiedValue.replaceAll("'", `"`));
-		itemCriteria["names"]?.forEach(itemName => {
-			this.#addNewInput("item", false, itemName);
-		});
-		itemCriteria["tags"]?.forEach(tagName => {
-			this.#addNewInput("tag", false, tagName);
-		});
-	}
-	
-	#reportFormState() {
-		this.internals.setFormValue(this.value);
-		let allInputs = [...this.#criteriaInputsCont.selectEls("input")];
-		if(allInputs.length == 0) {
-			this.internals.setValidity({
-				tooShort: true
-			}, translateCurrentLanguage("item_criteria_input.error.empty"));
-		} else if(allInputs.some(el => !el.validity.valid)) {
-			this.internals.setValidity({
-				patternMismatch: true
-			}, translateCurrentLanguage("item_criteria_input.error.invalid"));
-		} else {
-			this.internals.setValidity({});
-		}
-	}
-	#handleAttributeChange(attrName, oldValue, newValue) {
-		let inputValue = JSON.parse(this.value);
-		newValue = newValue.split(",");
-		switch(attrName) {
-			case "value-items": {
-				inputValue["names"] = newValue;
-			} break;
-			case "value-tags": {
-				inputValue["tags"] = newValue;
-			} break;
-		}
-		this.value = JSON.stringify(inputValue);
-	}
-	#addNewInput(type, autofocus = true, initialValue) {
-		const attributesByType = {
-			"item": `placeholder="Item name" list="itemNamesDatalist" class="itemNameInput" data-translate-placeholder="item_criteria_input.item_name"`,
-			"tag": `placeholder="Tag name" list="itemTagsDatalist" class="itemTagInput" data-translate-placeholder="item_criteria_input.item_tag"`
-		}
-		this.#criteriaInputsCont.selectEl(`input:last-child:placeholder-shown`)?.remove();
-		let lastNode = [...this.#criteriaInputsCont.childNodes].at(-1);
-		if(lastNode && !(lastNode instanceof HTMLSpanElement)) {
-			let orSpan = document.createElement("span");
-			orSpan.dataset.translate = "item_criteria_input.or";
-			orSpan.innerText = " or ";
-			this.#criteriaInputsCont.appendChild(orSpan);
-		}
-		let newInput = htmlCodeToElement(`<input type="text" required pattern="^\\s*(\\w+:)?\\w+\\s*$" spellcheck="false" autocapitalize="off" ${attributesByType[type]}/>`);
-		newInput.onEvent("keydown", this.#inputKeyDownEvent);
-		if(initialValue != undefined) {
-			newInput.value = initialValue;
-		}
-		this.#criteriaInputsCont.appendChild(newInput);
-		if(autofocus) {
-			newInput.focus();
-		}
-		this.#reportFormState();
-	}
-	#inputKeyDownEvent = e => { // must be arrow function to keep class scope
-		if(e.target.value != "" && (e.key == "Tab" && !e.shiftKey && e.target == this.#criteriaInputsCont.selectEl("input:last-child") || e.key == "Enter" || e.key == ",")) {
-			e.preventDefault();
-			this.#addNewInput(e.target.classList.contains("itemNameInput")? "item" : "tag");
-			this.#reportFormState();
-		} else if(e.key == "Backspace" && e.target.value == "") {
-			e.preventDefault();
-			e.target.remove();
-			this.#removeConsecutiveOrSpacers();
-			this.focus();
-			this.#reportFormState();
-		}
-	};
-	#removeConsecutiveOrSpacers() {
-		[...this.#criteriaInputsCont.children].forEach(node => {
-			if(node instanceof HTMLSpanElement && (node.previousSibling instanceof HTMLSpanElement || node.nextSibling instanceof HTMLSpanElement || !node.previousSibling || !node.nextSibling)) {
-				node.remove();
-			}
-		});
-	}
-});
