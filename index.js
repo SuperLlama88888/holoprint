@@ -401,6 +401,7 @@ async function makePack(structureFiles, localResourcePacks) {
 		RETEXTURE_CONTROL_ITEMS: !!formData.get("retextureControlItems"),
 		RENAME_CONTROL_ITEMS: !!formData.get("renameControlItems"),
 		CONTROLS: Object.fromEntries([...formData].filter(([key]) => key.startsWith("control.")).map(([key, value]) => [key.replace(/^control./, ""), JSON.parse(value)])),
+		INITIAL_OFFSET: [+formData.get("initialOffsetX"), +formData.get("initialOffsetY"), +formData.get("initialOffsetZ")],
 		BACKUP_SLOT_COUNT: +formData.get("backupSlotCount"),
 		PACK_NAME: formData.get("packName") || undefined,
 		PACK_ICON_BLOB: formData.get("packIcon").size? formData.get("packIcon") : undefined,

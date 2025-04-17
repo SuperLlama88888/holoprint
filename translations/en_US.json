@@ -56,6 +56,7 @@
 	"settings.features.retexture_control_items": "Retexture control items:",
 	"settings.features.rename_control_items": "Rename control items:",
 	"settings.ghost_block_scale": "Ghost block scale:",
+	"settings.initial_offset": "Initial offset:",
 	"settings.ignored_blocks": "Ignored blocks:",
 	"settings.ignored_blocks.placeholder": "block_1 block_2 etc.",
 	"settings.opacity": "Hologram opacity:",

@@ -465,6 +465,7 @@ export async function makePack(structureFiles, config = {}, resourcePackStack, p
 	entityDescription["scripts"]["initialize"] ??= [];
 	entityDescription["scripts"]["initialize"].push(functionToMolang(entityScripts.armorStandInitialization, {
 		structureSize: structureSizes[0],
+		initialOffset: config.INITIAL_OFFSET,
 		defaultTextureIndex,
 		singleLayerMode: HOLOGRAM_LAYER_MODES.SINGLE,
 		structureCount: structureFiles.length
@@ -964,6 +965,7 @@ export function addDefaultConfig(config) {
 			CONTROL_ITEM_TEXTURE_SCALE: 1,
 			RENAME_CONTROL_ITEMS: true,
 			WRONG_BLOCK_OVERLAY_COLOR: [1, 0, 0, 0.3],
+			INITIAL_OFFSET: [0, 0, 0],
 			BACKUP_SLOT_COUNT: 10,
 			PACK_NAME: undefined,
 			PACK_ICON_BLOB: undefined,
@@ -1700,6 +1702,7 @@ function stringifyWithFixedDecimals(value) {
  * @property {Number} CONTROL_ITEM_TEXTURE_SCALE How much to scale control item overlay textures. When compositing textures, MCBE scales all textures to the maximum, so the size of the overlay control texture has to be the LCM of itself and in-game items. Hence, if in-game items have a higher resolution than expected, they will probably be scaled wrong. The solution is to scale the overlay textures even more, which can be adjusted with this.
  * @property {Boolean} RENAME_CONTROL_ITEMS
  * @property {Array<Number>} WRONG_BLOCK_OVERLAY_COLOR Clamped colour quartet
+ * @property {Vec3} INITIAL_OFFSET
  * @property {Number} BACKUP_SLOT_COUNT
  * @property {String|undefined} PACK_NAME The name of the completed pack; will default to the structure file names
  * @property {Blob} PACK_ICON_BLOB Blob for `pack_icon.png`
