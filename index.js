@@ -422,7 +422,7 @@ async function makePack(structureFiles, localResourcePacks) {
 	let pack;
 	logger?.setOriginTime(performance.now());
 	
-	let generationFailedError;
+	let generationFailedError; // generation failed or generational failure?
 	if(ACTUAL_CONSOLE_LOG) {
 		pack = await HoloPrint.makePack(structureFiles, config, resourcePackStack, previewCont);
 	} else {

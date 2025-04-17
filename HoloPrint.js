@@ -719,8 +719,7 @@ export async function makePack(structureFiles, config = {}, resourcePackStack, p
 				
 				if(Array.isArray(originalTexturePath)) { // if it's an array (like boats), we need to load the item texture and manually edit it here.
 					if(variant == -1) {
-						console.warn(`Don't know which texture to use for control item texture for ${itemName}`);
-						console.log(originalTexturePath)
+						console.warn(`Don't know which texture to use for control item texture for ${itemName}: [${originalTexturePath}]`);
 						return;
 					}
 					if(!(variant in originalTexturePath)) {
@@ -764,7 +763,7 @@ export async function makePack(structureFiles, config = {}, resourcePackStack, p
 			await Promise.all([...controlItemTextureSizes].map(async size => {
 				let resizedImagePath = `${controlTexturePath.slice(0, -4)}_${size}.png`;
 				let resizedTextureBlob = await resizeImageToBlob(paddedTexture, size);
-				controlItemTextures.push([resizedImagePath, resizedTextureBlob])
+				controlItemTextures.push([resizedImagePath, resizedTextureBlob]);
 			}));
 		}));
 	}
