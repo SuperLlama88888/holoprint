@@ -1,5 +1,3 @@
-import { createNumericEnum } from "./essential.js";
-
 let v, q, t, structureSize, singleLayerMode, structureCount, HOLOGRAM_INITIAL_ACTIVATION, initialOffset, defaultTextureIndex, textureBlobsCount, totalBlocksToValidate, totalBlocksToValidateByLayer, backupSlotCount, toggleRendering, changeOpacity, toggleTint, toggleValidating, changeLayer, decreaseLayer, changeLayerMode, disablePlayerControls, backupHologram, changeStructure, moveHologram, rotateHologram, initVariables, renderingControls, broadcastActions, structureWMolang, structureHMolang, structureDMolang; // prevent linting errors
 
 export const ACTIONS = createNumericEnum(["NEXT_STRUCTURE", "PREVIOUS_STRUCTURE", "INCREASE_LAYER", "DECREASE_LAYER", "TOGGLE_RENDERING", "INCREASE_OPACITY", "DECREASE_OPACITY", "TOGGLE_TINT", "TOGGLE_VALIDATING", "CHANGE_LAYER_MODE", "ROTATE_HOLOGRAM_CLOCKWISE", "ROTATE_HOLOGRAM_ANTICLOCKWISE", "BACKUP_HOLOGRAM", "MOVE_HOLOGRAM"]);
@@ -395,4 +393,14 @@ export function playerThirdPerson() {
 		$[renderingControls]
 		$[broadcastActions]
 	}
+}
+
+/**
+ * Create a pseudo-enumeration using numbers.
+ * @template {string[]} T
+ * @param {[...T]} keys - An array of string literals to use as keys.
+ * @returns {Record<T[number], number>}
+ */
+function createNumericEnum(keys) {
+	return Object.freeze(Object.fromEntries(keys.map((key, i) => [key, i])));
 }
