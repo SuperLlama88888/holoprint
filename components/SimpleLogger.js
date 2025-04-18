@@ -127,11 +127,11 @@ export default class SimpleLogger extends HTMLElement {
 			level: logLevel,
 			stackTrace
 		});
-		let currentURLOrigin = location.href.slice(0, location.href.lastIndexOf("/")); // location.origin is null on Firefox when on local files
-		if(stackTrace.some(loc => !loc.includes(currentURLOrigin) && !loc.includes("<anonymous>"))) {
+		if(logLevel == "debug") {
 			return;
 		}
-		if(logLevel == "debug") {
+		let currentURLOrigin = location.href.slice(0, location.href.lastIndexOf("/")); // location.origin is null on Firefox when on local files
+		if(stackTrace.some(loc => /https?:\/\//.test(loc) && !loc.includes(currentURLOrigin) && !loc.includes("<anonymous>"))) {
 			return;
 		}
 		let el = document.createElement("p");
