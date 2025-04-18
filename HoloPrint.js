@@ -7,7 +7,7 @@ import MaterialList from "./MaterialList.js";
 import PreviewRenderer from "./PreviewRenderer.js";
 
 import * as entityScripts from "./entityScripts.molang.js";
-import { addPaddingToImage, awaitAllEntries, CachingFetcher, concatenateFiles, createNumericEnum, exp, floor, hexColorToClampedTriplet, JSONMap, JSONSet, lcm, loadTranslationLanguage, max, min, overlaySquareImages, pi, resizeImageToBlob, round, sha256, translate, UserError } from "./essential.js";
+import { addPaddingToImage, arrayMin, awaitAllEntries, CachingFetcher, concatenateFiles, createNumericEnum, exp, floor, hexColorToClampedTriplet, JSONMap, JSONSet, lcm, loadTranslationLanguage, max, min, overlaySquareImages, pi, resizeImageToBlob, round, sha256, translate, UserError } from "./essential.js";
 import ResourcePackStack from "./ResourcePackStack.js";
 import BlockUpdater from "./BlockUpdater.js";
 
@@ -432,7 +432,7 @@ export async function makePack(structureFiles, config = {}, resourcePackStack, p
 		hologramGeo["minecraft:geometry"].push(geo);
 		
 		if(config.SPAWN_ANIMATION_ENABLED && structureI == 0) {
-			let minDelay = min(...spawnAnimationAnimatedBones.map(([, delay]) => delay));
+			let minDelay = arrayMin(spawnAnimationAnimatedBones.map(([, delay]) => delay));
 			spawnAnimationAnimatedBones.forEach(([boneName, delay, bonePos]) => {
 				delay -= minDelay - 0.05;
 				delay = Number(delay.toFixed(2));
