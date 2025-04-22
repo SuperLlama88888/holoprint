@@ -37,8 +37,10 @@ window.OffscreenCanvas ?? class OffscreenCanvas {
 
 let dropFileNotice;
 
+/** @type {HTMLFormElement} */
 let generatePackForm;
 let generatePackFormSubmitButton;
+/** @type {HTMLInputElement} */
 let structureFilesInput;
 let packNameInput;
 let completedPacksCont;
@@ -65,6 +67,15 @@ document.onEvent("DOMContentLoaded", () => {
 		packNameInput.setCustomValidity("");
 	});
 	structureFilesInput.onEventAndNow("input", updatePackNameInputPlaceholder);
+	structureFilesInput.onEventAndNow("change", () => {
+		if([...structureFilesInput.files].some(file => !file.name.endsWith(".mcstructure"))) {
+			structureFilesInput.setCustomValidity("Please upload only .mcstructure files.");
+			structureFilesInput.classList.add("wrongFileType"); // CSS styling uses :invalid to detect the empty input and show the large label, but it shouldn't be shown if it's invalid because the user has uploaded the wrong file type
+		} else {
+			structureFilesInput.setCustomValidity("");
+			structureFilesInput.classList.remove("wrongFileType");
+		}
+	});
 	completedPacksCont = selectEl("#completedPacksCont");
 	texturePreviewImageCont = selectEl("#texturePreviewImageCont");
 	defaultResourcePackStackPromise = new ResourcePackStack();
@@ -374,6 +385,11 @@ async function temporarilyChangeText(el, translationKey, duration = 2000) {
 	el.removeAttribute("disabled");
 }
 
+/**
+ * @param {Array<File>} structureFiles
+ * @param {Array<LocalResourcePack>} localResourcePacks
+ * @returns {Promise<void>}
+ */
 async function makePack(structureFiles, localResourcePacks) {
 	// this is a mess. all it does is get the settings, call HoloPrint.makePack(), and show the download button.
 	generatePackFormSubmitButton.disabled = true;
@@ -468,6 +484,4 @@ async function makePack(structureFiles, localResourcePacks) {
 	}
 	
 	generatePackFormSubmitButton.disabled = false;
-	
-	return pack;
 }
