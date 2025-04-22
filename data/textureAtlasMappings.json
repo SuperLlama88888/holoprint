@@ -52,6 +52,10 @@
 				"tint": "foliage",
 				"tint_like_png": true
 			},
+			"reeds": {
+				"tint": "foliage",
+				"tint_like_png": true
+			},
 			"jungle_leaves": {
 				"tint": "#57BE08",
 				"tint_like_png": true
