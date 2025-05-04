@@ -74,8 +74,16 @@
 	"settings.textures.outline.width": "Texture outline width:",
 	"settings.textures.outline.width.no_outline": "None",
 	"terms_of_use_notice": "By generating a pack with HoloPrint, you agree to the [Terms of Use](https://github.com/SuperLlama88888/holoprint/blob/main/TERMS_OF_USE.md). (It's really short!)",
-	"upload": "Upload structure files (`*.mcstructure`)",
+	"structure_files.heading": "Structure files",
+	"structure_files.upload": "Upload structure files (`*.mcstructure`)",
+	"extract_from_world.heading": "Extract from world",
+	"extract_from_world.upload": "Upload world file (`*.mcworld`, `*.zip`)",
+	"update_pack.heading": "Update pack",
+	"update_pack.upload": "Upload old Structura/HoloPrint pack (`*.mcpack`)",
 	"upload.button": "Upload a file",
+	"upload.button.world": "Upload a world file",
+	"upload.button.old_pack": "Upload an old pack",
 	"upload.button.drop_notice": "Or drop files here",
-	"upload.drop_file": "Drop your structure files here"
+	"upload.drop_file": "Drop your files here",
+	"upload.error.wrong_file_type": "Please upload only {FILE_TYPE} files."
 }

@@ -6,6 +6,18 @@ import stripJsonComments from "strip-json-comments";
 export const selectEl = selector => document.querySelector(selector);
 /** @returns {NodeListOf<HTMLElement>} */
 export const selectEls = selector => document.querySelectorAll(selector);
+/**
+ * Finds the closest descendent of an element or itself that matches a given selector.
+ * @param {Element} el
+ * @param {String} selector
+ * @returns {Element|null}
+ */
+export function closestDescendentOrSelf(el, selector) {
+	if(el.matches(selector)) {
+		return el;
+	}
+	return el.querySelector(selector);
+}
 
 Element.prototype.selectEl = DocumentFragment.prototype.selectEl = function(query) {
 	return this.querySelector(query);
@@ -171,6 +183,44 @@ export function random(arr) {
 	return arr[~~(Math.random() * arr.length)];
 }
 /**
+ * Groups an array into two arrays based on a condition function.
+ * @template T
+ * @param {Array<T>} arr
+ * @param {function(T): Boolean} conditionFunc
+ * @returns {[Array<T>, Array<T>]}
+ */
+export function conditionallyGroup(arr, conditionFunc) {
+	let res = [[], []];
+	arr.forEach(el => {
+		res[+conditionFunc(el)].push(el);
+	});
+	return res;
+}
+/**
+ * Separates array items based on the result of a grouping function.
+ * @template T
+ * @param {Array<T>} arr
+ * @param {function(T): String} groupFunc
+ * @returns {Record<String, Array<T>>}
+ */
+export function groupBy(items, groupFunc) { // native Object.groupBy is only 89.47% on caniuse...
+	let res = {};
+	items.forEach(item => {
+		let group = groupFunc(item);
+		res[group] ??= [];
+		res[group].push(item);
+	});
+	return res;
+};
+/**
+ * Groups files by their file extensions.
+ * @param {Array<File>} files
+ * @returns {Record<String, Array<File>|undefined>}
+ */
+export function groupByFileExtension(files) {
+	return groupBy(files, file => getFileExtension(file));
+}
+/**
  * Create a pseudo-enumeration using numbers.
  * @template {string[]} T
  * @param {[...T]} keys - An array of string literals to use as keys.
@@ -178,6 +228,32 @@ export function random(arr) {
  */
 export function createNumericEnum(keys) {
 	return Object.freeze(Object.fromEntries(keys.map((key, i) => [key, i])));
+}
+/**
+ * Creates an enumeration using Symbols.
+ * @template {String} T
+ * @param {Array<T>} keys
+ * @returns {Readonly<Record<T, symbol>>}
+ */
+export function createSymbolicEnum(keys) {
+	return Object.freeze(Object.fromEntries(keys.map(key => [key, Symbol(key)])));
+}
+/**
+ * Crates a pseudo-enumeration using strings.
+ * @template {String} T
+ * @param {Array<T>} keys
+ * @returns {Readonly<Record<T, String>>}
+ */
+export function createStringEnum(keys) {
+	return Object.freeze(Object.fromEntries(keys.map((key, i) => {
+		let n = i + 1;
+		let value = "";
+		while(n) {
+			value = String.fromCharCode((n - 1) % 26 + 97) + value;
+			n = ~~((n - 1) / 26);
+		}
+		return [key, value];
+	})));
 }
 
 export function hexColorToClampedTriplet(hexColor) {
@@ -187,7 +263,114 @@ export function hexColorToClampedTriplet(hexColor) {
 export function addOrdinalSuffix(num) {
 	return num + (num % 10 == 1 && num % 100 != 11? "st" : num % 10 == 2 && num % 100 != 12? "nd" : num % 10 == 3 && num % 100 != 13? "rd" : "th");
 }
+/** Returns the original string when used in a tagged template literal. Only used so the HTML inside can be minified when building, and so VSCode can apply syntax highlighting with the lit-plugin plugin. */
+export function html(strings, ...values) {
+	return strings.reduce((acc, str, i) => acc + str + (values[i] ?? ""), "");
+}
+/**
+ * Finds the basename from a file path.
+ * @param {String} path
+ * @returns {String}
+ */
+export function basename(path) {
+	return path.slice(path.lastIndexOf("/") + 1);
+}
+/**
+ * Finds the directory name from a file path. Returns an empty string if there are no directories, else will end in /.
+ * @param {String} path
+ * @returns {String}
+ */
+export function dirname(path) {
+	return path.includes("/")? path.slice(0, path.lastIndexOf("/") + 1) : "";
+}
+/**
+ * Finds the file extension from a file or filename.
+ * @param {File|String} filename
+ * @returns {String}
+ */
+export function getFileExtension(filename) {
+	if(filename instanceof File) {
+		filename = filename.name;
+	}
+	return filename.slice(filename.lastIndexOf(".") + 1);
+}
+/**
+ * Removes the (last) file extension from a filename.
+ * @param {String} filename
+ * @returns {String}
+ */
+export function removeFileExtension(filename) {
+	return filename.includes(".")? filename.slice(0, filename.lastIndexOf(".")) : filename;
+}
+/**
+ * Joins an array of strings with "or", localised.
+ * @param {Array<String>} arr
+ * @param {String} [language]
+ * @returns {String}
+ */
+export function joinOr(arr, language = "en") {
+	return (new Intl.ListFormat(language.replaceAll("_", "-"), {
+		type: "disjunction"
+	})).format(arr);
+}
 
+
+/**
+ * Sets a file input's files and dispatches input an dchange events.
+ * @param {HTMLInputElement} fileInput
+ * @param {FileList|Array<File>} files
+ */
+export function setFileInputFiles(fileInput, files) {
+	if(!files.length) {
+		return;
+	}
+	if(Array.isArray(files)) {
+		files = fileArrayToFileList(files);
+	}
+	fileInput.files = files;
+	dispatchInputEvents(fileInput);
+}
+/**
+ * Adds files to a file input.
+ * @param {HTMLInputElement} fileInput
+ * @param {Array<File>} files
+ */
+export function addFilesToFileInput(fileInput, files) {
+	if(!files.length) {
+		return;
+	}
+	setFileInputFiles(fileInput, [...fileInput.files, ...files]);
+}
+/**
+ * Turns an array of files into a FileList.
+ * @param {Array<File>} files
+ * @returns {FileList}
+ */
+export function fileArrayToFileList(files) {
+	let dataTransfer = new DataTransfer();
+	files.forEach(file => dataTransfer.items.add(file));
+	return dataTransfer.files;
+}
+/**
+ * Clears all the files in a file input.
+ * @param {HTMLInputElement} fileInput
+ */
+export function clearFileInput(fileInput) {
+	fileInput.files = (new DataTransfer()).files;
+	dispatchInputEvents(fileInput);
+}
+/**
+ * Dispatches the input and change events on an <input>.
+ * @param {HTMLInputElement} input
+ */
+export function dispatchInputEvents(input) {
+	input.dispatchEvent(new Event("input", {
+		bubbles: true
+	}));
+	input.dispatchEvent(new Event("change", {
+		bubbles: true
+	}));
+}
 export function htmlCodeToElement(htmlCode) {
 	return (new DOMParser()).parseFromString(htmlCode, "text/html").body.firstElementChild;
 }
@@ -489,9 +672,17 @@ export class CachingFetcher {
 		throw lastError;
 	}
 }
-export class UserError extends Error {
-	constructor(message) {
-		super(message);
-		this.name = "UserError";
-	}
+/**
+ * Creates a custom error class with a given name.
+ * @param {String} name
+ * @returns {typeof Error}
+ */
+export function createCustomError(name) {
+	return class extends Error {
+		constructor(message) {
+			super(message);
+			this.name = name;
+		}
+	};
 }
+export const UserError = createCustomError("UserError");

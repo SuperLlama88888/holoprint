@@ -7,7 +7,7 @@ import MaterialList from "./MaterialList.js";
 import PreviewRenderer from "./PreviewRenderer.js";
 
 import * as entityScripts from "./entityScripts.molang.js";
-import { addPaddingToImage, arrayMin, awaitAllEntries, CachingFetcher, concatenateFiles, createNumericEnum, exp, floor, hexColorToClampedTriplet, JSONMap, JSONSet, lcm, loadTranslationLanguage, max, min, overlaySquareImages, pi, resizeImageToBlob, round, sha256, translate, UserError } from "./essential.js";
+import { addPaddingToImage, arrayMin, awaitAllEntries, CachingFetcher, concatenateFiles, createNumericEnum, exp, floor, getFileExtension, hexColorToClampedTriplet, JSONMap, JSONSet, lcm, loadTranslationLanguage, max, min, overlaySquareImages, pi, resizeImageToBlob, round, sha256, translate, UserError } from "./essential.js";
 import ResourcePackStack from "./ResourcePackStack.js";
 import BlockUpdater from "./BlockUpdater.js";
 
@@ -555,7 +555,7 @@ export async function makePack(structureFiles, config = {}, resourcePackStack, p
 		highestItemCount = max(...finalisedMaterialList.map(({ count }) => count));
 		let longestItemNameLength = max(...finalisedMaterialList.map(({ translatedName }) => translatedName.length));
 		let longestCountLength = max(...finalisedMaterialList.map(({ partitionedCount }) => partitionedCount.length));
-		if(longestItemNameLength + longestCountLength >= 47) {
+		if(longestItemNameLength + longestCountLength >= 43) {
 			hudScreenUI["material_list"]["size"][0] = "50%"; // up from 40%
 			hudScreenUI["material_list"]["max_size"][0] = "50%";
 		}
@@ -939,7 +939,7 @@ export function createItemCriteria(names, tags = []) { // IDK why I haven't made
 }
 /**
  * Adds default config options to a potentially incomplete config object.
- * @param {HoloPrintConfig} config
+ * @param {Partial<HoloPrintConfig>} config
  * @returns {HoloPrintConfig}
  */
 export function addDefaultConfig(config) {
@@ -1068,7 +1068,7 @@ async function getResponseContents(resPromise, filePath) {
 	if(res.status >= 400) {
 		throw new Error(`HTTP error ${res.status} for ${res.url}`);
 	}
-	let fileExtension = filePath.slice(filePath.lastIndexOf(".") + 1);
+	let fileExtension = getFileExtension(filePath);
 	switch(fileExtension) {
 		case "json":
 		case "material": return await res.jsonc();

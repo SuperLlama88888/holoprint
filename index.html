@@ -72,14 +72,15 @@
 		<script type="importmap">
 			{
 				"imports": {
-					"nbtify": "https://esm.sh/nbtify@2.0.0?exports=read",
+					"nbtify": "https://esm.sh/nbtify@2.2.0?exports=read",
+					"mcbe-leveldb-reader": "https://esm.sh/mcbe-leveldb-reader@1.0.3?exports=extractStructureFilesFromMcworld",
 					"tga-js": "https://esm.sh/tga-js@1.1.1",
 					"potpack": "https://esm.sh/potpack@2.0.0",
 					"deepmerge": "https://esm.sh/deepmerge@4.3.1",
 					"@supabase/supabase-js": "https://esm.sh/@supabase/supabase-js@2?exports=createClient",
 					"three": "https://esm.sh/three@0.147.0?exports=DirectionalLight,AmbientLight,CubeTextureLoader",
 					"@bridge-editor/model-viewer": "https://esm.sh/@bridge-editor/model-viewer@0.8.1?exports=StandaloneModelViewer",
-					"@zip.js/zip.js": "https://esm.sh/@zip.js/zip.js@2.7.54?exports=ZipWriter,TextReader,BlobWriter,BlobReader,ZipReader",
+					"@zip.js/zip.js": "https://esm.sh/@zip.js/zip.js@2.7.60?exports=ZipWriter,TextReader,BlobWriter,BlobReader,ZipReader",
 					"strip-json-comments": "https://esm.sh/strip-json-comments@5.0.1"
 				}
 			}
@@ -91,15 +92,49 @@
 			<h1 data-translate="app_name">HoloPrint</h1>
 			<div id="responsiveWidthWrapper">
 				<form action="javascript:" id="generatePackForm">
-					<fieldset>
-						<legend data-translate="generate_heading">Generate HoloPrint resource pack (<code>*.mcpack</code>)</legend>
-						<fieldset>
-							<legend data-translate="upload">Upload structure files (<code>*.mcstructure</code>)</legend>
-							<label>
-								<input type="file" accept=".mcstructure" multiple name="structureFiles" required id="structureFilesInput"/>
-								<div class="buttonlike"><p data-translate="upload.button">Upload a file</p><p data-translate="upload.button.drop_notice">Or drop files here</p></div>
-							</label>
-						</fieldset>
+				<fieldset>
+					<legend data-translate="generate_heading">Generate HoloPrint resource pack (<code>*.mcpack</code>)</legend>
+						<div class="multiTabCont" id="structureFileInputCont">
+							<input type="radio" checked name="configTabs2" form="" id="structureFilesTab"/>
+							<label for="structureFilesTab" class="buttonlike" data-translate="structure_files.heading">Structure files</label>
+							<fieldset>
+								<legend data-translate="structure_files.upload">Upload structure files (<code>*.mcstructure</code>)</legend>
+								<label>
+									<input type="file" accept=".mcstructure" multiple form="" autocomplete="off" id="structureFilesInput"/>
+									<div class="buttonlike"><p data-translate="upload.button">Upload a file</p><p data-translate="upload.button.drop_notice">Or drop files here</p></div>
+								</label>
+								<span class="hidden" id="notStructureFileError">Please upload only <code>.mcstructure</code> files.</span>
+							</fieldset>
+							<input type="radio" name="configTabs2" form="" id="extractFromWorldTab"/>
+							<label for="extractFromWorldTab" class="buttonlike" data-translate="extract_from_world.heading">Extract from world</label>
+							<fieldset>
+								<legend data-translate="extract_from_world.upload">Upload world file (<code>*.mcworld</code>, <code>*.zip</code>)</legend>
+								<label>
+									<input type="file" accept=".mcworld,.zip" form="" autocomplete="off" id="worldFileInput"/>
+									<div class="buttonlike"><p data-translate="upload.button.world">Upload a world file</p><p data-translate="upload.button.drop_notice">Or drop files here</p></div>
+								</label>
+								<table id="worldStructureFilesTable"></table>
+								<span class="hidden" id="worldExtractionMessage">Extracting structures from world...</span>
+								<span class="hidden" id="worldExtractionSuccess">Successfully extracted structures!</span>
+								<span class="hidden" id="worldExtractionError">No saved structures found!</span>
+								<span class="hidden" id="worldExtractionWorldError" data-message="Invalid world file! {ERROR}"></span>
+							</fieldset>
+							<input type="radio" name="configTabs2" form="" id="updatePackTab"/>
+							<label for="updatePackTab" class="buttonlike" data-translate="update_pack.heading">Update pack</label>
+							<fieldset>
+								<legend data-translate="update_pack.upload">Upload old Structura/HoloPrint pack (<code>*.mcpack</code>)</legend>
+								<label>
+									<input type="file" accept=".mcpack" form="" autocomplete="off" id="oldPackInput"/>
+									<div class="buttonlike"><p data-translate="upload.button.old_pack">Upload an old pack</p><p data-translate="upload.button.drop_notice">Or drop files here</p></div>
+								</label>
+								<span class="hidden" id="oldPackExtractionMessage">Extracting structure files...</span>
+								<span class="hidden" id="oldPackExtractionSuccess">Successfully found old structure files!</span>
+								<span class="hidden" id="oldPackExtractionError">Pack is not a Structura/HoloPrint pack! <small>(No structure files were found.)</small></span>
+							</fieldset>
+						</div>
+						<file-input-table hide-file-extensions>
+							<input type="file" accept=".mcstructure" multiple required name="structureFiles" id="structureFilesList"/>
+						</file-input-table>
 						<div class="multiTabCont">
 							<input type="radio" checked name="configTabs" form="" id="settingsTab"/>
 							<label for="settingsTab" class="buttonlike" data-translate="settings.heading">Settings</label>
@@ -195,7 +230,7 @@
 			</div>
 		</main>
 		<div id="dropFileNotice" class="hidden">
-			<h1 data-translate="upload.drop_file">Drop your structure files here</h1>
+			<h1 data-translate="upload.drop_file">Drop your files here</h1>
 		</div>
 	</body>
 </html>

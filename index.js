@@ -1,12 +1,14 @@
-import { selectEl, downloadBlob, sleep, selectEls, loadTranslationLanguage, translate, getStackTrace, random, UserError } from "./essential.js";
+import { extractStructureFilesFromMcworld } from "mcbe-leveldb-reader";
+import { selectEl, downloadBlob, sleep, selectEls, loadTranslationLanguage, translate, getStackTrace, random, UserError, joinOr, conditionallyGroup, groupByFileExtension, clearFileInput, addFilesToFileInput, setFileInputFiles, dispatchInputEvents } from "./essential.js";
 import * as HoloPrint from "./HoloPrint.js";
-import SimpleLogger from "./components/SimpleLogger.js";
 import SupabaseLogger from "./SupabaseLogger.js";
 
 import ResourcePackStack from "./ResourcePackStack.js";
 import LocalResourcePack from "./LocalResourcePack.js";
 import TextureAtlas from "./TextureAtlas.js";
 import ItemCriteriaInput from "./components/ItemCriteriaInput.js";
+import FileInputTable from "./components/FileInputTable.js";
+import SimpleLogger from "./components/SimpleLogger.js";
 
 const IN_PRODUCTION = false;
 const ACTUAL_CONSOLE_LOG = false;
@@ -42,6 +44,14 @@ let generatePackForm;
 let generatePackFormSubmitButton;
 /** @type {HTMLInputElement} */
 let structureFilesInput;
+/** @type {HTMLInputElement} */
+let worldFileInput;
+/** @type {HTMLTableElement} */
+let worldStructureFilesTable;
+/** @type {HTMLInputElement} */
+let oldPackInput;
+/** @type {HTMLInputElement} */
+let structureFilesList;
 let packNameInput;
 let completedPacksCont;
 let logger;
@@ -56,9 +66,29 @@ let texturePreviewImage;
 document.onEvent("DOMContentLoaded", () => {
 	document.body.appendChild = selectEl("main").appendChild.bind(selectEl("main"));
 	
+	selectEls(`input[type="file"][accept]:not([multiple])`).forEach(input => {
+		input.onEventAndNow("input", e => {
+			if(!validateFileInputFileTypes(input)) {
+				e?.stopImmediatePropagation();
+			}
+		});
+	});
+	
 	generatePackForm = selectEl("#generatePackForm");
 	dropFileNotice = selectEl("#dropFileNotice");
-	structureFilesInput = generatePackForm.elements.namedItem("structureFiles");
+	structureFilesInput = selectEl("#structureFilesInput");
+	let notStructureFileError = selectEl("#notStructureFileError");
+	worldFileInput = selectEl("#worldFileInput");
+	worldStructureFilesTable = selectEl("#worldStructureFilesTable");
+	let worldExtractionMessage = selectEl("#worldExtractionMessage");
+	let worldExtractionSuccess = selectEl("#worldExtractionSuccess");
+	let worldExtractionError = selectEl("#worldExtractionError");
+	let worldExtractionWorldError = selectEl("#worldExtractionWorldError");
+	oldPackInput = selectEl("#oldPackInput");
+	let oldPackExtractionMessage = selectEl("#oldPackExtractionMessage");
+	let oldPackExtractionSuccess = selectEl("#oldPackExtractionSuccess");
+	let oldPackExtractionError = selectEl("#oldPackExtractionError");
+	structureFilesList = selectEl("#structureFilesList");
 	packNameInput = generatePackForm.elements.namedItem("packName");
 	packNameInput.onEvent("invalid", () => {
 		packNameInput.setCustomValidity(translateCurrentLanguage("metadata.pack_name.error"));
@@ -66,16 +96,80 @@ document.onEvent("DOMContentLoaded", () => {
 	packNameInput.onEvent("input", () => {
 		packNameInput.setCustomValidity("");
 	});
-	structureFilesInput.onEventAndNow("input", updatePackNameInputPlaceholder);
-	structureFilesInput.onEventAndNow("change", () => {
-		if([...structureFilesInput.files].some(file => !file.name.endsWith(".mcstructure"))) {
-			structureFilesInput.setCustomValidity("Please upload only .mcstructure files.");
-			structureFilesInput.classList.add("wrongFileType"); // CSS styling uses :invalid to detect the empty input and show the large label, but it shouldn't be shown if it's invalid because the user has uploaded the wrong file type
-		} else {
+	structureFilesInput.onEvent("input", () => {
+		if(!structureFilesInput.files.length) {
+			return;
+		}
+		let files = Array.from(structureFilesInput.files);
+		let filesToAdd = files.filter(file => file.name.endsWith(".mcstructure"));
+		if(files.length == filesToAdd.length) {
+			notStructureFileError.classList.add("hidden");
 			structureFilesInput.setCustomValidity("");
-			structureFilesInput.classList.remove("wrongFileType");
+		} else {
+			notStructureFileError.classList.remove("hidden");
+			structureFilesInput.setCustomValidity(notStructureFileError.textContent);
+		}
+		addFilesToFileInput(structureFilesList, filesToAdd);
+	});
+	worldFileInput.onEvent("input", async () => {
+		worldExtractionMessage.classList.add("hidden");
+		worldExtractionSuccess.classList.add("hidden");
+		worldExtractionError.classList.add("hidden");
+		worldExtractionWorldError.classList.add("hidden");
+		oldPackInput.setCustomValidity("");
+		let worldFile = worldFileInput.files[0];
+		if(!worldFile) {
+			return;
+		}
+		selectEl("#extractFromWorldTab").checked = true;
+		worldExtractionMessage.classList.remove("hidden");
+		worldExtractionMessage.scrollIntoView({
+			block: "center"
+		});
+		let structureFiles;
+		try {
+			structureFiles = await extractStructureFilesFromMcworld(worldFile);
+		} catch(e) {
+			worldExtractionMessage.classList.add("hidden");
+			worldExtractionWorldError.classList.remove("hidden");
+			worldExtractionWorldError.textContent = worldExtractionWorldError.dataset.message.replace("{ERROR}", e);
+			worldFileInput.setCustomValidity(worldExtractionWorldError.textContent);
+			return;
+		}
+		worldExtractionMessage.classList.add("hidden");
+		if(structureFiles.size) {
+			addFilesToFileInput(structureFilesList, Array.from(structureFiles.values()));
+			worldExtractionSuccess.classList.remove("hidden");
+		} else {
+			worldExtractionError.classList.remove("hidden");
+			worldFileInput.setCustomValidity(worldExtractionError.textContent);
 		}
 	});
+	oldPackInput.onEvent("input", async () => {
+		oldPackExtractionMessage.classList.add("hidden");
+		oldPackExtractionSuccess.classList.add("hidden");
+		oldPackExtractionError.classList.add("hidden");
+		oldPackInput.setCustomValidity("");
+		let oldPack = oldPackInput.files[0];
+		if(!oldPack) {
+			return;
+		}
+		selectEl("#updatePackTab").checked = true;
+		oldPackExtractionMessage.classList.remove("hidden");
+		oldPackExtractionMessage.scrollIntoView({
+			block: "center"
+		});
+		let extractedStructureFiles = await HoloPrint.extractStructureFilesFromPack(oldPack);
+		oldPackExtractionMessage.classList.add("hidden");
+		if(extractedStructureFiles.length) {
+			addFilesToFileInput(structureFilesList, extractedStructureFiles);
+			oldPackExtractionSuccess.classList.remove("hidden");
+		} else {
+			oldPackExtractionError.classList.remove("hidden");
+			oldPackInput.setCustomValidity(oldPackExtractionError.textContent);
+		}
+	});
+	structureFilesList.onEventAndNow("input", updatePackNameInputPlaceholder);
 	completedPacksCont = selectEl("#completedPacksCont");
 	texturePreviewImageCont = selectEl("#texturePreviewImageCont");
 	defaultResourcePackStackPromise = new ResourcePackStack();
@@ -116,6 +210,7 @@ document.onEvent("DOMContentLoaded", () => {
 			super(translateCurrentLanguage);
 		}
 	});
+	customElements.define("file-input-table", FileInputTable);
 	customElements.define("simple-logger", SimpleLogger);
 	if(!ACTUAL_CONSOLE_LOG) {
 		logger = selectEl("#log");
@@ -173,7 +268,7 @@ document.onEvent("DOMContentLoaded", () => {
 	selectEls(".resetButton").forEach(el => {
 		el.onEvent("click", () => {
 			let fieldset = el.parentElement;
-			let elementsToSave = [...generatePackForm.elements].filter(el => el.localName != "fieldset" && el.localName != "button" && (!fieldset.contains(el) || !el.hasAttribute("name")));
+			let [elementsBeingReset, elementsToSave] = conditionallyGroup(Array.from(generatePackForm.elements), el => el.localName != "fieldset" && el.localName != "button" && (!fieldset.contains(el) || !el.hasAttribute("name")));
 			let oldValues = elementsToSave.map(el => {
 				switch(el.type) {
 					case "file": {
@@ -199,9 +294,10 @@ document.onEvent("DOMContentLoaded", () => {
 					}
 				}
 			});
+			elementsBeingReset.forEach(el => {
+				dispatchInputEvents(el);
+			});
 			temporarilyChangeText(el, el.dataset.resetTranslation);
-			opacityModeSelect.dispatchEvent(new Event("change"));
-			updateTexturePreview();
 		});
 	});
 	
@@ -256,23 +352,25 @@ window.onEvent("load", () => { // shadow DOMs aren't populated in the DOMContent
 	}
 });
 
+/**
+ * Handles files that are dropped on the webpage or opened with the PWA.
+ * @param {Array<File>} files
+ */
 async function handleInputFiles(files) {
-	let structureFiles = files.filter(file => file.name.endsWith(".mcstructure"));
-	let resourcePacks = files.filter(file => file.name.endsWith(".mcpack") || file.name.endsWith(".zip"));
+	let {
+		"mcstructure": structureFiles = [],
+		"mcworld": worldFiles = [],
+		"zip": zipFiles = [],
+		"mcpack": resourcePackFiles = []
+	} = groupByFileExtension(files);
+	let allWorldFiles = [...worldFiles, ...zipFiles];
 	
-	for(let resourcePack of resourcePacks) {
-		let extractedStructureFiles = await HoloPrint.extractStructureFilesFromPack(resourcePack);
-		structureFiles.push(...extractedStructureFiles);
-	}
-	if(structureFiles.length) {
-		let dataTransfer = new DataTransfer();
-		[...structureFilesInput.files, ...structureFiles].forEach(structureFile => dataTransfer.items.add(structureFile));
-		structureFilesInput.files = dataTransfer.files;
-	}
-	updatePackNameInputPlaceholder();
+	addFilesToFileInput(structureFilesList, structureFiles);
+	setFileInputFiles(worldFileInput, allWorldFiles.slice(0, 1)); // yes I could make it do all of them, but seriously, how many people are drag-and-dropping more than 1 world file onto the page?
+	setFileInputFiles(oldPackInput, resourcePackFiles.slice(0, 1));
 }
 function updatePackNameInputPlaceholder() {
-	packNameInput.setAttribute("placeholder", HoloPrint.getDefaultPackName([...structureFilesInput.files]));
+	packNameInput.setAttribute("placeholder", HoloPrint.getDefaultPackName([...structureFilesList.files]));
 }
 async function updateTexturePreview() {
 	texturePreviewImage ??= await defaultResourcePackStackPromise.then(rps => rps.fetchResource(`textures/blocks/${random(["crafting_table_front", "diamond_ore", "blast_furnace_front_off", "brick", "cherry_planks", "chiseled_copper", "cobblestone", "wool_colored_white", "stonebrick", "stone_granite_smooth"])}.png`)).then(res => res.toImage());
@@ -363,6 +461,9 @@ function performTranslationSubstitutions(el, translation) {
 	return translation;
 }
 function translateCurrentLanguage(translationKey) {
+	if(!languageSelector) {
+		return undefined;
+	}
 	let translation = translate(translationKey, languageSelector.value);
 	if(!translation) {
 		translation = translate(translationKey, "en_US");
@@ -383,6 +484,25 @@ async function temporarilyChangeText(el, translationKey, duration = 2000) {
 	await sleep(duration);
 	el.dataset.translate = originalTranslationKey;
 	el.removeAttribute("disabled");
+}
+/**
+ * Validates a file input based on the value of the `accept` attribute. Only works when `accept` is a comma-separated list of file extensions, not for MIME types.
+ * @param {HTMLInputElement} fileInput
+ * @returns {Boolean}
+ */
+function validateFileInputFileTypes(fileInput) {
+	let acceptableFileExtensions = fileInput.accept.split(",");
+	let valid = Array.from(fileInput.files).every(file => acceptableFileExtensions.some(fileExtension => file.name.endsWith(fileExtension)));
+	if(valid) {
+		fileInput.setCustomValidity("");
+	} else {
+		if(languageSelector) {
+			fileInput.setCustomValidity(translateCurrentLanguage("upload.error.wrong_file_type").replace("{FILE_TYPE}", joinOr(acceptableFileExtensions, languageSelector.value)));
+		} else {
+			fileInput.setCustomValidity(`Please upload only ${joinOr(acceptableFileExtensions)} files.`);
+		}
+	}
+	return valid;
 }
 
 /**

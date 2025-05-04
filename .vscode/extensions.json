@@ -4,6 +4,8 @@
 		"blockceptionltd.blockceptionvscodeminecraftbedrockdevelopmentextension",
 		"misodee.vscode-nbt",
 		"quick-lint.quick-lint-js",
-		"ije.esm-vscode"
+		"ije.esm-vscode",
+		"sissel.json-script-tag",
+		"jackolope.lit-analyzer-plugin"
 	]
 }

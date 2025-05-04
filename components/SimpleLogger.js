@@ -1,10 +1,9 @@
 // Simple logger.
-import { ceil, downloadBlob, getStackTrace } from "../essential.js";
+import { ceil, downloadBlob, getStackTrace, html } from "../essential.js";
 
 export default class SimpleLogger extends HTMLElement {
 	#originTime;
 	
-	shadowRoot;
 	node;
 	allLogs = [];
 	
@@ -16,12 +15,12 @@ export default class SimpleLogger extends HTMLElement {
 	
 	constructor() {
 		super();
-		this.shadowRoot = this.attachShadow({
+		this.attachShadow({
 			mode: "open"
 		});
 	}
 	connectedCallback() {
-		this.shadowRoot.innerHTML = `
+		this.shadowRoot.innerHTML = html`
 			<style>
 				#root {
 					margin: 15px;
@@ -125,7 +124,8 @@ export default class SimpleLogger extends HTMLElement {
 		this.allLogs.push({
 			text,
 			level: logLevel,
-			stackTrace
+			stackTrace,
+			time: performance.now() - this.#originTime
 		});
 		if(logLevel == "debug") {
 			return;
