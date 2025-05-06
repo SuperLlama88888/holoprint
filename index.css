@@ -4,6 +4,7 @@ body {
 	background-size: 100px;
 	/* animation: move-background 10s linear infinite; */
 	font-family: "Catamaran", "Trebuchet MS", sans-serif;
+	color: #202526;
 	line-height: 1.2;
 	--icon-scale: 1;
 	--success-green: #3AB336;
@@ -213,6 +214,7 @@ button, input[type="checkbox"], input[type="number"], input[type="text"], textar
 	border-radius: 7px;
 	background: #EEDEEE;
 	font-family: inherit;
+	color: inherit;
 	cursor: pointer;
 	transition: background 0.15s, border-color 0.15s;
 }

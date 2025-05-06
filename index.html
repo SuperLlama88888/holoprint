@@ -67,6 +67,7 @@
 		<link rel="icon" sizes="192x192" href="assets/logo_192.png"/>
 		
 		<link rel="stylesheet" href="https://fonts.bunny.net/css?family=catamaran:400,500,700&display=swap"/>
+		<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols&display=block"/>
 		
 		<link rel="stylesheet" href="index.css"/>
 		<script type="importmap">
@@ -115,7 +116,7 @@
 								</label>
 								<table id="worldStructureFilesTable"></table>
 								<span class="hidden" id="worldExtractionMessage">Extracting structures from world...</span>
-								<span class="hidden" id="worldExtractionSuccess">Successfully extracted structures!</span>
+								<span class="hidden" id="worldExtractionSuccess" data-message="Successfully extracted {COUNT} structures!"></span>
 								<span class="hidden" id="worldExtractionError">No saved structures found!</span>
 								<span class="hidden" id="worldExtractionWorldError" data-message="Invalid world file! {ERROR}"></span>
 							</fieldset>

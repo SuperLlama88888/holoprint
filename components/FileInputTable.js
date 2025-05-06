@@ -62,89 +62,115 @@ export default class FileInputTable extends HTMLElement {
 					margin: auto;
 					width: 70%;
 					border: 3px ridge black;
-				}
-				#main > * {
-					width: 100%;
+					& > * {
+						width: 100%;
+					}
 				}
 				#fileCountHeadingWrapper {
 					margin: 0;
-					padding: 0 1px 0 3px;
+					padding: 1px 1px 0 3px;
 					height: 22px;
 					box-sizing: border-box;
 					background: #0000002B;
 				}
 				#fileCountHeading {
 					font-weight: bold;
+					font-size: 1rem;
 				}
 				#removeAllFilesButton {
 					margin-top: 1px;
+					padding: 0 4px;
 					float: right;
 					height: calc(100% - 2px);
 					box-sizing: border-box;
-					background: inherit;
+					background: #00000028;
 					border: 1px solid black;
 					border-radius: 7px;
 					font-family: inherit;
 					line-height: inherit;
+					font-size: smaller;
 					cursor: pointer;
 					transition: transform 0.15s;
+					
+					.material-symbols {
+						font-size: 120%;
+						vertical-align: top;
+					}
+					&:hover {
+						transform: scale(1.05);
+					}
+					&:active {
+						transform: scale(1.02);
+					}
 				}
-				#removeAllFilesButton:hover {
-					transform: scale(1.05);
-				}
-				#removeAllFilesButton:active {
-					transform: scale(1.02);
+				button {
+					color: inherit;
 				}
 				table {
 					border-collapse: collapse;
 					table-layout: fixed;
 				}
-				tr:first-child .moveUpButton, tr:last-child .moveDownButton {
-					visibility: hidden;
+				tr {
+					&:first-child .moveUpButton, &:last-child .moveDownButton {
+						visibility: hidden;
+					} 
+					&:only-child .dragMoveCell {
+						opacity: 0; /* silly css bug in both firefox and chrome: the background of the <tr> won't show when the last <td> is hidden. 0 opacity works though. */
+					}
+					&:nth-child(2n + 1) {
+						background: #0001;
+					}
+					&.beingDragged {
+						transition: background 0.1s;
+						background: #00000028;
+					}
+					&:not(:only-child):not(.beingDeleted) .dragMoveCell {
+						cursor: grab;
+						&:active {
+							cursor: grabbing;
+						}
+					}
 				}
-				tr:only-child .dragMoveCell {
-					opacity: 0; /* silly css bug in both firefox and chrome: the background of the <tr> won't show when the last <td> is hidden. 0 opacity works though. */
+				td {
+					&:first-child {
+						padding: 0 3px;
+						overflow: hidden;
+						text-overflow: ellipsis;
+					}
+					&:last-child {
+						user-select: none;
+						padding: 0;
+						width: 80px;
+					}
+					div {
+						height: 20px;
+						display: flex;
+						* {
+							width: 20px;
+							height: 20px;
+							font-size: 100%;
+							transition: font-size 0.1s;
+						}
+					}
+					button {
+						padding: 0;
+						border: none;
+						background: none;
+						cursor: pointer;
+						text-align: center;
+						&:active {
+							font-size: 80%;
+						}
+					}
 				}
-				tr:nth-child(2n + 1) {
-					background: #0001;
-				}
-				tr.beingDragged {
-					transition: background 0.1s;
-					background: #00000028;
-				}
-				td:first-child, th:first-child {
-					padding: 0 3px;
-				}
-				td:first-child {
-					overflow: hidden;
-					text-overflow: ellipsis;
-				}
-				td:not(:first-child), th:not(:first-child) {
-					user-select: none;
-					width: 20px;
-				}
-				td button {
-					padding: 0;
-					width: 20px;
-					aspect-ratio: 1;
-					border: none;
-					background: none;
-					cursor: pointer;
-					text-align: center;
-					transition: transform 0.1s;
-				}
-				td button:active {
-					transform: scale(0.8);
-				}
-				tr:not(:only-child):not(.beingDeleted) .dragMoveCell {
-					cursor: grab;
-				}
-				tr:not(:only-child):not(.beingDeleted) .dragMoveCell:active {
-					cursor: grabbing;
+				.material-symbols {
+					font-family: "Material Symbols";
+					line-height: 1;
+					font-size: 100%;
 				}
 			</style>
 			<div id="main">
-				<p id="fileCountHeadingWrapper"><span id="fileCountHeading"></span><button id="removeAllFilesButton">🗑️Remove all</button></p>
+				<p id="fileCountHeadingWrapper"><span id="fileCountHeading"></span><button id="removeAllFilesButton"><span>Remove all</span> <span class="material-symbols">delete_sweep</span></button></p>
 				<table></table>
 			</div>
 		`;
@@ -171,36 +197,27 @@ export default class FileInputTable extends HTMLElement {
 		});
 		
 		this.#table.addEventListener("click", e => {
-			if(!(e.target instanceof HTMLButtonElement || e.target.firstElementChild instanceof HTMLButtonElement)) {
-				return;
-			}
-			let button = e.target instanceof HTMLButtonElement? e.target : e.target.firstElementChild;
-			if(getComputedStyle(button).opacity == "0") {
+			if(!(e.target instanceof HTMLButtonElement)) {
 				return;
 			}
 			let row = e.target.closest("tr");
-			switch(button.className) {
-				case "moveUpButton": {
-					this.#animateRow(row.previousElementSibling, FileInputTable.#ANIMATION_MOVEMENTS.MOVE_DOWN, false);
-					row.previousElementSibling.before(row);
-					this.#animateRow(row, FileInputTable.#ANIMATION_MOVEMENTS.MOVE_UP);
-					break;
-				}
-				case "moveDownButton": {
-					this.#animateRow(row.nextElementSibling, FileInputTable.#ANIMATION_MOVEMENTS.MOVE_UP, false);
-					row.nextElementSibling.after(row);
-					this.#animateRow(row, FileInputTable.#ANIMATION_MOVEMENTS.MOVE_DOWN);
-					break;
-				}
-				case "deleteButton": {
-					this.#deleteRow(row);
-					break;
-				}
+			if(e.target.classList.contains("moveUpButton")) {
+				this.#animateRow(row.previousElementSibling, FileInputTable.#ANIMATION_MOVEMENTS.MOVE_DOWN, false);
+				row.previousElementSibling.before(row);
+				this.#animateRow(row, FileInputTable.#ANIMATION_MOVEMENTS.MOVE_UP);
+			} else if(e.target.classList.contains("moveDownButton")) {
+				this.#animateRow(row.nextElementSibling, FileInputTable.#ANIMATION_MOVEMENTS.MOVE_UP, false);
+				row.nextElementSibling.after(row);
+				this.#animateRow(row, FileInputTable.#ANIMATION_MOVEMENTS.MOVE_DOWN);
+			} else if(e.target.classList.contains("deleteButton")) {
+				this.#deleteRow(row);
+			} else {
+				return;
 			}
 			this.#updateFileInput();
 		});
 		this.#table.onEvent("dragstart", e => {
-			if(e.target instanceof HTMLTableCellElement && e.target.classList.contains("dragMoveCell") && getComputedStyle(e.target).opacity != "0") {
+			if(e.target.classList.contains("dragMoveCell") && getComputedStyle(e.target).opacity != "0") {
 				let row = e.target.closest("tr");
 				if(row.classList.contains("beingDeleted")) {
 					e.preventDefault();
@@ -281,10 +298,14 @@ export default class FileInputTable extends HTMLElement {
 	 */
 	#addGenericRowButtons(row) {
 		row.insertAdjacentHTML("beforeend", html`
-			<td><button class="moveUpButton">🔼</button></td>
-			<td><button class="moveDownButton">🔽</button></td>
-			<td><button class="deleteButton">🗑️</button></td>
-			<td draggable="true" class="dragMoveCell">↕️</td>
+			<td>
+				<div>
+					<button class="moveUpButton material-symbols">arrow_upward</button>
+					<button class="moveDownButton material-symbols">arrow_downward</button>
+					<button class="deleteButton material-symbols">delete</button>
+					<span draggable="true" class="dragMoveCell material-symbols">drag_indicator</span>
+				</div>
+			</td>
 		`);
 	}
 	#updateFileInput() {

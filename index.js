@@ -140,6 +140,7 @@ document.onEvent("DOMContentLoaded", () => {
 		if(structureFiles.size) {
 			addFilesToFileInput(structureFilesList, Array.from(structureFiles.values()));
 			worldExtractionSuccess.classList.remove("hidden");
+			worldExtractionSuccess.textContent = worldExtractionSuccess.dataset.message.replace("{COUNT}", structureFiles.size);
 		} else {
 			worldExtractionError.classList.remove("hidden");
 			worldFileInput.setCustomValidity(worldExtractionError.textContent);
