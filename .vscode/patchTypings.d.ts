@@ -12,7 +12,8 @@ declare global {
 		getAllChildren(): Array<HTMLElement>
 	}
 	interface EventTarget {
-		onEvent(type: String, listener: EventListenerOrEventListenerObject, options?: Boolean | AddEventListenerOptions): void;
+		onEvent<K extends keyof HTMLElementEventMap>(type: K, listener: (this: EventTarget, ev: HTMLElementEventMap[K]) => any, options?: boolean | AddEventListenerOptions): void;
+		onEvents(types: Array<String>, listener: EventListenerOrEventListenerObject, options?: Boolean | AddEventListenerOptions): void;
 		onEventAndNow(type: String, listener: EventListenerOrEventListenerObject, options?: Boolean | AddEventListenerOptions): void;
 	}
 	interface Response {

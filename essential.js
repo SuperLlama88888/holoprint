@@ -39,6 +39,11 @@ Element.prototype.getAllChildren = DocumentFragment.prototype.getAllChildren = f
 };
 
 EventTarget.prototype.onEvent = EventTarget.prototype.addEventListener;
+EventTarget.prototype.onEvents = function(types, listener, options = false) {
+	types.forEach(type => {
+		this.addEventListener(type, listener, options);
+	});
+};
 EventTarget.prototype.onEventAndNow = function(type, listener, options) {
 	listener();
 	this.addEventListener(type, listener, options);
@@ -370,6 +375,16 @@ export function dispatchInputEvents(input) {
 	input.dispatchEvent(new Event("change", {
 		bubbles: true
 	}));
+}
+/**
+ * Checks if a touch from a touch event is in an element's vertical bounds.
+ * @param {Touch} touch
+ * @param {Element} el
+ * @returns {Boolean}
+ */
+export function isTouchInElementVerticalBounds(touch, el) {
+	let domRect = el.getBoundingClientRect();
+	return touch.clientY >= domRect.top && touch.clientY <= domRect.bottom;
 }
 export function htmlCodeToElement(htmlCode) {
 	return (new DOMParser()).parseFromString(htmlCode, "text/html").body.firstElementChild;

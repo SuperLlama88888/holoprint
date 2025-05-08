@@ -1,4 +1,4 @@
-import { createSymbolicEnum, html, removeFileExtension, sleep } from "../essential.js";
+import { clamp, createSymbolicEnum, html, isTouchInElementVerticalBounds, max, min, removeFileExtension, sleep } from "../essential.js";
 
 export default class FileInputTable extends HTMLElement {
 	static observedAttributes = ["file-count-text", "empty-text", "hide-file-extensions"];
@@ -14,6 +14,8 @@ export default class FileInputTable extends HTMLElement {
 	#fileCountHeading;
 	/** @type {HTMLTableRowElement|null} */
 	#rowBeingDragged;
+	/** @type {Number} */
+	#touchDragVerticalOffset;
 	/** @type {WeakMap<HTMLTableRowElement, File>} */
 	#filesByRow;
 	
@@ -61,27 +63,26 @@ export default class FileInputTable extends HTMLElement {
 				#main {
 					margin: auto;
 					width: 70%;
-					border: 3px ridge black;
+					border: 4px ridge #ADADAD;
 					& > * {
 						width: 100%;
 					}
 				}
 				#fileCountHeadingWrapper {
 					margin: 0;
-					padding: 1px 1px 0 3px;
+					padding: 1px 1px 1px 3px;
 					height: 22px;
 					box-sizing: border-box;
 					background: #0000002B;
 				}
 				#fileCountHeading {
 					font-weight: bold;
-					font-size: 1rem;
+					font-size: 1em;
 				}
 				#removeAllFilesButton {
-					margin-top: 1px;
 					padding: 0 4px;
 					float: right;
-					height: calc(100% - 2px);
+					height: 100%;
 					box-sizing: border-box;
 					background: #00000028;
 					border: 1px solid black;
@@ -116,13 +117,15 @@ export default class FileInputTable extends HTMLElement {
 					} 
 					&:only-child .dragMoveCell {
 						opacity: 0; /* silly css bug in both firefox and chrome: the background of the <tr> won't show when the last <td> is hidden. 0 opacity works though. */
+						cursor: initial;
 					}
 					&:nth-child(2n + 1) {
 						background: #0001;
 					}
 					&.beingDragged {
-						transition: background 0.1s;
+						position: relative;
 						background: #00000028;
+						transition: background 0.1s;
 					}
 					&:not(:only-child):not(.beingDeleted) .dragMoveCell {
 						cursor: grab;
@@ -140,16 +143,17 @@ export default class FileInputTable extends HTMLElement {
 					&:last-child {
 						user-select: none;
 						padding: 0;
-						width: 80px;
+						width: 4.6rem;
 					}
 					div {
 						height: 20px;
 						display: flex;
 						* {
-							width: 20px;
+							width: 1.15rem;
 							height: 20px;
 							font-size: 100%;
 							transition: font-size 0.1s;
+							text-align: center;
 						}
 					}
 					button {
@@ -157,8 +161,7 @@ export default class FileInputTable extends HTMLElement {
 						border: none;
 						background: none;
 						cursor: pointer;
-						text-align: center;
-						&:active {
+						&:not(.dragMoveCell):active {
 							font-size: 80%;
 						}
 					}
@@ -216,7 +219,7 @@ export default class FileInputTable extends HTMLElement {
 			}
 			this.#updateFileInput();
 		});
-		this.#table.onEvent("dragstart", e => {
+		this.#table.onEvents(["dragstart", "touchstart"], e => {
 			if(e.target.classList.contains("dragMoveCell") && getComputedStyle(e.target).opacity != "0") {
 				let row = e.target.closest("tr");
 				if(row.classList.contains("beingDeleted")) {
@@ -225,37 +228,66 @@ export default class FileInputTable extends HTMLElement {
 				}
 				this.#rowBeingDragged = row;
 				this.#rowBeingDragged.classList.add("beingDragged");
-				e.dataTransfer.effectAllowed = "move";
-				e.dataTransfer.dropEffect = "move";
-				e.dataTransfer.setDragImage(this.#rowBeingDragged.cells[0], 0, 0);
-			}
-		});
-		this.#table.onEvent("dragover", e => {
-			if(this.#rowBeingDragged) {
-				let targetRow = e.target.closest("tr");
-				e.preventDefault();
-				if(targetRow && targetRow != this.#rowBeingDragged && !targetRow.getAnimations().length) {
-					if(this.#rowBeingDragged.rowIndex < targetRow.rowIndex) {
-						for(let rowI = this.#rowBeingDragged.rowIndex + 1; rowI <= targetRow.rowIndex; rowI++) {
-							this.#animateRow(this.#table.rows[rowI], FileInputTable.#ANIMATION_MOVEMENTS.MOVE_UP, false);
-						}
-						targetRow.after(this.#rowBeingDragged);
-						this.#animateRow(this.#rowBeingDragged, FileInputTable.#ANIMATION_MOVEMENTS.MOVE_DOWN);
-					} else {
-						for(let rowI = targetRow.rowIndex; rowI < this.#rowBeingDragged.rowIndex; rowI++) {
-							this.#animateRow(this.#table.rows[rowI], FileInputTable.#ANIMATION_MOVEMENTS.MOVE_DOWN, false);
-						}
-						targetRow.before(this.#rowBeingDragged);
-						this.#animateRow(this.#rowBeingDragged, FileInputTable.#ANIMATION_MOVEMENTS.MOVE_UP);
-					}
-					this.#animateRow(this.#rowBeingDragged);
-					this.#updateFileInput();
+				if(e.type == "dragstart") {
+					e.dataTransfer.effectAllowed = "move";
+					e.dataTransfer.dropEffect = "move";
+					e.dataTransfer.setDragImage(this.#rowBeingDragged.cells[0], 0, 0);
+				} else {
+					this.#touchDragVerticalOffset = e.changedTouches[0].clientY;
 				}
 			}
 		});
-		this.#table.onEvent("dragend", () => {
-			this.#rowBeingDragged?.classList.remove("beingDragged");
-			this.#rowBeingDragged = null;
+		this.#table.onEvents(["dragover", "touchmove"], e => {
+			if(!this.#rowBeingDragged) {
+				return;
+			}
+			e.preventDefault();
+			let targetRow;
+			if(e.type == "dragover") {
+				targetRow = e.target.closest("tr");
+			} else {
+				let touch = e.changedTouches[0];
+				if(isTouchInElementVerticalBounds(touch, this.#table)) {
+					targetRow = Array.from(this.#table.rows).find(row => row != this.#rowBeingDragged && isTouchInElementVerticalBounds(touch, row));
+				}
+			}
+			if(targetRow && targetRow != this.#rowBeingDragged && !targetRow.getAnimations().length) {
+				let initialY = this.#rowBeingDragged.offsetTop;
+				if(this.#rowBeingDragged.rowIndex < targetRow.rowIndex) {
+					for(let rowI = this.#rowBeingDragged.rowIndex + 1; rowI <= targetRow.rowIndex; rowI++) {
+						this.#animateRow(this.#table.rows[rowI], FileInputTable.#ANIMATION_MOVEMENTS.MOVE_UP, false);
+					}
+					targetRow.after(this.#rowBeingDragged);
+					this.#animateRow(this.#rowBeingDragged, e.type == "dragover"? FileInputTable.#ANIMATION_MOVEMENTS.MOVE_DOWN : undefined);
+				} else {
+					for(let rowI = targetRow.rowIndex; rowI < this.#rowBeingDragged.rowIndex; rowI++) {
+						this.#animateRow(this.#table.rows[rowI], FileInputTable.#ANIMATION_MOVEMENTS.MOVE_DOWN, false);
+					}
+					targetRow.before(this.#rowBeingDragged);
+					this.#animateRow(this.#rowBeingDragged, e.type == "dragover"? FileInputTable.#ANIMATION_MOVEMENTS.MOVE_UP : undefined);
+				}
+				let deltaY = this.#rowBeingDragged.offsetTop - initialY;
+				this.#touchDragVerticalOffset += deltaY;
+				this.#updateFileInput();
+			}
+			if(e.type == "touchmove") {
+				let currentOffset = parseFloat(this.#rowBeingDragged.style.top) || 0;
+				let tableBounds = this.#table.getBoundingClientRect();
+				let rowBounds = this.#rowBeingDragged.getBoundingClientRect();
+				let lowest = min(tableBounds.top - (rowBounds.top - currentOffset), 0);
+				let highest = max(tableBounds.bottom - (rowBounds.bottom - currentOffset), 0);
+				let y = clamp(e.changedTouches[0].clientY - this.#touchDragVerticalOffset, lowest, highest);
+				this.#rowBeingDragged.style.top = `${y}px`;
+			}
+		});
+		this.#table.onEvents(["dragend", "touchend", "touchcancel"], () => {
+			if(this.#rowBeingDragged) {
+				this.#rowBeingDragged.classList.remove("beingDragged");
+				this.#rowBeingDragged.style.left = "";
+				this.#rowBeingDragged.style.top = "";
+				this.#touchDragVerticalOffset = null;
+				this.#rowBeingDragged = null;
+			}
 		});
 	}
 	/**
@@ -303,7 +335,7 @@ export default class FileInputTable extends HTMLElement {
 					<button class="moveUpButton material-symbols">arrow_upward</button>
 					<button class="moveDownButton material-symbols">arrow_downward</button>
 					<button class="deleteButton material-symbols">delete</button>
-					<span draggable="true" class="dragMoveCell material-symbols">drag_indicator</span>
+					<button draggable="true" class="dragMoveCell material-symbols">drag_indicator</button>
 				</div>
 			</td>
 		`);
@@ -336,21 +368,23 @@ export default class FileInputTable extends HTMLElement {
 				transform: "scale(1.08)",
 				boxShadow: "0 0 5px #0008"
 			};
-			row.animate([
-				startingFrame,
-				{
-					...middleFrame,
-					offset: 0.3
-				},
-				{
-					...middleFrame,
-					offset: 0.7
-				},
-				{}
-			], {
-				duration: FileInputTable.#ANIMATION_LENGTH,
-				easing: "ease"
-			});
+			for(let i = 0; i < 2; i++) { // more emphasis when done twice
+				row.animate([
+					i == 0? startingFrame : {},
+					{
+						...middleFrame,
+						offset: 0.3
+					},
+					{
+						...middleFrame,
+						offset: 0.7
+					},
+					{}
+				], {
+					duration: FileInputTable.#ANIMATION_LENGTH,
+					easing: "ease"
+				});
+			}
 		} else {
 			row.animate([startingFrame, {}], {
 				duration: FileInputTable.#ANIMATION_LENGTH * 0.3,
