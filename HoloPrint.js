@@ -853,9 +853,7 @@ export async function makePack(structureFiles, config = {}, resourcePackStack, p
 			let message = document.createElement("div");
 			message.classList.add("previewMessage", "clickToView");
 			let p = document.createElement("p");
-			p.dataset.translationSubstitutions = JSON.stringify({
-				"{TOTAL_BLOCK_COUNT}": totalBlockCount
-			});
+			p.dataset.translationSubTotalBlockCount = totalBlockCount;
 			if(structureFiles.length == 1) {
 				p.dataset.translate = "preview.click_to_view";
 			} else {

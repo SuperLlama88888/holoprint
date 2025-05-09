@@ -455,7 +455,7 @@ img:not(#languageSelectorButton), canvas {
 #languageSelectorButton {
 	width: calc(22px * var(--icon-scale));
 	height: calc(22px * var(--icon-scale));
-	background: black;
+	background: currentColor;
 	mask: url("assets/translate_icon.svg") no-repeat center;
 	-webkit-mask: url("assets/translate_icon.svg") no-repeat center; /* No way Chrome didn't support this until a year ago :0 */
 	transition: transform 0.15s;

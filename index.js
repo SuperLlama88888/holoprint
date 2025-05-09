@@ -1,5 +1,5 @@
 import { extractStructureFilesFromMcworld } from "mcbe-leveldb-reader";
-import { selectEl, downloadBlob, sleep, selectEls, loadTranslationLanguage, translate, getStackTrace, random, UserError, joinOr, conditionallyGroup, groupByFileExtension, clearFileInput, addFilesToFileInput, setFileInputFiles, dispatchInputEvents } from "./essential.js";
+import { selectEl, downloadBlob, sleep, selectEls, loadTranslationLanguage, translate, getStackTrace, random, UserError, joinOr, conditionallyGroup, groupByFileExtension, addFilesToFileInput, setFileInputFiles, dispatchInputEvents } from "./essential.js";
 import * as HoloPrint from "./HoloPrint.js";
 import SupabaseLogger from "./SupabaseLogger.js";
 
@@ -131,16 +131,16 @@ document.onEvent("DOMContentLoaded", () => {
 			structureFiles = await extractStructureFilesFromMcworld(worldFile);
 		} catch(e) {
 			worldExtractionMessage.classList.add("hidden");
+			worldExtractionWorldError.dataset.translationSubError = e;
 			worldExtractionWorldError.classList.remove("hidden");
-			worldExtractionWorldError.textContent = worldExtractionWorldError.dataset.message.replace("{ERROR}", e);
 			worldFileInput.setCustomValidity(worldExtractionWorldError.textContent);
 			return;
 		}
 		worldExtractionMessage.classList.add("hidden");
 		if(structureFiles.size) {
 			addFilesToFileInput(structureFilesList, Array.from(structureFiles.values()));
+			worldExtractionSuccess.dataset.translationSubCount = structureFiles.size;
 			worldExtractionSuccess.classList.remove("hidden");
-			worldExtractionSuccess.textContent = worldExtractionSuccess.dataset.message.replace("{COUNT}", structureFiles.size);
 		} else {
 			worldExtractionError.classList.remove("hidden");
 			worldFileInput.setCustomValidity(worldExtractionError.textContent);
@@ -328,7 +328,7 @@ document.onEvent("DOMContentLoaded", () => {
 				console.log("mutations observed when retranslating:", mutations); // should never happen!
 				return;
 			}
-			let shouldRetranslate = mutations.find(mutation => mutation.type == "childList" && [...mutation.addedNodes].some(node => node instanceof Element && ([...node.attributes].some(attr => attr.name.startsWith("data-translate")) || node.getAllChildren().some(el => [...el.attributes].some(attr => attr.name.startsWith("data-translate"))))) || mutation.type == "attributes" && mutation.attributeName.startsWith("data-translate") && mutation.target.getAttribute(mutation.attributeName) != mutation.oldValue); // retranslate when an element with a translate dataset attribute or a child with a translate dataset attribute is added, or when a translate dataset attribute is changed
+			let shouldRetranslate = mutations.find(mutation => mutation.type == "childList" && [...mutation.addedNodes].some(node => node instanceof Element && ([...node.attributes].some(attr => attr.name.startsWith("data-translate") || attr.name.startsWith("data-translation-sub-")) || node.getAllChildren().some(el => [...el.attributes].some(attr => attr.name.startsWith("data-translate") || attr.name.startsWith("data-translation-sub-"))))) || mutation.type == "attributes" && (mutation.attributeName.startsWith("data-translate") || mutation.attributeName.startsWith("data-translation-sub-")) && mutation.target.getAttribute(mutation.attributeName) != mutation.oldValue); // retranslate when an element with a translate dataset attribute or a child with a translate dataset attribute is added, or when a translate dataset attribute is changed
 			if(shouldRetranslate) {
 				retranslating = true;
 				translatePage(languageSelector.value);
@@ -453,12 +453,22 @@ async function translatePage(language, generateTranslations = false) {
 		downloadBlob(new File([JSON.stringify(translations, null, "\t")], `${language}.json`));
 	}
 }
+/**
+ * @param {Element} el
+ * @param {String} translation
+ * @returns {String}
+ */
 function performTranslationSubstitutions(el, translation) {
-	if("translationSubstitutions" in el.dataset) {
-		Object.entries(JSON.parse(el.dataset["translationSubstitutions"])).forEach(([original, substitution]) => {
-			translation = translation.replaceAll(original, substitution);
-		});
-	}
+	const prefix = "data-translation-sub-";
+	Array.from(el.attributes).forEach(({ name, value }) => {
+		if(name.startsWith(prefix)) {
+			let subName = name.slice(prefix.length).toUpperCase().replaceAll("-", "_");
+			translation = translation.replaceAll(`{${subName}}`, value);
+			if(parseInt(value) == value) {
+				translation = value > 1? translation.replace(/\[|\]/g, "") : translation.replaceAll(/\[.+\]/g, "");
+			}
+		}
+	});
 	return translation;
 }
 function translateCurrentLanguage(translationKey) {

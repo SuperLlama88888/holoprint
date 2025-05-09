@@ -104,7 +104,7 @@
 									<input type="file" accept=".mcstructure" multiple form="" autocomplete="off" id="structureFilesInput"/>
 									<div class="buttonlike"><p data-translate="upload.button">Upload a file</p><p data-translate="upload.button.drop_notice">Or drop files here</p></div>
 								</label>
-								<span class="hidden" id="notStructureFileError">Please upload only <code>.mcstructure</code> files.</span>
+								<span class="hidden" id="notStructureFileError" data-translate="structure_files.error">Please upload only <code>.mcstructure</code> files.</span>
 							</fieldset>
 							<input type="radio" name="configTabs2" form="" id="extractFromWorldTab"/>
 							<label for="extractFromWorldTab" class="buttonlike" data-translate="extract_from_world.heading">Extract from world</label>
@@ -115,10 +115,10 @@
 									<div class="buttonlike"><p data-translate="upload.button.world">Upload a world file</p><p data-translate="upload.button.drop_notice">Or drop files here</p></div>
 								</label>
 								<table id="worldStructureFilesTable"></table>
-								<span class="hidden" id="worldExtractionMessage">Extracting structures from world...</span>
-								<span class="hidden" id="worldExtractionSuccess" data-message="Successfully extracted {COUNT} structures!"></span>
-								<span class="hidden" id="worldExtractionError">No saved structures found!</span>
-								<span class="hidden" id="worldExtractionWorldError" data-message="Invalid world file! {ERROR}"></span>
+								<span class="hidden" id="worldExtractionMessage" data-translate="extract_from_world.extracting">Extracting structures from world...</span>
+								<span class="hidden" id="worldExtractionSuccess" data-translate="extract_from_world.success"></span>
+								<span class="hidden" id="worldExtractionError" data-translate="extract_from_world.error">No saved structures found!</span>
+								<span class="hidden" id="worldExtractionWorldError" data-translate="extract_from_world.world_error"></span>
 							</fieldset>
 							<input type="radio" name="configTabs2" form="" id="updatePackTab"/>
 							<label for="updatePackTab" class="buttonlike" data-translate="update_pack.heading">Update pack</label>
@@ -128,12 +128,12 @@
 									<input type="file" accept=".mcpack" form="" autocomplete="off" id="oldPackInput"/>
 									<div class="buttonlike"><p data-translate="upload.button.old_pack">Upload an old pack</p><p data-translate="upload.button.drop_notice">Or drop files here</p></div>
 								</label>
-								<span class="hidden" id="oldPackExtractionMessage">Extracting structure files...</span>
-								<span class="hidden" id="oldPackExtractionSuccess">Successfully found old structure files!</span>
-								<span class="hidden" id="oldPackExtractionError">Pack is not a Structura/HoloPrint pack! <small>(No structure files were found.)</small></span>
+								<span class="hidden" id="oldPackExtractionMessage" data-translate="update_pack.extracting">Extracting structure files...</span>
+								<span class="hidden" id="oldPackExtractionSuccess" data-translate="update_pack.success">Successfully found old structure files!</span>
+								<span class="hidden" id="oldPackExtractionError" data-translate="update_pack.error">Pack is not a Structura/HoloPrint pack! <small>(No structure files were found.)</small></span>
 							</fieldset>
 						</div>
-						<file-input-table hide-file-extensions>
+						<file-input-table hide-file-extensions file-text-count="{COUNT} file[s] selected" data-translate-file-text-count="file_input_table.count" empty-text="No files are selected" data-translate-empty-text="file_input_table.empty" remove-all-text="Remove all" data-translate-remove-all-text="file_input_table.remove_all">
 							<input type="file" accept=".mcstructure" multiple required name="structureFiles" id="structureFilesList"/>
 						</file-input-table>
 						<div class="multiTabCont">

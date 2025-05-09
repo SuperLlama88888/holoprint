@@ -1,7 +1,7 @@
 import { clamp, createSymbolicEnum, html, isTouchInElementVerticalBounds, max, min, removeFileExtension, sleep } from "../essential.js";
 
 export default class FileInputTable extends HTMLElement {
-	static observedAttributes = ["file-count-text", "empty-text", "hide-file-extensions"];
+	static observedAttributes = ["file-count-text", "empty-text", "remove-all-text", "hide-file-extensions"];
 	
 	static #ANIMATION_MOVEMENTS = createSymbolicEnum(["MOVE_DOWN", "MOVE_UP"]);
 	static #ANIMATION_LENGTH = 400;
@@ -36,7 +36,12 @@ export default class FileInputTable extends HTMLElement {
 		
 		this.#updateTable();
 	}
-	attributeChangedCallback(attrName) {
+	attributeChangedCallback(attrName, _, newValue) {
+		let elBoundToAttr = this.shadowRoot.selectEl(`[data-text-attribute="${attrName}"]`);
+		if(elBoundToAttr) {
+			elBoundToAttr.textContent = newValue;
+			return;
+		}
 		if(!this.#table) {
 			return;
 		}
@@ -173,7 +178,7 @@ export default class FileInputTable extends HTMLElement {
 				}
 			</style>
 			<div id="main">
-				<p id="fileCountHeadingWrapper"><span id="fileCountHeading"></span><button id="removeAllFilesButton"><span>Remove all</span> <span class="material-symbols">delete_sweep</span></button></p>
+				<p id="fileCountHeadingWrapper"><span id="fileCountHeading"></span><button id="removeAllFilesButton"><span data-text-attribute="remove-all-text">Remove all</span> <span class="material-symbols">delete_sweep</span></button></p>
 				<table></table>
 			</div>
 		`;
@@ -285,7 +290,6 @@ export default class FileInputTable extends HTMLElement {
 				this.#rowBeingDragged.classList.remove("beingDragged");
 				this.#rowBeingDragged.style.left = "";
 				this.#rowBeingDragged.style.top = "";
-				this.#touchDragVerticalOffset = null;
 				this.#rowBeingDragged = null;
 			}
 		});
