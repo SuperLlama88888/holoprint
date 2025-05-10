@@ -148,15 +148,15 @@ export default class FileInputTable extends HTMLElement {
 					&:last-child {
 						user-select: none;
 						padding: 0;
-						width: 4.6rem;
+						width: 5.06rem;
 					}
 					div {
-						height: 20px;
+						height: 24px;
 						display: flex;
 						* {
-							width: 1.15rem;
-							height: 20px;
-							font-size: 100%;
+							width: 1.265rem;
+							height: 24px;
+							font-size: 115%;
 							transition: font-size 0.1s;
 							text-align: center;
 						}
@@ -174,7 +174,6 @@ export default class FileInputTable extends HTMLElement {
 				.material-symbols {
 					font-family: "Material Symbols";
 					line-height: 1;
-					font-size: 100%;
 				}
 			</style>
 			<div id="main">
