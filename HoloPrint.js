@@ -1115,7 +1115,7 @@ async function tweakBlockPalette(structure, ignoredBlocks) {
 	
 	// add block entities into the block palette (on layer 0)
 	let indices = structure["block_indices"].map(layer => structuredClone(layer).map(i => +i));
-	let newIndexCache = new Map();
+	let newIndexCache = new JSONMap();
 	let entitylessBlockEntityIndices = new Set(); // contains all the block palette indices for blocks with block entities. since they don't have block entity data yet, and all block entities well be cloned and added to the end of the palette, we can remove all the entries in here from the palette.
 	let blockPositionData = structure["palette"]["default"]["block_position_data"];
 	for(let i in blockPositionData) {
@@ -1139,16 +1139,14 @@ async function tweakBlockPalette(structure, ignoredBlocks) {
 		let newBlock = structuredClone(palette[oldPaletteI]);
 		newBlock["block_entity_data"] = blockEntityData;
 		
-		let stringifiedNewBlock = JSON.stringify(newBlock, (_, x) => typeof x == "bigint"? x.toString() : x);
-		
 		// check that we haven't seen this block entity before. since in JS objects are compared by reference we have to stringify it first then check the cache.
-		if(newIndexCache.has(stringifiedNewBlock)) {
-			indices[0][i] = newIndexCache.get(stringifiedNewBlock);
+		if(newIndexCache.has(newBlock)) {
+			indices[0][i] = newIndexCache.get(newBlock);
 		} else {
 			let paletteI = palette.length;
 			palette[paletteI] = newBlock;
 			indices[0][i] = paletteI;
-			newIndexCache.set(stringifiedNewBlock, paletteI);
+			newIndexCache.set(newBlock, paletteI);
 			entitylessBlockEntityIndices.add(oldPaletteI); // we can schedule to delete the original block palette entry later, as it doesn't have any block entity data and all block entities clone it.
 		}
 	}

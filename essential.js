@@ -559,20 +559,28 @@ export function downloadBlob(blob, fileName) {
 	URL.revokeObjectURL(objectURL);
 }
 
+function stringifyJsonBigIntSafe(value) {
+	return JSON.stringify(value, (_, x) => typeof x == "bigint"? (JSON.rawJSON ?? String)(x) : x); // JSON.rawJSON offers the perfect solution but is very modern, so stringifying them is the next best option
+}
+function parseJsonBigIntSafe(value) { // this function is unused but I'm keeping it here because it works well with the function above
+	return JSON.parse(value, (_, x, context) => context && Number.isInteger(x) && !Number.isSafeInteger(x)? BigInt(context.source) : x);
+}
 export class JSONSet extends Set {
-	#replacer;
-	#reviver;
-	constructor(replacer, reviver) {
+	#actualValues;
+	constructor() {
 		super();
-		this.#replacer = replacer;
-		this.#reviver = reviver;
+		this.#actualValues = new Map();
 	}
 	indexOf(value) { // not part of sets normally! but they keep their order anyway so...
 		let stringifiedValues = [...super[Symbol.iterator]()];
 		return stringifiedValues.indexOf(this.#stringify(value));
 	}
 	add(value) {
-		return super.add(this.#stringify(value));
+		let stringifiedValue = this.#stringify(value);
+		if(!this.#actualValues.has(stringifiedValue)) {
+			this.#actualValues.set(stringifiedValue, structuredClone(value));
+		}
+		return super.add(stringifiedValue);
 	}
 	delete(value) {
 		return super.delete(this.#stringify(value));
@@ -581,19 +589,7 @@ export class JSONSet extends Set {
 		return super.has(this.#stringify(value))
 	}
 	[Symbol.iterator]() {
-		let iter = super[Symbol.iterator]();
-		return {
-			next: () => {
-				let { value, done } = iter.next();
-				return {
-					value: done? undefined : this.#parse(value),
-					done
-				};
-			},
-			[Symbol.iterator]() {
-				return this;
-			}
-		};
+		return this.#actualValues.values();
 	}
 	entries() {
 		let iter = this[Symbol.iterator]();
@@ -617,17 +613,12 @@ export class JSONSet extends Set {
 		return this[Symbol.iterator]();
 	}
 	#stringify(value) {
-		return JSON.stringify(value, this.#replacer);
-	}
-	#parse(value) {
-		return JSON.parse(value, this.#reviver);
+		return stringifyJsonBigIntSafe(value);
 	}
 }
 export class JSONMap extends Map { // very barebones
-	#replacer;
-	constructor(replacer) {
+	constructor() {
 		super();
-		this.#replacer = replacer;
 	}
 	get(key) {
 		return super.get(this.#stringify(key));
@@ -639,7 +630,7 @@ export class JSONMap extends Map { // very barebones
 		return super.set(this.#stringify(key), value)
 	}
 	#stringify(value) {
-		return JSON.stringify(value, this.#replacer);
+		return stringifyJsonBigIntSafe(value);
 	}
 }
 export class CachingFetcher {
