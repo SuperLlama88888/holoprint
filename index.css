@@ -1,11 +1,16 @@
 /* This can only be described as functional. */
+:root {
+	--icon-scale: 1;
+	--success-green: #3AB336;
+	--error-red: #E24436;
+}
 body {
 	background-image: linear-gradient(#FFFB, #FFFB), url("assets/logo_background.png");
 	background-size: 100px;
 	/* animation: move-background 10s linear infinite; */
 	font-family: "Catamaran", "Trebuchet MS", sans-serif;
+	color: #202526;
 	line-height: 1.2;
-	--icon-scale: 1;
 }
 @keyframes move-background {
 	from {
@@ -32,15 +37,10 @@ main {
 	box-sizing: border-box;
 	text-align: center;
 	overflow: auto;
+	scroll-behavior: smooth;
 }
 h1 {
 	margin: 6px 0;
-}
-@media (min-width: 1301px) {
-	body {
-		font-size: 1.125em;
-		--icon-scale: 1.6;
-	}
 }
 #responsiveWidthWrapper {
 	margin: auto;
@@ -49,8 +49,14 @@ h1 {
 form {
 	text-align: left;
 }
+@media (min-width: 1301px) {
+	:root {
+		font-size: 1.125em;
+		--icon-scale: 1.6;
+	}
+}
 @media (max-width: 1300px) {
-	body {
+	:root {
 		--icon-scale: 1.3;
 	}
 	#responsiveWidthWrapper {
@@ -63,7 +69,7 @@ form {
 	}
 }
 @media (max-width: 748px) {
-	body {
+	:root {
 		font-size: 0.875em;
 	}
 	#responsiveWidthWrapper {
@@ -71,7 +77,7 @@ form {
 	}
 }
 @media (max-width: 450px) {
-	body {
+	:root {
 		font-size: 0.8em;
 		--icon-scale: 1;
 	}
@@ -82,40 +88,65 @@ form {
 		padding: 5px;
 	}
 }
-#structureFilesInput:invalid:not(.wrongFileType) {
-	display: none; /* The label will make the button work */
+input[type="file"]:invalid {
+	color: var(--error-red);
+	outline: 3px solid var(--error-red);
+	contain: paint; /* makes the outline draw on top of neighbouring elements */
 }
-#structureFilesInput.wrongFileType {
-	color: #E24436;
-	outline: 3px solid #E24436;
-}
-#structureFilesInput ~ div {
+#structureFileInputCont input[type="file"] ~ div {
 	margin: 4px auto;
 	padding: 10px;
 	box-sizing: border-box;
 	width: 70%;
 	font-weight: 500;
 	text-align: center;
-	border: 3px solid #D899D8;
+	border: 3px dashed #D899D8;
 	border-radius: 25px;
 }
-#structureFilesInput ~ div p {
+#structureFileInputCont fieldset:first-of-type input[type="file"] ~ div {
+	border: 3px solid #D899D8;
+}
+#structureFileInputCont input[type="file"] ~ div p {
 	margin: 0;
 }
-#structureFilesInput ~ div p:first-child {
+#structureFileInputCont input[type="file"] ~ div p:first-child {
 	font-size: 1.4em;
 }
-#structureFilesInput ~ div p:last-child {
+#structureFileInputCont input[type="file"] ~ div p:last-child {
 	font-size: 0.7em;
 }
-#structureFilesInput:valid ~ div, #structureFilesInput.wrongFileType ~ div {
-	display: none;
+#structureFileInputCont:not(:has(+ file-input-table[has-files])):not(:has(fieldset label ~ span:not(.hidden))) {
+	input[type="file"], ~ * {
+		display: none;
+	}
 }
-form:has(#structureFilesInput:invalid:not(.wrongFileType)) ~ * {
-	display: none;
+main:not(:has(file-input-table[has-files])):not(:has(.previewCont)) { /* hide lots of stuff when no files are selected */
+	#structureFileInputCont:not(:has(fieldset label ~ span:not(.hidden))) input[type="file"] {
+		display: none;
+	}
+	form ~ *, #structureFileInputCont ~ * {
+		display: none;
+	}
 }
-fieldset:has(#structureFilesInput:invalid:not(.wrongFileType)) ~ * {
-	display: none;
+#structureFileInputCont:has(+ file-input-table[has-files]), #structureFileInputCont:has(fieldset label ~ span:not(.hidden)) {
+	input[type="file"] ~ div {
+		display: none;
+	}
+}
+#structureFileInputCont fieldset label ~ span {
+	display: block;
+	margin-top: 10px;
+	font-weight: 500;
+	
+	&[id$="success"i] {
+		color: var(--success-green);
+	}
+	&[id$="error"i] {
+		color: var(--error-red);
+	}
+}
+file-input-table {
+	margin: 3px;
 }
 fieldset.expandable {
 	display: grid;
@@ -185,6 +216,7 @@ button, input[type="checkbox"], input[type="number"], input[type="text"], textar
 	border-radius: 7px;
 	background: #EEDEEE;
 	font-family: inherit;
+	color: inherit;
 	cursor: pointer;
 	transition: background 0.15s, border-color 0.15s;
 }
@@ -204,8 +236,8 @@ input[type="text"]::placeholder {
 	text-overflow: ellipsis;
 }
 input[type="text"]:invalid {
-	border-color: #E24436;
-	outline-color: #E24436;
+	border-color: var(--error-red);
+	outline-color: var(--error-red);
 }
 a.buttonlike {
 	color: initial;
@@ -224,7 +256,7 @@ button:not(#generatePackButton):disabled {
 input[type="number"]:hover, input[type="text"]:hover, input[type="color"]:hover, textarea:hover {
 	background: #EAD5EA;
 }
-button:not(.packInfoButton):not(:disabled):active, input[type="file"]:not(:disabled):active::file-selector-button, select:not(:disabled):active, .buttonlike:not(.packInfoButton):not(:disabled):active {
+button:not(.packInfoButton):not(:disabled):active, input[type="file"]:not(:disabled):active::file-selector-button, select:not(:disabled):active, .buttonlike:not(.packInfoButton):not(:disabled):active:active {
 	background: #DABADA;
 }
 input[type="checkbox"] {
@@ -273,12 +305,15 @@ input[type="checkbox"]:hover::after {
 }
 .multiTabCont > input[type="radio"][name^="configTabs"] {
 	position: absolute; /* stay at top */
-	opacity: 0;
+	display: none;
 }
 .multiTabCont > label {
 	flex: 1 1 0;
 	text-align: center;
 	margin: 10px 5px 5px;
+}
+.multiTabCont:nth-child(2) > label {
+	margin: 0 5px 5px;
 }
 .multiTabCont > fieldset {
 	width: 100%;
@@ -293,9 +328,6 @@ input[type="checkbox"]:hover::after {
 	display: none;
 }
 
-#fileInputLabel {
-	font-size: 1.75em;
-}
 #dropFileNotice {
 	padding: 10px;
 	position: fixed;
@@ -423,7 +455,7 @@ img:not(#languageSelectorButton), canvas {
 #languageSelectorButton {
 	width: calc(22px * var(--icon-scale));
 	height: calc(22px * var(--icon-scale));
-	background: black;
+	background: currentColor;
 	mask: url("assets/translate_icon.svg") no-repeat center;
 	-webkit-mask: url("assets/translate_icon.svg") no-repeat center; /* No way Chrome didn't support this until a year ago :0 */
 	transition: transform 0.15s;

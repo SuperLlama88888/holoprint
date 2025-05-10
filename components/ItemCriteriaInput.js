@@ -1,4 +1,4 @@
-import { htmlCodeToElement } from "../essential.js";
+import { html, htmlCodeToElement } from "../essential.js";
 import * as HoloPrint from "../HoloPrint.js";
 import { VanillaDataFetcher } from "../ResourcePackStack.js";
 
@@ -24,7 +24,6 @@ export default class ItemCriteriaInput extends HTMLElement {
 	static formAssociated = true;
 	static observedAttributes = ["value-items", "value-tags"];
 	
-	shadowRoot;
 	internals;
 	
 	#connected;
@@ -39,7 +38,7 @@ export default class ItemCriteriaInput extends HTMLElement {
 	constructor(translateCurrentLanguage) {
 		super();
 		this.#translateCurrentLanguage = translateCurrentLanguage;
-		this.shadowRoot = this.attachShadow({
+		this.attachShadow({
 			mode: "open"
 		});
 		this.internals = this.attachInternals();
@@ -54,7 +53,7 @@ export default class ItemCriteriaInput extends HTMLElement {
 		this.#connected = true;
 		
 		this.tabIndex = 0;
-		this.shadowRoot.innerHTML = `
+		this.shadowRoot.innerHTML = html`
 			<style>
 				:host {
 					display: block;
