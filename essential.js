@@ -188,6 +188,15 @@ export function random(arr) {
 	return arr[~~(Math.random() * arr.length)];
 }
 /**
+ * Removes empty slots from a potentially sparse array.
+ * @template {Array} T
+ * @param {T} arr
+ * @returns {T}
+ */
+export function desparseArray(arr) {
+	return arr.filter(() => true);
+}
+/**
  * Groups an array into two arrays based on a condition function.
  * @template T
  * @param {Array<T>} arr
