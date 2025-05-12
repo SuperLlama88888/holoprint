@@ -73,6 +73,11 @@ export default class FileInputTable extends HTMLElement {
 						width: 100%;
 					}
 				}
+				@supports (-webkit-text-zoom: normal) { /* Exclusively target WebKit browsers (i.e. Safari) because different styling is needed there. I found this property by looking at https://caniuse.com/?search=-webkit to find webkit-only properties, and -webkit-text-zoom is the ONLY one that's only ever been supported in WebKit. 'Documentation' for this property can be found at https://webkit.org/css-status/#?search=-webkit-text-zoom. A larger list of -webkit- properties can be found at https://developer.mozilla.org/en-US/docs/Web/CSS/WebKit_Extensions. */
+					#main {
+						border-color: #626262;
+					}
+				}
 				#fileCountHeadingWrapper {
 					margin: 0;
 					padding: 1px 1px 1px 3px;

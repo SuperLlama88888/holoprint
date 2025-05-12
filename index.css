@@ -274,20 +274,22 @@ input[type="checkbox"]::after {
 	width: 12px;
 	height: 12px;
 	position: relative;
-	bottom: 2px;
+	bottom: -1px;
 	left: -2px;
 	background: #C889C8;
 	border-radius: 50%;
-	content: "\2716"; /* cross */
+	content: "close";
+	font-family: "Material Symbols";
+	font-size: 15px;
+	font-weight: bold;
 	color: transparent;
-	font-size: 11px;
-	text-shadow: 21px -2px 0 black; /* effectively move the text */
+	text-shadow: 17px -3px 0 black; /* effectively move the text */
 	transition: left 0.2s, text-shadow 0.2s, background 0.15s;
 }
 input[type="checkbox"]:checked::after {
 	left: 18px;
-	content: "\2714"; /* tick */
-	text-shadow: -18px -2px 0 black;
+	content: "check";
+	text-shadow: -20px -3px 0 black;
 }
 input[type="checkbox"]:hover::after {
 	background: #B778B7;
