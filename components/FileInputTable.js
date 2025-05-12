@@ -101,6 +101,8 @@ export default class FileInputTable extends HTMLElement {
 					.material-symbols {
 						font-size: 120%;
 						vertical-align: top;
+						display: inline-block;
+						width: 1ch;
 					}
 					&:hover {
 						transform: scale(1.05);
@@ -240,6 +242,8 @@ export default class FileInputTable extends HTMLElement {
 					this.#touchDragVerticalOffset = e.changedTouches[0].clientY;
 				}
 			}
+		}, {
+			passive: false
 		});
 		this.#table.onEvents(["dragover", "touchmove"], e => {
 			if(!this.#rowBeingDragged) {
@@ -283,6 +287,8 @@ export default class FileInputTable extends HTMLElement {
 				let y = clamp(e.changedTouches[0].clientY - this.#touchDragVerticalOffset, lowest, highest);
 				this.#rowBeingDragged.style.top = `${y}px`;
 			}
+		}, {
+			passive: false
 		});
 		this.#table.onEvents(["dragend", "touchend", "touchcancel"], () => {
 			if(this.#rowBeingDragged) {
