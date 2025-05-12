@@ -213,7 +213,7 @@ export function conditionallyGroup(arr, conditionFunc) {
 /**
  * Separates array items based on the result of a grouping function.
  * @template T
- * @param {Array<T>} arr
+ * @param {Array<T>} items
  * @param {function(T): String} groupFunc
  * @returns {Record<String, Array<T>>}
  */
@@ -634,8 +634,12 @@ export class JSONMap extends Map { // very barebones
 	}
 }
 export class CachingFetcher {
+	static URL_PREFIX = "https://cache/";
+	static #BAD_STATUS_CODES = [429];
+	
 	cacheName;
 	#baseUrl;
+	/** @type {Cache} */
 	#cache;
 	constructor(cacheName, baseUrl = "") {
 		return (async () => {
@@ -653,11 +657,25 @@ export class CachingFetcher {
 	 */
 	async fetch(url) {
 		let fullUrl = this.#baseUrl + url;
-		let cacheLink = `https://cache/${url}`;
+		let cacheLink = CachingFetcher.URL_PREFIX + url;
 		let res = await this.#cache.match(cacheLink);
+		if(CachingFetcher.#BAD_STATUS_CODES.includes(res?.status)) {
+			await this.#cache.delete(cacheLink);
+			res = undefined;
+		}
 		if(!res) {
 			res = await this.retrieve(fullUrl);
-			this.#cache.put(cacheLink, res.clone()).catch(e => console.warn(`Failed to save response from ${fullUrl} to cache ${this.cacheName}:`, e));
+			let fetchAttempsLeft = 5;
+			const fetchRetryTimeout = 1000;
+			while(CachingFetcher.#BAD_STATUS_CODES.includes(res.status) && fetchAttempsLeft--) {
+				console.debug(`Encountered bad HTTP status ${res.status} from ${fullUrl}, trying again in ${fetchRetryTimeout}ms`);
+				await sleep(fetchRetryTimeout);
+			}
+			if(fetchAttempsLeft) {
+				await this.#cache.put(cacheLink, res.clone());
+			} else {
+				console.error(`Couldn't avoid getting bad HTTP status codes for ${fullUrl}`);
+			}
 		}
 		return res;
 	}

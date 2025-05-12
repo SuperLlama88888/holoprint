@@ -4,7 +4,7 @@ import { CachingFetcher } from "./essential.js";
 
 export default class BlockUpdater {
 	static LATEST_VERSION = 18168865; // 1.21.60.33 (1.21.61)
-	static #UPGRADE_SCHEMA_URL = "https://raw.githubusercontent.com/SuperLlama88888/BedrockBlockUpgradeSchema";
+	static #UPGRADE_SCHEMA_URL = "https://cdn.jsdelivr.net/gh/SuperLlama88888/BedrockBlockUpgradeSchema";
 	static #UPGRADE_SCHEMA_VERSION = "5.1.0+bedrock-1.21.60"; // specifically, the tag name
 	
 	#fetcher;
@@ -17,7 +17,7 @@ export default class BlockUpdater {
 	 * Creates a BlockUpdater to update older blocks to the latest MCBE version.
 	 */
 	constructor() {
-		this.#fetcher = new CachingFetcher(`BlockUpgrader@${BlockUpdater.#UPGRADE_SCHEMA_VERSION}`, `${BlockUpdater.#UPGRADE_SCHEMA_URL}/refs/tags/${BlockUpdater.#UPGRADE_SCHEMA_VERSION}/`);
+		this.#fetcher = new CachingFetcher(`BlockUpgrader@${BlockUpdater.#UPGRADE_SCHEMA_VERSION}`, `${BlockUpdater.#UPGRADE_SCHEMA_URL}@${BlockUpdater.#UPGRADE_SCHEMA_VERSION}/`);
 		this.#schemaIndex = {};
 		this.#schemas = new Map();
 	}

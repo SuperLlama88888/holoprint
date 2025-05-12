@@ -46,8 +46,6 @@ let generatePackFormSubmitButton;
 let structureFilesInput;
 /** @type {HTMLInputElement} */
 let worldFileInput;
-/** @type {HTMLTableElement} */
-let worldStructureFilesTable;
 /** @type {HTMLInputElement} */
 let oldPackInput;
 /** @type {HTMLInputElement} */
@@ -79,7 +77,6 @@ document.onEvent("DOMContentLoaded", () => {
 	structureFilesInput = selectEl("#structureFilesInput");
 	let notStructureFileError = selectEl("#notStructureFileError");
 	worldFileInput = selectEl("#worldFileInput");
-	worldStructureFilesTable = selectEl("#worldStructureFilesTable");
 	let worldExtractionMessage = selectEl("#worldExtractionMessage");
 	let worldExtractionSuccess = selectEl("#worldExtractionSuccess");
 	let worldExtractionError = selectEl("#worldExtractionError");
