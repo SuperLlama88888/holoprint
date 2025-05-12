@@ -1,0 +1,16 @@
+/*
+	Material Symbols
+	Copyright (c) Google
+	Licensed under the Apache License, Version 2.0
+	http://www.apache.org/licenses/LICENSE-2.0
+
+	Modified from https://fonts.googleapis.com/css2?family=Material+Symbols:wght@400..700&icon_names=arrow_downward,arrow_upward,check,close,delete,delete_sweep,drag_indicator,stat_0&display=block
+*/
+
+@font-face {
+	font-family: "Material Symbols";
+	font-style: normal;
+	font-weight: 400 700;
+	font-display: block;
+	src: url("./MaterialSymbols.woff2") format("woff2");
+}
