@@ -26,7 +26,7 @@ jobs:
         working-directory: ci-cd
         run: |
           npm ci
-          node ci-cd/bundleAndMinify.js
+          node bundleAndMinify.js
       - name: Remove unnecessary files
         run: bash ci-cd/removeUnnecessaryFiles.sh
       - name: Upload files as artifact

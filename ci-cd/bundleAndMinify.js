@@ -7,7 +7,7 @@ import browserslist from "browserslist";
 import { transform, browserslistToTargets } from "lightningcss";
 import minifyJSON from "jsonminify";
 
-process.chdir(path.resolev(import.meta.dirname, ".."));
+process.chdir(path.resolve(import.meta.dirname, ".."));
 
 const baseDir = "./";
 const cssTargets = browserslistToTargets(browserslist(">= 0.1%"));
@@ -17,12 +17,12 @@ processDir(baseDir);
 let importMapJSON = fs.readFileSync("index.html", "utf-8").match(/<script type="importmap">([^]+?)<\/script>/)[1];
 let externalModules = Object.keys(JSON.parse(importMapJSON).imports);
 let { metafile } = esbuild.buildSync({
-	entryPoints: ["index.js"],
+	entryPoints: ["../index.js"],
 	bundle: true,
 	external: ["./entityScripts.molang.js", ...externalModules],
 	minify: true,
 	format: "esm",
-	outdir: ".",
+	outdir: "../",
 	allowOverwrite: true,
 	sourcemap: true,
 	metafile: true
@@ -37,7 +37,7 @@ function processDir(dir) {
 	directoryContents.forEach(filename => {
 		let filepath = path.join(dir, filename);
 		let stats = fs.statSync(filepath);
-		if(stats.isDirectory()) {
+		if(stats.isDirectory() && filename != "ci-cd") {
 			processDir(filepath);
 		} else {
 			let processingFunction = findProcessingFunction(filepath);
