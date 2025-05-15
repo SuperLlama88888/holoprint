@@ -17,6 +17,7 @@
 	"metadata.compression_level": "Compression level:",
 	"metadata.description": "Description:",
 	"metadata.description.placeholder": "This is my epic house!",
+	"metadata.description.link_found": "Link found:",
 	"metadata.heading": "Metadata",
 	"metadata.pack_icon": "Pack icon (`*.png`):",
 	"metadata.pack_name": "Pack name:",

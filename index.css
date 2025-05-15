@@ -145,6 +145,11 @@ main:not(:has(file-input-table[has-files])):not(:has(.previewCont)) { /* hide lo
 		color: var(--error-red);
 	}
 }
+#descriptionLinksCont {
+	font-weight: 500;
+	color: #777;
+	font-size: 0.9em;
+}
 file-input-table {
 	margin: 3px;
 }
@@ -231,6 +236,7 @@ input[type="number"], input[type="text"], textarea {
 	cursor: text;
 	outline-width: thin;
 	accent-color: auto;
+	line-height: inherit;
 }
 input[type="text"]::placeholder {
 	text-overflow: ellipsis;

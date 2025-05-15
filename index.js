@@ -239,6 +239,20 @@ document.onEvent("DOMContentLoaded", () => {
 		generatePackForm.elements.namedItem("opacity").parentElement.classList.toggle("hidden", opacityModeSelect.value == "multiple");
 	});
 	
+	let descriptionTextArea = generatePackForm.elements.namedItem("description");
+	let descriptionLinksCont = selectEl("#descriptionLinksCont");
+	descriptionTextArea.onEventAndNow("input", () => {
+		let links = HoloPrint.findLinksInDescription(descriptionTextArea.value);
+		descriptionLinksCont.textContent = "";
+		links.forEach(([_, link], i) => {
+			if(i) {
+				descriptionLinksCont.appendChild(document.createElement("br"));
+			}
+			descriptionLinksCont.insertAdjacentHTML("beforeend", `<span data-translate="metadata.description.link_found">Link found:</span>`);
+			descriptionLinksCont.insertAdjacentText("beforeend", " " + link);
+		});
+	});
+	
 	let playerControlsInputCont = selectEl("#playerControlsInputCont");
 	Object.entries(HoloPrint.DEFAULT_PLAYER_CONTROLS).map(([control, itemCriteria]) => {
 		let label = document.createElement("label");
@@ -602,7 +616,7 @@ async function makePack(structureFiles, localResourcePacks) {
 		if(generationFailedError) {
 			let bugReportAnchor = document.createElement("a");
 			bugReportAnchor.classList.add("buttonlike", "packInfoButton", "reportIssue");
-			bugReportAnchor.href = `https://github.com/SuperLlama88888/holoprint/issues/new?template=1-pack-creation-error.yml&title=Pack creation error: ${encodeURIComponent(generationFailedError.toString().replaceAll("\n", " "))}&version=${HoloPrint.VERSION}`;
+			bugReportAnchor.href = `https://github.com/SuperLlama88888/holoprint/issues/new?template=1-pack-creation-error.yml&title=Pack creation error: ${encodeURIComponent(generationFailedError.toString().replaceAll("\n", " "))}&version=${HoloPrint.VERSION}&logs=${encodeURIComponent(JSON.stringify(selectEl("simple-logger").allLogs))}`;
 			bugReportAnchor.target = "_blank";
 			bugReportAnchor.dataset.translate = "pack_generation_failed.report_github_issue";
 			infoButton.parentNode.replaceChild(bugReportAnchor, infoButton);

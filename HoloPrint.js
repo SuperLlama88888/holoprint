@@ -576,6 +576,17 @@ export async function makePack(structureFiles, config = {}, resourcePackStack, p
 	if(config.AUTHORS.length) {
 		manifest["metadata"]["authors"].push(...config.AUTHORS);
 	}
+	if(config.DESCRIPTION) {
+		let labelsAndLinks = findLinksInDescription(config.DESCRIPTION);
+		labelsAndLinks.forEach(([label, link], i) => {
+			manifest["settings"].push({
+				"type": "input",
+				"text": label,
+				"default": link,
+				"name": `link_${i}`
+			});
+		});
+	}
 	
 	let controlsHaveBeenCustomised = JSON.stringify(config.CONTROLS) != JSON.stringify(DEFAULT_PLAYER_CONTROLS);
 	let pmmpBedrockDataFetcher = config.RENAME_CONTROL_ITEMS || config.RETEXTURE_CONTROL_ITEMS? await createPmmpBedrockDataFetcher() : undefined;
@@ -922,6 +933,20 @@ export function getDefaultPackName(structureFiles) {
 		defaultName = "hologram";
 	}
 	return defaultName;
+}
+/**
+ * Finds all labels and links in a description section that will be put in the settings links section.
+ * @param {String} description
+ * @returns {Array<[String, String]>}
+ */
+export function findLinksInDescription(description) {
+	let links = [];
+	Array.from(description.matchAll(/(.*?)\n?\s*(https?:\/\/[^\s]+)/g)).forEach(match =>  {
+		let label = match[1].trim();
+		let url = match[2].trim();
+		links.push([label, url]);
+	});
+	return links;
 }
 /**
  * Creates an ItemCriteria from arrays of names and tags.
