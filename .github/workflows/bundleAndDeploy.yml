@@ -12,44 +12,23 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4.1.1
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: "npm"
+          cache-dependency-path: 'ci-cd/package-lock.json'
       - name: Add production constants
         run: |
           sed -i 's/const VERSION = "dev";/const VERSION = "${{ github.ref_name }}";/g' HoloPrint.js
           sed -i 's/const IN_PRODUCTION = false;/const IN_PRODUCTION = true;/g' index.js
       - name: Bundle and minify
+        working-directory: ci-cd
         run: |
-          npm install -g esbuild html-minifier lightningcss-cli strip-json-comments-cli json-minify
-          external_modules=$(awk '/<script type="importmap">/,/<\/script>/' index.html | sed -n '2,$p' | sed '$d' | jq -r '.imports | keys[]' | awk '{printf "--external:%s ", $0}') # ChatGPT says this is how to get all imports from index.html
-          esbuild --bundle --external:./entityScripts.molang.js $external_modules --format=esm --minify --outdir=. --allow-overwrite --sourcemap --analyze --metafile=esbuild_meta.json index.js
-          find . -type f | while read file; do
-            if [[ $file == *.html ]]; then
-              echo "Minifying $file"
-              html-minifier --remove-comments --collapse-whitespace ${file} > temp && mv temp ${file}
-            elif [[ $file == *.css ]]; then
-              echo "Minifying $file"
-              lightningcss -m -t ">= 0.05%" --sourcemap ${file} -o ${file}
-            elif [[ $file == *.json || $file == *.material || $file == *.webmanifest ]]; then
-              echo "Minifying and de-commenting $file"
-              strip-json-comments --no-whitespace ${file} | json-minify > temp && mv temp $file
-              truncate -s -1 ${file}
-            fi
-          done
+          npm ci
+          node ci-cd/bundleAndMinify.js
       - name: Remove unnecessary files
-        run: |
-          rm *.md
-          rm assets/*.gif
-          rm -r tests
-          rm -r supabase
-          rm -r data/schemas
-          rm -rf .*
-          keys=$(jq -r '.inputs | keys[]' "esbuild_meta.json")
-          for key in $keys; do
-            if [ "$key" != "index.js" ]; then
-              rm "$key"
-            fi
-          done
-          rm esbuild_meta.json
-          tree -f
+        run: bash ci-cd/removeUnnecessaryFiles.sh
       - name: Upload files as artifact
         uses: actions/upload-pages-artifact@v3.0.1
         with:
