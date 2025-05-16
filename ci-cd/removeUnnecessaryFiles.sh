@@ -7,7 +7,7 @@ rm -r supabase
 rm -r data/schemas
 rm -rf .*
 keys=$(jq -r '.inputs | keys[]' "esbuild_meta.json")
-cd ci-cd
+cd tests
 for key in $keys; do
 if [ "$key" != "index.js" ]; then
 	rm "$key"
