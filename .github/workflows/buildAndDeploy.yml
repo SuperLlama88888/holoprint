@@ -1,4 +1,4 @@
-name: Bundle and Deploy
+name: Build and Deploy
 on:
   push:
     tags:
@@ -6,8 +6,8 @@ on:
   workflow_dispatch:
 permissions: read-all
 jobs:
-  bundle:
-    name: Bundle and Minify
+  build:
+    name: Build and Minify
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
@@ -18,24 +18,15 @@ jobs:
           node-version: 22
           cache: "npm"
           cache-dependency-path: 'ci-cd/package-lock.json'
-      - name: Add production constants
-        run: |
-          sed -i 's/const VERSION = "dev";/const VERSION = "${{ github.ref_name }}";/g' HoloPrint.js
-          sed -i 's/const IN_PRODUCTION = false;/const IN_PRODUCTION = true;/g' index.js
-      - name: Bundle and minify
-        working-directory: ci-cd
-        run: |
-          npm ci
-          node bundleAndMinify.js
-      - name: Remove unnecessary files
-        run: bash ci-cd/removeUnnecessaryFiles.sh
+      - name: Build
+        run: bash ci-cd/build.sh && rm -r tests
       - name: Upload files as artifact
         uses: actions/upload-pages-artifact@v3.0.1
         with:
           path: .
   deploy:
     name: Deploy
-    needs: bundle
+    needs: build
     runs-on: ubuntu-latest
     if: github.repository == 'HoloPrint-MC/holoprint-mc.github.io'
     permissions:
@@ -50,7 +41,7 @@ jobs:
         uses: actions/deploy-pages@v4.0.5
   update-fork:
     name: Update Fork (HoloPrint-MC)
-    needs: bundle
+    needs: build
     runs-on: ubuntu-latest
     if: github.repository == 'SuperLlama88888/holoprint'
     steps:

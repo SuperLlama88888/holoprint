@@ -1,6 +1,7 @@
+#!/bin/bash
+
 rm *.md
 rm assets/*.gif
-rm -r tests
 rm -r ci-cd
 rm -r supabase
 rm -r data/schemas

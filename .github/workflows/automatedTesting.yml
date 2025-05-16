@@ -38,6 +38,8 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4.1.1
+      - name: Build
+        run: bash ci-cd/build.sh
       - name: Test Sample Structures on ${{ matrix.browser }}
         run: |
           npm install @actions/core puppeteer mime-types
