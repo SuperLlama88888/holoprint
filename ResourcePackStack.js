@@ -27,8 +27,8 @@ export default class ResourcePackStack {
 	/**
 	 * Creates a resource pack stack to get resources.
 	 * @param {Array<LocalResourcePack>} [localResourcePacks] Local resource packs to apply. Front of the list is on top (i.e. applied first.)
-	 * @param {Boolean} [enableCache] Whether or not to cache files
-	 * @param {String} [vanillaDataVersion] The Minecraft version to get vanilla data from
+	 * @param {boolean} [enableCache] Whether or not to cache files
+	 * @param {string} [vanillaDataVersion] The Minecraft version to get vanilla data from
 	 */
 	constructor(localResourcePacks = [], enableCache = true, vanillaDataVersion = defaultVanillaDataVersion) {
 		return (async () => {
@@ -49,7 +49,7 @@ export default class ResourcePackStack {
 	
 	/**
 	 * Fetches data from the root directory of Mojang/bedrock-samples.
-	 * @param {String} filePath 
+	 * @param {string} filePath 
 	 * @returns {Promise<Response>}
 	 */
 	async fetchData(filePath) {
@@ -57,7 +57,7 @@ export default class ResourcePackStack {
 	}
 	/**
 	 * Fetches a resource pack file.
-	 * @param {String} resourcePath
+	 * @param {string} resourcePath
 	 * @returns {Promise<Response>}
 	 */
 	async fetchResource(resourcePath) {
@@ -105,7 +105,7 @@ export class VanillaDataFetcher extends CachingFetcher {
 	
 	/**
 	 * Creates a vanilla data fetcher to fetch data from the Mojang/bedrock-samples repository.
-	 * @param {String} [version] The name of the GitHub tag for a specific Minecraft version.
+	 * @param {string} [version] The name of the GitHub tag for a specific Minecraft version.
 	 */
 	constructor(version = defaultVanillaDataVersion) {
 		return (async () => {

@@ -43,7 +43,7 @@ export default class LocalResourcePack {
 	}
 	/**
 	 * Gets a file from the local resource pack, or undefined if it doesn't exist.
-	 * @param {String} filePath
+	 * @param {string} filePath
 	 * @returns {File|undefined}
 	 */
 	getFile(filePath) {

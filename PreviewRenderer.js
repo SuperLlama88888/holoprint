@@ -10,9 +10,9 @@ export default class PreviewRenderer {
 	 * Create a preview renderer for a completed geometry file.
 	 * @param {HTMLElement} cont
 	 * @param {TextureAtlas} textureAtlas
-	 * @param {Object} geo The Minecraft geometry object
-	 * @param {Object} animations Contents of the `.animation.json` file
-	 * @param {Boolean} [showSkybox] If the skybox should show or not
+	 * @param {object} geo The Minecraft geometry object
+	 * @param {object} animations Contents of the `.animation.json` file
+	 * @param {boolean} [showSkybox] If the skybox should show or not
 	 */
 	constructor(cont, textureAtlas, geo, animations, showSkybox = true) {
 		return (async () => {

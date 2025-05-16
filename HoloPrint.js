@@ -922,7 +922,7 @@ export async function updatePack(resourcePack, config, resourcePackStack, previe
 /**
  * Returns the default pack name that would be used if no pack name is specified.
  * @param {Array<File>} structureFiles
- * @returns {String}
+ * @returns {string}
  */
 export function getDefaultPackName(structureFiles) {
 	let defaultName = structureFiles.map(structureFile => structureFile.name.replace(/(\.holoprint)?\.[^.]+$/, "")).join(", ");
@@ -936,8 +936,8 @@ export function getDefaultPackName(structureFiles) {
 }
 /**
  * Finds all labels and links in a description section that will be put in the settings links section.
- * @param {String} description
- * @returns {Array<[String, String]>}
+ * @param {string} description
+ * @returns {Array<[string, string]>}
  */
 export function findLinksInDescription(description) {
 	let links = [];
@@ -950,8 +950,8 @@ export function findLinksInDescription(description) {
 }
 /**
  * Creates an ItemCriteria from arrays of names and tags.
- * @param {String|Array<String>} names
- * @param {String|Array<String>} [tags]
+ * @param {string|Array<string>} names
+ * @param {string|Array<string>} [tags]
  * @returns {ItemCriteria}
  */
 export function createItemCriteria(names, tags = []) { // IDK why I haven't made this a class
@@ -1023,7 +1023,7 @@ export async function createPmmpBedrockDataFetcher() {
 /**
  * Reads the NBT of a structure file, returning a JSON object.
  * @param {File} structureFile `*.mcstructure`
- * @returns {Promise<Object>}
+ * @returns {Promise<object>}
  */
 async function readStructureNBT(structureFile) {
 	if(structureFile.size == 0) {
@@ -1041,7 +1041,7 @@ async function readStructureNBT(structureFile) {
  * @template TData
  * @param {{ packTemplate?: TPackTemplate, resources?: TResources, otherFiles?: TOtherFiles, data?: TData }} stuff
  * @param {ResourcePackStack} resourcePackStack
- * @returns {Promise<{ files: { [K in keyof TPackTemplate | keyof TResources | keyof TOtherFiles]?: String|Blob|Record<String, any>|Array<any>|HTMLImageElement }, data: { [K in keyof TData]?: String|Blob|Record<String, any>|Array<any>|HTMLImageElement } }>}
+ * @returns {Promise<{ files: { [K in keyof TPackTemplate | keyof TResources | keyof TOtherFiles]?: string|Blob|Record<string, any>|Array<any>|HTMLImageElement }, data: { [K in keyof TData]?: string|Blob|Record<string, any>|Array<any>|HTMLImageElement } }>}
 */
 async function loadStuff(stuff, resourcePackStack) {
 	let filePromises = {};
@@ -1065,28 +1065,28 @@ async function loadStuff(stuff, resourcePackStack) {
  * Gets the contents of a response based on the requested file extension (e.g. object from .json, image from .png, etc.).
  * @overload
  * @param {Promise<Response>} resPromise
- * @param {`${String}.${"json"|"material"}`} filePath
- * @returns {Promise<Record<String, any>|Array<any>>}
+ * @param {`${string}.${"json"|"material"}`} filePath
+ * @returns {Promise<Record<string, any>|Array<any>>}
  */
 /**
  * Gets the contents of a response based on the requested file extension (e.g. object from .json, image from .png, etc.).
  * @overload
  * @param {Promise<Response>} resPromise
- * @param {`${String}.lang`} filePath
- * @returns {Promise<String>}
+ * @param {`${string}.lang`} filePath
+ * @returns {Promise<string>}
  */
 /**
  * Gets the contents of a response based on the requested file extension (e.g. object from .json, image from .png, etc.).
  * @overload
  * @param {Promise<Response>} resPromise
- * @param {`${String}.png`} filePath
+ * @param {`${string}.png`} filePath
  * @returns {Promise<HTMLImageElement>}
  */
 /**
  * Gets the contents of a response based on the requested file extension (e.g. object from .json, image from .png, etc.).
  * @overload
  * @param {Promise<Response>} resPromise
- * @param {String} filePath
+ * @param {string} filePath
  * @returns {Promise<Blob>}
  */
 async function getResponseContents(resPromise, filePath) {
@@ -1105,8 +1105,8 @@ async function getResponseContents(resPromise, filePath) {
 }
 /**
  * Removes ignored blocks from the block palette, updates old blocks, and adds block entities as separate entries.
- * @param {Record<String, any>} structure The de-NBT-ed structure file
- * @returns {{ palette: Array<Block>, indices: [Array<Number>, Array<Number>] }}
+ * @param {Record<string, any>} structure The de-NBT-ed structure file
+ * @returns {{ palette: Array<Block>, indices: [Array<number>, Array<number>] }}
  */
 async function tweakBlockPalette(structure, ignoredBlocks) {
 	let palette = structuredClone(structure["palette"]["default"]["block_palette"]);
@@ -1184,8 +1184,8 @@ async function tweakBlockPalette(structure, ignoredBlocks) {
 }
 /**
  * Combines multiple block palettes into one, and updates indices for each.
- * @param {Array<{palette: Array<Block>, indices: Array<[Number, Number]>}>} palettesAndIndices
- * @returns {{palette: Array<Block>, indices: Array<Array<[Number, Number]>>}}
+ * @param {Array<{palette: Array<Block>, indices: Array<[number, number]>}>} palettesAndIndices
+ * @returns {{palette: Array<Block>, indices: Array<Array<[number, number]>>}}
  */
 function mergeMultiplePalettesAndIndices(palettesAndIndices) {
 	if(palettesAndIndices.length == 1) {
@@ -1211,8 +1211,8 @@ function mergeMultiplePalettesAndIndices(palettesAndIndices) {
 }
 /**
  * Adds bounding box particles for a single structure to the hologram animation controllers in-place.
- * @param {Record<String, any>} hologramAnimationControllers
- * @param {Number} structureI
+ * @param {Record<string, any>} hologramAnimationControllers
+ * @param {number} structureI
  * @param {Vec3} structureSize
  */
 function addBoundingBoxParticles(hologramAnimationControllers, structureI, structureSize) {
@@ -1253,9 +1253,9 @@ function addBoundingBoxParticles(hologramAnimationControllers, structureI, struc
 }
 /**
  * Adds block validation particles for a single structure to the hologram animation controllers in-place.
- * @param {Record<String, any>} hologramAnimationControllers
- * @param {Number} structureI
- * @param {Array<Record<String, any>>} blocksToValidate
+ * @param {Record<string, any>} hologramAnimationControllers
+ * @param {number} structureI
+ * @param {Array<Record<string, any>>} blocksToValidate
  * @param {Vec3} structureSize
  */
 function addBlockValidationParticles(hologramAnimationControllers, structureI, blocksToValidate, structureSize) {
@@ -1327,8 +1327,8 @@ function addBlockValidationParticles(hologramAnimationControllers, structureI, b
 /**
  * Add player controls. These are done entirely in the render controller so character creator skins aren't disabled.
  * @param {HoloPrintConfig} config
- * @param {Record<String, any>} defaultPlayerRenderControllers
- * @returns {Record<String, any>}
+ * @param {Record<string, any>} defaultPlayerRenderControllers
+ * @returns {Record<string, any>}
  */
 function addPlayerControlsToRenderControllers(config, defaultPlayerRenderControllers) {
 	let initVariables = functionToMolang(entityScripts.playerInitVariables);
@@ -1356,9 +1356,9 @@ function addPlayerControlsToRenderControllers(config, defaultPlayerRenderControl
 }
 /**
  * Patches a set of render controllers with some extra Molang code. Returns a new set of render controllers.
- * @param {Record<String, any>} renderControllers
- * @param {Record<String, any>} patches
- * @returns {Record<String, any>}
+ * @param {Record<string, any>} renderControllers
+ * @param {Record<string, any>} patches
+ * @returns {Record<string, any>}
  */
 function patchRenderControllers(renderControllers, patches) {
 	return {
@@ -1386,12 +1386,12 @@ function patchRenderControllers(renderControllers, patches) {
 /**
  * Translates control items by making a fake material list.
  * @param {HoloPrintConfig} config
- * @param {Record<String, any>} blockMetadata
- * @param {Record<String, any>} itemMetadata
- * @param {Array<String>} languagesDotJson
- * @param {Record<String, String>} resourceLangFiles
- * @param {Record<String, Array<String>>} itemTags
- * @returns {Promise<{ inGameControls: Record<String, String>, controlItemTranslations: Record<String, String> }>}
+ * @param {Record<string, any>} blockMetadata
+ * @param {Record<string, any>} itemMetadata
+ * @param {Array<string>} languagesDotJson
+ * @param {Record<string, string>} resourceLangFiles
+ * @param {Record<string, Array<string>>} itemTags
+ * @returns {Promise<{ inGameControls: Record<string, string>, controlItemTranslations: Record<string, string> }>}
  */
 async function translateControlItems(config, blockMetadata, itemMetadata, languagesDotJson, resourceLangFiles, itemTags) {
 	// make a fake material list for the in-game control items (just to translate them lol)
@@ -1509,8 +1509,8 @@ async function makePackIcon(structureFile) {
 /**
  * Expands item criteria into an array of item names by expanding all item tags.
  * @param {ItemCriteria} itemCriteria
- * @param {Record<String, Array<String>>} itemTags
- * @returns {Array<String>}
+ * @param {Record<string, Array<string>>} itemTags
+ * @returns {Array<string>}
  */
 function expandItemCriteria(itemCriteria, itemTags) {
 	let minecraftTags = itemCriteria["tags"].filter(tag => !tag.includes(":")); // we can't find which items are used in custom tags
@@ -1520,7 +1520,7 @@ function expandItemCriteria(itemCriteria, itemTags) {
 /**
  * Converts an item filter into a Molang expression representation.
  * @param {ItemCriteria} itemCriteria
- * @returns {String}
+ * @returns {string}
  */
 function itemCriteriaToMolang(itemCriteria, slot = "slot.weapon.mainhand") {
 	let names = itemCriteria["names"].map(name => name.includes(":")? name : `minecraft:${name}`);
@@ -1532,8 +1532,8 @@ function itemCriteriaToMolang(itemCriteria, slot = "slot.weapon.mainhand") {
 /**
  * Creates a Molang expression that mimics array access. Defaults to the last element if nothing is found.
  * @param {Array} array A continuous array
- * @param {String} indexVar
- * @returns {String}
+ * @param {string} indexVar
+ * @returns {string}
  */
 export function arrayToMolang(array, indexVar) {
 	let arrayEntries = Object.entries(array); // to handle splitting, original indices need to be preserved, hence looking at index-value pairs
@@ -1550,9 +1550,9 @@ function arrayEntriesToMolang(entries, indexVar) {
 /**
  * Creates a Molang expression that mimics 2D array access.
  * @param {Array<Array>} array
- * @param {String} indexVar1
- * @param {String} indexVar2
- * @returns {String}
+ * @param {string} indexVar1
+ * @param {string} indexVar2
+ * @returns {string}
  */
 function array2DToMolang(array, indexVar1, indexVar2) {
 	return arrayToMolang(array.map(subArray => `(${arrayToMolang(subArray, indexVar2)})`), indexVar1);
@@ -1560,8 +1560,8 @@ function array2DToMolang(array, indexVar1, indexVar2) {
 /**
  * Converts a function into minified Molang code. Variables can be referenced with $[...].
  * @param {Function} func
- * @param {Record<String, any>} [vars]
- * @returns {String} Molang code
+ * @param {Record<string, any>} [vars]
+ * @returns {string} Molang code
  */
 function functionToMolang(func, vars = {}) {
 	let funcCode = func.toString();
@@ -1687,7 +1687,7 @@ function functionToMolang(func, vars = {}) {
 /**
  * JSON.stringify(), but shortens numbers to at most 4 decimal places to avoid JS floating-point errors making stringified numbers long.
  * @param {*} value
- * @returns {String}
+ * @returns {string}
  */
 function stringifyWithFixedDecimals(value) {
 	const NUMBER_OF_DECIMALS = 4;
@@ -1705,40 +1705,40 @@ function stringifyWithFixedDecimals(value) {
 
 /**
  * An object for storing HoloPrint config options.
- * @typedef {Object} HoloPrintConfig
- * @property {Array<String>} IGNORED_BLOCKS
- * @property {Array<String>} IGNORED_MATERIAL_LIST_BLOCKS
- * @property {Number} SCALE
- * @property {Number} OPACITY
- * @property {Boolean} MULTIPLE_OPACITIES Whether to generate multiple opacity images and allow in-game switching, or have a constant opacity
- * @property {String} TINT_COLOR Hex RGB #xxxxxx
- * @property {Number} TINT_OPACITY 0-1
- * @property {Number} MINI_SCALE Size of ghost blocks when in the mini view for layers
- * @property {Number} TEXTURE_OUTLINE_WIDTH Measured in pixels, x ∈ [0, 1], x ∈ 2^ℝ
- * @property {String} TEXTURE_OUTLINE_COLOR A colour string
- * @property {Number} TEXTURE_OUTLINE_OPACITY 0-1
- * @property {Boolean} SPAWN_ANIMATION_ENABLED
- * @property {Number} SPAWN_ANIMATION_LENGTH Length of each individual block's spawn animation (seconds)
- * @property {Boolean} PLAYER_CONTROLS_ENABLED
+ * @typedef {object} HoloPrintConfig
+ * @property {Array<string>} IGNORED_BLOCKS
+ * @property {Array<string>} IGNORED_MATERIAL_LIST_BLOCKS
+ * @property {number} SCALE
+ * @property {number} OPACITY
+ * @property {boolean} MULTIPLE_OPACITIES Whether to generate multiple opacity images and allow in-game switching, or have a constant opacity
+ * @property {string} TINT_COLOR Hex RGB #xxxxxx
+ * @property {number} TINT_OPACITY 0-1
+ * @property {number} MINI_SCALE Size of ghost blocks when in the mini view for layers
+ * @property {number} TEXTURE_OUTLINE_WIDTH Measured in pixels, x ∈ [0, 1], x ∈ 2^ℝ
+ * @property {string} TEXTURE_OUTLINE_COLOR A colour string
+ * @property {number} TEXTURE_OUTLINE_OPACITY 0-1
+ * @property {boolean} SPAWN_ANIMATION_ENABLED
+ * @property {number} SPAWN_ANIMATION_LENGTH Length of each individual block's spawn animation (seconds)
+ * @property {boolean} PLAYER_CONTROLS_ENABLED
  * @property {HoloPrintControlsConfig} CONTROLS
- * @property {Boolean} MATERIAL_LIST_ENABLED
- * @property {Boolean} RETEXTURE_CONTROL_ITEMS
- * @property {Number} CONTROL_ITEM_TEXTURE_SCALE How much to scale control item overlay textures. When compositing textures, MCBE scales all textures to the maximum, so the size of the overlay control texture has to be the LCM of itself and in-game items. Hence, if in-game items have a higher resolution than expected, they will probably be scaled wrong. The solution is to scale the overlay textures even more, which can be adjusted with this.
- * @property {Boolean} RENAME_CONTROL_ITEMS
- * @property {Array<Number>} WRONG_BLOCK_OVERLAY_COLOR Clamped colour quartet
+ * @property {boolean} MATERIAL_LIST_ENABLED
+ * @property {boolean} RETEXTURE_CONTROL_ITEMS
+ * @property {number} CONTROL_ITEM_TEXTURE_SCALE How much to scale control item overlay textures. When compositing textures, MCBE scales all textures to the maximum, so the size of the overlay control texture has to be the LCM of itself and in-game items. Hence, if in-game items have a higher resolution than expected, they will probably be scaled wrong. The solution is to scale the overlay textures even more, which can be adjusted with this.
+ * @property {boolean} RENAME_CONTROL_ITEMS
+ * @property {Array<number>} WRONG_BLOCK_OVERLAY_COLOR Clamped colour quartet
  * @property {Vec3} INITIAL_OFFSET
- * @property {Number} BACKUP_SLOT_COUNT
- * @property {String|undefined} PACK_NAME The name of the completed pack; will default to the structure file names
+ * @property {number} BACKUP_SLOT_COUNT
+ * @property {string|undefined} PACK_NAME The name of the completed pack; will default to the structure file names
  * @property {Blob} PACK_ICON_BLOB Blob for `pack_icon.png`
- * @property {Array<String>} AUTHORS
- * @property {String|undefined} DESCRIPTION
- * @property {Number} COMPRESSION_LEVEL
- * @property {Number} PREVIEW_BLOCK_LIMIT The maximum number of blocks a structure can have for rendering a preview
- * @property {Boolean} SHOW_PREVIEW_SKYBOX
+ * @property {Array<string>} AUTHORS
+ * @property {string|undefined} DESCRIPTION
+ * @property {number} COMPRESSION_LEVEL
+ * @property {number} PREVIEW_BLOCK_LIMIT The maximum number of blocks a structure can have for rendering a preview
+ * @property {boolean} SHOW_PREVIEW_SKYBOX
  */
 /**
  * Controls which items are used for in-game controls.
- * @typedef {Object} HoloPrintControlsConfig
+ * @typedef {object} HoloPrintControlsConfig
  * @property {ItemCriteria} TOGGLE_RENDERING
  * @property {ItemCriteria} CHANGE_OPACITY
  * @property {ItemCriteria} TOGGLE_TINT
@@ -1754,133 +1754,133 @@ function stringifyWithFixedDecimals(value) {
  */
 /**
  * Stores item names and tags for checking items. Leaving everything empty will check for nothing being held.
- * @typedef {Object} ItemCriteria
- * @property {Array<String>} names Item names the matching item could have. The `minecraft:` namespace will be used if no namespace is specified.
- * @property {Array<String>} tags Item tags the matching item could have. The `minecraft:` namespace will be used if no namespace is specified.
+ * @typedef {object} ItemCriteria
+ * @property {Array<string>} names Item names the matching item could have. The `minecraft:` namespace will be used if no namespace is specified.
+ * @property {Array<string>} tags Item tags the matching item could have. The `minecraft:` namespace will be used if no namespace is specified.
  */
 /**
  * A block as stored in NBT.
- * @typedef {Object} NBTBlock
- * @property {String} name The block's ID
- * @property {Record<String, Number|String>} states Block states
- * @property {Number} version
+ * @typedef {object} NBTBlock
+ * @property {string} name The block's ID
+ * @property {Record<string, number|string>} states Block states
+ * @property {number} version
  */
 /**
  * A block palette entry, similar to how it appears in the NBT, as used in HoloPrint.
- * @typedef {Object} Block
- * @property {String} name The block's ID
- * @property {Record<String, Number|String>} [states] Block states
- * @property {Object} [block_entity_data] Block entity data
+ * @typedef {object} Block
+ * @property {string} name The block's ID
+ * @property {Record<string, number|string>} [states] Block states
+ * @property {object} [block_entity_data] Block entity data
  */
 /**
  * An unpositioned bone for geometry files without name or parent. All units/coordinates are relative to (0, 0, 0).
- * @typedef {Object} BoneTemplate
+ * @typedef {object} BoneTemplate
  * @property {Vec3} [pivot] The block's center point of rotation
  * @property {Vec3} [rotation] The block's rotation
  * @property {Array} cubes
  */
 /**
  * A positioned bone for geometry files.
- * @typedef {Object} Bone
+ * @typedef {object} Bone
  * @augments BoneTemplate
- * @property {String} name
- * @property {String} parent
+ * @property {string} name
+ * @property {string} parent
  */
 /**
  * A texture reference, made in BlockGeoMaker.js and turned into a texture in TextureAtlas.js.
- * @typedef {Object} TextureReference
+ * @typedef {object} TextureReference
  * @property {Vec2} uv UV coordinates
  * @property {Vec2} uv_size	UV size
- * @property {String} block_name Block ID to get the texture from
- * @property {String} texture_face Which face's texture to use
- * @property {Number} variant Which terrain_texture.json variant to use
- * @property {Boolean} croppable If a texture can be cropped automatically
- * @property {String} [texture_path_override] An overriding texture file path to look at
- * @property {String} [terrain_texture_override] A terrain texture key override; will override block_name and texture_face
+ * @property {string} block_name Block ID to get the texture from
+ * @property {string} texture_face Which face's texture to use
+ * @property {number} variant Which terrain_texture.json variant to use
+ * @property {boolean} croppable If a texture can be cropped automatically
+ * @property {string} [texture_path_override] An overriding texture file path to look at
+ * @property {string} [terrain_texture_override] A terrain texture key override; will override block_name and texture_face
  * @property {Vec3} [tint] A tint override
  */
 /**
  * An unresolved texture fragment containing an image path, tint, and UV position and size.
- * @typedef {Object} TextureFragment
- * @property {String} texturePath
+ * @typedef {object} TextureFragment
+ * @property {string} texturePath
  * @property {Vec3} [tint]
- * @property {Boolean} [tint_like_png]
- * @property {Number} opacity
+ * @property {boolean} [tint_like_png]
+ * @property {number} opacity
  * @property {Vec2} uv
  * @property {Vec2} uv_size
- * @property {Boolean} croppable If a texture can be cropped automatically
+ * @property {boolean} croppable If a texture can be cropped automatically
  */
 /**
  * An image fragment containing an image, UV position, and UV size.
- * @typedef {Object} ImageFragment
+ * @typedef {object} ImageFragment
  * @property {Image} image
- * @property {Number} w Width
- * @property {Number} h Height
- * @property {Number} sourceX
- * @property {Number} sourceY
- * @property {{ x: Number, y: Number, w: Number, h: Number }} crop
+ * @property {number} w Width
+ * @property {number} h Height
+ * @property {number} sourceX
+ * @property {number} sourceY
+ * @property {{ x: number, y: number, w: number, h: number }} crop
  */
 /**
  * An entry in a material list.
- * @typedef {Object} MaterialListEntry
- * @property {String} itemName
- * @property {String} translationKey
- * @property {String} translatedName
- * @property {Number} count How many of this item is required
- * @property {String} partitionedCount A formatted string representing partitions of the total count
- * @property {Number|undefined} auxId The item's aux ID
+ * @typedef {object} MaterialListEntry
+ * @property {string} itemName
+ * @property {string} translationKey
+ * @property {string} translatedName
+ * @property {number} count How many of this item is required
+ * @property {string} partitionedCount A formatted string representing partitions of the total count
+ * @property {number|undefined} auxId The item's aux ID
  */
 /**
- * @typedef {Object} TypedBlockStateProperty
- * @property {Number} [int] - An integer property.
- * @property {String} [string] - A string property.
- * @property {Number} [byte] - A byte property.
+ * @typedef {object} TypedBlockStateProperty
+ * @property {number} [int] - An integer property.
+ * @property {string} [string] - A string property.
+ * @property {number} [byte] - A byte property.
  */
 /**
- * @typedef {Object} BlockUpdateSchemaFlattenRule
- * @property {String} prefix - The prefix for the flattened property.
- * @property {String} flattenedProperty - The name of the flattened property.
+ * @typedef {object} BlockUpdateSchemaFlattenRule
+ * @property {string} prefix - The prefix for the flattened property.
+ * @property {string} flattenedProperty - The name of the flattened property.
  * @property {"int"|"string"|"byte"} [flattenedPropertyType] - The type of the flattened property.
- * @property {String} suffix - The suffix for the flattened property.
- * @property {Record<String, String>} [flattenedValueRemaps] - A mapping of flattened values.
+ * @property {string} suffix - The suffix for the flattened property.
+ * @property {Record<string, string>} [flattenedValueRemaps] - A mapping of flattened values.
  */
 /**
- * @typedef {Object} BlockUpdateSchemaRemappedState
- * @property {Record<String, TypedBlockStateProperty>|null} oldState - The property values before the remapping.
- * @property {String} [newName] - An optional new name for the block.
+ * @typedef {object} BlockUpdateSchemaRemappedState
+ * @property {Record<string, TypedBlockStateProperty>|null} oldState - The property values before the remapping.
+ * @property {string} [newName] - An optional new name for the block.
  * @property {BlockUpdateSchemaFlattenRule} [newFlattenedName] - An optional flattened property rule providing a new name.
- * @property {Record<String, TypedBlockStateProperty>|null} newState - The new property values after the remapping.
- * @property {Array<String>} [copiedState] - Optional list of property names to copy from the old state.
+ * @property {Record<string, TypedBlockStateProperty>|null} newState - The new property values after the remapping.
+ * @property {Array<string>} [copiedState] - Optional list of property names to copy from the old state.
  */
 
 /**
- * @typedef {Object} BlockUpdateSchemaSkeleton
- * @property {String} filename
- * @property {Number} maxVersionMajor - The major version (must be >= 0).
- * @property {Number} maxVersionMinor - The minor version (must be >= 0).
- * @property {Number} maxVersionPatch - The patch version (must be >= 0).
- * @property {Number} maxVersionRevision - The revision version (must be >= 0).
+ * @typedef {object} BlockUpdateSchemaSkeleton
+ * @property {string} filename
+ * @property {number} maxVersionMajor - The major version (must be >= 0).
+ * @property {number} maxVersionMinor - The minor version (must be >= 0).
+ * @property {number} maxVersionPatch - The patch version (must be >= 0).
+ * @property {number} maxVersionRevision - The revision version (must be >= 0).
  */
 /**
- * @typedef {Object} BlockUpdateSchema
- * @property {Number} maxVersionMajor - The major version (must be >= 0).
- * @property {Number} maxVersionMinor - The minor version (must be >= 0).
- * @property {Number} maxVersionPatch - The patch version (must be >= 0).
- * @property {Number} maxVersionRevision - The revision version (must be >= 0).
- * @property {Record<String, String>} [renamedIds] - Mapping of renamed IDs.
- * @property {Record<String, Record<String, TypedBlockStateProperty>>} [addedProperties] - Mapping of added properties.
- * @property {Record<String, Record<String, String>>} [renamedProperties] - Mapping of renamed properties.
- * @property {Record<String, Array<String>>} [removedProperties] - Mapping of removed properties.
- * @property {Record<String, Record<String, String>>} [remappedPropertyValues] - Mapping of remapped property values.
- * @property {Record<String, Array<{ old: TypedBlockStateProperty, new: TypedBlockStateProperty }>>} [remappedPropertyValuesIndex] - Index of remapped property values.
- * @property {Record<String, BlockUpdateSchemaFlattenRule>} [flattenedProperties] - Mapping of flattened properties.
- * @property {Record<String, Array<BlockUpdateSchemaRemappedState>>} [remappedStates] - Mapping of remapped states.
+ * @typedef {object} BlockUpdateSchema
+ * @property {number} maxVersionMajor - The major version (must be >= 0).
+ * @property {number} maxVersionMinor - The minor version (must be >= 0).
+ * @property {number} maxVersionPatch - The patch version (must be >= 0).
+ * @property {number} maxVersionRevision - The revision version (must be >= 0).
+ * @property {Record<string, string>} [renamedIds] - Mapping of renamed IDs.
+ * @property {Record<string, Record<string, TypedBlockStateProperty>>} [addedProperties] - Mapping of added properties.
+ * @property {Record<string, Record<string, string>>} [renamedProperties] - Mapping of renamed properties.
+ * @property {Record<string, Array<string>>} [removedProperties] - Mapping of removed properties.
+ * @property {Record<string, Record<string, string>>} [remappedPropertyValues] - Mapping of remapped property values.
+ * @property {Record<string, Array<{ old: TypedBlockStateProperty, new: TypedBlockStateProperty }>>} [remappedPropertyValuesIndex] - Index of remapped property values.
+ * @property {Record<string, BlockUpdateSchemaFlattenRule>} [flattenedProperties] - Mapping of flattened properties.
+ * @property {Record<string, Array<BlockUpdateSchemaRemappedState>>} [remappedStates] - Mapping of remapped states.
  */
 /**
  * 2D vector.
- * @typedef {[Number, Number]} Vec2
+ * @typedef {[number, number]} Vec2
  */
 /**
  * 3D vector.
- * @typedef {[Number, Number, Number]} Vec3
+ * @typedef {[number, number, number]} Vec3
  */
