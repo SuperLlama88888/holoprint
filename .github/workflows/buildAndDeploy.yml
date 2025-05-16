@@ -19,7 +19,7 @@ jobs:
           cache: "npm"
           cache-dependency-path: 'ci-cd/package-lock.json'
       - name: Build
-        run: bash ci-cd/build.sh && rm -r tests
+        run: bash ci-cd/build.sh ${{ github.ref_name }} && rm -r tests
       - name: Upload files as artifact
         uses: actions/upload-pages-artifact@v3.0.1
         with:
