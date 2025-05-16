@@ -24,7 +24,7 @@ export default class TextureAtlas {
 	
 	/**
 	 * Contains the actual texture atlas images: [textureName, imageBlob]
-	 * @type {Array<[String, Blob]>}
+	 * @type {Array<[string, Blob]>}
 	 */
 	imageBlobs;
 	textureWidth;
@@ -155,7 +155,7 @@ export default class TextureAtlas {
 	/**
 	 * Finds the terrain texture key for a texture reference.
 	 * @param {TextureReference} textureRef
-	 * @returns {String}
+	 * @returns {string}
 	 */
 	#getTerrainTextureKeyFromTextureReference(textureRef) {
 		if("terrain_texture_override" in textureRef) {
@@ -234,9 +234,9 @@ export default class TextureAtlas {
 	}
 	/**
 	 * Gets the texture path from a terrain texture key and variant index.
-	 * @param {String} terrainTextureKey
-	 * @param {Number} variant
-	 * @returns {{ texturePath: String, tint?: String }}
+	 * @param {string} terrainTextureKey
+	 * @param {number} variant
+	 * @returns {{ texturePath: string, tint?: string }}
 	 */
 	#getTexturePathAndTint(terrainTextureKey, variant) {
 		if(terrainTextureKey in this.#terrainTexturePatches) {
@@ -373,7 +373,7 @@ export default class TextureAtlas {
 	/**
 	 * Stitches together images with widths and heights, and puts the UV coordinates and sizes into the textureUvs property.
 	 * @param {Array<ImageFragment>} imageFragments
-	 * @returns {Array<{ uv: [Number, Number], uv_size: [Number, Number], crop: Object|undefined }>}
+	 * @returns {Array<{ uv: [number, number], uv_size: [number, number], crop: object|undefined }>}
 	 */
 	async #stitchTextureAtlas(imageFragments) {
 		imageFragments.forEach((imageFragment, i) => {
@@ -453,11 +453,11 @@ export default class TextureAtlas {
 	/**
 	 * Finds the coordinates of the most extreme outer pixels of an image
 	 * @param {Image} image
-	 * @param {Number} [startX] The x-position to start looking at
-	 * @param {Number} [startY] The y-position to start looking at
-	 * @param {Number} [imageW] The width of the portion of the image to look at
-	 * @param {Number} [imageH] The height of the portion of the image to look at
-	 * @returns {{ minX: Number, minY: Number, maxX: Number, maxY: Number }}
+	 * @param {number} [startX] The x-position to start looking at
+	 * @param {number} [startY] The y-position to start looking at
+	 * @param {number} [imageW] The width of the portion of the image to look at
+	 * @param {number} [imageH] The height of the portion of the image to look at
+	 * @returns {{ minX: number, minY: number, maxX: number, maxY: number }}
 	 */
 	#findMostExtremePixels(image, startX = 0, startY = 0, imageW = image.width, imageH = image.height) {
 		let can = new OffscreenCanvas(imageW, imageH);
@@ -485,7 +485,7 @@ export default class TextureAtlas {
 	}
 	/** Add an outline around each texture.
 	 * @param {CanvasImageSource} ogCan
-	 * @param {Array<{ x: Number, y: Number, w: Number, h: Number }>} imagePositions
+	 * @param {Array<{ x: number, y: number, w: number, h: number }>} imagePositions
 	 * @param {HoloPrintConfig} config
 	 * @returns {OffscreenCanvas}
 	 */
@@ -567,7 +567,7 @@ export default class TextureAtlas {
 	 * Tints some image data.
 	 * @param {ImageData} imageData
 	 * @param {Vec3} tint
-	 * @param {Boolean} onlyAlpha If only full opacity pixels should be tinted and transparent pixels made opaque, or not
+	 * @param {boolean} onlyAlpha If only full opacity pixels should be tinted and transparent pixels made opaque, or not
 	 * @returns {ImageData}
 	 */
 	#tintImageData(imageData, tint, onlyAlpha = false) {
@@ -588,7 +588,7 @@ export default class TextureAtlas {
 	/**
 	 * Sets the opacity of pixels in some image data.
 	 * @param {ImageData} imageData
-	 * @param {Number} opacity 0-1
+	 * @param {number} opacity 0-1
 	 * @returns {ImageData}
 	 */
 	#setImageDataOpacity(imageData, opacity) {

@@ -30,7 +30,7 @@ let { metafile } = esbuild.buildSync({
 fs.writeFileSync("esbuild_meta.json", JSON.stringify(metafile));
 
 /**
- * @param {String} dir
+ * @param {string} dir
  */
 function processDir(dir) {
 	let directoryContents = fs.readdirSync(dir);
@@ -53,7 +53,7 @@ function processDir(dir) {
 	});
 }
 /**
- * @param {String} filename
+ * @param {string} filename
  * @returns {Function|undefined}
  */
 function findProcessingFunction(filename) {
@@ -69,9 +69,9 @@ function findProcessingFunction(filename) {
 }
 
 /**
- * @param {String} code
- * @param {String} filename
- * @returns {{ code: String }}
+ * @param {string} code
+ * @param {string} filename
+ * @returns {{ code: string }}
  */
 function processHTML(code, filename) {
 	code = code.replaceAll(/<style>([^]+?)<\/style>/g, (_, css) => `<style>${processCSS(css, filename, true).code}</style>`);
@@ -83,10 +83,10 @@ function processHTML(code, filename) {
 	return { code };
 }
 /**
- * @param {String} code
- * @param {String} filename
- * @param {Boolean} [disableSourceMap]
- * @returns {{ code: String, sourceMap: String|undefined }}
+ * @param {string} code
+ * @param {string} filename
+ * @param {boolean} [disableSourceMap]
+ * @returns {{ code: string, sourceMap: string|undefined }}
  */
 function processCSS(code, filename, disableSourceMap = false) {
 	let { code: codeBytes, map: sourceMapBytes } = transform({
@@ -101,17 +101,17 @@ function processCSS(code, filename, disableSourceMap = false) {
 	return { code, sourceMap };
 }
 /**
- * @param {String} code
- * @param {String} filename
- * @returns {{ code: String }}
+ * @param {string} code
+ * @param {string} filename
+ * @returns {{ code: string }}
  */
 function processJS(code, filename) {
 	code = code.replaceAll(/html`([^]+?)`/g, (_, html) => "`" + processHTML(html, filename).code + "`");
 	return { code };
 }
 /**
- * @param {String} code
- * @returns {{ code: String }}
+ * @param {string} code
+ * @returns {{ code: string }}
  */
 function processJSON(code) {
 	code = minifyJSON(code);

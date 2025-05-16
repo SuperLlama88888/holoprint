@@ -9,7 +9,7 @@ export const selectEls = selector => document.querySelectorAll(selector);
 /**
  * Finds the closest descendent of an element or itself that matches a given selector.
  * @param {Element} el
- * @param {String} selector
+ * @param {string} selector
  * @returns {Element|null}
  */
 export function closestDescendentOrSelf(el, selector) {
@@ -200,7 +200,7 @@ export function desparseArray(arr) {
  * Groups an array into two arrays based on a condition function.
  * @template T
  * @param {Array<T>} arr
- * @param {function(T): Boolean} conditionFunc
+ * @param {function(T): boolean} conditionFunc
  * @returns {[Array<T>, Array<T>]}
  */
 export function conditionallyGroup(arr, conditionFunc) {
@@ -214,8 +214,8 @@ export function conditionallyGroup(arr, conditionFunc) {
  * Separates array items based on the result of a grouping function.
  * @template T
  * @param {Array<T>} items
- * @param {function(T): String} groupFunc
- * @returns {Record<String, Array<T>>}
+ * @param {function(T): string} groupFunc
+ * @returns {Record<string, Array<T>>}
  */
 export function groupBy(items, groupFunc) { // native Object.groupBy is only 89.47% on caniuse...
 	let res = {};
@@ -229,7 +229,7 @@ export function groupBy(items, groupFunc) { // native Object.groupBy is only 89.
 /**
  * Groups files by their file extensions.
  * @param {Array<File>} files
- * @returns {Record<String, Array<File>|undefined>}
+ * @returns {Record<string, Array<File>|undefined>}
  */
 export function groupByFileExtension(files) {
 	return groupBy(files, file => getFileExtension(file));
@@ -245,7 +245,7 @@ export function createNumericEnum(keys) {
 }
 /**
  * Creates an enumeration using Symbols.
- * @template {String} T
+ * @template {string} T
  * @param {Array<T>} keys
  * @returns {Readonly<Record<T, symbol>>}
  */
@@ -254,9 +254,9 @@ export function createSymbolicEnum(keys) {
 }
 /**
  * Crates a pseudo-enumeration using strings.
- * @template {String} T
+ * @template {string} T
  * @param {Array<T>} keys
- * @returns {Readonly<Record<T, String>>}
+ * @returns {Readonly<Record<T, string>>}
  */
 export function createStringEnum(keys) {
 	return Object.freeze(Object.fromEntries(keys.map((key, i) => {
@@ -283,24 +283,24 @@ export function html(strings, ...values) {
 }
 /**
  * Finds the basename from a file path.
- * @param {String} path
- * @returns {String}
+ * @param {string} path
+ * @returns {string}
  */
 export function basename(path) {
 	return path.slice(path.lastIndexOf("/") + 1);
 }
 /**
  * Finds the directory name from a file path. Returns an empty string if there are no directories, else will end in /.
- * @param {String} path
- * @returns {String}
+ * @param {string} path
+ * @returns {string}
  */
 export function dirname(path) {
 	return path.includes("/")? path.slice(0, path.lastIndexOf("/") + 1) : "";
 }
 /**
  * Finds the file extension from a file or filename.
- * @param {File|String} filename
- * @returns {String}
+ * @param {File|string} filename
+ * @returns {string}
  */
 export function getFileExtension(filename) {
 	if(filename instanceof File) {
@@ -310,17 +310,17 @@ export function getFileExtension(filename) {
 }
 /**
  * Removes the (last) file extension from a filename.
- * @param {String} filename
- * @returns {String}
+ * @param {string} filename
+ * @returns {string}
  */
 export function removeFileExtension(filename) {
 	return filename.includes(".")? filename.slice(0, filename.lastIndexOf(".")) : filename;
 }
 /**
  * Joins an array of strings with "or", localised.
- * @param {Array<String>} arr
- * @param {String} [language]
- * @returns {String}
+ * @param {Array<string>} arr
+ * @param {string} [language]
+ * @returns {string}
  */
 export function joinOr(arr, language = "en") {
 	return (new Intl.ListFormat(language.replaceAll("_", "-"), {
@@ -389,7 +389,7 @@ export function dispatchInputEvents(input) {
  * Checks if a touch from a touch event is in an element's vertical bounds.
  * @param {Touch} touch
  * @param {Element} el
- * @returns {Boolean}
+ * @returns {boolean}
  */
 export function isTouchInElementVerticalBounds(touch, el) {
 	let domRect = el.getBoundingClientRect();
@@ -413,7 +413,7 @@ export function stringToImageData(text, textCol = "black", backgroundCol = "whit
 /**
  * Adds transparent padding around an image.
  * @param {HTMLImageElement} image
- * @param {{ left: Number|undefined, right: Number|undefined, top: Number|undefined, bottom: Number|undefined }} padding Pixels
+ * @param {{ left: number|undefined, right: number|undefined, top: number|undefined, bottom: number|undefined }} padding Pixels
  * @returns {Promise<HTMLImageElement>}
  */
 export async function addPaddingToImage(image, padding) {
@@ -442,8 +442,8 @@ export async function overlaySquareImages(...images) {
 /**
  * Resizes an image to a specific size without image smoothing.
  * @param {HTMLImageElement} image
- * @param {Number} width
- * @param {Number} [height]
+ * @param {number} width
+ * @param {number} [height]
  * @returns {Promise<Blob>}
  */
 export async function resizeImageToBlob(image, width, height = width) {
@@ -463,9 +463,9 @@ export async function loadTranslationLanguage(language) {
 }
 /**
  * Looks up a translation from translations/`language`.json
- * @param {String} translationKey
- * @param {String} language
- * @returns {String|undefined}
+ * @param {string} translationKey
+ * @param {string} language
+ * @returns {string|undefined}
  */
 export function translate(translationKey, language) {
 	if(!(language in translationLanguages)) {
@@ -519,8 +519,8 @@ export async function awaitAllEntries(object) {
 
 /**
  * Returns the two factors of a number which are closest to each other.
- * @param {Number} n
- * @returns {[Number, Number]}
+ * @param {number} n
+ * @returns {[number, number]}
  */
 export function closestFactorPair(n) {
 	let x = ceil(sqrt(n));
@@ -529,9 +529,9 @@ export function closestFactorPair(n) {
 }
 /**
  * Calculates the GCD of two numbers
- * @param {Number} a
- * @param {Number} b
- * @returns {Number}
+ * @param {number} a
+ * @param {number} b
+ * @returns {number}
  */
 export function gcd(a, b) {
 	while(b != 0) {
@@ -542,9 +542,9 @@ export function gcd(a, b) {
 }
 /**
  * Calculates the LCM of two numbers
- * @param {Number} a
- * @param {Number} b
- * @returns {Number}
+ * @param {number} a
+ * @param {number} b
+ * @returns {number}
  */
 export function lcm(a, b) {
 	return a * b / gcd(a, b);
@@ -652,7 +652,7 @@ export class CachingFetcher {
 	}
 	/**
 	 * Fetches a file, checking first against cache.
-	 * @param {String} url
+	 * @param {string} url
 	 * @returns {Promise<Response>}
 	 */
 	async fetch(url) {
@@ -681,7 +681,7 @@ export class CachingFetcher {
 	}
 	/**
 	 * Actually load a file, for when it's not found in cache.
-	 * @param {String} url
+	 * @param {string} url
 	 * @returns {Promise<Response>}
 	 */
 	async retrieve(url) {
@@ -707,7 +707,7 @@ export class CachingFetcher {
 }
 /**
  * Creates a custom error class with a given name.
- * @param {String} name
+ * @param {string} name
  * @returns {typeof Error}
  */
 export function createCustomError(name) {

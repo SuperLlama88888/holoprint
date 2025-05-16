@@ -365,7 +365,7 @@ export default class FileInputTable extends HTMLElement {
 	 * Plays a small movement animation on a row.
 	 * @param {HTMLTableRowElement} row
 	 * @param {Symbol|undefined} [movement]
-	 * @param {Boolean} [highlight]
+	 * @param {boolean} [highlight]
 	 */
 	#animateRow(row, movement, highlight = true) {
 		let startingFrame = {};
