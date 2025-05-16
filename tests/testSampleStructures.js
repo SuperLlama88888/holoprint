@@ -121,7 +121,7 @@ async function test() {
 		await page.reload();
 		try {
 			totalTime += await page.evaluate(async (structurePath, browserEngine) => {
-				const HoloPrint = await import("../HoloPrint.js");
+				const HoloPrint = await import("../index.js"); // testing workflow makes index.js export everything from HoloPrint.js
 				
 				let structureFileName = structurePath.substring(structurePath.lastIndexOf("/") + 1);
 				console.group(`Testing ${structureFileName}...`);

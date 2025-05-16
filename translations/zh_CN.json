@@ -17,7 +17,7 @@
   "metadata.compression_level": "Compression level:",
   "metadata.description": "描述：",
   "metadata.description.placeholder": "这是我超酷炫的房子！",
-	"metadata.description.link_found": "Link found:",
+  "metadata.description.link_found": "Link found:",
   "metadata.heading": "元数据",
   "metadata.pack_icon": "包图标（`*.png`）：",
   "metadata.pack_name": "包名：",
