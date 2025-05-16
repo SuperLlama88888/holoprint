@@ -7,7 +7,7 @@ import MaterialList from "./MaterialList.js";
 import PreviewRenderer from "./PreviewRenderer.js";
 
 import * as entityScripts from "./entityScripts.molang.js";
-import { addPaddingToImage, arrayMin, awaitAllEntries, CachingFetcher, concatenateFiles, createNumericEnum, exp, floor, getFileExtension, hexColorToClampedTriplet, JSONMap, JSONSet, lcm, loadTranslationLanguage, max, min, overlaySquareImages, pi, resizeImageToBlob, round, sha256, translate, UserError } from "./essential.js";
+import { addPaddingToImage, arrayMin, awaitAllEntries, CachingFetcher, concatenateFiles, createNumericEnum, desparseArray, exp, floor, getFileExtension, hexColorToClampedTriplet, JSONMap, JSONSet, lcm, loadTranslationLanguage, max, min, overlaySquareImages, pi, resizeImageToBlob, round, sha256, translate, UserError } from "./essential.js";
 import ResourcePackStack from "./ResourcePackStack.js";
 import BlockUpdater from "./BlockUpdater.js";
 
@@ -117,6 +117,9 @@ export async function makePack(structureFiles, config = {}, resourcePackStack, p
 	
 	let palettesAndIndices = await Promise.all(structures.map(structure => tweakBlockPalette(structure, config.IGNORED_BLOCKS)));
 	let { palette: blockPalette, indices: allStructureIndicesByLayer } = mergeMultiplePalettesAndIndices(palettesAndIndices);
+	if(desparseArray(blockPalette).length == 0) {
+		throw new UserError(`Structure is empty! No blocks are inside the structure.`);
+	}
 	console.log("combined palette: ", blockPalette);
 	console.log("remapped indices: ", allStructureIndicesByLayer);
 	window.blockPalette = blockPalette;
@@ -573,6 +576,17 @@ export async function makePack(structureFiles, config = {}, resourcePackStack, p
 	if(config.AUTHORS.length) {
 		manifest["metadata"]["authors"].push(...config.AUTHORS);
 	}
+	if(config.DESCRIPTION) {
+		let labelsAndLinks = findLinksInDescription(config.DESCRIPTION);
+		labelsAndLinks.forEach(([label, link], i) => {
+			manifest["settings"].push({
+				"type": "input",
+				"text": label,
+				"default": link,
+				"name": `link_${i}`
+			});
+		});
+	}
 	
 	let controlsHaveBeenCustomised = JSON.stringify(config.CONTROLS) != JSON.stringify(DEFAULT_PLAYER_CONTROLS);
 	let pmmpBedrockDataFetcher = config.RENAME_CONTROL_ITEMS || config.RETEXTURE_CONTROL_ITEMS? await createPmmpBedrockDataFetcher() : undefined;
@@ -921,6 +935,20 @@ export function getDefaultPackName(structureFiles) {
 	return defaultName;
 }
 /**
+ * Finds all labels and links in a description section that will be put in the settings links section.
+ * @param {String} description
+ * @returns {Array<[String, String]>}
+ */
+export function findLinksInDescription(description) {
+	let links = [];
+	Array.from(description.matchAll(/(.*?)\n?\s*(https?:\/\/[^\s]+)/g)).forEach(match =>  {
+		let label = match[1].trim();
+		let url = match[2].trim();
+		links.push([label, url]);
+	});
+	return links;
+}
+/**
  * Creates an ItemCriteria from arrays of names and tags.
  * @param {String|Array<String>} names
  * @param {String|Array<String>} [tags]
@@ -989,7 +1017,7 @@ export function addDefaultConfig(config) {
  */
 export async function createPmmpBedrockDataFetcher() {
 	const pmmpBedrockDataVersion = "4.1.0+bedrock-1.21.70";
-	return await new CachingFetcher(`BedrockData@${pmmpBedrockDataVersion}`, `https://raw.githubusercontent.com/pmmp/BedrockData/refs/tags/${pmmpBedrockDataVersion}/`);
+	return await new CachingFetcher(`BedrockData@${pmmpBedrockDataVersion}`, `https://cdn.jsdelivr.net/gh/pmmp/BedrockData@${pmmpBedrockDataVersion}/`);
 }
 
 /**
@@ -1112,7 +1140,7 @@ async function tweakBlockPalette(structure, ignoredBlocks) {
 	
 	// add block entities into the block palette (on layer 0)
 	let indices = structure["block_indices"].map(layer => structuredClone(layer).map(i => +i));
-	let newIndexCache = new Map();
+	let newIndexCache = new JSONMap();
 	let entitylessBlockEntityIndices = new Set(); // contains all the block palette indices for blocks with block entities. since they don't have block entity data yet, and all block entities well be cloned and added to the end of the palette, we can remove all the entries in here from the palette.
 	let blockPositionData = structure["palette"]["default"]["block_position_data"];
 	for(let i in blockPositionData) {
@@ -1136,16 +1164,14 @@ async function tweakBlockPalette(structure, ignoredBlocks) {
 		let newBlock = structuredClone(palette[oldPaletteI]);
 		newBlock["block_entity_data"] = blockEntityData;
 		
-		let stringifiedNewBlock = JSON.stringify(newBlock, (_, x) => typeof x == "bigint"? x.toString() : x);
-		
 		// check that we haven't seen this block entity before. since in JS objects are compared by reference we have to stringify it first then check the cache.
-		if(newIndexCache.has(stringifiedNewBlock)) {
-			indices[0][i] = newIndexCache.get(stringifiedNewBlock);
+		if(newIndexCache.has(newBlock)) {
+			indices[0][i] = newIndexCache.get(newBlock);
 		} else {
 			let paletteI = palette.length;
 			palette[paletteI] = newBlock;
 			indices[0][i] = paletteI;
-			newIndexCache.set(stringifiedNewBlock, paletteI);
+			newIndexCache.set(newBlock, paletteI);
 			entitylessBlockEntityIndices.add(oldPaletteI); // we can schedule to delete the original block palette entry later, as it doesn't have any block entity data and all block entities clone it.
 		}
 	}

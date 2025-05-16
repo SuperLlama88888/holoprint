@@ -1,0 +1,10 @@
+{
+	"type": "module",
+	"devDependencies": {
+		"browserslist": "^4.24.5",
+		"esbuild": "^0.25.4",
+		"html-minifier": "^4.0.0",
+		"jsonminify": "^0.4.2",
+		"lightningcss": "^1.30.0"
+	}
+}

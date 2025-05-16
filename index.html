@@ -67,7 +67,7 @@
 		<link rel="icon" sizes="192x192" href="assets/logo_192.png"/>
 		
 		<link rel="stylesheet" href="https://fonts.bunny.net/css?family=catamaran:400,500,700&display=swap"/>
-		<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols&display=block"/>
+		<link rel="stylesheet" href="assets/MaterialSymbols.css"/>
 		
 		<link rel="stylesheet" href="index.css"/>
 		<script type="importmap">
@@ -114,7 +114,6 @@
 									<input type="file" accept=".mcworld,.zip" form="" autocomplete="off" id="worldFileInput"/>
 									<div class="buttonlike"><p data-translate="upload.button.world">Upload a world file</p><p data-translate="upload.button.drop_notice">Or drop files here</p></div>
 								</label>
-								<table id="worldStructureFilesTable"></table>
 								<span class="hidden" id="worldExtractionMessage" data-translate="extract_from_world.extracting">Extracting structures from world...</span>
 								<span class="hidden" id="worldExtractionSuccess" data-translate="extract_from_world.success"></span>
 								<span class="hidden" id="worldExtractionError" data-translate="extract_from_world.error">No saved structures found!</span>
@@ -182,6 +181,12 @@
 										</table>
 									</div>
 								</fieldset>
+								<label><span data-translate="settings.mini_size">Mini display size: </span><select name="miniSize">
+									<option value="0.125" selected data-translate="settings.mini_size.small">Small</option>
+									<option value="0.0625" data-translate="settings.mini_size.smaller">Smaller</option>
+									<option value="0.03125" data-translate="settings.mini_size.tiny">Tiny</option>
+									<option value="0" data-translate="settings.mini_size.hidden">Hidden</option>
+								</select></label>
 								<label><span data-translate="settings.ignored_blocks">Ignored blocks:</span> <input type="text" name="ignoredBlocks" placeholder="block_1 block_2 etc." data-translate-placeholder="settings.ignored_blocks.placeholder"/></label>
 								<details>
 									<summary data-translate="settings.advanced">Advanced</summary>
@@ -203,7 +208,8 @@
 								<label><span data-translate="metadata.pack_name">Pack name:</span> <code><input type="text" pattern="[^\/]*" name="packName"/></code></label>
 								<label><span data-translate="metadata.pack_icon">Pack icon (<code>*.png</code>):</span> <input type="file" accept=".png" name="packIcon"/></label>
 								<label><span data-translate="metadata.structure_author">Structure author:</span> <input type="text" placeholder="MinecraftLover123" name="author" data-translate-placeholder="metadata.structure_author.placeholder"/></label>
-								<label><span data-translate="metadata.description">Description:</span><br/><textarea placeholder="This is my epic house!" rows="3" cols="20" name="description" data-translate-placeholder="metadata.description.placeholder"></textarea></label>
+								<label><span data-translate="metadata.description">Description:</span><br/><textarea placeholder="This is my epic house!" rows="4" cols="20" name="description" data-translate-placeholder="metadata.description.placeholder"></textarea></label>
+								<div id="descriptionLinksCont"></div>
 								<label><span data-translate="metadata.compression_level">Compression level:</span> <input type="number" min="0" max="9" step="1" value="5" name="compressionLevel"/></label>
 								<button type="button" class="resetButton" data-translate="reset" data-reset-translation="metadata.reset">Reset</button>
 							</fieldset>

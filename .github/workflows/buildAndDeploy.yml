@@ -1,0 +1,59 @@
+name: Build and Deploy
+on:
+  push:
+    tags:
+      - 'v[0-9]+.[0-9]+.[0-9]+'
+  workflow_dispatch:
+permissions: read-all
+jobs:
+  build:
+    name: Build and Minify
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4.1.1
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: "npm"
+          cache-dependency-path: 'ci-cd/package-lock.json'
+      - name: Build
+        run: bash ci-cd/build.sh ${{ github.ref_name }} && rm -r tests
+      - name: Upload files as artifact
+        uses: actions/upload-pages-artifact@v3.0.1
+        with:
+          path: .
+  deploy:
+    name: Deploy
+    needs: build
+    runs-on: ubuntu-latest
+    if: github.repository == 'HoloPrint-MC/holoprint-mc.github.io'
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4.0.5
+  update-fork:
+    name: Update Fork (HoloPrint-MC)
+    needs: build
+    runs-on: ubuntu-latest
+    if: github.repository == 'SuperLlama88888/holoprint'
+    steps:
+      - name: Trigger workflow in fork
+        uses: actions/github-script@v6
+        with:
+          github-token: ${{ secrets.PAT }}
+          script: |
+            let res = await github.rest.actions.createWorkflowDispatch({
+              owner: 'HoloPrint-MC',
+              repo: 'holoprint-mc.github.io',
+              workflow_id: 'updateFromUpstream.yml',
+              ref: 'main'
+            });
+            console.log(`Fork upstream fetching workflow triggered with status ${res.status}`);

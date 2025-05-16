@@ -69,13 +69,13 @@ export default class SimpleLogger extends HTMLElement {
 					background: #334;
 				}
 				.warning > .logText::before {
-					content: "\u26A0\uFE0F";
+					content: "⚠️";
 				}
 				.error > .logText::before {
-					content: "\u{1F6A8}";
+					content: "🚨";
 				}
 				.info > .logText::before {
-					content: "\u2139\uFE0F";
+					content: "ℹ️";
 				}
 				.timestamp {
 					margin-right: 5px;

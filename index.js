@@ -46,8 +46,6 @@ let generatePackFormSubmitButton;
 let structureFilesInput;
 /** @type {HTMLInputElement} */
 let worldFileInput;
-/** @type {HTMLTableElement} */
-let worldStructureFilesTable;
 /** @type {HTMLInputElement} */
 let oldPackInput;
 /** @type {HTMLInputElement} */
@@ -79,7 +77,6 @@ document.onEvent("DOMContentLoaded", () => {
 	structureFilesInput = selectEl("#structureFilesInput");
 	let notStructureFileError = selectEl("#notStructureFileError");
 	worldFileInput = selectEl("#worldFileInput");
-	worldStructureFilesTable = selectEl("#worldStructureFilesTable");
 	let worldExtractionMessage = selectEl("#worldExtractionMessage");
 	let worldExtractionSuccess = selectEl("#worldExtractionSuccess");
 	let worldExtractionError = selectEl("#worldExtractionError");
@@ -240,6 +237,20 @@ document.onEvent("DOMContentLoaded", () => {
 	let opacityModeSelect = generatePackForm.elements.namedItem("opacityMode");
 	opacityModeSelect.onEventAndNow("change", () => {
 		generatePackForm.elements.namedItem("opacity").parentElement.classList.toggle("hidden", opacityModeSelect.value == "multiple");
+	});
+	
+	let descriptionTextArea = generatePackForm.elements.namedItem("description");
+	let descriptionLinksCont = selectEl("#descriptionLinksCont");
+	descriptionTextArea.onEventAndNow("input", () => {
+		let links = HoloPrint.findLinksInDescription(descriptionTextArea.value);
+		descriptionLinksCont.textContent = "";
+		links.forEach(([_, link], i) => {
+			if(i) {
+				descriptionLinksCont.appendChild(document.createElement("br"));
+			}
+			descriptionLinksCont.insertAdjacentHTML("beforeend", `<span data-translate="metadata.description.link_found">Link found:</span>`);
+			descriptionLinksCont.insertAdjacentText("beforeend", " " + link);
+		});
 	});
 	
 	let playerControlsInputCont = selectEl("#playerControlsInputCont");
@@ -539,6 +550,7 @@ async function makePack(structureFiles, localResourcePacks) {
 		MULTIPLE_OPACITIES: formData.get("opacityMode") == "multiple",
 		TINT_COLOR: formData.get("tintColor"),
 		TINT_OPACITY: formData.get("tintOpacity") / 100,
+		MINI_SCALE: +formData.get("miniSize"),
 		TEXTURE_OUTLINE_WIDTH: +formData.get("textureOutlineWidth"),
 		TEXTURE_OUTLINE_COLOR: formData.get("textureOutlineColor"),
 		TEXTURE_OUTLINE_OPACITY: formData.get("textureOutlineOpacity") / 100,
@@ -604,7 +616,7 @@ async function makePack(structureFiles, localResourcePacks) {
 		if(generationFailedError) {
 			let bugReportAnchor = document.createElement("a");
 			bugReportAnchor.classList.add("buttonlike", "packInfoButton", "reportIssue");
-			bugReportAnchor.href = `https://github.com/SuperLlama88888/holoprint/issues/new?template=1-pack-creation-error.yml&title=Pack creation error: ${encodeURIComponent(generationFailedError.toString().replaceAll("\n", " "))}&version=${HoloPrint.VERSION}`;
+			bugReportAnchor.href = `https://github.com/SuperLlama88888/holoprint/issues/new?template=1-pack-creation-error.yml&title=Pack creation error: ${encodeURIComponent(generationFailedError.toString().replaceAll("\n", " "))}&version=${HoloPrint.VERSION}&logs=${encodeURIComponent(JSON.stringify(selectEl("simple-logger").allLogs))}`;
 			bugReportAnchor.target = "_blank";
 			bugReportAnchor.dataset.translate = "pack_generation_failed.report_github_issue";
 			infoButton.parentNode.replaceChild(bugReportAnchor, infoButton);

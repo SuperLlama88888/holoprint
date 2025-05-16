@@ -89,7 +89,7 @@ export default class ResourcePackStack {
 				res ??= await this.fetchData(filePath);
 			}
 			if(this.cacheEnabled) {
-				this.#cache.put(cacheLink, res.clone()).catch(e => console.warn(`Failed to save resource to cache ${this.cacheName}:`, e));
+				await this.#cache.put(cacheLink, res.clone());
 			}
 		}
 		return res;
@@ -97,7 +97,7 @@ export default class ResourcePackStack {
 }
 
 export class VanillaDataFetcher extends CachingFetcher {
-	static #VANILLA_RESOURCES_LINK = "https://raw.githubusercontent.com/Mojang/bedrock-samples"; // No / at the end
+	static #VANILLA_RESOURCES_LINK = "https://cdn.jsdelivr.net/gh/Mojang/bedrock-samples"; // No / at the end
 	
 	/**
 	 * Creates a vanilla data fetcher to fetch data from the Mojang/bedrock-samples repository.
@@ -105,7 +105,7 @@ export class VanillaDataFetcher extends CachingFetcher {
 	 */
 	constructor(version = defaultVanillaDataVersion) {
 		return (async () => {
-			await super(`VanillaDataFetcher_${version}`, `${VanillaDataFetcher.#VANILLA_RESOURCES_LINK}/${version}/`);
+			await super(`VanillaDataFetcher_${version}`, `${VanillaDataFetcher.#VANILLA_RESOURCES_LINK}@${version}/`);
 			this.version = version;
 			
 			return this;

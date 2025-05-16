@@ -188,6 +188,15 @@ export function random(arr) {
 	return arr[~~(Math.random() * arr.length)];
 }
 /**
+ * Removes empty slots from a potentially sparse array.
+ * @template {Array} T
+ * @param {T} arr
+ * @returns {T}
+ */
+export function desparseArray(arr) {
+	return arr.filter(() => true);
+}
+/**
  * Groups an array into two arrays based on a condition function.
  * @template T
  * @param {Array<T>} arr
@@ -204,7 +213,7 @@ export function conditionallyGroup(arr, conditionFunc) {
 /**
  * Separates array items based on the result of a grouping function.
  * @template T
- * @param {Array<T>} arr
+ * @param {Array<T>} items
  * @param {function(T): String} groupFunc
  * @returns {Record<String, Array<T>>}
  */
@@ -550,20 +559,28 @@ export function downloadBlob(blob, fileName) {
 	URL.revokeObjectURL(objectURL);
 }
 
+function stringifyJsonBigIntSafe(value) {
+	return JSON.stringify(value, (_, x) => typeof x == "bigint"? (JSON.rawJSON ?? String)(x) : x); // JSON.rawJSON offers the perfect solution but is very modern, so stringifying them is the next best option
+}
+function parseJsonBigIntSafe(value) { // this function is unused but I'm keeping it here because it works well with the function above
+	return JSON.parse(value, (_, x, context) => context && Number.isInteger(x) && !Number.isSafeInteger(x)? BigInt(context.source) : x);
+}
 export class JSONSet extends Set {
-	#replacer;
-	#reviver;
-	constructor(replacer, reviver) {
+	#actualValues;
+	constructor() {
 		super();
-		this.#replacer = replacer;
-		this.#reviver = reviver;
+		this.#actualValues = new Map();
 	}
 	indexOf(value) { // not part of sets normally! but they keep their order anyway so...
 		let stringifiedValues = [...super[Symbol.iterator]()];
 		return stringifiedValues.indexOf(this.#stringify(value));
 	}
 	add(value) {
-		return super.add(this.#stringify(value));
+		let stringifiedValue = this.#stringify(value);
+		if(!this.#actualValues.has(stringifiedValue)) {
+			this.#actualValues.set(stringifiedValue, structuredClone(value));
+		}
+		return super.add(stringifiedValue);
 	}
 	delete(value) {
 		return super.delete(this.#stringify(value));
@@ -572,19 +589,7 @@ export class JSONSet extends Set {
 		return super.has(this.#stringify(value))
 	}
 	[Symbol.iterator]() {
-		let iter = super[Symbol.iterator]();
-		return {
-			next: () => {
-				let { value, done } = iter.next();
-				return {
-					value: done? undefined : this.#parse(value),
-					done
-				};
-			},
-			[Symbol.iterator]() {
-				return this;
-			}
-		};
+		return this.#actualValues.values();
 	}
 	entries() {
 		let iter = this[Symbol.iterator]();
@@ -608,17 +613,12 @@ export class JSONSet extends Set {
 		return this[Symbol.iterator]();
 	}
 	#stringify(value) {
-		return JSON.stringify(value, this.#replacer);
-	}
-	#parse(value) {
-		return JSON.parse(value, this.#reviver);
+		return stringifyJsonBigIntSafe(value);
 	}
 }
 export class JSONMap extends Map { // very barebones
-	#replacer;
-	constructor(replacer) {
+	constructor() {
 		super();
-		this.#replacer = replacer;
 	}
 	get(key) {
 		return super.get(this.#stringify(key));
@@ -630,12 +630,16 @@ export class JSONMap extends Map { // very barebones
 		return super.set(this.#stringify(key), value)
 	}
 	#stringify(value) {
-		return JSON.stringify(value, this.#replacer);
+		return stringifyJsonBigIntSafe(value);
 	}
 }
 export class CachingFetcher {
+	static URL_PREFIX = "https://cache/";
+	static #BAD_STATUS_CODES = [429];
+	
 	cacheName;
 	#baseUrl;
+	/** @type {Cache} */
 	#cache;
 	constructor(cacheName, baseUrl = "") {
 		return (async () => {
@@ -653,11 +657,25 @@ export class CachingFetcher {
 	 */
 	async fetch(url) {
 		let fullUrl = this.#baseUrl + url;
-		let cacheLink = `https://cache/${url}`;
+		let cacheLink = CachingFetcher.URL_PREFIX + url;
 		let res = await this.#cache.match(cacheLink);
+		if(CachingFetcher.#BAD_STATUS_CODES.includes(res?.status)) {
+			await this.#cache.delete(cacheLink);
+			res = undefined;
+		}
 		if(!res) {
 			res = await this.retrieve(fullUrl);
-			this.#cache.put(cacheLink, res.clone()).catch(e => console.warn(`Failed to save response from ${fullUrl} to cache ${this.cacheName}:`, e));
+			let fetchAttempsLeft = 5;
+			const fetchRetryTimeout = 1000;
+			while(CachingFetcher.#BAD_STATUS_CODES.includes(res.status) && fetchAttempsLeft--) {
+				console.debug(`Encountered bad HTTP status ${res.status} from ${fullUrl}, trying again in ${fetchRetryTimeout}ms`);
+				await sleep(fetchRetryTimeout);
+			}
+			if(fetchAttempsLeft) {
+				await this.#cache.put(cacheLink, res.clone());
+			} else {
+				console.error(`Couldn't avoid getting bad HTTP status codes for ${fullUrl}`);
+			}
 		}
 		return res;
 	}
