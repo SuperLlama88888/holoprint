@@ -64,6 +64,10 @@ export default class ResourcePackStack {
 		let filePath = `resource_pack/${resourcePath}`;
 		let cacheLink = `https://holoprint-cache/${filePath}`;
 		let res = this.cacheEnabled && await this.#cache.match(cacheLink);
+		if(CachingFetcher.BAD_STATUS_CODES.includes(res?.status)) {
+			await this.#cache.delete(cacheLink);
+			res = undefined;
+		}
 		if(!res) {
 			if(ResourcePackStack.#JSON_FILES_TO_MERGE.includes(resourcePath)) {
 				let vanillaRes = await this.fetchData(filePath);
