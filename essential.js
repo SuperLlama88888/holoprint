@@ -635,7 +635,7 @@ export class JSONMap extends Map { // very barebones
 }
 export class CachingFetcher {
 	static URL_PREFIX = "https://cache/";
-	static #BAD_STATUS_CODES = [429];
+	static BAD_STATUS_CODES = [429];
 	
 	cacheName;
 	#baseUrl;
@@ -659,7 +659,7 @@ export class CachingFetcher {
 		let fullUrl = this.#baseUrl + url;
 		let cacheLink = CachingFetcher.URL_PREFIX + url;
 		let res = await this.#cache.match(cacheLink);
-		if(CachingFetcher.#BAD_STATUS_CODES.includes(res?.status)) {
+		if(CachingFetcher.BAD_STATUS_CODES.includes(res?.status)) {
 			await this.#cache.delete(cacheLink);
 			res = undefined;
 		}
@@ -667,7 +667,7 @@ export class CachingFetcher {
 			res = await this.retrieve(fullUrl);
 			let fetchAttempsLeft = 5;
 			const fetchRetryTimeout = 1000;
-			while(CachingFetcher.#BAD_STATUS_CODES.includes(res.status) && fetchAttempsLeft--) {
+			while(CachingFetcher.BAD_STATUS_CODES.includes(res.status) && fetchAttempsLeft--) {
 				console.debug(`Encountered bad HTTP status ${res.status} from ${fullUrl}, trying again in ${fetchRetryTimeout}ms`);
 				await sleep(fetchRetryTimeout);
 			}
