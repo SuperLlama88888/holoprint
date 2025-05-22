@@ -28,7 +28,7 @@ test();
 async function test() {
 	let uploadedPackFilePaths = [];
 	
-	let indexPage = await fs.promises.readFile(path.join(__dirname, "../index.html"), "utf-8");
+	let indexPage = await fs.promises.readFile(path.join(__dirname, "../dist/index.html"), "utf-8");
 	let headImportMap = indexPage.match(/<script type="importmap">[^]+?<\/script>/)[0];
 	indexPage = indexPage.replace(/<head>[^]+<\/body>/, `
 		<head>${headImportMap}</head>
@@ -48,7 +48,7 @@ async function test() {
 				return;
 			}
 			
-			let filePath = path.join(__dirname, "../", req.url); // serve files from the root directory
+			let filePath = path.join(__dirname, "../dist", req.url); // serve files from the root directory
 			fs.stat(filePath, (err, stats) => {
 				if(err || !stats.isFile()) {
 					res.writeHead(404, plainTextHeaders);

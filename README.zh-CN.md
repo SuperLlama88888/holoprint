@@ -1,4 +1,4 @@
-![HoloPrint](assets/banner.png)
+![HoloPrint](images/banner.png)
 
 [![English](https://img.shields.io/badge/Language-English-blue)](README.md)
 ### 关于
@@ -9,44 +9,44 @@
 
 ### 使用方法
 > [!NOTE]
-> 安卓设备的结构方块导出按钮默认隐藏，请使用 [此资源包](assets/structureBlockButtonAdderPack.mcpack) 恢复按钮。
+> 安卓设备的结构方块导出按钮默认隐藏，请使用 [此资源包](https://holoprint-mc.github.io/exportbutton) 恢复按钮。
 1. 输入命令 `/give @s structure_block` 获取结构方块，然后使用结构方块导出 `.mcstructure` 文件。
-![获取结构方块的命令](assets/giveStructureBlockCommand.png)  
-![导出结构文件操作](assets/structureBlockExporting.png)
+![获取结构方块的命令](images/giveStructureBlockCommand.png)  
+![导出结构文件操作](images/structureBlockExporting.png)
 2. 访问 <https://holoprint-mc.github.io>，上传结构文件并调整设置。  
-![资源包生成界面](assets/packGenerationScreen.png)
+![资源包生成界面](images/packGenerationScreen.png)
 3. 下载生成的资源包（`.mcpack`），在游戏中导入后启用。  
-![启用资源包](assets/resourcePackActive.png)
+![启用资源包](images/resourcePackActive.png)
 4. 在你的世界中放置盔甲架以显示全息影像。  
-![放置盔甲架](assets/placingArmourStand.gif)
+![放置盔甲架](images/placingArmourStand.gif)
 
 ### 控制全息影像（[Wiki](https://holoprint-mc.github.io/wiki/zh-cn/hologram-controls))
 - **切换渲染**：砖块  
-![切换渲染](assets/togglingRendering.gif)
+![切换渲染](images/togglingRendering.gif)
 - **调整透明度**：紫水晶碎片（潜行降低，反之提高）  
-![调整透明度](assets/changingTransparency.gif)
+![调整透明度](images/changingTransparency.gif)
 - **切换图层**：皮革(潜行下降，反之上升)，或修改盔甲架姿势  
-![切换图层](assets/changingLayer.gif)
+![切换图层](images/changingLayer.gif)
 - **移动影像**：木棍  
-![移动影像](assets/movingHologram.gif)
+![移动影像](images/movingHologram.gif)
 - **旋转影像**：铜锭  
-![旋转影像](assets/rotatingHologram.gif)
+![旋转影像](images/rotatingHologram.gif)
 - **结构验证**：铁锭  
-![结构验证](assets/validatingStructure.gif)
+![结构验证](images/validatingStructure.gif)
 - **材料清单**： Tab 键（键盘）或书箱图标（触屏）  
-![材料清单](assets/materialList.gif)
+![材料清单](images/materialList.gif)
 - **切换着色**：白色染料  
-![切换着色](assets/togglingTint.gif)
+![切换着色](images/togglingTint.gif)
 - **切换图层模式**：燧石  
-![切换图层模式](assets/changingLayerMode.gif)
+![切换图层模式](images/changingLayerMode.gif)
 - **切换结构**：箭矢，或空手攻击盔甲架  
-![切换结构](assets/changingStructure.gif)
+![切换结构](images/changingStructure.gif)
 - **保存全息影像设置**：纸  
-![保存备份](assets/savingBackup.gif)
+![保存备份](images/savingBackup.gif)
 - **盔甲架控制**：装备物品或攻击  
-![盔甲架控制](assets/armourStandControls.gif)
+![盔甲架控制](images/armourStandControls.gif)
 - **禁用玩家控制**：骨头  
-![禁用玩家控制](assets/disablingPlayerControls.gif)
+![禁用玩家控制](images/disablingPlayerControls.gif)
 > [!WARNING]
 > 玩家控制可能不稳定，但盔甲架控制始终有效。
 

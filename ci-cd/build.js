@@ -7,27 +7,43 @@ import browserslist from "browserslist";
 import { transform, browserslistToTargets } from "lightningcss";
 import minifyJSON from "jsonminify";
 
-process.chdir(path.resolve(import.meta.dirname, ".."));
+const buildVersion = process.argv[2] ?? "testing";
+// process.chdir("..");
+if(fs.existsSync("dist")) {
+	fs.rmSync("dist", {
+		recursive: true
+	});
+}
+fs.cpSync("src", "dist", {
+	recursive: true
+});
+process.chdir("dist");
 
-const baseDir = "./";
+const baseDir = ".";
 const cssTargets = browserslistToTargets(browserslist(">= 0.1%"));
 
 processDir(baseDir);
 
 let importMapJSON = fs.readFileSync("index.html", "utf-8").match(/<script type="importmap">([^]+?)<\/script>/)[1];
-let externalModules = Object.keys(JSON.parse(importMapJSON).imports);
+let externalModules = Object.keys(JSON.parse(importMapJSON)["imports"]);
 let { metafile } = esbuild.buildSync({
-	entryPoints: ["../index.js"],
+	absWorkingDir: process.cwd(),
+	entryPoints: ["index.js"],
 	bundle: true,
 	external: ["./entityScripts.molang.js", ...externalModules],
 	minify: true,
 	format: "esm",
-	outdir: "../",
+	outdir: ".",
 	allowOverwrite: true,
 	sourcemap: true,
 	metafile: true
 });
-fs.writeFileSync("esbuild_meta.json", JSON.stringify(metafile));
+console.log(esbuild.analyzeMetafileSync(metafile));
+Object.keys(metafile["inputs"]).forEach(filename => {
+	if(!filename.endsWith("index.js")) {
+		fs.unlinkSync(filename); // remove bundled JS files to make build smaller
+	}
+});
 
 /**
  * @param {string} dir
@@ -37,13 +53,13 @@ function processDir(dir) {
 	directoryContents.forEach(filename => {
 		let filepath = path.join(dir, filename);
 		let stats = fs.statSync(filepath);
-		if(stats.isDirectory() && filename != "ci-cd") {
+		if(stats.isDirectory()) {
 			processDir(filepath);
 		} else {
 			let processingFunction = findProcessingFunction(filepath);
 			if(processingFunction) {
 				let fileContent = fs.readFileSync(filepath, "utf-8");
-				let { code, sourceMap } = processingFunction(fileContent, filepath);
+				let { code, sourceMap } = processingFunction(fileContent, filename);
 				fs.writeFileSync(filepath, code);
 				if(sourceMap) {
 					fs.writeFileSync(filepath + ".map", sourceMap);
@@ -54,7 +70,7 @@ function processDir(dir) {
 }
 /**
  * @param {string} filename
- * @returns {Function|undefined}
+ * @returns {(function(string, string): { code: string, sourceMap: string|undefined })|undefined}
  */
 function findProcessingFunction(filename) {
 	let fileExtension = path.extname(filename);
@@ -74,11 +90,15 @@ function findProcessingFunction(filename) {
  * @returns {{ code: string }}
  */
 function processHTML(code, filename) {
-	code = code.replaceAll(/<style>([^]+?)<\/style>/g, (_, css) => `<style>${processCSS(css, filename, true).code}</style>`);
+	// code = code.replaceAll(/<style>([^]+?)<\/style>/g, (_, css) => `<style>${processCSS(css, filename, true).code}</style>`);
 	code = code.replaceAll(/<script type="(importmap|application\/ld\+json)">([^]+?)<\/script>/g, (_, scriptType, json) => `<script type="${scriptType}">${processJSON(json).code}</script>`);
 	code = minifyHTML(code, {
 		removeComments: true,
 		collapseWhitespace: true,
+		collapseBooleanAttributes: true,
+		sortAttributes: true,
+		sortClassName: true,
+		minifyCSS: css => processCSS(css, filename, true).code
 	});
 	return { code };
 }
@@ -97,8 +117,13 @@ function processCSS(code, filename, disableSourceMap = false) {
 		sourceMap: !disableSourceMap
 	});
 	code = (new TextDecoder()).decode(codeBytes);
-	let sourceMap = sourceMapBytes && (new TextDecoder()).decode(sourceMapBytes);
-	return { code, sourceMap };
+	if(sourceMapBytes) {
+		code += `\n/*# sourceMappingURL=${filename}.map */`;
+		let sourceMap = (new TextDecoder()).decode(sourceMapBytes);
+		return { code, sourceMap };
+	} else {
+		return { code };
+	}
 }
 /**
  * @param {string} code
@@ -106,6 +131,11 @@ function processCSS(code, filename, disableSourceMap = false) {
  * @returns {{ code: string }}
  */
 function processJS(code, filename) {
+	if(filename == "HoloPrint.js") {
+		code = code.replace(`const VERSION = "dev";`, `const VERSION = "${buildVersion}";`);
+	} else if(filename == "index.js") {
+		code = code.replace("const IN_PRODUCTION = false;", "const IN_PRODUCTION = true;");
+	}
 	code = code.replaceAll(/html`([^]+?)`/g, (_, html) => "`" + processHTML(html, filename).code + "`");
 	return { code };
 }
