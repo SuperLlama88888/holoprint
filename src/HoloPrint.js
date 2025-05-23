@@ -7,7 +7,7 @@ import MaterialList from "./MaterialList.js";
 import PreviewRenderer from "./PreviewRenderer.js";
 
 import * as entityScripts from "./entityScripts.molang.js";
-import { addPaddingToImage, arrayMin, awaitAllEntries, CachingFetcher, concatenateFiles, createNumericEnum, desparseArray, exp, floor, getFileExtension, hexColorToClampedTriplet, JSONMap, JSONSet, lcm, loadTranslationLanguage, max, min, overlaySquareImages, pi, resizeImageToBlob, round, sha256, translate, UserError } from "./essential.js";
+import { addPaddingToImage, arrayMin, awaitAllEntries, CachingFetcher, concatenateFiles, createNumericEnum, desparseArray, exp, floor, getFileExtension, hexColorToClampedTriplet, JSONMap, JSONSet, lcm, loadTranslationLanguage, max, min, overlaySquareImages, pi, removeFileExtension, resizeImageToBlob, round, sha256, translate, UserError } from "./essential.js";
 import ResourcePackStack from "./ResourcePackStack.js";
 import BlockUpdater from "./BlockUpdater.js";
 
@@ -69,6 +69,23 @@ export async function makePack(structureFiles, config = {}, resourcePackStack, p
 	let nbts = await Promise.all(structureFiles.map(structureFile => readStructureNBT(structureFile)));
 	console.info("Finished reading structure NBTs!");
 	console.log("NBTs:", nbts);
+	if(!nbts.every(isNBTValidMcstructure)) {
+		let offendingNBTsAndIndices = nbts.map((nbt, i) => [nbt, i]).filter(([nbt]) => !isNBTValidMcstructure(nbt));
+		let offendingStructureIndices = offendingNBTsAndIndices.map(([_, i]) => i);
+		let offendingStructures = offendingStructureIndices.map(i => removeFileExtension(structureFiles[i].name));
+		let errorMessage = offendingStructures.length > 1? `Structures ${offendingStructures.join(", ")} are not valid .mcstructure files!` : `Structure ${offendingStructures[0]} is not a valid .mcstructure file!`;
+		const otherNBTFileTypes = {
+			"MinecraftDataVersion": "litematic",
+			"TileEntities": "schematic",
+			"Metadata": "sponge",
+			"DataVersion": "nbt"
+		};
+		let probableSourceFileExtension = Object.entries(otherNBTFileTypes).find(([key]) => offendingNBTsAndIndices.some(([nbt]) => key in nbt))?.[1];
+		if(probableSourceFileExtension) {
+			errorMessage += `\nNote: Renaming .${probableSourceFileExtension} to .mcstructure doesn't work, you must create the structure file from inside Minecraft Bedrock! Minecraft Java structures aren't the same as Minecraft Bedrock structures!`;
+		}
+		throw new UserError(errorMessage);
+	}
 	let structureSizes = nbts.map(nbt => nbt["size"].map(x => +x)); // Stored as Number instances: https://github.com/Offroaders123/NBTify/issues/50
 	let packName = config.PACK_NAME ?? getDefaultPackName(structureFiles);
 	
@@ -1020,6 +1037,14 @@ export async function createPmmpBedrockDataFetcher() {
 	return await new CachingFetcher(`BedrockData@${pmmpBedrockDataVersion}`, `https://cdn.jsdelivr.net/gh/pmmp/BedrockData@${pmmpBedrockDataVersion}/`);
 }
 
+/**
+ * Checks if a NBT object is valid .mcstructure NBT.
+ * @param {object} nbt
+ * @returns {boolean}
+ */
+function isNBTValidMcstructure(nbt) {
+	return nbt["format_version"] == 1 && "size" in nbt && "structure" in nbt && "structure_world_origin" in nbt;
+}
 /**
  * Reads the NBT of a structure file, returning a JSON object.
  * @param {File} structureFile `*.mcstructure`
