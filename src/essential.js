@@ -7,10 +7,11 @@ export const selectEl = selector => document.querySelector(selector);
 /** @returns {NodeListOf<HTMLElement>} */
 export const selectEls = selector => document.querySelectorAll(selector);
 /**
- * Finds the closest descendent of an element or itself that matches a given selector.
- * @param {Element} el
- * @param {string} selector
- * @returns {Element|null}
+ * Returns the element itself if it matches the selector, or the closest matching descendant, or null if none match.
+ *
+ * @param {Element} el - The element to search from.
+ * @param {string} selector - The CSS selector to match.
+ * @returns {Element|null} The matching element or null if not found.
  */
 export function closestDescendentOrSelf(el, selector) {
 	if(el.matches(selector)) {
@@ -197,11 +198,12 @@ export function desparseArray(arr) {
 	return arr.filter(() => true);
 }
 /**
- * Groups an array into two arrays based on a condition function.
+ * Splits an array into two arrays based on a condition function.
+ *
  * @template T
- * @param {Array<T>} arr
- * @param {function(T): boolean} conditionFunc
- * @returns {[Array<T>, Array<T>]}
+ * @param {Array<T>} arr - The array to split.
+ * @param {function(T): boolean} conditionFunc - Function that determines which group each element belongs to.
+ * @returns {[Array<T>, Array<T>]} A tuple where the first array contains elements for which {@link conditionFunc} returns false, and the second contains those for which it returns true.
  */
 export function conditionallyGroup(arr, conditionFunc) {
 	let res = [[], []];
@@ -211,11 +213,12 @@ export function conditionallyGroup(arr, conditionFunc) {
 	return res;
 }
 /**
- * Separates array items based on the result of a grouping function.
+ * Groups items into an object keyed by the result of a grouping function.
+ *
  * @template T
- * @param {Array<T>} items
- * @param {function(T): string} groupFunc
- * @returns {Record<string, Array<T>>}
+ * @param {Array<T>} items - The array of items to group.
+ * @param {function(T): string} groupFunc - Function that returns a group key for each item.
+ * @returns {Record<string, Array<T>>} An object where each key is a group and the value is an array of items in that group.
  */
 export function groupBy(items, groupFunc) { // native Object.groupBy is only 89.47% on caniuse...
 	let res = {};
@@ -227,36 +230,40 @@ export function groupBy(items, groupFunc) { // native Object.groupBy is only 89.
 	return res;
 };
 /**
- * Groups files by their file extensions.
- * @param {Array<File>} files
- * @returns {Record<string, Array<File>|undefined>}
+ * Groups an array of File objects by their file extension.
+ *
+ * @param {Array<File>} files - The files to group.
+ * @returns {Record<string, Array<File>|undefined>} An object mapping each file extension to an array of Files with that extension.
  */
 export function groupByFileExtension(files) {
 	return groupBy(files, file => getFileExtension(file));
 }
 /**
- * Create a pseudo-enumeration using numbers.
+ * Creates an object mapping string keys to unique numeric values, simulating a numeric enum.
+ *
  * @template {string[]} T
- * @param {[...T]} keys - An array of string literals to use as keys.
- * @returns {Record<T[number], number>}
+ * @param {[...T]} keys - Array of string literals to use as enum keys.
+ * @returns {Record<T[number], number>} An object where each key is assigned a unique number starting from 0.
  */
 export function createNumericEnum(keys) {
 	return Object.freeze(Object.fromEntries(keys.map((key, i) => [key, i])));
 }
 /**
- * Creates an enumeration using Symbols.
+ * Creates an enumeration object with unique Symbol values for each provided key.
+ *
  * @template {string} T
- * @param {Array<T>} keys
- * @returns {Readonly<Record<T, symbol>>}
+ * @param {Array<T>} keys - The keys to include in the enumeration.
+ * @returns {Readonly<Record<T, symbol>>} An object mapping each key to a unique Symbol.
  */
 export function createSymbolicEnum(keys) {
 	return Object.freeze(Object.fromEntries(keys.map(key => [key, Symbol(key)])));
 }
 /**
- * Crates a pseudo-enumeration using strings.
+ * Creates a string-based enumeration from an array of keys, assigning each key a unique alphabetic code.
+ *
  * @template {string} T
- * @param {Array<T>} keys
- * @returns {Readonly<Record<T, string>>}
+ * @param {Array<T>} keys - The keys to include in the enumeration.
+ * @returns {Readonly<Record<T, string>>} An object mapping each key to a unique lowercase alphabetic string code (e.g., "a", "b", ..., "z", "aa", "ab", ...).
  */
 export function createStringEnum(keys) {
 	return Object.freeze(Object.fromEntries(keys.map((key, i) => {
@@ -277,30 +284,43 @@ export function hexColorToClampedTriplet(hexColor) {
 export function addOrdinalSuffix(num) {
 	return num + (num % 10 == 1 && num % 100 != 11? "st" : num % 10 == 2 && num % 100 != 12? "nd" : num % 10 == 3 && num % 100 != 13? "rd" : "th");
 }
-/** Returns the original string when used in a tagged template literal. Only used so the HTML inside can be minified when building, and so VSCode can apply syntax highlighting with the lit-plugin plugin. */
+/**
+ * Returns the raw string result of a tagged template literal, concatenating all string and value parts.
+ *
+ * Intended for use as a tag for HTML template literals to enable build-time minification and editor syntax highlighting.
+ *
+ * @param {TemplateStringsArray} strings - The literal string segments.
+ * @param {...any} values - The interpolated values.
+ * @returns {string} The concatenated string with all values inserted.
+ */
 export function html(strings, ...values) {
 	return strings.reduce((acc, str, i) => acc + str + (values[i] ?? ""), "");
 }
 /**
- * Finds the basename from a file path.
- * @param {string} path
- * @returns {string}
+ * Returns the last portion of a file path after the final '/' character.
+ *
+ * @param {string} path - The file path to extract the basename from.
+ * @returns {string} The basename of the provided path.
  */
 export function basename(path) {
 	return path.slice(path.lastIndexOf("/") + 1);
 }
 /**
- * Finds the directory name from a file path. Returns an empty string if there are no directories, else will end in /.
- * @param {string} path
- * @returns {string}
+ * Returns the directory portion of a file path, including the trailing slash, or an empty string if no directory exists.
+ *
+ * @param {string} path - The file path to extract the directory from.
+ * @returns {string} The directory path ending with '/', or an empty string if {@link path} contains no directory.
  */
 export function dirname(path) {
 	return path.includes("/")? path.slice(0, path.lastIndexOf("/") + 1) : "";
 }
 /**
- * Finds the file extension from a file or filename.
- * @param {File|string} filename
- * @returns {string}
+ * Returns the file extension from a File object or filename string.
+ *
+ * If the input is a File, its name property is used. The extension is the substring after the last period, or the entire string if no period is present.
+ *
+ * @param {File|string} filename - The File object or filename string to extract the extension from.
+ * @returns {string} The file extension, or an empty string if none exists.
  */
 export function getFileExtension(filename) {
 	if(filename instanceof File) {
@@ -309,18 +329,22 @@ export function getFileExtension(filename) {
 	return filename.slice(filename.lastIndexOf(".") + 1);
 }
 /**
- * Removes the (last) file extension from a filename.
- * @param {string} filename
- * @returns {string}
+ * Removes the last file extension from a filename string.
+ *
+ * If the filename contains one or more periods, returns the substring up to (but not including) the last period; otherwise, returns the original filename unchanged.
+ *
+ * @param {string} filename - The filename from which to remove the extension.
+ * @returns {string} The filename without its last extension.
  */
 export function removeFileExtension(filename) {
 	return filename.includes(".")? filename.slice(0, filename.lastIndexOf(".")) : filename;
 }
 /**
- * Joins an array of strings with "or", localised.
- * @param {Array<string>} arr
- * @param {string} [language]
- * @returns {string}
+ * Joins an array of strings using a localized "or" conjunction.
+ *
+ * @param {Array<string>} arr - The array of strings to join.
+ * @param {string} [language="en"] - Optional BCP 47 language tag for localization.
+ * @returns {string} The joined string with a language-appropriate "or" separator.
  */
 export function joinOr(arr, language = "en") {
 	return (new Intl.ListFormat(language.replaceAll("_", "-"), {
@@ -386,10 +410,11 @@ export function dispatchInputEvents(input) {
 	}));
 }
 /**
- * Checks if a touch from a touch event is in an element's vertical bounds.
- * @param {Touch} touch
- * @param {Element} el
- * @returns {boolean}
+ * Determines whether a touch event's vertical position is within the vertical bounds of a given element.
+ *
+ * @param {Touch} touch - The touch point to check.
+ * @param {Element} el - The element whose vertical bounds are tested.
+ * @returns {boolean} True if the touch's Y coordinate is within the element's top and bottom edges; otherwise, false.
  */
 export function isTouchInElementVerticalBounds(touch, el) {
 	let domRect = el.getBoundingClientRect();
@@ -411,10 +436,11 @@ export function stringToImageData(text, textCol = "black", backgroundCol = "whit
 	return ctx.getImageData(0, 0, can.width, can.height);
 }
 /**
- * Adds transparent padding around an image.
- * @param {HTMLImageElement} image
- * @param {{ left: number|undefined, right: number|undefined, top: number|undefined, bottom: number|undefined }} padding Pixels
- * @returns {Promise<HTMLImageElement>}
+ * Returns a new image with transparent padding added to each side.
+ *
+ * @param {HTMLImageElement} image - The source image.
+ * @param {{ left?: number, right?: number, top?: number, bottom?: number }} padding - Amount of transparent padding (in pixels) to add to each side.
+ * @returns {Promise<HTMLImageElement>} A Promise that resolves to the padded image.
  */
 export async function addPaddingToImage(image, padding) {
 	let { left = 0, right = 0, top = 0, bottom = 0 } = padding;
@@ -440,11 +466,12 @@ export async function overlaySquareImages(...images) {
 	return await can.convertToBlob();
 }
 /**
- * Resizes an image to a specific size without image smoothing.
- * @param {HTMLImageElement} image
- * @param {number} width
- * @param {number} [height]
- * @returns {Promise<Blob>}
+ * Resizes an image to the specified width and height without smoothing and returns the result as a Blob.
+ *
+ * @param {HTMLImageElement} image - The image to resize.
+ * @param {number} width - The target width in pixels.
+ * @param {number} [height=width] - The target height in pixels. Defaults to the width if not provided.
+ * @returns {Promise<Blob>} A promise that resolves to a Blob containing the resized image.
  */
 export async function resizeImageToBlob(image, width, height = width) {
 	let can = new OffscreenCanvas(width, height);
@@ -455,6 +482,14 @@ export async function resizeImageToBlob(image, width, height = width) {
 }
 
 let translationLanguages = {};
+/**
+ * Loads and caches a translation JSON file for the specified language.
+ *
+ * If the translation file cannot be loaded or parsed, an empty object is cached for the language.
+ *
+ * @param {string} language - The language code to load translations for.
+ * @returns {Promise<void>}
+ */
 export async function loadTranslationLanguage(language) {
 	translationLanguages[language] ??= await fetch(`translations/${language}.json`).then(res => res.jsonc()).catch(() => {
 		console.warn(`Failed to load language ${language} for translations!`);
@@ -462,10 +497,11 @@ export async function loadTranslationLanguage(language) {
 	});
 }
 /**
- * Looks up a translation from translations/`language`.json
- * @param {string} translationKey
- * @param {string} language
- * @returns {string|undefined}
+ * Retrieves a localized translation string for a given key and language, replacing inline code and Markdown-style links with HTML tags.
+ *
+ * @param {string} translationKey - The key identifying the translation string.
+ * @param {string} language - The language code to use for translation.
+ * @returns {string|undefined} The translated string with HTML formatting, or undefined if the language is not loaded.
  */
 export function translate(translationKey, language) {
 	if(!(language in translationLanguages)) {
@@ -518,9 +554,10 @@ export async function awaitAllEntries(object) {
 }
 
 /**
- * Returns the two factors of a number which are closest to each other.
- * @param {number} n
- * @returns {[number, number]}
+ * Finds the pair of integer factors of a number that are closest in value.
+ *
+ * @param {number} n - The number to factor.
+ * @returns {[number, number]} An array containing the two closest integer factors of {@link n}.
  */
 export function closestFactorPair(n) {
 	let x = ceil(sqrt(n));
@@ -528,10 +565,13 @@ export function closestFactorPair(n) {
 	return [x, n / x];
 }
 /**
- * Calculates the GCD of two numbers
- * @param {number} a
- * @param {number} b
- * @returns {number}
+ * Computes the greatest common divisor (GCD) of two positive integers using the Euclidean algorithm.
+ *
+ * @param {number} a - First positive integer.
+ * @param {number} b - Second positive integer.
+ * @returns {number} The greatest common divisor of {@link a} and {@link b}.
+ *
+ * @throws {Error} If either {@link a} or {@link b} is less than 1.
  */
 export function gcd(a, b) {
 	while(b != 0) {
@@ -541,10 +581,14 @@ export function gcd(a, b) {
 	return a;
 }
 /**
- * Calculates the LCM of two numbers
- * @param {number} a
- * @param {number} b
- * @returns {number}
+ * Calculates the least common multiple (LCM) of two numbers.
+ *
+ * @param {number} a - The first integer.
+ * @param {number} b - The second integer.
+ * @returns {number} The smallest positive integer that is a multiple of both {@link a} and {@link b}.
+ *
+ * @throws {TypeError} If {@link a} or {@link b} is not a finite integer.
+ * @throws {RangeError} If {@link a} or {@link b} is zero.
  */
 export function lcm(a, b) {
 	return a * b / gcd(a, b);
@@ -706,9 +750,10 @@ export class CachingFetcher {
 	}
 }
 /**
- * Creates a custom error class with a given name.
- * @param {string} name
- * @returns {typeof Error}
+ * Generates a custom Error subclass with the specified name.
+ *
+ * @param {string} name - The name to assign to the custom error class.
+ * @returns {typeof Error} A new Error subclass with the given name.
  */
 export function createCustomError(name) {
 	return class extends Error {

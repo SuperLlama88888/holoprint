@@ -46,7 +46,11 @@ Object.keys(metafile["inputs"]).forEach(filename => {
 });
 
 /**
- * @param {string} dir
+ * Recursively processes all files in a directory, applying file-type-specific transformations and writing the results back to disk.
+ *
+ * For each file, selects an appropriate processing function based on its extension (e.g., HTML, CSS, JS, JSON) and applies it. If a source map is generated, writes it alongside the processed file.
+ *
+ * @param {string} dir - The path to the directory to process.
  */
 function processDir(dir) {
 	let directoryContents = fs.readdirSync(dir);
@@ -69,8 +73,10 @@ function processDir(dir) {
 	});
 }
 /**
- * @param {string} filename
- * @returns {(function(string, string): { code: string, sourceMap: string|undefined })|undefined}
+ * Returns a file processing function based on the file extension.
+ *
+ * @param {string} filename - The name of the file to determine the processor for.
+ * @returns {(function(string, string): { code: string, sourceMap: string|undefined })|undefined} The corresponding processing function for the file type, or `undefined` if the extension is not recognized.
  */
 function findProcessingFunction(filename) {
 	let fileExtension = path.extname(filename);
@@ -85,9 +91,13 @@ function findProcessingFunction(filename) {
 }
 
 /**
- * @param {string} code
- * @param {string} filename
- * @returns {{ code: string }}
+ * Minifies HTML content and inlines minified JSON and CSS.
+ *
+ * Replaces `<script>` tags of type `importmap` or `application/ld+json` with their minified JSON content, and minifies the entire HTML, including inline CSS, for optimized output.
+ *
+ * @param {string} code - The HTML source code to process.
+ * @param {string} filename - The name of the file being processed.
+ * @returns {{ code: string }} An object containing the minified HTML code.
  */
 function processHTML(code, filename) {
 	// code = code.replaceAll(/<style>([^]+?)<\/style>/g, (_, css) => `<style>${processCSS(css, filename, true).code}</style>`);
@@ -103,10 +113,14 @@ function processHTML(code, filename) {
 	return { code };
 }
 /**
- * @param {string} code
- * @param {string} filename
- * @param {boolean} [disableSourceMap]
- * @returns {{ code: string, sourceMap: string|undefined }}
+ * Minifies CSS code and generates a source map if enabled.
+ *
+ * Uses `lightningcss` to optimize the CSS for specified browser targets. Appends a source map reference comment to the output if a source map is generated and not disabled.
+ *
+ * @param {string} code - The CSS code to process.
+ * @param {string} filename - The name of the CSS file being processed.
+ * @param {boolean} [disableSourceMap] - If true, disables source map generation.
+ * @returns {{ code: string, sourceMap?: string }} The minified CSS code and, if generated, its source map.
  */
 function processCSS(code, filename, disableSourceMap = false) {
 	let { code: codeBytes, map: sourceMapBytes } = transform({
@@ -126,9 +140,13 @@ function processCSS(code, filename, disableSourceMap = false) {
 	}
 }
 /**
- * @param {string} code
- * @param {string} filename
- * @returns {{ code: string }}
+ * Transforms JavaScript source code by applying build-specific replacements and minifying embedded HTML templates.
+ *
+ * For `HoloPrint.js`, replaces the version constant with the current build version. For `index.js`, sets the production flag to `true`. All template literals tagged with `html` are minified using the HTML processor.
+ *
+ * @param {string} code - The JavaScript source code to process.
+ * @param {string} filename - The name of the file being processed.
+ * @returns {{ code: string }} The transformed JavaScript code.
  */
 function processJS(code, filename) {
 	if(filename == "HoloPrint.js") {
@@ -140,8 +158,10 @@ function processJS(code, filename) {
 	return { code };
 }
 /**
- * @param {string} code
- * @returns {{ code: string }}
+ * Minifies JSON content by removing unnecessary whitespace and comments.
+ *
+ * @param {string} code - The JSON string to be minified.
+ * @returns {{ code: string }} An object containing the minified JSON string.
  */
 function processJSON(code) {
 	code = minifyJSON(code);

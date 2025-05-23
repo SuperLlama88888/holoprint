@@ -410,6 +410,14 @@ async function updateTexturePreview() {
 	texturePreviewImageCont.appendChild(tintlessImage);
 	texturePreviewImageCont.appendChild(tintedImage);
 }
+/**
+ * Translates all elements on the page with translation data attributes to the specified language, or generates a translation JSON file if requested.
+ *
+ * If {@link generateTranslations} is true, collects current text and attribute values for translation keys and downloads them as a JSON file. Otherwise, replaces element content and attributes with translated strings for the given language, falling back to English or the key itself if a translation is missing.
+ *
+ * @param {string} language - The language code to use for translations.
+ * @param {boolean} [generateTranslations=false] - Whether to generate and download a translation JSON file instead of applying translations.
+ */
 async function translatePage(language, generateTranslations = false) {
 	let translatableEls = document.documentElement.getAllChildren().filter(el => [...el.attributes].some(attr => attr.name.startsWith("data-translate")));
 	await loadTranslationLanguage(language);
@@ -465,9 +473,14 @@ async function translatePage(language, generateTranslations = false) {
 	}
 }
 /**
- * @param {Element} el
- * @param {string} translation
- * @returns {string}
+ * Performs placeholder substitutions and pluralization in a translation string using element attributes.
+ *
+ * Replaces placeholders in the translation string with values from the element's `data-translation-sub-*` attributes.
+ * Handles pluralization by including or removing bracketed text based on numeric substitution values.
+ *
+ * @param {Element} el - The element containing substitution attributes.
+ * @param {string} translation - The translation string with placeholders.
+ * @returns {string} The translated string with substitutions and pluralization applied.
  */
 function performTranslationSubstitutions(el, translation) {
 	const prefix = "data-translation-sub-";
@@ -508,9 +521,12 @@ async function temporarilyChangeText(el, translationKey, duration = 2000) {
 	el.removeAttribute("disabled");
 }
 /**
- * Validates a file input based on the value of the `accept` attribute. Only works when `accept` is a comma-separated list of file extensions, not for MIME types.
- * @param {HTMLInputElement} fileInput
- * @returns {boolean}
+ * Checks whether all files in a file input match the allowed file extensions specified in its `accept` attribute.
+ *
+ * @param {HTMLInputElement} fileInput - The file input element to validate.
+ * @returns {boolean} `true` if all selected files have acceptable extensions; otherwise, `false`.
+ *
+ * @remark Only supports validation when the `accept` attribute is a comma-separated list of file extensions, not MIME types.
  */
 function validateFileInputFileTypes(fileInput) {
 	let acceptableFileExtensions = fileInput.accept.split(",");

@@ -46,12 +46,18 @@ export const DEFAULT_PLAYER_CONTROLS = {
 const HOLOGRAM_LAYER_MODES = createNumericEnum(["SINGLE", "ALL_BELOW"]);
 
 /**
- * Makes a HoloPrint resource pack from a structure file.
- * @param {File|Array<File>} structureFiles Either a singular structure file (`*.mcstructure`), or an array of structure files
- * @param {HoloPrintConfig} [config]
- * @param {ResourcePackStack} [resourcePackStack]
- * @param {HTMLElement} [previewCont]
- * @returns {Promise<File>} Resource pack (`*.mcpack`)
+ * Generates a Minecraft Bedrock Edition HoloPrint resource pack (`.mcpack`) from one or more structure files.
+ *
+ * Validates input files as `.mcstructure` format, processes block palettes, geometry, textures, animations, and translations, and packages all assets into a distributable resource pack. Optionally renders a hologram preview if a container is provided and the block count is within limits.
+ *
+ * @param {File|Array<File>} structureFiles - One or more Minecraft Bedrock structure files (`.mcstructure`).
+ * @param {HoloPrintConfig} [config] - Optional configuration for pack generation.
+ * @param {ResourcePackStack} [resourcePackStack] - Optional resource pack stack for resource resolution.
+ * @param {HTMLElement} [previewCont] - Optional container for rendering a hologram preview.
+ * @returns {Promise<File>} A `.mcpack` file containing the generated HoloPrint resource pack.
+ *
+ * @throws {UserError} If any input file is not a valid `.mcstructure` file or if the structure is empty.
+ * @remark Only structure files created from within Minecraft Bedrock Edition are supported; files from other formats (e.g., Java Edition schematics) are not compatible.
  */
 export async function makePack(structureFiles, config = {}, resourcePackStack, previewCont) {
 	console.info(`Running HoloPrint ${VERSION}`);
@@ -937,9 +943,12 @@ export async function updatePack(resourcePack, config, resourcePackStack, previe
 	return await makePack(structureFiles, config, resourcePackStack, previewCont);
 }
 /**
- * Returns the default pack name that would be used if no pack name is specified.
- * @param {Array<File>} structureFiles
- * @returns {string}
+ * Generates a default resource pack name based on the names of provided structure files.
+ *
+ * If the combined name exceeds 40 characters, it is truncated with an ellipsis. Returns "hologram" if no valid names are found.
+ *
+ * @param {Array<File>} structureFiles - Structure files to derive the pack name from.
+ * @returns {string} The generated default pack name.
  */
 export function getDefaultPackName(structureFiles) {
 	let defaultName = structureFiles.map(structureFile => structureFile.name.replace(/(\.holoprint)?\.[^.]+$/, "")).join(", ");
@@ -952,9 +961,10 @@ export function getDefaultPackName(structureFiles) {
 	return defaultName;
 }
 /**
- * Finds all labels and links in a description section that will be put in the settings links section.
- * @param {string} description
- * @returns {Array<[string, string]>}
+ * Extracts label-URL pairs from a description string for use in settings links.
+ *
+ * @param {string} description - The text to search for label and URL pairs.
+ * @returns {Array<[string, string]>} An array of [label, url] pairs found in the description.
  */
 export function findLinksInDescription(description) {
 	let links = [];
@@ -966,10 +976,13 @@ export function findLinksInDescription(description) {
 	return links;
 }
 /**
- * Creates an ItemCriteria from arrays of names and tags.
- * @param {string|Array<string>} names
- * @param {string|Array<string>} [tags]
- * @returns {ItemCriteria}
+ * Constructs an ItemCriteria object from provided item names and tags.
+ *
+ * Accepts either a single name or tag, or arrays of names and tags, and ensures both are arrays in the resulting object.
+ *
+ * @param {string|Array<string>} names - Item name or array of item names to match.
+ * @param {string|Array<string>} [tags] - Tag or array of tags to match.
+ * @returns {ItemCriteria} An object containing arrays of item names and tags for item matching.
  */
 export function createItemCriteria(names, tags = []) { // IDK why I haven't made this a class
 	if(!Array.isArray(names)) {
@@ -1029,8 +1042,9 @@ export function addDefaultConfig(config) {
 	});
 }
 /**
- * Creates a CachingFetcher to read pmmp/BedrockData.
- * @returns {Promise<CachingFetcher>}
+ * Creates a CachingFetcher for retrieving PMMP BedrockData resources from a CDN.
+ *
+ * @returns {Promise<CachingFetcher>} Resolves to a CachingFetcher instance configured for the specified BedrockData version.
  */
 export async function createPmmpBedrockDataFetcher() {
 	const pmmpBedrockDataVersion = "4.1.0+bedrock-1.21.70";
@@ -1038,17 +1052,22 @@ export async function createPmmpBedrockDataFetcher() {
 }
 
 /**
- * Checks if a NBT object is valid .mcstructure NBT.
- * @param {object} nbt
- * @returns {boolean}
+ * Determines whether the given NBT object conforms to the .mcstructure format.
+ *
+ * @param {object} nbt - The NBT object to validate.
+ * @returns {boolean} True if the object has the required keys and format version for a .mcstructure file; otherwise, false.
  */
 function isNBTValidMcstructure(nbt) {
 	return nbt["format_version"] == 1 && "size" in nbt && "structure" in nbt && "structure_world_origin" in nbt;
 }
 /**
- * Reads the NBT of a structure file, returning a JSON object.
- * @param {File} structureFile `*.mcstructure`
- * @returns {Promise<object>}
+ * Parses and returns the NBT data from a Minecraft structure file as a JSON object.
+ *
+ * @param {File} structureFile - The `.mcstructure` file to read.
+ * @returns {Promise<object>} The parsed NBT data from the structure file.
+ *
+ * @throws {UserError} If the file is empty.
+ * @throws {Error} If the file cannot be read or contains invalid NBT data.
  */
 async function readStructureNBT(structureFile) {
 	if(structureFile.size == 0) {
@@ -1059,15 +1078,17 @@ async function readStructureNBT(structureFile) {
 	return nbt.data;
 }
 /**
- * Loads many files from different sources.
+ * Loads multiple files and data entries from various sources, returning their resolved contents.
+ *
  * @template TPackTemplate
  * @template TResources
  * @template TOtherFiles
  * @template TData
- * @param {{ packTemplate?: TPackTemplate, resources?: TResources, otherFiles?: TOtherFiles, data?: TData }} stuff
+ *
+ * @param {{ packTemplate?: TPackTemplate, resources?: TResources, otherFiles?: TOtherFiles, data?: TData }} stuff - Object specifying file and data sources to load.
  * @param {ResourcePackStack} resourcePackStack
- * @returns {Promise<{ files: { [K in keyof TPackTemplate | keyof TResources | keyof TOtherFiles]?: string|Blob|Record<string, any>|Array<any>|HTMLImageElement }, data: { [K in keyof TData]?: string|Blob|Record<string, any>|Array<any>|HTMLImageElement } }>}
-*/
+ * @returns {Promise<{ files: { [K in keyof TPackTemplate | keyof TResources | keyof TOtherFiles]?: string|Blob|Record<string, any>|Array<any>|HTMLImageElement }, data: { [K in keyof TData]?: string|Blob|Record<string, any>|Array<any>|HTMLImageElement } }>} Resolves to an object containing loaded files and data keyed by their source names.
+ */
 async function loadStuff(stuff, resourcePackStack) {
 	let filePromises = {};
 	Object.entries(stuff.packTemplate ?? {}).forEach(([name, path]) => {
@@ -1108,11 +1129,15 @@ async function loadStuff(stuff, resourcePackStack) {
  * @returns {Promise<HTMLImageElement>}
  */
 /**
- * Gets the contents of a response based on the requested file extension (e.g. object from .json, image from .png, etc.).
- * @overload
- * @param {Promise<Response>} resPromise
- * @param {string} filePath
- * @returns {Promise<Blob>}
+ * Retrieves and parses the contents of a response according to the file extension.
+ *
+ * For `.json` and `.material` files, returns the parsed JSON object. For `.lang` files, returns the text content. For `.png` files, returns an image object. For all other file types, returns the response as a Blob.
+ *
+ * @param {Promise<Response>} resPromise - A promise resolving to the response object.
+ * @param {string} filePath - The file path used to determine the file extension.
+ * @returns {Promise<any>} The parsed content, type depending on the file extension.
+ *
+ * @throws {Error} If the HTTP response status is 400 or higher.
  */
 async function getResponseContents(resPromise, filePath) {
 	let res = await resPromise;
@@ -1129,9 +1154,13 @@ async function getResponseContents(resPromise, filePath) {
 	return await res.blob();
 }
 /**
- * Removes ignored blocks from the block palette, updates old blocks, and adds block entities as separate entries.
- * @param {Record<string, any>} structure The de-NBT-ed structure file
- * @returns {{ palette: Array<Block>, indices: [Array<number>, Array<number>] }}
+ * Processes a structure's block palette by removing ignored blocks, updating outdated blocks, and adding unique block entities as separate palette entries.
+ *
+ * The function clones and updates the block palette, strips ignored blocks, upgrades block versions if needed, and ensures each unique block entity is represented as a distinct palette entry. Palette indices are remapped accordingly.
+ *
+ * @param {Record<string, any>} structure - The parsed structure file object.
+ * @param {Array<string>} ignoredBlocks - List of block names to exclude from the palette.
+ * @returns {{ palette: Array<Block>, indices: [Array<number>, Array<number>] }} The updated block palette and remapped indices.
  */
 async function tweakBlockPalette(structure, ignoredBlocks) {
 	let palette = structuredClone(structure["palette"]["default"]["block_palette"]);
@@ -1208,9 +1237,10 @@ async function tweakBlockPalette(structure, ignoredBlocks) {
 	return { palette, indices };
 }
 /**
- * Combines multiple block palettes into one, and updates indices for each.
- * @param {Array<{palette: Array<Block>, indices: Array<[number, number]>}>} palettesAndIndices
- * @returns {{palette: Array<Block>, indices: Array<Array<[number, number]>>}}
+ * Merges multiple block palettes into a single unified palette and remaps all associated indices.
+ *
+ * @param {Array<{palette: Array<Block>, indices: Array<[number, number]>}>} palettesAndIndices - List of palettes and their corresponding indices to merge.
+ * @returns {{palette: Array<Block>, indices: Array<Array<[number, number]>>}} The merged palette and updated indices for each original palette.
  */
 function mergeMultiplePalettesAndIndices(palettesAndIndices) {
 	if(palettesAndIndices.length == 1) {
@@ -1235,10 +1265,11 @@ function mergeMultiplePalettesAndIndices(palettesAndIndices) {
 	};
 }
 /**
- * Adds bounding box particles for a single structure to the hologram animation controllers in-place.
- * @param {Record<string, any>} hologramAnimationControllers
- * @param {number} structureI
- * @param {Vec3} structureSize
+ * Adds bounding box particle effects for a specific structure to the hologram animation controllers.
+ *
+ * @param {Record<string, any>} hologramAnimationControllers - The animation controllers object to modify.
+ * @param {number} structureI - The index of the structure for which to add bounding box particles.
+ * @param {Vec3} structureSize - The size of the structure as a 3D vector.
  */
 function addBoundingBoxParticles(hologramAnimationControllers, structureI, structureSize) {
 	let outlineParticleSettings = [
@@ -1277,11 +1308,14 @@ function addBoundingBoxParticles(hologramAnimationControllers, structureI, struc
 	});
 }
 /**
- * Adds block validation particles for a single structure to the hologram animation controllers in-place.
- * @param {Record<string, any>} hologramAnimationControllers
- * @param {number} structureI
- * @param {Array<Record<string, any>>} blocksToValidate
- * @param {Vec3} structureSize
+ * Adds particle effects and animation state transitions for block validation overlays to the hologram animation controllers for a specific structure.
+ *
+ * Updates the animation controller states to display validation particles at the positions of specified blocks, enabling visual feedback for block validation in hologram layers.
+ *
+ * @param {Record<string, any>} hologramAnimationControllers - The animation controllers object to modify.
+ * @param {number} structureI - Index of the structure being processed.
+ * @param {Array<Record<string, any>>} blocksToValidate - List of blocks requiring validation overlays, each with position and block data.
+ * @param {Vec3} structureSize - The size of the structure as a 3D vector.
  */
 function addBlockValidationParticles(hologramAnimationControllers, structureI, blocksToValidate, structureSize) {
 	let validateAllState = {
@@ -1350,10 +1384,13 @@ function addBlockValidationParticles(hologramAnimationControllers, structureI, b
 }
 
 /**
- * Add player controls. These are done entirely in the render controller so character creator skins aren't disabled.
- * @param {HoloPrintConfig} config
- * @param {Record<string, any>} defaultPlayerRenderControllers
- * @returns {Record<string, any>}
+ * Injects Molang scripts for player control actions into the provided render controllers.
+ *
+ * This enables interactive hologram controls (such as toggling rendering, changing opacity, and moving the hologram) via item-based actions, without disabling character creator skins.
+ *
+ * @param {HoloPrintConfig} config - Configuration specifying control item bindings and related options.
+ * @param {Record<string, any>} defaultPlayerRenderControllers - The base render controllers to patch.
+ * @returns {Record<string, any>} A new set of render controllers with player control logic added.
  */
 function addPlayerControlsToRenderControllers(config, defaultPlayerRenderControllers) {
 	let initVariables = functionToMolang(entityScripts.playerInitVariables);
@@ -1380,10 +1417,14 @@ function addPlayerControlsToRenderControllers(config, defaultPlayerRenderControl
 	});
 }
 /**
- * Patches a set of render controllers with some extra Molang code. Returns a new set of render controllers.
- * @param {Record<string, any>} renderControllers
- * @param {Record<string, any>} patches
- * @returns {Record<string, any>}
+ * Applies Molang code patches to specified render controllers and returns a new set with updated texture expressions.
+ *
+ * @param {Record<string, any>} renderControllers - The original render controllers object.
+ * @param {Record<string, any>} patches - An object mapping controller IDs to Molang code patches.
+ * @returns {Record<string, any>} A new render controllers object with patched texture expressions.
+ *
+ * @remark
+ * If a controller ID in {@link patches} does not exist in {@link renderControllers}, it is skipped and an error is logged.
  */
 function patchRenderControllers(renderControllers, patches) {
 	return {
@@ -1409,14 +1450,17 @@ function patchRenderControllers(renderControllers, patches) {
 	};
 }
 /**
- * Translates control items by making a fake material list.
- * @param {HoloPrintConfig} config
- * @param {Record<string, any>} blockMetadata
- * @param {Record<string, any>} itemMetadata
- * @param {Array<string>} languagesDotJson
- * @param {Record<string, string>} resourceLangFiles
- * @param {Record<string, Array<string>>} itemTags
- * @returns {Promise<{ inGameControls: Record<string, string>, controlItemTranslations: Record<string, string> }>}
+ * Generates translated in-game control item names and translation strings for multiple languages.
+ *
+ * For each language, creates a mapping of control actions to their translated item names and builds translation entries for all relevant control items, including those referenced by tags.
+ *
+ * @param {HoloPrintConfig} config - The configuration object containing control definitions.
+ * @param {Record<string, any>} blockMetadata - Metadata for blocks used in translation.
+ * @param {Record<string, any>} itemMetadata - Metadata for items used in translation.
+ * @param {Array<string>} languagesDotJson - List of language codes to generate translations for.
+ * @param {Record<string, string>} resourceLangFiles - Mapping of language codes to resource language file contents.
+ * @param {Record<string, Array<string>>} itemTags - Mapping of tag names to arrays of item names.
+ * @returns {Promise<{ inGameControls: Record<string, string>, controlItemTranslations: Record<string, string> }>} An object containing per-language mappings of control descriptions and translation strings for control items.
  */
 async function translateControlItems(config, blockMetadata, itemMetadata, languagesDotJson, resourceLangFiles, itemTags) {
 	// make a fake material list for the in-game control items (just to translate them lol)
@@ -1532,10 +1576,11 @@ async function makePackIcon(structureFile) {
 	return await can.convertToBlob();
 }
 /**
- * Expands item criteria into an array of item names by expanding all item tags.
- * @param {ItemCriteria} itemCriteria
- * @param {Record<string, Array<string>>} itemTags
- * @returns {Array<string>}
+ * Returns a list of item names by combining explicit names and all items referenced by Minecraft tags in the given criteria.
+ *
+ * @param {ItemCriteria} itemCriteria - Criteria specifying item names and tags.
+ * @param {Record<string, Array<string>>} itemTags - Mapping of tag names to arrays of item names.
+ * @returns {Array<string>} Array of item names, with tag-derived items included and namespace prefixes removed.
  */
 function expandItemCriteria(itemCriteria, itemTags) {
 	let minecraftTags = itemCriteria["tags"].filter(tag => !tag.includes(":")); // we can't find which items are used in custom tags
@@ -1543,9 +1588,11 @@ function expandItemCriteria(itemCriteria, itemTags) {
 	return [...itemCriteria["names"], ...namespacedItemsFromTags.map(itemName => itemName.replace(/^minecraft:/, ""))];
 }
 /**
- * Converts an item filter into a Molang expression representation.
- * @param {ItemCriteria} itemCriteria
- * @returns {string}
+ * Converts item criteria into a Molang expression for matching equipped items.
+ *
+ * @param {ItemCriteria} itemCriteria - Criteria specifying item names and tags to match.
+ * @param {string} [slot="slot.weapon.mainhand"] - The inventory slot to check.
+ * @returns {string} A Molang expression that evaluates to true if the equipped item matches the criteria.
  */
 function itemCriteriaToMolang(itemCriteria, slot = "slot.weapon.mainhand") {
 	let names = itemCriteria["names"].map(name => name.includes(":")? name : `minecraft:${name}`);
@@ -1555,10 +1602,13 @@ function itemCriteriaToMolang(itemCriteria, slot = "slot.weapon.mainhand") {
 	return [nameQuery, tagQuery].removeFalsies().join("||") || "false";
 }
 /**
- * Creates a Molang expression that mimics array access. Defaults to the last element if nothing is found.
- * @param {Array} array A continuous array
- * @param {string} indexVar
- * @returns {string}
+ * Generates a Molang expression that simulates accessing an element from a 1D array by index.
+ *
+ * If the index is out of bounds, the expression defaults to the last element of the array.
+ *
+ * @param {Array} array - The array of values to convert into a Molang expression.
+ * @param {string} indexVar - The Molang variable representing the index to access.
+ * @returns {string} A Molang expression for array element selection with bounds checking.
  */
 export function arrayToMolang(array, indexVar) {
 	let arrayEntries = Object.entries(array); // to handle splitting, original indices need to be preserved, hence looking at index-value pairs
@@ -1573,20 +1623,25 @@ function arrayEntriesToMolang(entries, indexVar) {
 	return entries.map(([index, value], i) => i == entries.length - 1? value : `${i > 0? "(" : ""}${indexVar}==${index}?${value}:`).join("") + ")".repeat(max(entries.length - 2, 0));
 }
 /**
- * Creates a Molang expression that mimics 2D array access.
- * @param {Array<Array>} array
- * @param {string} indexVar1
- * @param {string} indexVar2
- * @returns {string}
+ * Converts a 2D JavaScript array into a Molang expression for indexed access.
+ *
+ * @param {Array<Array>} array - The 2D array to convert.
+ * @param {string} indexVar1 - The Molang variable representing the first (outer) index.
+ * @param {string} indexVar2 - The Molang variable representing the second (inner) index.
+ * @returns {string} A Molang expression that emulates 2D array access using {@link indexVar1} and {@link indexVar2}.
  */
 function array2DToMolang(array, indexVar1, indexVar2) {
 	return arrayToMolang(array.map(subArray => `(${arrayToMolang(subArray, indexVar2)})`), indexVar1);
 }
 /**
- * Converts a function into minified Molang code. Variables can be referenced with $[...].
- * @param {Function} func
- * @param {Record<string, any>} [vars]
- * @returns {string} Molang code
+ * Converts a JavaScript function into minified Molang code, substituting variables referenced as $[var] with provided values.
+ *
+ * @param {Function} func - The function to convert to Molang code.
+ * @param {Record<string, any>} [vars] - Optional variables for substitution in the generated Molang code.
+ * @returns {string} The resulting Molang code as a string.
+ *
+ * @throws {ReferenceError} If a referenced variable in the function is not provided in {@link vars}.
+ * @throws {RangeError} If an array or object index referenced in a variable substitution is out of bounds.
  */
 function functionToMolang(func, vars = {}) {
 	let funcCode = func.toString();
@@ -1710,9 +1765,10 @@ function functionToMolang(func, vars = {}) {
 	return variabledCode;
 }
 /**
- * JSON.stringify(), but shortens numbers to at most 4 decimal places to avoid JS floating-point errors making stringified numbers long.
- * @param {*} value
- * @returns {string}
+ * Converts a value to a JSON string, rounding all numbers to a maximum of 4 decimal places.
+ *
+ * @param {*} value - The value to stringify.
+ * @returns {string} The JSON string with numbers rounded to 4 decimal places.
  */
 function stringifyWithFixedDecimals(value) {
 	const NUMBER_OF_DECIMALS = 4;

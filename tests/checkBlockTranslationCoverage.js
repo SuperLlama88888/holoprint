@@ -11,6 +11,13 @@ const plainTextHeaders = {
 
 test();
 
+/**
+ * Runs an automated integration test by serving a modified HTML page and static assets from the `dist` directory, launching a headless browser to execute client-side code, and reporting results.
+ *
+ * The function sets up a local HTTP server, modifies the served `index.html` to inject an import map and a preview container, and serves static files from the `dist` directory. It then launches a Puppeteer browser instance, loads the page, and evaluates code that processes Minecraft block and item metadata, filters block names, and logs the exported material list as JSON. Test results are tracked and reported via process exit codes and console output.
+ *
+ * @remark Exits the process with code 0 on success, or 1 if errors or warnings are detected during the test.
+ */
 async function test() {
 	let indexPage = await fs.promises.readFile(path.join(__dirname, "../dist/index.html"), "utf-8");
 	let headImportMap = indexPage.match(/<script type="importmap">[^]+?<\/script>/)[0];

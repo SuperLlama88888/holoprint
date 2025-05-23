@@ -25,6 +25,14 @@ if(!fs.existsSync(screenshotUploadDir)) {
 
 test();
 
+/**
+ * Runs the automated test workflow for generating and validating Minecraft resource packs.
+ *
+ * Sets up a local HTTP server to serve test resources and receive generated packs, launches a Puppeteer-controlled browser to process sample structure files, generates resource packs, uploads them to the server, and optionally captures preview screenshots. Logs test results and exits the process with a success or failure code based on outcomes.
+ *
+ * @remark
+ * Only `.mcstructure` files in the `sampleStructures` directory are processed; others are logged as errors. Screenshots are captured only when using the Chrome browser engine.
+ */
 async function test() {
 	let uploadedPackFilePaths = [];
 	
