@@ -24,7 +24,7 @@ export default class BlockUpdater {
 	/**
 	 * Checks if a block needs updating to the latest Minecraft version.
 	 * @param {NBTBlock} block
-	 * @returns {Boolean}
+	 * @returns {boolean}
 	 */
 	blockNeedsUpdating(block) {
 		return block["version"] < BlockUpdater.LATEST_VERSION;
@@ -33,7 +33,7 @@ export default class BlockUpdater {
 	 * Upgrades a block from older Minecraft versions to the latest Minecraft version.
 	 * @mutating
 	 * @param {NBTBlock} block
-	 * @returns {Promise<Boolean>} Whether or not the block was updated. (The version number will always be updated.)
+	 * @returns {Promise<boolean>} Whether or not the block was updated. (The version number will always be updated.)
 	 */
 	async update(block) {
 		let oldBlockStringified = BlockUpdater.stringifyBlock(block);
@@ -78,7 +78,7 @@ export default class BlockUpdater {
 	 * @mutating
 	 * @param {BlockUpdateSchema} schema
 	 * @param {NBTBlock} block
-	 * @returns {Boolean} Whether or not the block changed between versions. (The version number will always be updated, unless it encountered an error.)
+	 * @returns {boolean} Whether or not the block changed between versions. (The version number will always be updated, unless it encountered an error.)
 	 */
 	#applyUpdateSchema(schema, block) {
 		let schemaVersion = this.#getSchemaVersion(schema);
@@ -195,7 +195,7 @@ export default class BlockUpdater {
 	 * @mutating
 	 * @param {BlockUpdateSchemaFlattenRule} flattenRule
 	 * @param {NBTBlock} block
-	 * @returns {Boolean} If the block state was successfully flattened
+	 * @returns {boolean} If the block state was successfully flattened
 	 */
 	#applyFlattenedProperty(flattenRule, block) {
 		let blockStateName = flattenRule["flattenedProperty"];
@@ -211,14 +211,14 @@ export default class BlockUpdater {
 	}
 	/**
 	 * @param {TypedBlockStateProperty} blockStateProperty 
-	 * @returns {Number|String}
+	 * @returns {number|string}
 	 */
 	#readBlockStateProperty(blockStateProperty) {
 		return Object.values(blockStateProperty)[0]; // blockStateValue is an object that's either { "string": "value" }, { "int": 0 }, or { "byte": 0 } but it's all the same in JS
 	}
 	/**
 	 * @param {BlockUpdateSchema|BlockUpdateSchemaSkeleton} schema
-	 * @returns {Number}
+	 * @returns {number}
 	 */
 	#getSchemaVersion(schema) {
 		return (schema["maxVersionMajor"] << 24) | (schema["maxVersionMinor"] << 16) | (schema["maxVersionPatch"] << 8) | schema["maxVersionRevision"];
@@ -226,8 +226,8 @@ export default class BlockUpdater {
 	/**
 	 * "Stringifies" a block with its name and states.
 	 * @param {NBTBlock|Block} block
-	 * @param {Boolean} [includeVersion]
-	 * @returns {String}
+	 * @param {boolean} [includeVersion]
+	 * @returns {string}
 	 */
 	static stringifyBlock(block, includeVersion = true) {
 		let blockStates = Object.entries(block["states"]).map(([name, value]) => `${name}=${value}`).join(",");
@@ -242,8 +242,8 @@ export default class BlockUpdater {
 	}
 	/**
 	 * Expands the block version number found in structure NBT into an array.
-	 * @param {Number} blockVersion Block version number as found in structure NBT
-	 * @returns {Array<Number>}
+	 * @param {number} blockVersion Block version number as found in structure NBT
+	 * @returns {Array<number>}
 	 */
 	static parseBlockVersion(blockVersion) {
 		return blockVersion.toString(16).padStart(8, 0).match(/.{2}/g).map(x => parseInt(x, 16));

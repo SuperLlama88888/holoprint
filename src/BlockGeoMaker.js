@@ -161,8 +161,8 @@ export default class BlockGeoMaker {
 	}
 	/**
 	 * Gets the block shape for a specific block.
-	 * @param {String} blockName
-	 * @returns {String}
+	 * @param {string} blockName
+	 * @returns {string}
 	 */
 	#getBlockShape(blockName) {
 		if(this.#cachedBlockShapes.has(blockName)) {
@@ -180,7 +180,7 @@ export default class BlockGeoMaker {
 	/**
 	 * Makes the cubes in a bone from a block.
 	 * @param {Block} block
-	 * @param {String} blockShape
+	 * @param {string} blockShape
 	 * @returns {Array}
 	 */
 	#makeBoneCubes(block, blockShape) {
@@ -451,15 +451,15 @@ export default class BlockGeoMaker {
 	/**
 	 * Returns the entries of a block's states and block entity data (prefixed by `entity.`; only first-level properties are supported).
 	 * @param {Block} block
-	 * @returns {Array<[String, any]>}
+	 * @returns {Array<[string, any]>}
 	 */
 	#getBlockStatesAndEntityDataEntries(block) {
 		return [...Object.entries(block["states"] ?? {}), ...Object.entries(block["block_entity_data"] ?? {}).map(([key, value]) => [`entity.${key}`, value])];
 	}
 	/**
 	 * Merges cubes together greedily.
-	 * @param {Array<Object>} cubes
-	 * @returns {Array<Object>}
+	 * @param {Array<object>} cubes
+	 * @returns {Array<object>}
 	 */
 	#mergeCubes(cubes) {
 		let unmergeableCubes = [];
@@ -497,8 +497,8 @@ export default class BlockGeoMaker {
 	/**
 	 * Gets the index of the variant to use in terrain_texture.json for a block.
 	 * @param {Block} block
-	 * @param {Boolean} [ignoreEigenvariant]
-	 * @returns {Number}
+	 * @param {boolean} [ignoreEigenvariant]
+	 * @returns {number}
 	 */
 	#getTextureVariant(block, ignoreEigenvariant = false) {	
 		let blockName = block["name"];
@@ -567,8 +567,8 @@ export default class BlockGeoMaker {
 	}
 	/**
 	 * Calculates the UV for a cube.
-	 * @param {Object} cube
-	 * @returns {Object}
+	 * @param {object} cube
+	 * @returns {object}
 	 */
 	#calculateUv(cube) {
 		if("box_uv" in cube) { // this is where a singular uv coordinate is specified, and the rest is calculated as below. used primarily in entity models.
@@ -640,8 +640,8 @@ export default class BlockGeoMaker {
 		}
 	}
 	/** Scales a bone cube towards (8, 8, 8).
-	 * @param {Object} boneCube
-	 * @returns {Object}
+	 * @param {object} boneCube
+	 * @returns {object}
 	 */
 	#scaleBoneCube(boneCube) {
 		boneCube["origin"] = boneCube["origin"].map(x => (x - 8) * this.config.SCALE + 8);
@@ -732,9 +732,9 @@ export default class BlockGeoMaker {
 	/**
 	 * Substitutes values from a block into a particular expression.
 	 * @param {Block} block
-	 * @param {String} fullExpression
-	 * @param {Object} cube
-	 * @returns {String}
+	 * @param {string} fullExpression
+	 * @param {object} cube
+	 * @returns {string}
 	 */
 	#interpolateInBlockValues(block, fullExpression, cube) {
 		let wholeStringValue;
@@ -810,9 +810,9 @@ export default class BlockGeoMaker {
 	}
 	/**
 	 * Unpurely tries to merge the second cube into the first if the second is more positive than the first.
-	 * @param {Object} cube1
-	 * @param {Object} cube2
-	 * @returns {Boolean} If the second cube was merged into the first.
+	 * @param {object} cube1
+	 * @param {object} cube2
+	 * @returns {boolean} If the second cube was merged into the first.
 	 */
 	#tryMergeCubesOneWay(cube1, cube2) {
 		if(cube1.x + cube1.w == cube2.x) { // bone cube 2 is to the right of bone cube 1

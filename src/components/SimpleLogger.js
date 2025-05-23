@@ -125,7 +125,7 @@ export default class SimpleLogger extends HTMLElement {
 			text,
 			level: logLevel,
 			stackTrace,
-			time: performance.now() - this.#originTime
+			time: +(performance.now() - this.#originTime).toFixed(1)
 		});
 		if(logLevel == "debug") {
 			return;

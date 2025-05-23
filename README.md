@@ -1,4 +1,4 @@
-![HoloPrint](assets/banner.png)
+![HoloPrint](images/banner.png)
 
 [![简体中文](https://img.shields.io/badge/Language-简体中文-blue)](README.zh-CN.md)
 ### About
@@ -9,44 +9,44 @@ HoloPrint is a web app that converts MCBE structure files into resource packs sh
 
 ### Usage
 > [!NOTE]
-> On Android the Structure Block export button is hidden; please use [this pack](assets/structureBlockButtonAdderPack.mcpack) to add it back.
+> On Android the Structure Block export button is hidden; please use [this pack](https://holoprint-mc.github.io/exportbutton) to add it back.
 1. Use a Structure Block to export a `.mcstructure` file. To get a structure block, run the command `/give @s structure_block`.  
-![Give Structure Block command](assets/giveStructureBlockCommand.png)  
-![Structure Block exporting](assets/structureBlockExporting.png)
+![Give Structure Block command](images/giveStructureBlockCommand.png)  
+![Structure Block exporting](images/structureBlockExporting.png)
 2. Go to [https://holoprint-mc.github.io](https://holoprint-mc.github.io), select your `.mcstructure` file, and tweak settings.  
-![Pack generation screen](assets/packGenerationScreen.png)
+![Pack generation screen](images/packGenerationScreen.png)
 3. Generate and download your resource pack (`.mcpack`).  
-![Resource pack active](assets/resourcePackActive.png)
+![Resource pack active](images/resourcePackActive.png)
 4. Apply your resource pack and place an armour stand in your world.  
-![Placing armour stand](assets/placingArmourStand.gif)
+![Placing armour stand](images/placingArmourStand.gif)
 
 ### Hologram controls ([Wiki](https://holoprint-mc.github.io/wiki/hologram-controls))
 - Toggle rendering: Brick  
-![Toggling rendering](assets/togglingRendering.gif)
+![Toggling rendering](images/togglingRendering.gif)
 - Change transparency: Amethyst shard (sneak to decrease, stand to increase)  
-![Changing transparency](assets/changingTransparency.gif)
+![Changing transparency](images/changingTransparency.gif)
 - Change layer: Leather (sneak to decrease, stand to increase), or changing the pose on the armour stand  
-![Changing layer](assets/changingLayer.gif)
+![Changing layer](images/changingLayer.gif)
 - Move hologram: Stick  
-![Moving hologram](assets/movingHologram.gif)
+![Moving hologram](images/movingHologram.gif)
 - Rotate hologram: Copper ingot  
-![Rotating hologram](assets/rotatingHologram.gif)
+![Rotating hologram](images/rotatingHologram.gif)
 - Block validation: Iron ingot  
-![Validating structure](assets/validatingStructure.gif)
+![Validating structure](images/validatingStructure.gif)
 - Material list: Tab button (keyboard), book icon (touch)  
-![Material list](assets/materialList.gif)
+![Material list](images/materialList.gif)
 - Toggle tint: White dye  
-![Toggle tint](assets/togglingTint.gif)
+![Toggle tint](images/togglingTint.gif)
 - Change layer mode: Flint  
-![Change layer mode](assets/changingLayerMode.gif)
+![Change layer mode](images/changingLayerMode.gif)
 - Change structure: Arrow, or hit armour stand that's holding nothing  
-![Changing structure](assets/changingStructure.gif)
+![Changing structure](images/changingStructure.gif)
 - Save hologram settings: Paper  
-![Saving backup](assets/savingBackup.gif)
+![Saving backup](images/savingBackup.gif)
 - Armour stand controls: Give item or hit  
-![Armour stand controls](assets/armourStandControls.gif)
+![Armour stand controls](images/armourStandControls.gif)
 - Disable player controls: Bone  
-![Disabling player controls](assets/disablingPlayerControls.gif)
+![Disabling player controls](images/disablingPlayerControls.gif)
 > [!WARNING]
 > Player controls may be unreliable, but armour stand controls will always work.
 

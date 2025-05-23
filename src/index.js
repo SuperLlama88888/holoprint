@@ -466,8 +466,8 @@ async function translatePage(language, generateTranslations = false) {
 }
 /**
  * @param {Element} el
- * @param {String} translation
- * @returns {String}
+ * @param {string} translation
+ * @returns {string}
  */
 function performTranslationSubstitutions(el, translation) {
 	const prefix = "data-translation-sub-";
@@ -510,7 +510,7 @@ async function temporarilyChangeText(el, translationKey, duration = 2000) {
 /**
  * Validates a file input based on the value of the `accept` attribute. Only works when `accept` is a comma-separated list of file extensions, not for MIME types.
  * @param {HTMLInputElement} fileInput
- * @returns {Boolean}
+ * @returns {boolean}
  */
 function validateFileInputFileTypes(fileInput) {
 	let acceptableFileExtensions = fileInput.accept.split(",");

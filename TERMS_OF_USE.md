@@ -19,4 +19,4 @@ HoloPrint uses **no** cookies, and the only data stored on your browser is cache
 
 For transparency, here is all the data stored for analytics:
 
-![Structure hashes table](assets/structureHashesTable.png)
+![Structure hashes table](images/structureHashesTable.png)

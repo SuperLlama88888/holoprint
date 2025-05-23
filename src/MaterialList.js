@@ -22,9 +22,9 @@ export default class MaterialList {
 	
 	/**
 	 * Creates a material list manager to count a list of items.
-	 * @param {Object} blockMetadata `Mojang/bedrock-samples/metadata/vanilladata_modules/mojang-blocks.json`
-	 * @param {Object} itemMetadata `Mojang/bedrock-samples/metadata/vanilladata_modules/mojang-items.json`
-	 * @param {String} [translations] The text contents of a `.lang` file
+	 * @param {object} blockMetadata `Mojang/bedrock-samples/metadata/vanilladata_modules/mojang-blocks.json`
+	 * @param {object} itemMetadata `Mojang/bedrock-samples/metadata/vanilladata_modules/mojang-items.json`
+	 * @param {string} [translations] The text contents of a `.lang` file
 	 */
 	constructor(blockMetadata, itemMetadata, translations) {
 		this.materials = new Map();
@@ -70,8 +70,8 @@ export default class MaterialList {
 	}
 	/**
 	 * Adds a block to the material list.
-	 * @param {String|Block} block
-	 * @param {Number} [count]
+	 * @param {string|Block} block
+	 * @param {number} [count]
 	 */
 	add(block, count = 1) {
 		let blockName = typeof block == "string"? block : block["name"];
@@ -108,8 +108,8 @@ export default class MaterialList {
 	}
 	/**
 	 * Adds an item to the material list.
-	 * @param {String} itemName
-	 * @param {Number} [count]
+	 * @param {string} itemName
+	 * @param {number} [count]
 	 */
 	addItem(itemName, count = 1) {
 		this.materials.set(itemName, (this.materials.get(itemName) ?? 0) + count);
@@ -166,7 +166,7 @@ export default class MaterialList {
 	}
 	/**
 	 * Sets the language of the material list for exporting.
-	 * @param {String} translations The text contents of a `.lang` file
+	 * @param {string} translations The text contents of a `.lang` file
 	 */
 	setLanguage(translations) {
 		this.#translations = new Map();
@@ -192,24 +192,24 @@ export default class MaterialList {
 	}
 	/**
 	 * Finds an item serialization id.
-	 * @param {String} itemName
-	 * @returns {String}
+	 * @param {string} itemName
+	 * @returns {string}
 	 */
 	#findItemSerializationId(itemName) {
 		return this.#itemMetadata.get(`minecraft:${itemName}`)?.["serialization_id"];
 	}
 	/**
 	 * Finds a block serialization id.
-	 * @param {String} blockName
-	 * @returns {String}
+	 * @param {string} blockName
+	 * @returns {string}
 	 */
 	#findBlockSerializationId(blockName) {
 		return this.#blockMetadata.get(`minecraft:${blockName}`)?.["serialization_id"];
 	}
 	/**
 	 * Converts a serialisation id into a translation key, also applying a patch if required.
-	 * @param {String} serializationId
-	 * @returns {String}
+	 * @param {string} serializationId
+	 * @returns {string}
 	 */
 	#serializationIdToTranslationKey(serializationId) {
 		if(this.#individualSerializationIdPatches.has(serializationId)) {
@@ -224,8 +224,8 @@ export default class MaterialList {
 	}
 	/**
 	 * Translates a given serialisation id.
-	 * @param {String} serializationId
-	 * @returns {String}
+	 * @param {string} serializationId
+	 * @returns {string}
 	 */
 	#translate(serializationId) {
 		let translationKey = this.#serializationIdToTranslationKey(serializationId);
@@ -233,8 +233,8 @@ export default class MaterialList {
 	}
 	/**
 	 * Partitions a number of items into how many boxes and stacks it is.
-	 * @param {Number} count E.g. 100
-	 * @returns {String} E.g. 1s + 36
+	 * @param {number} count E.g. 100
+	 * @returns {string} E.g. 1s + 36
 	 */
 	#partitionCount(count) {
 		if(count < 64) {
@@ -246,16 +246,16 @@ export default class MaterialList {
 	}
 	/**
 	 * Finds the aux id for an item.
-	 * @param {String} itemName
-	 * @returns {Number|undefined}
+	 * @param {string} itemName
+	 * @returns {number|undefined}
 	 */
 	#findItemAuxId(itemName) {
 		return nanToUndefined(this.#itemMetadata.get(`minecraft:${itemName}`)?.["raw_id"] * 65536); // undefined * 65536 = NaN, which breaks optional chaining
 	}
 	/**
 	 * Finds the aux id for a block.
-	 * @param {String} blockName
-	 * @returns {Number|undefined}
+	 * @param {string} blockName
+	 * @returns {number|undefined}
 	 */
 	#findBlockAuxId(blockName) {
 		return nanToUndefined(this.#blockMetadata.get(`minecraft:${blockName}`)?.["raw_id"] * 65536);
