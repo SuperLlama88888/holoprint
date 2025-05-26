@@ -1,8 +1,8 @@
 import * as ghActionsCore from "@actions/core";
 import * as fs from "fs";
 import * as path from "path";
-import * as Ajv from "ajv";
-import * as stripJsonComments from "strip-json-comments";
+import Ajv from "ajv";
+import stripJsonComments from "strip-json-comments";
 
 let ajv = new Ajv({
 	allErrors: true

@@ -16,7 +16,7 @@ const ACTUAL_CONSOLE_LOG = false;
 const supabaseProjectUrl = "https://gnzyfffwvulwxbczqpgl.supabase.co";
 const supabaseApiKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImduenlmZmZ3dnVsd3hiY3pxcGdsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MjMwMjE3NzgsImV4cCI6MjAzODU5Nzc3OH0.AWMhFcP3PiMD3dMC_SeIVuPx128KVpgfkZ5qBStDuVw";
 
-window.OffscreenCanvas ?? class OffscreenCanvas {
+window.OffscreenCanvas ??= class OffscreenCanvas {
 	constructor(w, h) {
 		console.debug("Using OffscreenCanvas polyfill");
 		this.canvas = document.createElement("canvas");
@@ -254,7 +254,7 @@ document.onEvent("DOMContentLoaded", () => {
 	});
 	
 	let playerControlsInputCont = selectEl("#playerControlsInputCont");
-	Object.entries(HoloPrint.DEFAULT_PLAYER_CONTROLS).map(([control, itemCriteria]) => {
+	Object.entries(HoloPrint.DEFAULT_PLAYER_CONTROLS).forEach(([control, itemCriteria]) => {
 		let label = document.createElement("label");
 		let playerControlTranslationKey = HoloPrint.PLAYER_CONTROL_NAMES[control];
 		label.innerHTML = `<span data-translate="${playerControlTranslationKey}">...</span>:`;

@@ -2,7 +2,7 @@ import * as ghActionsCore from "@actions/core";
 import * as fs from "fs";
 import * as path from "path";
 import * as http from "http";
-import * as puppeteer from "puppeteer";
+import puppeteer from "puppeteer";
 import * as mime from "mime-types";
 
 export const browserEngine = process.argv[2]?.toLowerCase() ?? "chrome";
@@ -61,12 +61,13 @@ export async function test(testBody, httpReqFunc) {
 	let status = {}; // we modify status.passedTest inside this function so we need to pass a reference
 	({ browser, page } = await setupBrowserAndPage(status));
 	
-	let passedTest = testBody(page).catch(e => {
+	let passedTest = await testBody(page).catch(e => {
 		console.error("Failed test!", e);
 		return false;
 	});
 	
 	await browser.close();
+	server.close();
 	
 	if(passedTest && status.passedTest) {
 		console.log("Passed test!");
@@ -88,7 +89,7 @@ async function setupBrowserAndPage(status) {
 	});
 	
 	let page = await browser.newPage();
-	page.setViewport({ // bigger for screenshots
+	await page.setViewport({ // bigger for screenshots
 		width: 1920,
 		height: 1080
 	});

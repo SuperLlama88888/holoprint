@@ -931,7 +931,7 @@ export async function extractStructureFilesFromPack(resourcePack) {
  */
 export async function updatePack(resourcePack, config, resourcePackStack, previewCont) {
 	let structureFiles = extractStructureFilesFromPack(resourcePack);
-	if(!structureFiles) {
+	if(!structureFiles.length) {
 		throw new UserError(`No structure files found inside resource pack ${resourcePack.name}; cannot update pack!`);
 	}
 	return await makePack(structureFiles, config, resourcePackStack, previewCont);
