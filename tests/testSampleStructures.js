@@ -20,7 +20,7 @@ test(async page => {
 		if(!filePath.endsWith(".mcstructure")) {
 			ghActionsCore.error(`The tests/testStructures folder can only have .mcstructure files; found ${filePath}!`);
 		}
-		testStructurePaths.push(path.join("tests", "sampleStructures", filePath));
+		testStructurePaths.push(path.join("../tests/sampleStructures", filePath));
 	});
 	
 	let totalTime = 0;
