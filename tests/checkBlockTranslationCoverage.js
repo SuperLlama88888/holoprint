@@ -1,6 +1,6 @@
-import { test } from "./headlessBrowserTestRunner.js";
+import { testOnSourceCode } from "./headlessBrowserTestRunner.js";
 
-test(async page => {
+testOnSourceCode(async page => {
 	await page.evaluate(async () => {
 		const ResourcePackStack = (await import("../ResourcePackStack.js")).default;
 		const MaterialList = (await import("../MaterialList.js")).default;

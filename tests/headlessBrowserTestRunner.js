@@ -13,9 +13,10 @@ export const plainTextHeaders = {
 /**
  * @param {function(puppeteer.Page): Promise<boolean>} testBody
  * @param {function(http.IncomingMessage): Promise<void>} [httpReqFunc]
+ * @param {string} [codeDirectory]
  */
-export async function test(testBody, httpReqFunc) {
-	let indexPage = await fs.promises.readFile(path.join(import.meta.dirname, "../dist/index.html"), "utf-8");
+export async function test(testBody, httpReqFunc, codeDirectory = "dist") {
+	let indexPage = await fs.promises.readFile(path.join(import.meta.dirname, `../${codeDirectory}/index.html`), "utf-8");
 	let headImportMap = indexPage.match(/<script type="importmap">[^]+?<\/script>/)[0];
 	indexPage = indexPage.replace(/<head>[^]+<\/body>/, `
 		<head>${headImportMap}</head>
@@ -37,7 +38,7 @@ export async function test(testBody, httpReqFunc) {
 				return;
 			}
 			
-			let filePath = path.join(import.meta.dirname, "../dist", req.url); // serve files from the root directory
+			let filePath = path.join(import.meta.dirname, `../${codeDirectory}`, req.url); // serve files from the root directory
 			fs.stat(filePath, (err, stats) => {
 				if(err || !stats.isFile()) {
 					res.writeHead(404, plainTextHeaders);
@@ -76,6 +77,13 @@ export async function test(testBody, httpReqFunc) {
 		console.error(`Failed test with ${status.errors} errors and ${status.warnings} warnings!`);
 		process.exit(1);
 	}
+}
+/**
+ * @param {function(puppeteer.Page): Promise<boolean>} testBody
+ * @param {function(http.IncomingMessage): Promise<void>} [httpReqFunc]
+ */
+export async function testOnSourceCode(testBody, httpReqFunc) {
+	await test(testBody, httpReqFunc, "src");
 }
 
 async function setupBrowserAndPage(status) {
