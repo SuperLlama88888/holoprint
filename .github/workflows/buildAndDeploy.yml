@@ -12,15 +12,11 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4.1.1
-      - name: Setup Node
-        uses: actions/setup-node@v4
-        with:
-          node-version: 22
-          cache: "npm"
-          cache-dependency-path: 'ci-cd/package-lock.json'
       - name: Build
         run: |
+          cd ci-cd
           npm ci
+          cd ..
           node ci-cd/build.js --browser=${{ github.ref_name }} && rm -r tests
       - name: Upload files as artifact
         uses: actions/upload-pages-artifact@v3.0.1

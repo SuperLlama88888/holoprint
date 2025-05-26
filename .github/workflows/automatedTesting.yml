@@ -38,15 +38,11 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4.1.1
-      - name: Setup Node
-        uses: actions/setup-node@v4
-        with:
-          node-version: 22
-          cache: "npm"
-          cache-dependency-path: 'ci-cd/package-lock.json'
       - name: Build
         run: |
+          cd ci-cd
           npm ci
+          cd ..
           node ci-cd/build.js --export-holoprint-lib
       - name: Upload built code
         if: matrix.browser == 'Firefox'
