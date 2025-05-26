@@ -1,15 +1,15 @@
-const ghActionsCore = require("@actions/core");
-const fs = require("fs");
-const path = require("path");
-const Ajv = require("ajv");
-const stripJsonComments = require("strip-json-comments");
+import * as ghActionsCore from "@actions/core";
+import * as fs from "fs";
+import * as path from "path";
+import * as Ajv from "ajv";
+import * as stripJsonComments from "strip-json-comments";
 
 let ajv = new Ajv({
 	allErrors: true
 });
 
 try {
-	process.chdir(path.resolve(__dirname, "../data"));
+	process.chdir(path.resolve(import.meta.dirname, "../src/data"));
 	validateJsonFiles();
 } catch(e) {
 	ghActionsCore.setFailed(`Action failed with error: ${e.message}`);
