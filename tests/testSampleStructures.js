@@ -20,21 +20,27 @@ test(async page => {
 		if(!filePath.endsWith(".mcstructure")) {
 			ghActionsCore.error(`The tests/testStructures folder can only have .mcstructure files; found ${filePath}!`);
 		}
-		testStructurePaths.push(path.join("../tests/sampleStructures", filePath));
+		testStructurePaths.push(path.join("tests/sampleStructures", filePath));
 	});
 	
 	let totalTime = 0;
 	let packsCreated = 0;
 	for(let structurePath of testStructurePaths) {
 		await page.reload();
+		let structureFileName = structurePath.substring(structurePath.lastIndexOf("/") + 1);
+		let structureFileContent = fs.readFileSync(structurePath).toString("base64");
 		try {
-			totalTime += await page.evaluate(async (structurePath, browserEngine) => {
+			totalTime += await page.evaluate(async (structureFileName, structureFileContent, browserEngine) => {
 				const HoloPrint = await import("../index.js"); // testing workflow makes index.js export everything from HoloPrint.js
 				
-				let structureFileName = structurePath.substring(structurePath.lastIndexOf("/") + 1);
 				console.group(`Testing ${structureFileName}...`);
+				let structureFileBinaryData = atob(structureFileContent);
+				let bytes = new Uint8Array(structureFileBinaryData.length);
+				for(let i = 0; i < bytes.length; i++) {
+					bytes[i] = structureFileBinaryData.charCodeAt(i);
+				}
+				let structureFile = new File([bytes], structureFileName);
 				let previewCont = document.querySelector("#previewCont");
-				let structureFile = new File([await fetch(structurePath).then(res => res.blob())], structureFileName);
 				let startTime = performance.now();
 				let pack = await HoloPrint.makePack(structureFile, {
 					SPAWN_ANIMATION_ENABLED: false,
@@ -53,7 +59,7 @@ test(async page => {
 				}).catch(e => console.error(`Failed to upload pack: ${e}, ${e.stack}`));
 				
 				return elapsedTime;
-			}, structurePath, browserEngine);
+			}, structureFileName, structureFileContent, browserEngine);
 			packsCreated++;
 		} catch(e) {
 			console.error(`Failed to generate pack: ${e}, ${e.stack}`);
@@ -73,14 +79,15 @@ test(async page => {
 		req.on("end", () => {
 			let fileBuffer = Buffer.concat(dataChunks);
 			let fileName = req.headers["content-location"];
-			let filePath = path.join(packUploadDir, fileName);
+			let fileBasename = path.basename(fileName);
+			let filePath = path.join(packUploadDir, fileBasename);
 			
 			fs.writeFile(filePath, fileBuffer, async err => {
 				if(browserEngine == "chrome") {
 					try {
 						let previewImage = await page.waitForSelector("#previewCont > canvas:last-child");
 						await previewImage?.screenshot({
-							path: path.join(screenshotUploadDir, `${fileName.slice(0, fileName.indexOf("."))}.png`),
+							path: path.join(screenshotUploadDir, `${fileBasename.slice(0, fileBasename.indexOf("."))}.png`),
 							omitBackground: true
 						});
 					} catch(e) {

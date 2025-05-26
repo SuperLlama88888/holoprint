@@ -41,8 +41,10 @@ export async function test(testBody, httpReqFunc, codeDirectory = "dist") {
 			let filePath = path.join(import.meta.dirname, `../${codeDirectory}`, req.url); // serve files from the root directory
 			fs.stat(filePath, (err, stats) => {
 				if(err || !stats.isFile()) {
+					let errorMessage = `File ${filePath} not found!`;
+					console.error(errorMessage);
 					res.writeHead(404, plainTextHeaders);
-					res.end(`File ${filePath} not found!`);
+					res.end(errorMessage);
 					return;
 				}
 				
