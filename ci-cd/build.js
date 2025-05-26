@@ -7,8 +7,12 @@ import browserslist from "browserslist";
 import { transform, browserslistToTargets } from "lightningcss";
 import minifyJSON from "jsonminify";
 
-const buildVersion = process.argv[2] ?? "testing";
-// process.chdir("..");
+const browserParamName = "--browser=";
+const exportHoloPrintLibFlagName = "--export-holoprint-lib";
+
+const buildVersion = process.argv.find(arg => arg.startsWith(browserParamName))?.slice(browserParamName.length) ?? "testing";
+const exportHoloPrintLib = process.argv.includes(exportHoloPrintLibFlagName);
+
 if(fs.existsSync("dist")) {
 	fs.rmSync("dist", {
 		recursive: true
@@ -135,6 +139,9 @@ function processJS(code, filename) {
 		code = code.replace(`const VERSION = "dev";`, `const VERSION = "${buildVersion}";`);
 	} else if(filename == "index.js") {
 		code = code.replace("const IN_PRODUCTION = false;", "const IN_PRODUCTION = true;");
+		if(exportHoloPrintLib) {
+			code = `export * from "./HoloPrint.js";` + code;
+		}
 	}
 	code = code.replaceAll(/html`([^]+?)`/g, (_, html) => "`" + processHTML(html, filename).code + "`");
 	return { code };
