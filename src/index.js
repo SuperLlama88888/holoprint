@@ -606,9 +606,15 @@ async function makePack(structureFiles, localResourcePacks) {
 		let hasLoggedPackCreation = false;
 		infoButton.onclick = () => {
 			if(!hasLoggedPackCreation && IN_PRODUCTION) {
-				supabaseLogger ??= new SupabaseLogger(supabaseProjectUrl, supabaseApiKey);
-				supabaseLogger.recordPackCreation(structureFiles);
 				hasLoggedPackCreation = true;
+				void async function() {
+					supabaseLogger ??= await SupabaseLogger.new(supabaseProjectUrl, supabaseApiKey);
+					try {
+						await supabaseLogger.recordPackCreation(structureFiles);
+					} catch(e) {
+						console.error(e);
+					}
+				}();
 			}
 			downloadBlob(pack, pack.name);
 		};

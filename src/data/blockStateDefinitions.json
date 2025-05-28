@@ -251,7 +251,7 @@
 					"3": [0, 180, 0]
 				}
 			},
-			"wall_sign,glazed_terracotta,wall_banner": { // todo: merge with hopper defs maybe
+			"wall_sign,wall_sign_prefix,wall_sign_suffix,glazed_terracotta,wall_banner": { // todo: merge with hopper defs maybe
 				"facing_direction": {
 					"2": [0, 0, 0], // north
 					"3": [0, 180, 0], // south

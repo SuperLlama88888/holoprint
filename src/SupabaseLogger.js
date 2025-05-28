@@ -1,20 +1,24 @@
-import { addOrdinalSuffix, concatenateFiles, sha256 } from "./utils.js";
+import { addOrdinalSuffix, AsyncFactory, concatenateFiles, sha256 } from "./utils.js";
 
-export default class SupabaseLogger {
+export default class SupabaseLogger extends AsyncFactory {
+	projectUrl;
+	apiKey;
 	supabase;
 	
 	constructor(projectUrl, apiKey) {
-		this.supabase = import("@supabase/supabase-js").then(supabaseLib => supabaseLib.createClient(projectUrl, apiKey));
+		super();
+		this.projectUrl = projectUrl;
+		this.apiKey = apiKey;
+	}
+	async init() {
+		let supabaseLib = await import("@supabase/supabase-js");
+		this.supabase = supabaseLib.createClient(this.projectUrl, this.apiKey);
 	}
 	/**
 	 * Records the creation of a pack from structure files in a Supabase server, based on file hashes.
 	 * @param {Array<File>} structureFiles
 	 */
 	async recordPackCreation(structureFiles) {
-		if(this.supabase instanceof Promise) {
-			this.supabase = await this.supabase;
-		}
-		
 		console.info("Hashing structure files...");
 		let fullFileHashes = await Promise.all(structureFiles.map(async structureFile => (await sha256(structureFile)).toHexadecimalString()));
 		let shortFileHashes = fullFileHashes.map(fullFileHash => fullFileHash.slice(0, 8));
