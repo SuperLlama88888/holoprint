@@ -6,7 +6,7 @@ testOnSourceCode(async page => {
 		const MaterialList = (await import("../MaterialList.js")).default;
 		const HoloPrint = await import("../HoloPrint.js");
 		
-		let rps = await new ResourcePackStack();
+		let rps = await ResourcePackStack.new();
 		let [blockMetadata, itemMetadata, translationFile] = await Promise.all([
 			rps.fetchData("metadata/vanilladata_modules/mojang-blocks.json").then(res => res.json()),
 			rps.fetchData("metadata/vanilladata_modules/mojang-items.json").then(res => res.json()),
@@ -24,7 +24,7 @@ testOnSourceCode(async page => {
 			blockNames.push(blockName);
 		});
 		
-		let materialList = await new MaterialList(blockMetadata, itemMetadata, translationFile);
+		let materialList = await MaterialList.new(blockMetadata, itemMetadata, translationFile);
 		blockNames.forEach(blockName => materialList.add(blockName));
 		console.log(JSON.stringify(materialList.export()));
 	});

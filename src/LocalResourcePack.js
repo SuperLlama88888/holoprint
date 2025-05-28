@@ -12,6 +12,7 @@ export default class LocalResourcePack extends AsyncFactory {
 	 * @param {FileList} fileList
 	 */
 	constructor(fileList = [], aggressiveHashing = false) {
+		super();
 		this.files = Array.from(fileList);
 		this.aggressiveHashing = aggressiveHashing;
 		this.#files = new Map();
