@@ -1,6 +1,6 @@
-import { floor, nanToUndefined } from "./essential.js";
+import { AsyncFactory, floor, nanToUndefined } from "./utils.js";
 
-export default class MaterialList {
+export default class MaterialList extends AsyncFactory {
 	/** @type {Map<String, Number>} */
 	materials;
 	totalMaterialCount;
@@ -27,6 +27,7 @@ export default class MaterialList {
 	 * @param {string} [translations] The text contents of a `.lang` file
 	 */
 	constructor(blockMetadata, itemMetadata, translations) {
+		super();
 		this.materials = new Map();
 		this.totalMaterialCount = 0;
 		
@@ -35,38 +36,35 @@ export default class MaterialList {
 		if(translations) {
 			this.setLanguage(translations);
 		}
-		
-		return (async () => {
-			let materialListMappings = await fetch("data/materialListMappings.json").then(res => res.jsonc());
-			this.#ignoredBlocks = materialListMappings["ignored_blocks"];
-			let blockToItemMappings = Object.entries(materialListMappings["block_to_item_mappings"]);
-			this.#individualBlockToItemMappings = new Map(blockToItemMappings.filter(([blockName]) => !blockName.startsWith("/") && !blockName.endsWith("/")));
-			this.#blockToItemPatternMappings = blockToItemMappings.filter(([pattern]) => pattern.startsWith("/") && pattern.endsWith("/")).map(([pattern, item]) => [new RegExp(pattern.slice(1, -1), "g"), item]);
-			this.#itemCountMultipliers = Object.entries(materialListMappings["item_count_multipliers"]).map(([key, value]) => {
-				let itemNames = [];
-				let patterns = [];
-				key.split(",").forEach(itemNameOrPattern => {
-					if(itemNameOrPattern.startsWith("/") && itemNameOrPattern.endsWith("/")) {
-						patterns.push(new RegExp(itemNameOrPattern.slice(1, -1)));
-					} else {
-						itemNames.push(itemNameOrPattern);
-					}
-				});
-				if(typeof value == "number") {
-					return [itemNames, patterns, value, ""];
+	}
+	async init() {
+		let materialListMappings = await fetch("data/materialListMappings.json").then(res => res.jsonc());
+		this.#ignoredBlocks = materialListMappings["ignored_blocks"];
+		let blockToItemMappings = Object.entries(materialListMappings["block_to_item_mappings"]);
+		this.#individualBlockToItemMappings = new Map(blockToItemMappings.filter(([blockName]) => !blockName.startsWith("/") && !blockName.endsWith("/")));
+		this.#blockToItemPatternMappings = blockToItemMappings.filter(([pattern]) => pattern.startsWith("/") && pattern.endsWith("/")).map(([pattern, item]) => [new RegExp(pattern.slice(1, -1), "g"), item]);
+		this.#itemCountMultipliers = Object.entries(materialListMappings["item_count_multipliers"]).map(([key, value]) => {
+			let itemNames = [];
+			let patterns = [];
+			key.split(",").forEach(itemNameOrPattern => {
+				if(itemNameOrPattern.startsWith("/") && itemNameOrPattern.endsWith("/")) {
+					patterns.push(new RegExp(itemNameOrPattern.slice(1, -1)));
 				} else {
-					return [itemNames, patterns, value["multiplier"], value["remove"]];
+					itemNames.push(itemNameOrPattern);
 				}
 			});
-			this.#specialBlockEntityProperties = materialListMappings["special_block_entity_properties"];
-			let serializationIdPatches = Object.entries(materialListMappings["serialization_id_patches"]);
-			this.#individualSerializationIdPatches = new Map(serializationIdPatches.filter(([serializationId]) => !serializationId.startsWith("/") && !serializationId.endsWith("/")));
-			this.#serializationIdPatternPatches = serializationIdPatches.filter(([pattern]) => pattern.startsWith("/") && pattern.endsWith("/")).map(([pattern, serializationId]) => [new RegExp(pattern.slice(1, -1), "g"), serializationId]);
-			this.#blocksMissingSerializationIds = materialListMappings["blocks_missing_serialization_ids"];
-			this.#translationPatches = materialListMappings["translation_patches"];
-			
-			return this;
-		})();
+			if(typeof value == "number") {
+				return [itemNames, patterns, value, ""];
+			} else {
+				return [itemNames, patterns, value["multiplier"], value["remove"]];
+			}
+		});
+		this.#specialBlockEntityProperties = materialListMappings["special_block_entity_properties"];
+		let serializationIdPatches = Object.entries(materialListMappings["serialization_id_patches"]);
+		this.#individualSerializationIdPatches = new Map(serializationIdPatches.filter(([serializationId]) => !serializationId.startsWith("/") && !serializationId.endsWith("/")));
+		this.#serializationIdPatternPatches = serializationIdPatches.filter(([pattern]) => pattern.startsWith("/") && pattern.endsWith("/")).map(([pattern, serializationId]) => [new RegExp(pattern.slice(1, -1), "g"), serializationId]);
+		this.#blocksMissingSerializationIds = materialListMappings["blocks_missing_serialization_ids"];
+		this.#translationPatches = materialListMappings["translation_patches"];
 	}
 	/**
 	 * Adds a block to the material list.

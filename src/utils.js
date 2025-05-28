@@ -559,6 +559,47 @@ export function downloadBlob(blob, fileName) {
 	URL.revokeObjectURL(objectURL);
 }
 
+/**
+ * Gets the inheritance chain of a class.
+ * @param {Function} c
+ * @returns {Array<Function>}
+ */
+export function getClassInheritance(c) {
+	let classes = [];
+	while(typeof c == "function" && c.name && c != Function && c != null) {
+		classes.push(c);
+		c = Object.getPrototypeOf(c);
+	}
+	return classes;
+}
+/**
+ * Gets the full name of a class and all other classes it is inherited from.
+ * @param {Function} c
+ * @returns {Array<String>}
+ */
+export function getClassFullName(c) {
+	return getClassInheritance(c).map(f => f.name).join(":");
+}
+export class AsyncFactory {
+	static #allowedConstructors = new WeakSet();
+	/** Don't use the constructor to create an AsyncFactory instance; use the static async new() method. */
+	constructor() {
+		if(!AsyncFactory.#allowedConstructors.has(new.target)) {
+			throw new Error(`Cannot create ${getClassFullName(new.target)} normally; must call the static async new() method.`);
+		}
+	}
+	async init() {}
+	/** Creates an instance. */
+	static async new(...params) {
+		let classes = getClassInheritance(this);
+		classes.forEach(c => AsyncFactory.#allowedConstructors.add(c));
+		let instance = new this(...params);
+		classes.forEach(c => AsyncFactory.#allowedConstructors.delete(c));
+		await instance.init();
+		return instance;
+	}
+}
+
 function stringifyJsonBigIntSafe(value) {
 	return JSON.stringify(value, (_, x) => typeof x == "bigint"? (JSON.rawJSON ?? String)(x) : x); // JSON.rawJSON offers the perfect solution but is very modern, so stringifying them is the next best option
 }
@@ -633,7 +674,7 @@ export class JSONMap extends Map { // very barebones
 		return stringifyJsonBigIntSafe(value);
 	}
 }
-export class CachingFetcher {
+export class CachingFetcher extends AsyncFactory {
 	static URL_PREFIX = "https://cache/";
 	static BAD_STATUS_CODES = [429];
 	
@@ -642,13 +683,12 @@ export class CachingFetcher {
 	/** @type {Cache} */
 	#cache;
 	constructor(cacheName, baseUrl = "") {
-		return (async () => {
-			this.#cache = await caches.open(cacheName);
-			this.#baseUrl = baseUrl;
-			this.cacheName = cacheName;
-			
-			return this;
-		})();
+		super();
+		this.cacheName = cacheName;
+		this.#baseUrl = baseUrl;
+	}
+	async init() {
+		this.#cache = await caches.open(this.cacheName);
 	}
 	/**
 	 * Fetches a file, checking first against cache.

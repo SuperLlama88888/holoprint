@@ -14,7 +14,6 @@ if(!fs.existsSync(screenshotUploadDir)) {
 }
 
 test(async page => {
-	// Evaluate the class and run the code
 	let testStructurePaths = [];
 	fs.readdirSync(path.join(import.meta.dirname, "sampleStructures")).forEach(filePath => {
 		if(!filePath.endsWith(".mcstructure")) {

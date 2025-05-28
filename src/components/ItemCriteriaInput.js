@@ -1,8 +1,8 @@
-import { html, htmlCodeToElement } from "../essential.js";
+import { html, htmlCodeToElement } from "../utils.js";
 import * as HoloPrint from "../HoloPrint.js";
 import { VanillaDataFetcher } from "../ResourcePackStack.js";
 
-let itemsDatalistPromise = (new VanillaDataFetcher()).then(async fetcher => {
+let itemsDatalistPromise = VanillaDataFetcher.new().then(async fetcher => {
 	let mojangItems = await fetcher.fetch("metadata/vanilladata_modules/mojang-items.json").then(res => res.json());
 	let itemNames = mojangItems["data_items"].map(item => item["name"].replace(/^minecraft:/, ""))
 	let datalist = document.createElement("datalist");

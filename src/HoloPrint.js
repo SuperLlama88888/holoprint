@@ -7,7 +7,7 @@ import MaterialList from "./MaterialList.js";
 import PreviewRenderer from "./PreviewRenderer.js";
 
 import * as entityScripts from "./entityScripts.molang.js";
-import { addPaddingToImage, arrayMin, awaitAllEntries, CachingFetcher, concatenateFiles, createNumericEnum, desparseArray, exp, floor, getFileExtension, hexColorToClampedTriplet, JSONMap, JSONSet, lcm, loadTranslationLanguage, max, min, overlaySquareImages, pi, removeFileExtension, resizeImageToBlob, round, sha256, translate, UserError } from "./essential.js";
+import { addPaddingToImage, arrayMin, awaitAllEntries, CachingFetcher, concatenateFiles, createNumericEnum, desparseArray, exp, floor, getFileExtension, hexColorToClampedTriplet, JSONMap, JSONSet, lcm, loadTranslationLanguage, max, min, overlaySquareImages, pi, removeFileExtension, resizeImageToBlob, round, sha256, translate, UserError } from "./utils.js";
 import ResourcePackStack from "./ResourcePackStack.js";
 import BlockUpdater from "./BlockUpdater.js";
 
@@ -57,7 +57,7 @@ export async function makePack(structureFiles, config = {}, resourcePackStack, p
 	console.info(`Running HoloPrint ${VERSION}`);
 	if(!resourcePackStack) {
 		console.debug("Waiting for resource pack stack initialisation...");
-		resourcePackStack = await new ResourcePackStack();
+		resourcePackStack = await ResourcePackStack.new();
 		console.debug("Resource pack stack initialised!");
 	}
 	let startTime = performance.now();
@@ -142,14 +142,14 @@ export async function makePack(structureFiles, config = {}, resourcePackStack, p
 	window.blockPalette = blockPalette;
 	window.blockIndices = allStructureIndicesByLayer;
 	
-	let blockGeoMaker = await new BlockGeoMaker(config);
+	let blockGeoMaker = await BlockGeoMaker.new(config);
 	// makeBoneTemplate() is an impure function and adds texture references to the textureRefs set property.
 	let boneTemplatePalette = blockPalette.map(block => blockGeoMaker.makeBoneTemplate(block));
 	console.info("Finished making block geometry templates!");
 	console.log("Block geo maker:", blockGeoMaker);
 	console.log("Bone template palette:", structuredClone(boneTemplatePalette));
 	
-	let textureAtlas = await new TextureAtlas(config, resourcePackStack);
+	let textureAtlas = await TextureAtlas.new(config, resourcePackStack);
 	let textureRefs = [...blockGeoMaker.textureRefs];
 	await textureAtlas.makeAtlas(textureRefs); // each texture reference will get added to the textureUvs array property
 	let textureBlobs = textureAtlas.imageBlobs;
@@ -244,7 +244,7 @@ export async function makePack(structureFiles, config = {}, resourcePackStack, p
 	let totalBlocksToValidateByStructureByLayer = [];
 	let uniqueBlocksToValidate = new Set();
 	
-	let materialList = await new MaterialList(blockMetadata, itemMetadata);
+	let materialList = await MaterialList.new(blockMetadata, itemMetadata);
 	allStructureIndicesByLayer.forEach((structureIndicesByLayer, structureI) => {
 		let structureSize = structureSizes[structureI];
 		let geoShortName = `hologram_${structureI}`;
@@ -875,7 +875,7 @@ export async function makePack(structureFiles, config = {}, resourcePackStack, p
 	if(previewCont) {
 		let showPreview = () => {
 			hologramGeo["minecraft:geometry"].filter(geo => geo["description"]["identifier"].startsWith("geometry.armor_stand.hologram_")).map(geo => {
-				(new PreviewRenderer(previewCont, textureAtlas, geo, hologramAnimations, config.SHOW_PREVIEW_SKYBOX)).catch(e => console.error("Preview renderer error:", e)); // is async but we won't wait for it
+				PreviewRenderer.new(previewCont, textureAtlas, geo, hologramAnimations, config.SHOW_PREVIEW_SKYBOX).catch(e => console.error("Preview renderer error:", e)); // is async but we won't wait for it
 			});
 		};
 		if(totalBlockCount < config.PREVIEW_BLOCK_LIMIT) {
@@ -1034,7 +1034,7 @@ export function addDefaultConfig(config) {
  */
 export async function createPmmpBedrockDataFetcher() {
 	const pmmpBedrockDataVersion = "4.1.0+bedrock-1.21.70";
-	return await new CachingFetcher(`BedrockData@${pmmpBedrockDataVersion}`, `https://cdn.jsdelivr.net/gh/pmmp/BedrockData@${pmmpBedrockDataVersion}/`);
+	return await CachingFetcher.new(`BedrockData@${pmmpBedrockDataVersion}`, `https://cdn.jsdelivr.net/gh/pmmp/BedrockData@${pmmpBedrockDataVersion}/`);
 }
 
 /**
@@ -1137,7 +1137,7 @@ async function tweakBlockPalette(structure, ignoredBlocks) {
 	let palette = structuredClone(structure["palette"]["default"]["block_palette"]);
 	
 	let blockVersions = new Set(); // version should be constant for all blocks. just wanted to test this
-	let blockUpdater = new BlockUpdater(true);
+	let blockUpdater = await BlockUpdater.new(true);
 	let updatedBlocks = 0;
 	for(let [i, block] of Object.entries(palette)) {
 		blockVersions.add(+block["version"]);
@@ -1420,7 +1420,7 @@ function patchRenderControllers(renderControllers, patches) {
  */
 async function translateControlItems(config, blockMetadata, itemMetadata, languagesDotJson, resourceLangFiles, itemTags) {
 	// make a fake material list for the in-game control items (just to translate them lol)
-	let controlsMaterialList = await new MaterialList(blockMetadata, itemMetadata);
+	let controlsMaterialList = await MaterialList.new(blockMetadata, itemMetadata);
 	let inGameControls = {};
 	let controlItemTranslations = {};
 	await Promise.all(languagesDotJson.map(language => loadTranslationLanguage(language)));

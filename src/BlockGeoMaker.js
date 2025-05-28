@@ -2,12 +2,12 @@
 // READ: this also looks pretty comprehensive: https://github.com/MCBE-Development-Wiki/mcbe-dev-home/blob/main/docs/misc/enums/block_shape.md
 // https://github.com/bricktea/MCStructure/blob/main/docs/1.16.201/enums/B.md
 
-import { awaitAllEntries, hexColorToClampedTriplet, JSONSet } from "./essential.js";
+import { AsyncFactory, awaitAllEntries, hexColorToClampedTriplet, JSONSet } from "./utils.js";
 
 // https://wiki.bedrock.dev/visuals/material-creations.html#overlay-color-in-render-controllers
 // https://wiki.bedrock.dev/documentation/materials.html#entity-alphatest
 
-export default class BlockGeoMaker {
+export default class BlockGeoMaker extends AsyncFactory {
 	/** @type {HoloPrintConfig} */
 	config;
 	textureRefs;
@@ -30,67 +30,63 @@ export default class BlockGeoMaker {
 	#cachedBlockShapes;
 	
 	constructor(config) {
-		return (async () => {
-			this.config = config;
-			
-			this.textureRefs = new JSONSet();
-			
-			let { blockShapes, blockShapeGeos, blockStateDefs, eigenvariants } = await awaitAllEntries({
-				blockShapes: fetch("data/blockShapes.json").then(res => res.jsonc()),
-				blockShapeGeos: fetch("data/blockShapeGeos.json").then(res => res.jsonc()),
-				blockStateDefs: fetch("data/blockStateDefinitions.json").then(res => res.jsonc()),
-				eigenvariants: fetch("data/blockEigenvariants.json").then(res => res.jsonc()),
+		super();
+		this.config = config;
+		this.textureRefs = new JSONSet();
+		this.#cachedBlockShapes = new Map();
+		this.#blockShapeBlockStateRotations = [];
+		this.#blockNameBlockStateRotations = [];
+		this.#blockNamePatternBlockStateRotations = [];
+		this.#blockShapeBlockStateTextureVariants = [];
+		this.#blockNameBlockStateTextureVariants = [];
+		this.#blockNamePatternBlockStateTextureVariants = [];
+	}
+	async init() {
+		let { blockShapes, blockShapeGeos, blockStateDefs, eigenvariants } = await awaitAllEntries({
+			blockShapes: fetch("data/blockShapes.json").then(res => res.jsonc()),
+			blockShapeGeos: fetch("data/blockShapeGeos.json").then(res => res.jsonc()),
+			blockStateDefs: fetch("data/blockStateDefinitions.json").then(res => res.jsonc()),
+			eigenvariants: fetch("data/blockEigenvariants.json").then(res => res.jsonc()),
+		});
+		this.#individualBlockShapes = blockShapes["individual_blocks"];
+		this.#blockShapePatterns = Object.entries(blockShapes["patterns"]).map(([rule, blockShape]) => [new RegExp(rule), blockShape]); // store regular expressions from the start to avoid recompiling them every time
+		this.#blockShapeGeos = blockShapeGeos;
+		this.#eigenvariants = eigenvariants;
+		
+		// console.log(this.#blockShapeGeos)
+		
+		// block-state-driven rotations/texture variants can either be global, based on block shape, based on specific block names, or based on regular expressions for block names, hence the many variables.
+		this.#globalBlockStateRotations = blockStateDefs["rotations"]["*"];
+		Object.entries(blockStateDefs["rotations"]["block_shapes"] ?? {}).forEach(([blockShapes, rotationDefs]) => {
+			blockShapes.split(",").forEach(blockShape => {
+				this.#blockShapeBlockStateRotations[blockShape] = rotationDefs;
 			});
-			this.#individualBlockShapes = blockShapes["individual_blocks"];
-			this.#blockShapePatterns = Object.entries(blockShapes["patterns"]).map(([rule, blockShape]) => [new RegExp(rule), blockShape]); // store regular expressions from the start to avoid recompiling them every time
-			this.#blockShapeGeos = blockShapeGeos;
-			this.#eigenvariants = eigenvariants;
-			
-			// console.log(this.#blockShapeGeos)
-			
-			// block-state-driven rotations/texture variants can either be global, based on block shape, based on specific block names, or based on regular expressions for block names, hence the many variables.
-			this.#globalBlockStateRotations = blockStateDefs["rotations"]["*"];
-			this.#blockShapeBlockStateRotations = [];
-			Object.entries(blockStateDefs["rotations"]["block_shapes"] ?? {}).forEach(([blockShapes, rotationDefs]) => {
-				blockShapes.split(",").forEach(blockShape => {
-					this.#blockShapeBlockStateRotations[blockShape] = rotationDefs;
+		});
+		Object.entries(blockStateDefs["rotations"]["block_names"] ?? {}).forEach(([blockNames, rotationDefs]) => {
+			if(blockNames.startsWith("/") && blockNames.endsWith("/")) {
+				this.#blockNamePatternBlockStateRotations.push([new RegExp(blockNames.slice(1, -1)), rotationDefs]);
+			} else {
+				blockNames.split(",").forEach(blockName => {
+					this.#blockNameBlockStateRotations[blockName] = rotationDefs; // todo: make these Maps?
 				});
+			}
+		});
+		
+		this.#globalBlockStateTextureVariants = blockStateDefs["texture_variants"]["*"];
+		Object.entries(blockStateDefs["texture_variants"]["block_shapes"] ?? {}).forEach(([blockShapes, textureVariantDefs]) => {
+			blockShapes.split(",").forEach(blockShape => {
+				this.#blockShapeBlockStateTextureVariants[blockShape] = textureVariantDefs;
 			});
-			this.#blockNameBlockStateRotations = [];
-			this.#blockNamePatternBlockStateRotations = [];
-			Object.entries(blockStateDefs["rotations"]["block_names"] ?? {}).forEach(([blockNames, rotationDefs]) => {
-				if(blockNames.startsWith("/") && blockNames.endsWith("/")) {
-					this.#blockNamePatternBlockStateRotations.push([new RegExp(blockNames.slice(1, -1)), rotationDefs]);
-				} else {
-					blockNames.split(",").forEach(blockName => {
-						this.#blockNameBlockStateRotations[blockName] = rotationDefs; // todo: make these Maps?
-					});
-				}
-			});
-			
-			this.#globalBlockStateTextureVariants = blockStateDefs["texture_variants"]["*"];
-			this.#blockShapeBlockStateTextureVariants = [];
-			Object.entries(blockStateDefs["texture_variants"]["block_shapes"] ?? {}).forEach(([blockShapes, textureVariantDefs]) => {
-				blockShapes.split(",").forEach(blockShape => {
-					this.#blockShapeBlockStateTextureVariants[blockShape] = textureVariantDefs;
+		});
+		Object.entries(blockStateDefs["texture_variants"]["block_names"] ?? {}).forEach(([blockNames, textureVariantDefs]) => {
+			if(blockNames.startsWith("/") && blockNames.endsWith("/")) {
+				this.#blockNamePatternBlockStateTextureVariants.push([new RegExp(blockNames.slice(1, -1)), textureVariantDefs]);
+			} else {
+				blockNames.split(",").forEach(blockName => {
+					this.#blockNameBlockStateTextureVariants[blockName] = textureVariantDefs;
 				});
-			});
-			this.#blockNameBlockStateTextureVariants = [];
-			this.#blockNamePatternBlockStateTextureVariants = [];
-			Object.entries(blockStateDefs["texture_variants"]["block_names"] ?? {}).forEach(([blockNames, textureVariantDefs]) => {
-				if(blockNames.startsWith("/") && blockNames.endsWith("/")) {
-					this.#blockNamePatternBlockStateTextureVariants.push([new RegExp(blockNames.slice(1, -1)), textureVariantDefs]);
-				} else {
-					blockNames.split(",").forEach(blockName => {
-						this.#blockNameBlockStateTextureVariants[blockName] = textureVariantDefs;
-					});
-				}
-			});
-			
-			this.#cachedBlockShapes = new Map();
-			
-			return this;
-		})();
+			}
+		});
 	}
 	/**
 	 * Makes a bone template (i.e. unpositioned, nameless bone with geometry) from a block. Texture UVs are unresolved, and are indices for the textureRefs property.

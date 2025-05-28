@@ -1,4 +1,4 @@
-import { clamp, createSymbolicEnum, html, isTouchInElementVerticalBounds, max, min, removeFileExtension, sleep } from "../essential.js";
+import { clamp, createSymbolicEnum, html, isTouchInElementVerticalBounds, max, min, removeFileExtension, sleep } from "../utils.js";
 
 export default class FileInputTable extends HTMLElement {
 	static observedAttributes = ["file-count-text", "empty-text", "remove-all-text", "hide-file-extensions"];

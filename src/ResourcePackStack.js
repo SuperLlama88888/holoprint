@@ -3,23 +3,24 @@
 
 import { all as mergeObjects } from "deepmerge";
 
-import "./essential.js";
+import "./utils.js";
 
 import LocalResourcePack from "./LocalResourcePack.js";
-import { CachingFetcher, sha256text } from "./essential.js";
+import { AsyncFactory, CachingFetcher, sha256text } from "./utils.js";
 
 const defaultVanillaDataVersion = "v1.21.70.26-preview";
 
-export default class ResourcePackStack {
+export default class ResourcePackStack extends AsyncFactory {
 	static #JSON_FILES_TO_MERGE = ["blocks.json", "textures/terrain_texture.json", "textures/flipbook_textures.json"];
 	
-	cacheEnabled;
+	enableCache;
+	vanillaDataVersion;
 	hash;
 	cacheName;
 	/** Whether or not there are any resource packs attached (apart from vanilla ofc) @type {Boolean} */
 	hasResourcePacks;
 	/** @type {Array<LocalResourcePack>} */
-	#localResourcePacks;
+	localResourcePacks;
 	 /** @type {VanillaDataFetcher} */
 	#vanillaDataFetcher;
 	#cache;
@@ -31,20 +32,20 @@ export default class ResourcePackStack {
 	 * @param {string} [vanillaDataVersion] The Minecraft version to get vanilla data from
 	 */
 	constructor(localResourcePacks = [], enableCache = true, vanillaDataVersion = defaultVanillaDataVersion) {
-		return (async () => {
-			this.hash = (await sha256text([vanillaDataVersion, ...localResourcePacks.map(lrp => lrp.hash)].join("\n"))).toHexadecimalString();
-			this.cacheName = `ResourcePackStack_${this.hash}`;
-			this.hasResourcePacks = localResourcePacks.length > 0;
-			this.#localResourcePacks = localResourcePacks;
-			this.#vanillaDataFetcher = await new VanillaDataFetcher(vanillaDataVersion);
-			this.cacheEnabled = enableCache;
-			if(enableCache) {
-				console.log("Using cache:", this.cacheName, [vanillaDataVersion, ...localResourcePacks.map(lrp => lrp.hash)])
-				this.#cache = await caches.open(this.cacheName);
-			}
-			
-			return this;
-		})();
+		super();
+		this.localResourcePacks = localResourcePacks;
+		this.enableCache = enableCache;
+		this.vanillaDataVersion = vanillaDataVersion;
+		this.hasResourcePacks = localResourcePacks.length > 0;
+	}
+	async init() {
+		this.hash = (await sha256text([this.vanillaDataVersion, ...this.localResourcePacks.map(lrp => lrp.hash)].join("\n"))).toHexadecimalString();
+		this.cacheName = `ResourcePackStack_${this.hash}`;
+		this.#vanillaDataFetcher = await VanillaDataFetcher.new(this.vanillaDataVersion);
+		if(this.enableCache) {
+			console.log("Using cache:", this.cacheName, [this.vanillaDataVersion, ...this.localResourcePacks.map(lrp => lrp.hash)])
+			this.#cache = await caches.open(this.cacheName);
+		}
 	}
 	
 	/**
@@ -63,7 +64,7 @@ export default class ResourcePackStack {
 	async fetchResource(resourcePath) {
 		let filePath = `resource_pack/${resourcePath}`;
 		let cacheLink = `https://holoprint-cache/${filePath}`;
-		let res = this.cacheEnabled && await this.#cache.match(cacheLink);
+		let res = this.enableCache && await this.#cache.match(cacheLink);
 		if(CachingFetcher.BAD_STATUS_CODES.includes(res?.status)) {
 			await this.#cache.delete(cacheLink);
 			res = undefined;
@@ -72,7 +73,7 @@ export default class ResourcePackStack {
 			if(ResourcePackStack.#JSON_FILES_TO_MERGE.includes(resourcePath)) {
 				let vanillaRes = await this.fetchData(filePath);
 				let vanillaFile = await vanillaRes.clone().jsonc(); // clone it so it can be read later if need be (responses can only be read once)
-				let resourcePackFiles = await Promise.all(this.#localResourcePacks.map(resourcePack => resourcePack.getFile(resourcePath)?.jsonc()));
+				let resourcePackFiles = await Promise.all(this.localResourcePacks.map(resourcePack => resourcePack.getFile(resourcePath)?.jsonc()));
 				resourcePackFiles.reverse(); // start with the lowest priority pack, so that they get overwritten by higher priority packs
 				let allFiles = [vanillaFile, ...resourcePackFiles.removeFalsies()];
 				if(allFiles.length == 1) { // if only the vanilla resources had this file, use that response
@@ -83,7 +84,7 @@ export default class ResourcePackStack {
 					res = new Response(JSON.stringify(mergedFile));
 				}
 			} else {
-				for(let localResourcePack of this.#localResourcePacks) {
+				for(let localResourcePack of this.localResourcePacks) {
 					let resource = localResourcePack.getFile(resourcePath);
 					if(resource) {
 						res = new Response(resource);
@@ -92,7 +93,7 @@ export default class ResourcePackStack {
 				}
 				res ??= await this.fetchData(filePath);
 			}
-			if(this.cacheEnabled) {
+			if(this.enableCache) {
 				await this.#cache.put(cacheLink, res.clone());
 			}
 		}
@@ -108,11 +109,7 @@ export class VanillaDataFetcher extends CachingFetcher {
 	 * @param {string} [version] The name of the GitHub tag for a specific Minecraft version.
 	 */
 	constructor(version = defaultVanillaDataVersion) {
-		return (async () => {
-			await super(`VanillaDataFetcher_${version}`, `${VanillaDataFetcher.#VANILLA_RESOURCES_LINK}@${version}/`);
-			this.version = version;
-			
-			return this;
-		})();
+		super(`VanillaDataFetcher_${version}`, `${VanillaDataFetcher.#VANILLA_RESOURCES_LINK}@${version}/`);
+		this.version = version;
 	}
 }

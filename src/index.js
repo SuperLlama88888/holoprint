@@ -1,5 +1,5 @@
 import { extractStructureFilesFromMcworld } from "mcbe-leveldb-reader";
-import { selectEl, downloadBlob, sleep, selectEls, loadTranslationLanguage, translate, getStackTrace, random, UserError, joinOr, conditionallyGroup, groupByFileExtension, addFilesToFileInput, setFileInputFiles, dispatchInputEvents } from "./essential.js";
+import { selectEl, downloadBlob, sleep, selectEls, loadTranslationLanguage, translate, getStackTrace, random, UserError, joinOr, conditionallyGroup, groupByFileExtension, addFilesToFileInput, setFileInputFiles, dispatchInputEvents } from "./utils.js";
 import * as HoloPrint from "./HoloPrint.js";
 import SupabaseLogger from "./SupabaseLogger.js";
 
@@ -170,7 +170,7 @@ document.onEvent("DOMContentLoaded", () => {
 	structureFilesList.onEventAndNow("input", updatePackNameInputPlaceholder);
 	completedPacksCont = selectEl("#completedPacksCont");
 	texturePreviewImageCont = selectEl("#texturePreviewImageCont");
-	defaultResourcePackStackPromise = new ResourcePackStack();
+	defaultResourcePackStackPromise = ResourcePackStack.new();
 	
 	if(location.search == "?loadFile") {
 		window.launchQueue?.setConsumer(async launchParams => {
@@ -222,7 +222,7 @@ document.onEvent("DOMContentLoaded", () => {
 		let resourcePacks = [];
 		let localResourcePackFiles = generatePackForm.elements.namedItem("localResourcePack").files;
 		if(localResourcePackFiles.length) {
-			resourcePacks.push(await new LocalResourcePack(localResourcePackFiles));
+			resourcePacks.push(await LocalResourcePack.new(localResourcePackFiles));
 		}
 		makePack(formData.getAll("structureFiles"), resourcePacks);
 	});
@@ -577,7 +577,7 @@ async function makePack(structureFiles, localResourcePacks) {
 	infoButton.dataset.translate = "progress.generating";
 	completedPacksCont.prepend(infoButton);
 	
-	let resourcePackStack = await new ResourcePackStack(localResourcePacks);
+	let resourcePackStack = await ResourcePackStack.new(localResourcePacks);
 	
 	let pack;
 	logger?.setOriginTime(performance.now());

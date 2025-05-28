@@ -1,4 +1,4 @@
-import { addOrdinalSuffix, concatenateFiles, sha256 } from "./essential.js";
+import { addOrdinalSuffix, concatenateFiles, sha256 } from "./utils.js";
 
 export default class SupabaseLogger {
 	supabase;

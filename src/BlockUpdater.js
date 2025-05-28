@@ -1,8 +1,8 @@
 // Updates a block from older MCBE versions, using schemas from pmmp/BedrockBlockUpgradeSchema. This code was made with reference to https://github.com/pmmp/PocketMine-MP/blob/5.21.0/src/data/bedrock/block/upgrade/BlockStateUpgrader.php and https://github.com/RaphiMC/ViaBedrock/blob/main/src/main/java/net/raphimc/viabedrock/api/chunk/blockstate/JsonBlockStateUpgradeSchema.java.
 
-import { CachingFetcher } from "./essential.js";
+import { AsyncFactory, CachingFetcher } from "./utils.js";
 
-export default class BlockUpdater {
+export default class BlockUpdater extends AsyncFactory {
 	static LATEST_VERSION = 18168865; // 1.21.60.33 (1.21.61)
 	static #UPGRADE_SCHEMA_URL = "https://cdn.jsdelivr.net/gh/SuperLlama88888/BedrockBlockUpgradeSchema";
 	static #UPGRADE_SCHEMA_VERSION = "5.1.0+bedrock-1.21.60"; // specifically, the tag name
@@ -17,9 +17,12 @@ export default class BlockUpdater {
 	 * Creates a BlockUpdater to update older blocks to the latest MCBE version.
 	 */
 	constructor() {
-		this.#fetcher = new CachingFetcher(`BlockUpgrader@${BlockUpdater.#UPGRADE_SCHEMA_VERSION}`, `${BlockUpdater.#UPGRADE_SCHEMA_URL}@${BlockUpdater.#UPGRADE_SCHEMA_VERSION}/`);
+		super();
 		this.#schemaIndex = {};
 		this.#schemas = new Map();
+	}
+	async init() {
+		this.#fetcher = await CachingFetcher.new(`BlockUpgrader@${BlockUpdater.#UPGRADE_SCHEMA_VERSION}`, `${BlockUpdater.#UPGRADE_SCHEMA_URL}@${BlockUpdater.#UPGRADE_SCHEMA_VERSION}/`);
 	}
 	/**
 	 * Checks if a block needs updating to the latest Minecraft version.
@@ -37,9 +40,6 @@ export default class BlockUpdater {
 	 */
 	async update(block) {
 		let oldBlockStringified = BlockUpdater.stringifyBlock(block);
-		if(this.#fetcher instanceof Promise) {
-			this.#fetcher = await this.#fetcher;
-		}
 		if(Object.keys(this.#schemaIndex).length == 0) {
 			let schemaList = await this.#fetcher.fetch("schema_list.json").then(res => res.json());
 			schemaList.forEach(schemaSkeleton => {

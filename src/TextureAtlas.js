@@ -1,9 +1,9 @@
-import { awaitAllEntries, ceil, floor, hexColorToClampedTriplet, JSONSet, max, range, stringToImageData } from "./essential.js";
+import { AsyncFactory, awaitAllEntries, ceil, floor, hexColorToClampedTriplet, JSONSet, max, range, stringToImageData } from "./utils.js";
 import TGALoader from "tga-js"; // We could use dynamic import as this isn't used all the time but it's so small it won't matter
 import potpack from "potpack";
 import ResourcePackStack from "./ResourcePackStack.js";
 
-export default class TextureAtlas {
+export default class TextureAtlas extends AsyncFactory {
 	#blocksDotJsonPatches;
 	#blocksToUseCarriedTextures;
 	#transparentBlocks;
@@ -39,37 +39,35 @@ export default class TextureAtlas {
 	 * @param {ResourcePackStack} resourcePackStack
 	 */
 	constructor(config, resourcePackStack) {
-		return (async () => { // async constructor pattern from https://stackoverflow.com/a/50885340
-			this.config = config;
-			this.resourcePackStack = resourcePackStack;
-			
-			let { blocksDotJson, terrainTexture, flipbookTextures, textureAtlasMappings } = await awaitAllEntries({
-				blocksDotJson: this.resourcePackStack.fetchResource("blocks.json").then(res => res.jsonc()),
-				terrainTexture: this.resourcePackStack.fetchResource("textures/terrain_texture.json").then(res => res.jsonc()),
-				flipbookTextures: this.resourcePackStack.fetchResource("textures/flipbook_textures.json").then(res => res.jsonc()),
-				/** @type {import("./data/textureAtlasMappings.json")} */
-				textureAtlasMappings: fetch("data/textureAtlasMappings.json").then(res => res.jsonc())
-			})
-			this.blocksDotJson = blocksDotJson;
-			this.terrainTexture = terrainTexture;
-			
-			this.#blocksDotJsonPatches = textureAtlasMappings["blocks_dot_json_patches"];
-			this.#blocksToUseCarriedTextures = textureAtlasMappings["blocks_to_use_carried_textures"];
-			this.#transparentBlocks = textureAtlasMappings["transparent_blocks"];
-			this.#terrainTexturePatches = textureAtlasMappings["terrain_texture_patches"];
-			this.#terrainTextureTints = textureAtlasMappings["terrain_texture_tints"];
-			
-			this.#flipbookTexturesAndSizes = new Map();
-			textureAtlasMappings["missing_flipbook_textures"].forEach(terrainTextureKey => {
-				this.#flipbookTexturesAndSizes.set(terrainTextureKey, 1);
-			});
-			flipbookTextures.map(entry => {
-				this.#flipbookTexturesAndSizes.set(entry["flipbook_texture"], entry["replicate"] ?? 1);
-			});
-			// console.log("Flipbook textures -> sizes:", this.#flipbookTexturesAndSizes);
-			
-			return this;
-		})();
+		super();
+		this.config = config;
+		this.resourcePackStack = resourcePackStack;
+		this.#flipbookTexturesAndSizes = new Map();
+	}
+	async init() {
+		let { blocksDotJson, terrainTexture, flipbookTextures, textureAtlasMappings } = await awaitAllEntries({
+			blocksDotJson: this.resourcePackStack.fetchResource("blocks.json").then(res => res.jsonc()),
+			terrainTexture: this.resourcePackStack.fetchResource("textures/terrain_texture.json").then(res => res.jsonc()),
+			flipbookTextures: this.resourcePackStack.fetchResource("textures/flipbook_textures.json").then(res => res.jsonc()),
+			/** @type {import("./data/textureAtlasMappings.json")} */
+			textureAtlasMappings: fetch("data/textureAtlasMappings.json").then(res => res.jsonc())
+		})
+		this.blocksDotJson = blocksDotJson;
+		this.terrainTexture = terrainTexture;
+		
+		this.#blocksDotJsonPatches = textureAtlasMappings["blocks_dot_json_patches"];
+		this.#blocksToUseCarriedTextures = textureAtlasMappings["blocks_to_use_carried_textures"];
+		this.#transparentBlocks = textureAtlasMappings["transparent_blocks"];
+		this.#terrainTexturePatches = textureAtlasMappings["terrain_texture_patches"];
+		this.#terrainTextureTints = textureAtlasMappings["terrain_texture_tints"];
+		
+		textureAtlasMappings["missing_flipbook_textures"].forEach(terrainTextureKey => {
+			this.#flipbookTexturesAndSizes.set(terrainTextureKey, 1);
+		});
+		flipbookTextures.map(entry => {
+			this.#flipbookTexturesAndSizes.set(entry["flipbook_texture"], entry["replicate"] ?? 1);
+		});
+		// console.log("Flipbook textures -> sizes:", this.#flipbookTexturesAndSizes);
 	}
 	/**
 	 * Makes a texture atlas from texture references and changes the textureUvs property to reflect UV coordinates and sizes for each reference.
@@ -291,7 +289,7 @@ export default class TextureAtlas {
 			let imageNotFound = false;
 			if(imageRes.ok) {
 				let image = await imageRes.toImage();
-				imageData = image.toImageData(); // defined in essential.js; just draws the image onto a canvas then gets the image data from there.
+				imageData = image.toImageData(); // defined in utils.js; just draws the image onto a canvas then gets the image data from there.
 			} else {
 				imageRes = await this.resourcePackStack.fetchResource(`${texturePath}.tga`);
 				if(imageRes.ok) {
