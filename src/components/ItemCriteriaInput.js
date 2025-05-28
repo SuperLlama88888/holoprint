@@ -29,7 +29,7 @@ export default class ItemCriteriaInput extends HTMLElement {
 	#connected;
 	#tasksPendingConnection;
 	#translateCurrentLanguage;
-	
+	/** @type {HTMLLabelElement} */
 	#criteriaInputsCont;
 	
 	/**
@@ -118,7 +118,7 @@ export default class ItemCriteriaInput extends HTMLElement {
 			this.shadowRoot.append(await itemsDatalistPromise, await itemTagsDatalistPromise);
 		});
 		this.onEvent("blur", async () => { // remove empty inputs when focus is lost
-			if([...this.#criteriaInputsCont.selectEls("input")].filter(input => input.value.trim() == "").map(input => input.remove()).length) {
+			if(Array.from(this.#criteriaInputsCont.selectEls("input")).filter(input => input.value.trim() == "").map(input => input.remove()).length) {
 				this.#reportFormState();
 				this.#removeConsecutiveOrSpacers();
 			}
@@ -148,8 +148,8 @@ export default class ItemCriteriaInput extends HTMLElement {
 		return this.localName;
 	}
 	get value() {
-		let itemNames = [...this.#criteriaInputsCont.selectEls(".itemNameInput")].map(input => input.value.trim());
-		let tagNames = [...this.#criteriaInputsCont.selectEls(".itemTagInput")].map(input => input.value.trim());
+		let itemNames = Array.from(this.#criteriaInputsCont.selectEls(".itemNameInput")).map(input => input.value.trim());
+		let tagNames = Array.from(this.#criteriaInputsCont.selectEls(".itemTagInput")).map(input => input.value.trim());
 		return JSON.stringify(HoloPrint.createItemCriteria(itemNames, tagNames));
 	}
 	set value(stringifiedValue) {
@@ -165,7 +165,7 @@ export default class ItemCriteriaInput extends HTMLElement {
 	
 	#reportFormState() {
 		this.internals.setFormValue(this.value);
-		let allInputs = [...this.#criteriaInputsCont.selectEls("input")];
+		let allInputs = Array.from(this.#criteriaInputsCont.selectEls("input"));
 		if(allInputs.length == 0) {
 			this.internals.setValidity({
 				tooShort: true
@@ -197,7 +197,7 @@ export default class ItemCriteriaInput extends HTMLElement {
 			"tag": `placeholder="Tag name" list="itemTagsDatalist" class="itemTagInput" data-translate-placeholder="item_criteria_input.item_tag"`
 		}
 		this.#criteriaInputsCont.selectEl(`input:last-child:placeholder-shown`)?.remove();
-		let lastNode = [...this.#criteriaInputsCont.childNodes].at(-1);
+		let lastNode = Array.from(this.#criteriaInputsCont.childNodes).at(-1);
 		if(lastNode && !(lastNode instanceof HTMLSpanElement)) {
 			let orSpan = document.createElement("span");
 			orSpan.dataset.translate = "item_criteria_input.or";
@@ -229,7 +229,7 @@ export default class ItemCriteriaInput extends HTMLElement {
 		}
 	};
 	#removeConsecutiveOrSpacers() {
-		[...this.#criteriaInputsCont.children].forEach(node => {
+		Array.from(this.#criteriaInputsCont.children).forEach(node => {
 			if(node instanceof HTMLSpanElement && (node.previousSibling instanceof HTMLSpanElement || node.nextSibling instanceof HTMLSpanElement || !node.previousSibling || !node.nextSibling)) {
 				node.remove();
 			}

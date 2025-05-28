@@ -121,7 +121,7 @@ export default class MaterialList extends AsyncFactory {
 		if(this.#translations == undefined) {
 			throw new Error("Cannot export a material list without providing translations! Use setLanguage()");
 		}
-		return [...this.materials].map(([itemName, count]) => {
+		return Array.from(this.materials).map(([itemName, count]) => {
 			let serializationId;
 			let blockEntityPropertyValue;
 			if(itemName.includes("+")) {

@@ -199,7 +199,7 @@ document.onEvent("DOMContentLoaded", () => {
 		e.preventDefault();
 		dragCounter = 0;
 		dropFileNotice.classList.add("hidden");
-		let files = [...e.dataTransfer.files]; // apparently this is a "historical accident": https://stackoverflow.com/a/74641156
+		let files = Array.from(e.dataTransfer.files); // apparently this is a "historical accident": https://stackoverflow.com/a/74641156
 		handleInputFiles(files);
 	});
 	
@@ -285,7 +285,7 @@ document.onEvent("DOMContentLoaded", () => {
 				switch(el.type) {
 					case "file": {
 						let dataTransfer = new DataTransfer(); // Simply copying el.files wouldn't work since that's a FormData object, and resetting the form will reset the files in there as well. To work around this, we just copy all files to a DataTransfer, which is the only other thing that uses FormData. (Using structuredClone() is laggy on Chrome.)
-						[...el.files].forEach(file => dataTransfer.items.add(file));
+						Array.from(el.files).forEach(file => dataTransfer.items.add(file));
 						return dataTransfer.files;
 					}
 					case "checkbox": return el.checked;
@@ -339,7 +339,7 @@ document.onEvent("DOMContentLoaded", () => {
 				console.log("mutations observed when retranslating:", mutations); // should never happen!
 				return;
 			}
-			let shouldRetranslate = mutations.find(mutation => mutation.type == "childList" && [...mutation.addedNodes].some(node => node instanceof Element && ([...node.attributes].some(attr => attr.name.startsWith("data-translate") || attr.name.startsWith("data-translation-sub-")) || node.getAllChildren().some(el => [...el.attributes].some(attr => attr.name.startsWith("data-translate") || attr.name.startsWith("data-translation-sub-"))))) || mutation.type == "attributes" && (mutation.attributeName.startsWith("data-translate") || mutation.attributeName.startsWith("data-translation-sub-")) && mutation.target.getAttribute(mutation.attributeName) != mutation.oldValue); // retranslate when an element with a translate dataset attribute or a child with a translate dataset attribute is added, or when a translate dataset attribute is changed
+			let shouldRetranslate = mutations.find(mutation => mutation.type == "childList" && Array.from(mutation.addedNodes).some(node => node instanceof Element && (Array.from(node.attributes).some(attr => attr.name.startsWith("data-translate") || attr.name.startsWith("data-translation-sub-")) || node.getAllChildren().some(el => Array.from(el.attributes).some(attr => attr.name.startsWith("data-translate") || attr.name.startsWith("data-translation-sub-"))))) || mutation.type == "attributes" && (mutation.attributeName.startsWith("data-translate") || mutation.attributeName.startsWith("data-translation-sub-")) && mutation.target.getAttribute(mutation.attributeName) != mutation.oldValue); // retranslate when an element with a translate dataset attribute or a child with a translate dataset attribute is added, or when a translate dataset attribute is changed
 			if(shouldRetranslate) {
 				retranslating = true;
 				translatePage(languageSelector.value);
@@ -382,7 +382,7 @@ async function handleInputFiles(files) {
 	setFileInputFiles(oldPackInput, resourcePackFiles.slice(0, 1));
 }
 function updatePackNameInputPlaceholder() {
-	packNameInput.setAttribute("placeholder", HoloPrint.getDefaultPackName([...structureFilesList.files]));
+	packNameInput.setAttribute("placeholder", HoloPrint.getDefaultPackName(Array.from(structureFilesList.files)));
 }
 async function updateTexturePreview() {
 	texturePreviewImage ??= await defaultResourcePackStackPromise.then(rps => rps.fetchResource(`textures/blocks/${random(["crafting_table_front", "diamond_ore", "blast_furnace_front_off", "brick", "cherry_planks", "chiseled_copper", "cobblestone", "wool_colored_white", "stonebrick", "stone_granite_smooth"])}.png`)).then(res => res.toImage());
@@ -411,7 +411,7 @@ async function updateTexturePreview() {
 	texturePreviewImageCont.appendChild(tintedImage);
 }
 async function translatePage(language, generateTranslations = false) {
-	let translatableEls = document.documentElement.getAllChildren().filter(el => [...el.attributes].some(attr => attr.name.startsWith("data-translate")));
+	let translatableEls = document.documentElement.getAllChildren().filter(el => Array.from(el.attributes).some(attr => attr.name.startsWith("data-translate")));
 	await loadTranslationLanguage(language);
 	let translations = generateTranslations? await fetch(`translations/${language}.json`).then(res => res.jsonc()) : {};
 	await Promise.all(translatableEls.map(async el => {
@@ -436,7 +436,7 @@ async function translatePage(language, generateTranslations = false) {
 				}
 			}
 		}
-		[...el.attributes].filter(attr => attr.name.startsWith("data-translate-")).forEach(async attr => {
+		Array.from(el.attributes).filter(attr => attr.name.startsWith("data-translate-")).forEach(async attr => {
 			let targetAttrName = attr.name.replace(/^data-translate-/, "");
 			let translationKey = attr.value;
 			if(generateTranslations) {
@@ -559,7 +559,7 @@ async function makePack(structureFiles, localResourcePacks) {
 		MATERIAL_LIST_ENABLED: !!formData.get("materialListEnabled"),
 		RETEXTURE_CONTROL_ITEMS: !!formData.get("retextureControlItems"),
 		RENAME_CONTROL_ITEMS: !!formData.get("renameControlItems"),
-		CONTROLS: Object.fromEntries([...formData].filter(([key]) => key.startsWith("control.")).map(([key, value]) => [key.replace(/^control./, ""), JSON.parse(value)])),
+		CONTROLS: Object.fromEntries(Array.from(formData).filter(([key]) => key.startsWith("control.")).map(([key, value]) => [key.replace(/^control./, ""), JSON.parse(value)])),
 		INITIAL_OFFSET: [+formData.get("initialOffsetX"), +formData.get("initialOffsetY"), +formData.get("initialOffsetZ")],
 		BACKUP_SLOT_COUNT: +formData.get("backupSlotCount"),
 		PACK_NAME: formData.get("packName") || undefined,

@@ -239,7 +239,7 @@ export default class BlockGeoMaker extends AsyncFactory {
 									facesInCopiedCube.add(face);
 								}
 							});
-							copiedCube[field] = [...facesInCopiedCube];
+							copiedCube[field] = Array.from(facesInCopiedCube);
 						} else if(typeof copiedCube[field] == "object") {
 							copiedCube[field] = { ...cube[field], ...copiedCube[field] }; // fields on the copied cubes still take priority over the "parent" cube (the one that's copying it)
 						} else {

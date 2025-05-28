@@ -150,7 +150,7 @@ export async function makePack(structureFiles, config = {}, resourcePackStack, p
 	console.log("Bone template palette:", structuredClone(boneTemplatePalette));
 	
 	let textureAtlas = await TextureAtlas.new(config, resourcePackStack);
-	let textureRefs = [...blockGeoMaker.textureRefs];
+	let textureRefs = Array.from(blockGeoMaker.textureRefs);
 	await textureAtlas.makeAtlas(textureRefs); // each texture reference will get added to the textureUvs array property
 	let textureBlobs = textureAtlas.imageBlobs;
 	let defaultTextureIndex = max(textureBlobs.length - 3, 0); // default to 80% opacity
@@ -759,7 +759,7 @@ export async function makePack(structureFiles, config = {}, resourcePackStack, p
 						return;
 					}
 					itemTexture["texture_data"][itemName] ??= {
-						"textures": [...originalTexturePath] // clone the whole thing here. this is so we can edit it directly, which means that if we're modifying multiple textures in the same array all can be applied.
+						"textures": Array.from(originalTexturePath) // clone the whole thing here. this is so we can edit it directly, which means that if we're modifying multiple textures in the same array all can be applied.
 					};
 					let specificOriginalTexturePath = `${itemTexture["texture_data"][itemName]["textures"][variant]}.png`;
 					let originalImage;
@@ -792,7 +792,7 @@ export async function makePack(structureFiles, config = {}, resourcePackStack, p
 					};
 				}
 			}));
-			await Promise.all([...controlItemTextureSizes].map(async size => {
+			await Promise.all(Array.from(controlItemTextureSizes).map(async size => {
 				let resizedImagePath = `${controlTexturePath.slice(0, -4)}_${size}.png`;
 				let resizedTextureBlob = await resizeImageToBlob(paddedTexture, size);
 				controlItemTextures.push([resizedImagePath, resizedTextureBlob]);
@@ -1156,12 +1156,12 @@ async function tweakBlockPalette(structure, ignoredBlocks) {
 			delete block["states"]; // easier viewing
 		}
 	}
-	let blockVersionsStringified = [...blockVersions].map(v => BlockUpdater.parseBlockVersion(v).join("."));
+	let blockVersionsStringified = Array.from(blockVersions).map(v => BlockUpdater.parseBlockVersion(v).join("."));
 	if(updatedBlocks > 0) {
 		console.info(`Updated ${updatedBlocks} block${updatedBlocks > 1? "s" : ""} from ${blockVersionsStringified.join(", ")} to ${BlockUpdater.parseBlockVersion(BlockUpdater.LATEST_VERSION).join(".")}!`);
 		console.info(`Note: Updated blocks may not be 100% accurate! If there are some errors, try loading the structure in the latest version of Minecraft then saving it again, so all blocks are up to date.`);
 	}
-	console.log("Block versions:", [...blockVersions], blockVersionsStringified);
+	console.log("Block versions:", Array.from(blockVersions), blockVersionsStringified);
 	
 	// add block entities into the block palette (on layer 0)
 	let indices = structure["block_indices"].map(layer => structuredClone(layer).map(i => +i));
@@ -1230,7 +1230,7 @@ function mergeMultiplePalettesAndIndices(palettesAndIndices) {
 		remappedIndices.push(indices.map(layer => layer.map(i => indexRemappings[i] ?? -1)));
 	});
 	return {
-		palette: [...mergedPaletteSet],
+		palette: Array.from(mergedPaletteSet),
 		indices: remappedIndices
 	};
 }
@@ -1463,7 +1463,7 @@ async function translateControlItems(config, blockMetadata, itemMetadata, langua
  * @returns {Promise<Blob>}
  */
 async function makePackIcon(structureFile) {
-	let fileHashBytes = [...await sha256(structureFile)]; // I feel like I should wrap the async expression in brackets...
+	let fileHashBytes = Array.from(await sha256(structureFile));
 	let fileHashBits = fileHashBytes.map(byte => [7, 6, 5, 4, 3, 2, 1, 0].map(bitI => byte >> bitI & 0x1)).flat();
 	
 	const ICON_RESOLUTION = [4, 6][fileHashBytes[1] % 2]; // either 4x4 or 6x6 large tiles

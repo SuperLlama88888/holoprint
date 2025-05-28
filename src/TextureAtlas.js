@@ -280,7 +280,8 @@ export default class TextureAtlas extends AsyncFactory {
 	 */
 	async #loadImages(textureFragments) {
 		let tgaLoader = new TGALoader();
-		let allTexturePaths = [...new Set([...textureFragments].map(textureFragment => textureFragment.texturePath))];
+		let allTexturePathsWithDuplicates = Array.from(textureFragments).map(textureFragment => textureFragment.texturePath);
+		let allTexturePaths = Array.from(new Set(allTexturePathsWithDuplicates));
 		console.log(`Loading ${allTexturePaths.length} images for ${textureFragments.size} texture fragments`);
 		let allImageData = await Promise.all(allTexturePaths.map(async texturePath => {
 			let imageRes = await this.resourcePackStack.fetchResource(`${texturePath}.png`);
@@ -306,7 +307,7 @@ export default class TextureAtlas extends AsyncFactory {
 			return { imageData, imageIsTga, imageNotFound };
 		}));
 		let imageDataByTexturePath = new Map(allTexturePaths.map((texturePath, i) => [texturePath, allImageData[i]]));
-		return await Promise.all([...textureFragments].map(async ({ texturePath, tint, tint_like_png: tintLikePng, opacity, uv: sourceUv, uv_size: uvSize, croppable }) => {
+		return await Promise.all(Array.from(textureFragments).map(async ({ texturePath, tint, tint_like_png: tintLikePng, opacity, uv: sourceUv, uv_size: uvSize, croppable }) => {
 			let { imageData, imageIsTga, imageNotFound } = imageDataByTexturePath.get(texturePath);
 			if(imageNotFound) {
 				sourceUv = [0, 0];

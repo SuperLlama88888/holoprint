@@ -26,7 +26,7 @@ Element.prototype.selectEls = DocumentFragment.prototype.selectEls = function(qu
 	return this.querySelectorAll(query);
 };
 Element.prototype.getAllChildren = DocumentFragment.prototype.getAllChildren = function() {
-	let children = [...this.selectEls("*")];
+	let children = Array.from(this.selectEls("*"));
 	let allChildren = [];
 	while(children.length) {
 		let child = children.shift();
@@ -491,7 +491,7 @@ export async function sha256text(text) {
 	return new Uint8Array(await crypto.subtle.digest("SHA-256", (new TextEncoder()).encode(text)));
 }
 Uint8Array.prototype.toHexadecimalString = function() {
-	return [...this].map(ch => ch.toString(16).padStart(2, "0")).join("");
+	return Array.from(this).map(ch => ch.toString(16).padStart(2, "0")).join("");
 };
 Array.prototype.removeFalsies = function() {
 	return this.filter(el => el);
@@ -613,7 +613,7 @@ export class JSONSet extends Set {
 		this.#actualValues = new Map();
 	}
 	indexOf(value) { // not part of sets normally! but they keep their order anyway so...
-		let stringifiedValues = [...super[Symbol.iterator]()];
+		let stringifiedValues = Array.from(super[Symbol.iterator]());
 		return stringifiedValues.indexOf(this.#stringify(value));
 	}
 	add(value) {
