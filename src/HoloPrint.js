@@ -217,26 +217,6 @@ export async function makePack(structureFiles, config = {}, resourcePackStack, p
 		delete hologramAnimations["animations"]["animation.armor_stand.hologram.spawn"]["bones"];
 	}
 	
-	let layerAnimationStates = hologramAnimationControllers["animation_controllers"]["controller.animation.armor_stand.hologram.layers"]["states"];
-	let topLayer = max(...structureSizes.map(structureSize => structureSize[1])) - 1;
-	layerAnimationStates["default"]["transitions"].push(
-		{
-			"l_0": `v.hologram.layer > -1 && v.hologram.layer != ${topLayer} && v.hologram.layer_mode == ${HOLOGRAM_LAYER_MODES.SINGLE}`
-		},
-		{
-			[`l_${topLayer}`]: `v.hologram.layer == ${topLayer} && v.hologram.layer_mode == ${HOLOGRAM_LAYER_MODES.SINGLE}`
-		}
-	);
-	if(topLayer > 0) {
-		layerAnimationStates["default"]["transitions"].push(
-			{
-				"l_0-": `v.hologram.layer > -1 && v.hologram.layer != ${topLayer - 1} && v.hologram.layer_mode == ${HOLOGRAM_LAYER_MODES.ALL_BELOW}`
-			},
-			{
-				[`l_${topLayer - 1}-`]: `v.hologram.layer == ${topLayer - 1} && v.hologram.layer_mode == ${HOLOGRAM_LAYER_MODES.ALL_BELOW}`
-			}
-		);
-	}
 	let entityDescription = entityFile["minecraft:client_entity"]["description"];
 	
 	let totalBlockCount = 0;
@@ -288,76 +268,6 @@ export async function makePack(structureFiles, config = {}, resourcePackStack, p
 				"parent": "hologram_offset_wrapper",
 				"pivot": [8, 0, -8]
 			});
-			layerAnimationStates[layerName] = {
-				"animations": [`hologram.l_${y}`],
-				"blend_transition": 0.1,
-				"blend_via_shortest_path": true,
-				"transitions": [
-					{
-						[y == topLayer? "default" : `${layerName}-`]: `v.hologram.layer_mode == ${HOLOGRAM_LAYER_MODES.ALL_BELOW}`
-					},
-					{
-						[y == 0? "default" : `l_${y - 1}`]: `v.hologram.layer < ${y}${y == topLayer? " && v.hologram.layer != -1" : ""}`
-					},
-					(y == topLayer? {
-						"default": "v.hologram.layer == -1"
-					} : {
-						[`l_${y + 1}`]: `v.hologram.layer > ${y}`
-					})
-				]
-			};
-			hologramAnimations["animations"][`animation.armor_stand.hologram.l_${y}`] ??= {};
-			let layerAnimation = hologramAnimations["animations"][`animation.armor_stand.hologram.l_${y}`];
-			layerAnimation["loop"] = "hold_on_last_frame";
-			layerAnimation["bones"] ??= {};
-			for(let otherLayerY = 0; otherLayerY < structureSize[1]; otherLayerY++) {
-				if(otherLayerY == y) {
-					continue;
-				}
-				layerAnimation["bones"][`l_${otherLayerY}`] = {
-					"scale": config.MINI_SCALE
-				};
-			}
-			if(Object.entries(layerAnimation["bones"]).length == 0) {
-				delete layerAnimation["bones"];
-			}
-			entityDescription["animations"][`hologram.l_${y}`] = `animation.armor_stand.hologram.l_${y}`;
-			if(y < topLayer) { // top layer with all layers below is the default view, so the animation + animation controller state doesn't need to be made for it
-				layerAnimationStates[`${layerName}-`] = {
-					"animations": [`hologram.l_${y}-`],
-					"blend_transition": 0.1,
-					"blend_via_shortest_path": true,
-					"transitions": [
-						{
-							[layerName]: `v.hologram.layer_mode == ${HOLOGRAM_LAYER_MODES.SINGLE}`
-						},
-						{
-							[y == 0? "default" : `l_${y - 1}-`]: `v.hologram.layer < ${y}${y == topLayer - 1? " && v.hologram.layer != -1" : ""}`
-						},
-						(y >= topLayer - 1? {
-							"default": "v.hologram.layer == -1"
-						} : {
-							[`l_${y + 1}-`]: `v.hologram.layer > ${y}`
-						})
-					]
-				};
-				hologramAnimations["animations"][`animation.armor_stand.hologram.l_${y}-`] ??= {};
-				let layerAnimationAllBelow = hologramAnimations["animations"][`animation.armor_stand.hologram.l_${y}-`];
-				layerAnimationAllBelow["loop"] = "hold_on_last_frame";
-				layerAnimationAllBelow["bones"] ??= {};
-				for(let otherLayerY = 0; otherLayerY < structureSize[1]; otherLayerY++) {
-					if(otherLayerY <= y) {
-						continue;
-					}
-					layerAnimationAllBelow["bones"][`l_${otherLayerY}`] = {
-						"scale": config.MINI_SCALE
-					};
-				}
-				if(Object.entries(layerAnimationAllBelow["bones"]).length == 0) {
-					delete layerAnimationAllBelow["bones"];
-				}
-				entityDescription["animations"][`hologram.l_${y}-`] = `animation.armor_stand.hologram.l_${y}-`;
-			}
 			
 			let blocksToValidateCurrentLayer = 0; // "layer" in here refers to y-coordinate, NOT structure layer
 			for(let x = 0; x < structureSize[0]; x++) {
@@ -465,6 +375,8 @@ export async function makePack(structureFiles, config = {}, resourcePackStack, p
 		totalBlocksToValidateByStructure.push(blocksToValidate.length);
 		totalBlocksToValidateByStructureByLayer.push(blocksToValidateByLayer);
 	});
+		
+	makeLayerAnimations(config, structureSizes, entityDescription, hologramAnimations, hologramAnimationControllers);
 	
 	entityDescription["materials"]["hologram"] = "holoprint_hologram";
 	entityDescription["materials"]["hologram.wrong_block_overlay"] = "holoprint_hologram.wrong_block_overlay";
@@ -1235,6 +1147,112 @@ function mergeMultiplePalettesAndIndices(palettesAndIndices) {
 	};
 }
 /**
+ * Makes the layer animations and animation controllers. Mutates the original arguments.
+ * @param {HoloPrintConfig} config
+ * @param {Array<Vec3>} structureSizes
+ * @param {object} entityDescription
+ * @param {object} hologramAnimations
+ * @param {object} hologramAnimationControllers
+ */
+function makeLayerAnimations(config, structureSizes, entityDescription, hologramAnimations, hologramAnimationControllers) {
+	let layerAnimationStates = hologramAnimationControllers["animation_controllers"]["controller.animation.armor_stand.hologram.layers"]["states"];
+	let topLayer = max(...structureSizes.map(structureSize => structureSize[1])) - 1;
+	layerAnimationStates["default"]["transitions"].push(
+		{
+			"l_0": `v.hologram.layer > -1 && v.hologram.layer != ${topLayer} && v.hologram.layer_mode == ${HOLOGRAM_LAYER_MODES.SINGLE}`
+		},
+		{
+			[`l_${topLayer}`]: `v.hologram.layer == ${topLayer} && v.hologram.layer_mode == ${HOLOGRAM_LAYER_MODES.SINGLE}`
+		}
+	);
+	if(topLayer > 0) {
+		layerAnimationStates["default"]["transitions"].push(
+			{
+				"l_0-": `v.hologram.layer > -1 && v.hologram.layer != ${topLayer - 1} && v.hologram.layer_mode == ${HOLOGRAM_LAYER_MODES.ALL_BELOW}`
+			},
+			{
+				[`l_${topLayer - 1}-`]: `v.hologram.layer == ${topLayer - 1} && v.hologram.layer_mode == ${HOLOGRAM_LAYER_MODES.ALL_BELOW}`
+			}
+		);
+	}
+	
+	for(let y = 0; y <= topLayer; y++) {
+		let layerName = `l_${y}`;
+		layerAnimationStates[layerName] = {
+			"animations": [`hologram.l_${y}`],
+			"blend_transition": 0.1,
+			"blend_via_shortest_path": true,
+			"transitions": [
+				{
+					[y == topLayer? "default" : `${layerName}-`]: `v.hologram.layer_mode == ${HOLOGRAM_LAYER_MODES.ALL_BELOW}`
+				},
+				{
+					[y == 0? "default" : `l_${y - 1}`]: `v.hologram.layer < ${y}${y == topLayer? " && v.hologram.layer != -1" : ""}`
+				},
+				(y == topLayer? {
+					"default": "v.hologram.layer == -1"
+				} : {
+					[`l_${y + 1}`]: `v.hologram.layer > ${y}`
+				})
+			]
+		};
+		let layerAnimation = {
+			"loop": "hold_on_last_frame",
+			"bones": {}
+		};
+		for(let otherLayerY = 0; otherLayerY <= topLayer; otherLayerY++) {
+			if(otherLayerY == y) {
+				continue;
+			}
+			layerAnimation["bones"][`l_${otherLayerY}`] = {
+				"scale": config.MINI_SCALE
+			};
+		}
+		if(Object.entries(layerAnimation["bones"]).length == 0) {
+			delete layerAnimation["bones"];
+		}
+		hologramAnimations["animations"][`animation.armor_stand.hologram.l_${y}`] = layerAnimation;
+		entityDescription["animations"][`hologram.l_${y}`] = `animation.armor_stand.hologram.l_${y}`;
+		if(y < topLayer) { // top layer with all layers below is the default view, so the animation + animation controller state doesn't need to be made for it
+			layerAnimationStates[`${layerName}-`] = {
+				"animations": [`hologram.l_${y}-`],
+				"blend_transition": 0.1,
+				"blend_via_shortest_path": true,
+				"transitions": [
+					{
+						[layerName]: `v.hologram.layer_mode == ${HOLOGRAM_LAYER_MODES.SINGLE}`
+					},
+					{
+						[y == 0? "default" : `l_${y - 1}-`]: `v.hologram.layer < ${y}${y == topLayer - 1? " && v.hologram.layer != -1" : ""}`
+					},
+					(y >= topLayer - 1? {
+						"default": "v.hologram.layer == -1"
+					} : {
+						[`l_${y + 1}-`]: `v.hologram.layer > ${y}`
+					})
+				]
+			};
+			let layerAnimationAllBelow = {
+				"loop": "hold_on_last_frame",
+				"bones": {}
+			};
+			for(let otherLayerY = 0; otherLayerY <= topLayer; otherLayerY++) {
+				if(otherLayerY <= y) {
+					continue;
+				}
+				layerAnimationAllBelow["bones"][`l_${otherLayerY}`] = {
+					"scale": config.MINI_SCALE
+				};
+			}
+			if(Object.entries(layerAnimationAllBelow["bones"]).length == 0) {
+				delete layerAnimationAllBelow["bones"];
+			}
+			hologramAnimations["animations"][`animation.armor_stand.hologram.l_${y}-`] = layerAnimationAllBelow;
+			entityDescription["animations"][`hologram.l_${y}-`] = `animation.armor_stand.hologram.l_${y}-`;
+		}
+	}
+}
+/**
  * Adds bounding box particles for a single structure to the hologram animation controllers in-place.
  * @param {Record<string, any>} hologramAnimationControllers
  * @param {number} structureI
@@ -1560,7 +1578,7 @@ function itemCriteriaToMolang(itemCriteria, slot = "slot.weapon.mainhand") {
  * @param {string} indexVar
  * @returns {string}
  */
-export function arrayToMolang(array, indexVar) {
+function arrayToMolang(array, indexVar) {
 	let arrayEntries = Object.entries(array); // to handle splitting, original indices need to be preserved, hence looking at index-value pairs
 	return arrayEntriesToMolang(arrayEntries, indexVar);
 }
