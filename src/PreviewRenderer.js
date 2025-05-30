@@ -1,5 +1,5 @@
 import TextureAtlas from "./TextureAtlas.js";
-import { AsyncFactory, max, min } from "./utils.js";
+import { AsyncFactory, min } from "./utils.js";
 
 let THREE;
 let StandaloneModelViewer;
@@ -81,9 +81,9 @@ export default class PreviewRenderer extends AsyncFactory {
 		let animator = this.#viewer.getModel().animator;
 		let animation = this.animations["animations"]["animation.armor_stand.hologram.spawn"];
 		Object.values(animation["bones"] ?? {}).map(bone => Object.values(bone).forEach(animationChannel => {
-			animationChannel["Infinity"] = animationChannel[`${max(...Object.keys(animationChannel))}`];
+			animationChannel["Infinity"] = Object.values(animationChannel).at(-1); // hold last keyframe. 
 		}));
-		animator.addAnimation("spawn", this.animations["animations"]["animation.armor_stand.hologram.spawn"]);
+		animator.addAnimation("spawn", animation);
 		animator.play("spawn");
 	}
 	#addLighting() {

@@ -45,10 +45,7 @@ I also wonder if we could have a "rotation lock" option which makes the hologram
 				}
 			}
 		},
-		"animation.armor_stand.hologram.spawn": {
-			// A fun spawning animation
-			"bones": {}
-		},
+		"animation.armor_stand.hologram.spawn": {}, // A fun spawning animation
 		"animation.armor_stand.hologram.wrong_block_overlay": {
 			"loop": "hold_on_last_frame",
 			"bones": {

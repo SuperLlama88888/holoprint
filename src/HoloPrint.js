@@ -7,9 +7,10 @@ import MaterialList from "./MaterialList.js";
 import PreviewRenderer from "./PreviewRenderer.js";
 
 import * as entityScripts from "./entityScripts.molang.js";
-import { addPaddingToImage, arrayMin, awaitAllEntries, CachingFetcher, concatenateFiles, createNumericEnum, desparseArray, exp, floor, getFileExtension, hexColorToClampedTriplet, JSONMap, JSONSet, lcm, loadTranslationLanguage, max, min, overlaySquareImages, pi, removeFileExtension, resizeImageToBlob, round, sha256, translate, UserError } from "./utils.js";
+import { addPaddingToImage, awaitAllEntries, CachingFetcher, concatenateFiles, createNumericEnum, desparseArray, exp, floor, getFileExtension, hexColorToClampedTriplet, JSONMap, JSONSet, lcm, loadTranslationLanguage, max, min, overlaySquareImages, pi, removeFileExtension, resizeImageToBlob, round, sha256, translate, UserError } from "./utils.js";
 import ResourcePackStack from "./ResourcePackStack.js";
 import BlockUpdater from "./BlockUpdater.js";
+import SpawnAnimationMaker from "./SpawnAnimationMaker.js";
 
 export const VERSION = "dev";
 export const IGNORED_BLOCKS = ["air", "piston_arm_collision", "sticky_piston_arm_collision"]; // blocks to be ignored when scanning the structure file
@@ -211,12 +212,6 @@ export async function makePack(structureFiles, config = {}, resourcePackStack, p
 	let structureHMolang = arrayToMolang(structureSizes.map(structureSize => structureSize[1]), "v.hologram.structure_index");
 	let structureDMolang = arrayToMolang(structureSizes.map(structureSize => structureSize[2]), "v.hologram.structure_index");
 	
-	if(!config.SPAWN_ANIMATION_ENABLED) {
-		// Totally empty animation
-		delete hologramAnimations["animations"]["animation.armor_stand.hologram.spawn"]["loop"];
-		delete hologramAnimations["animations"]["animation.armor_stand.hologram.spawn"]["bones"];
-	}
-	
 	let entityDescription = entityFile["minecraft:client_entity"]["description"];
 	
 	let totalBlockCount = 0;
@@ -225,6 +220,7 @@ export async function makePack(structureFiles, config = {}, resourcePackStack, p
 	let uniqueBlocksToValidate = new Set();
 	
 	let materialList = await MaterialList.new(blockMetadata, itemMetadata);
+	let spawnAnimationMaker = config.SPAWN_ANIMATION_ENABLED && new SpawnAnimationMaker(config, structureSizes[0]);
 	allStructureIndicesByLayer.forEach((structureIndicesByLayer, structureI) => {
 		let structureSize = structureSizes[structureI];
 		let geoShortName = `hologram_${structureI}`;
@@ -236,31 +232,6 @@ export async function makePack(structureFiles, config = {}, resourcePackStack, p
 		let blocksToValidate = [];
 		let blocksToValidateByLayer = [];
 		
-		let getSpawnAnimationDelay;
-		let animationTimingFunc;
-		let makeHologramSpawnAnimation;
-		let spawnAnimationAnimatedBones = [];
-		if(config.SPAWN_ANIMATION_ENABLED) {
-			let totalVolume = structureSize.reduce((a, b) => a * b);
-			let totalAnimationLength = 0;
-			getSpawnAnimationDelay = (x, y, z) => {
-				let randomness = 2 - 1.9 * exp(-0.005 * totalVolume); // 100 -> ~0.85, 1000 -> ~1.99, asymptotic to 2
-				return config.SPAWN_ANIMATION_LENGTH * 0.25 * (structureSize[0] - x + y + structureSize[2] - z + Math.random() * randomness);
-			};
-			animationTimingFunc = x => 1 - (1 - x) ** 3;
-			makeHologramSpawnAnimation = (delay, bonePos) => {
-				let animationEnd = Number((delay + config.SPAWN_ANIMATION_LENGTH).toFixed(2));
-				totalAnimationLength = max(totalAnimationLength, animationEnd);
-				hologramAnimations["animations"]["animation.armor_stand.hologram.spawn"]["animation_length"] = totalAnimationLength;
-				let keyframes = [0, 0.2, 0.4, 0.6, 0.8, 1]; // this is smooth enough
-				let positionOffset = [-bonePos[0] - 8, -bonePos[1], -bonePos[2] - 8];
-				let createAnimFromKeyframes = timingFunc => Object.fromEntries(keyframes.map(keyframe => [`${+(delay + keyframe * config.SPAWN_ANIMATION_LENGTH).toFixed(2)}`, timingFunc(keyframe)]));
-				return {
-					"scale": createAnimFromKeyframes(keyframe => (new Array(3)).fill(+animationTimingFunc(keyframe).toFixed(2))), // has to be an array here...
-					"position": createAnimFromKeyframes(keyframe => positionOffset.map(x => +(x * (1 - animationTimingFunc(keyframe))).toFixed(2)))
-				};
-			};
-		}
 		for(let y = 0; y < structureSize[1]; y++) {
 			let layerName = `l_${y}`;
 			geo["bones"].push({
@@ -336,7 +307,7 @@ export async function makePack(structureFiles, config = {}, resourcePackStack, p
 							hologramGeo["minecraft:geometry"][2]["bones"][1]["locators"][blockCoordinateName] ??= bonePos.map(x => x + 8);
 						}
 						if(config.SPAWN_ANIMATION_ENABLED && structureI == 0) {
-							spawnAnimationAnimatedBones.push([boneName, getSpawnAnimationDelay(x, y, z), bonePos]);
+							spawnAnimationMaker.addBone(boneName, [x, y, z], bonePos);
 						}
 						
 						let block = blockPalette[paletteI];
@@ -361,15 +332,6 @@ export async function makePack(structureFiles, config = {}, resourcePackStack, p
 		}
 		hologramGeo["minecraft:geometry"].push(geo);
 		
-		if(config.SPAWN_ANIMATION_ENABLED && structureI == 0) {
-			let minDelay = arrayMin(spawnAnimationAnimatedBones.map(([, delay]) => delay));
-			spawnAnimationAnimatedBones.forEach(([boneName, delay, bonePos]) => {
-				delay -= minDelay - 0.05;
-				delay = Number(delay.toFixed(2));
-				hologramAnimations["animations"]["animation.armor_stand.hologram.spawn"]["bones"][boneName] = makeHologramSpawnAnimation(delay, bonePos);
-			});
-		}
-		
 		addBoundingBoxParticles(hologramAnimationControllers, structureI, structureSize);
 		addBlockValidationParticles(hologramAnimationControllers, structureI, blocksToValidate, structureSize);
 		totalBlocksToValidateByStructure.push(blocksToValidate.length);
@@ -377,6 +339,9 @@ export async function makePack(structureFiles, config = {}, resourcePackStack, p
 	});
 		
 	makeLayerAnimations(config, structureSizes, entityDescription, hologramAnimations, hologramAnimationControllers);
+	if(config.SPAWN_ANIMATION_ENABLED) {
+		hologramAnimations["animations"]["animation.armor_stand.hologram.spawn"] = spawnAnimationMaker.makeAnimation();
+	}
 	
 	entityDescription["materials"]["hologram"] = "holoprint_hologram";
 	entityDescription["materials"]["hologram.wrong_block_overlay"] = "holoprint_hologram.wrong_block_overlay";
@@ -1872,6 +1837,19 @@ function stringifyWithFixedDecimals(value) {
  * @property {number} count How many of this item is required
  * @property {string} partitionedCount A formatted string representing partitions of the total count
  * @property {number|undefined} auxId The item's aux ID
+ */
+/**
+ * Information about a bone in the spawn animation.
+ * @typedef {object} SpawnAnimationBone
+ * @property {string} boneName
+ * @property {Vec3} blockPos The block position (i.e. in-game blocks relative to the structure origin)
+ * @property {Vec3} bonePos The bone position in the model (i.e. measured in geometry space pixels)
+ */
+/**
+ * A Minecraft animation as seen in `.animation.json` files.
+ * @typedef {object} MinecraftAnimation
+ * @property {number} [animation_length]
+ * @property {Record<string, object>} [bones]
  */
 /**
  * @typedef {object} TypedBlockStateProperty
