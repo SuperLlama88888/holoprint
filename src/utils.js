@@ -413,7 +413,7 @@ export function stringToImageData(text, textCol = "black", backgroundCol = "whit
 /**
  * Adds transparent padding around an image.
  * @param {HTMLImageElement} image
- * @param {{ left: number|undefined, right: number|undefined, top: number|undefined, bottom: number|undefined }} padding Pixels
+ * @param {Partial<{ left: number, right: number, top: number, bottom: number }>} padding Pixels
  * @returns {Promise<HTMLImageElement>}
  */
 export async function addPaddingToImage(image, padding) {
@@ -575,7 +575,7 @@ export function getClassInheritance(c) {
 /**
  * Gets the full name of a class and all other classes it is inherited from.
  * @param {Function} c
- * @returns {Array<String>}
+ * @returns {String}
  */
 export function getClassFullName(c) {
 	return getClassInheritance(c).map(f => f.name).join(":");
@@ -589,7 +589,13 @@ export class AsyncFactory {
 		}
 	}
 	async init() {}
-	/** Creates an instance. */
+	/**
+	 * Creates an instance.
+	 * @template {AsyncFactory} T
+	 * @this {new (...params: any[]) => T}
+	 * @param {...any} params
+	 * @returns {Promise<T>}
+	 */
 	static async new(...params) {
 		let classes = getClassInheritance(this);
 		classes.forEach(c => AsyncFactory.#allowedConstructors.add(c));

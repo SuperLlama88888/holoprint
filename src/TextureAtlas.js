@@ -372,7 +372,7 @@ export default class TextureAtlas extends AsyncFactory {
 	/**
 	 * Stitches together images with widths and heights, and puts the UV coordinates and sizes into the textureUvs property.
 	 * @param {Array<ImageFragment>} imageFragments
-	 * @returns {Array<{ uv: [number, number], uv_size: [number, number], crop: object|undefined }>}
+	 * @returns {Promise<Array<{ uv: [number, number], uv_size: [number, number], crop?: object }>>}
 	 */
 	async #stitchTextureAtlas(imageFragments) {
 		imageFragments.forEach((imageFragment, i) => {
@@ -451,7 +451,7 @@ export default class TextureAtlas extends AsyncFactory {
 	}
 	/**
 	 * Finds the coordinates of the most extreme outer pixels of an image
-	 * @param {Image} image
+	 * @param {HTMLImageElement} image
 	 * @param {number} [startX] The x-position to start looking at
 	 * @param {number} [startY] The y-position to start looking at
 	 * @param {number} [imageW] The width of the portion of the image to look at
@@ -483,7 +483,7 @@ export default class TextureAtlas extends AsyncFactory {
 		return { minX, minY, maxX, maxY };
 	}
 	/** Add an outline around each texture.
-	 * @param {CanvasImageSource} ogCan
+	 * @param {OffscreenCanvas} ogCan
 	 * @param {Array<{ x: number, y: number, w: number, h: number }>} imagePositions
 	 * @param {HoloPrintConfig} config
 	 * @returns {OffscreenCanvas}
@@ -611,4 +611,7 @@ export default class TextureAtlas extends AsyncFactory {
  */
 /**
  * @typedef {import("./HoloPrint.js").HoloPrintConfig} HoloPrintConfig
+ */
+/**
+ * @typedef {import("./HoloPrint.js").Vec3} Vec3
  */

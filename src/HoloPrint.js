@@ -337,7 +337,7 @@ export async function makePack(structureFiles, config = {}, resourcePackStack, p
 		totalBlocksToValidateByStructure.push(blocksToValidate.length);
 		totalBlocksToValidateByStructureByLayer.push(blocksToValidateByLayer);
 	});
-		
+	
 	makeLayerAnimations(config, structureSizes, entityDescription, hologramAnimations, hologramAnimationControllers);
 	if(config.SPAWN_ANIMATION_ENABLED) {
 		hologramAnimations["animations"]["animation.armor_stand.hologram.spawn"] = spawnAnimationMaker.makeAnimation();
@@ -1008,7 +1008,7 @@ async function getResponseContents(resPromise, filePath) {
 /**
  * Removes ignored blocks from the block palette, updates old blocks, and adds block entities as separate entries.
  * @param {Record<string, any>} structure The de-NBT-ed structure file
- * @returns {{ palette: Array<Block>, indices: [Array<number>, Array<number>] }}
+ * @returns {Promise<{ palette: Array<Block>, indices: [Array<number>, Array<number>] }>}
  */
 async function tweakBlockPalette(structure, ignoredBlocks) {
 	let palette = structuredClone(structure["palette"]["default"]["block_palette"]);
@@ -1821,12 +1821,12 @@ function stringifyWithFixedDecimals(value) {
 /**
  * An image fragment containing an image, UV position, and UV size.
  * @typedef {object} ImageFragment
- * @property {Image} image
+ * @property {HTMLImageElement} image
  * @property {number} w Width
  * @property {number} h Height
  * @property {number} sourceX
  * @property {number} sourceY
- * @property {{ x: number, y: number, w: number, h: number }} crop
+ * @property {{ x: number, y: number, w: number, h: number }} [crop]
  */
 /**
  * An entry in a material list.
