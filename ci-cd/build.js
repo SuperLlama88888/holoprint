@@ -74,7 +74,7 @@ function processDir(dir) {
 }
 /**
  * @param {string} filename
- * @returns {(function(string, string): { code: string, sourceMap: string|undefined })|undefined}
+ * @returns {(function(string, string): { code: string, sourceMap: string|undefined }) | undefined}
  */
 function findProcessingFunction(filename) {
 	let fileExtension = path.extname(filename);
@@ -110,7 +110,7 @@ function processHTML(code, filename) {
  * @param {string} code
  * @param {string} filename
  * @param {boolean} [disableSourceMap]
- * @returns {{ code: string, sourceMap: string|undefined }}
+ * @returns {{ code: string, sourceMap: string | undefined }}
  */
 function processCSS(code, filename, disableSourceMap = false) {
 	let { code: codeBytes, map: sourceMapBytes } = transform({

@@ -6,7 +6,7 @@ import { all as mergeObjects } from "deepmerge";
 import "./utils.js";
 
 import LocalResourcePack from "./LocalResourcePack.js";
-import { AsyncFactory, CachingFetcher, sha256text } from "./utils.js";
+import { AsyncFactory, CachingFetcher, jsonc, removeFalsies, sha256text, toHexadecimalString } from "./utils.js";
 
 const defaultVanillaDataVersion = "v1.21.70.26-preview";
 
@@ -39,7 +39,7 @@ export default class ResourcePackStack extends AsyncFactory {
 		this.hasResourcePacks = localResourcePacks.length > 0;
 	}
 	async init() {
-		this.hash = (await sha256text([this.vanillaDataVersion, ...this.localResourcePacks.map(lrp => lrp.hash)].join("\n"))).toHexadecimalString();
+		this.hash = toHexadecimalString(await sha256text([this.vanillaDataVersion, ...this.localResourcePacks.map(lrp => lrp.hash)].join("\n")));
 		this.cacheName = `ResourcePackStack_${this.hash}`;
 		this.#vanillaDataFetcher = await VanillaDataFetcher.new(this.vanillaDataVersion);
 		if(this.enableCache) {
@@ -72,16 +72,17 @@ export default class ResourcePackStack extends AsyncFactory {
 		if(!res) {
 			if(ResourcePackStack.#JSON_FILES_TO_MERGE.includes(resourcePath)) {
 				let vanillaRes = await this.fetchData(filePath);
-				let vanillaFile = await vanillaRes.clone().jsonc(); // clone it so it can be read later if need be (responses can only be read once)
-				let resourcePackFiles = await Promise.all(this.localResourcePacks.map(resourcePack => resourcePack.getFile(resourcePath)?.jsonc()));
-				resourcePackFiles.reverse(); // start with the lowest priority pack, so that they get overwritten by higher priority packs
-				let allFiles = [vanillaFile, ...resourcePackFiles.removeFalsies()];
-				if(allFiles.length == 1) { // if only the vanilla resources had this file, use that response
+				let vanillaJson = await jsonc(vanillaRes.clone()); // clone it so it can be read later if need be (responses can only be read once)
+				let resourcePackFiles = this.localResourcePacks.map(resourcePack => resourcePack.getFile(resourcePath));
+				let resourcePackJsons = await Promise.all(removeFalsies(resourcePackFiles).map(file => jsonc(file)));
+				resourcePackJsons.reverse(); // start with the lowest priority pack, so that they get overwritten by higher priority packs
+				let allJsons = [vanillaJson, ...resourcePackJsons];
+				if(allJsons.length == 1) { // if only the vanilla resources had this file, use that response
 					res = vanillaRes;
 				} else {
-					let mergedFile = mergeObjects(allFiles);
-					console.debug(`Merged JSON file ${resourcePath}:`, mergedFile, "From:", allFiles);
-					res = new Response(JSON.stringify(mergedFile));
+					let mergedJson = mergeObjects(allJsons);
+					console.debug(`Merged JSON file ${resourcePath}:`, mergedJson, "From:", allJsons);
+					res = new Response(JSON.stringify(mergedJson));
 				}
 			} else {
 				for(let localResourcePack of this.localResourcePacks) {

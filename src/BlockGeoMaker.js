@@ -2,7 +2,7 @@
 // READ: this also looks pretty comprehensive: https://github.com/MCBE-Development-Wiki/mcbe-dev-home/blob/main/docs/misc/enums/block_shape.md
 // https://github.com/bricktea/MCStructure/blob/main/docs/1.16.201/enums/B.md
 
-import { AsyncFactory, awaitAllEntries, hexColorToClampedTriplet, JSONSet } from "./utils.js";
+import { AsyncFactory, awaitAllEntries, hexColorToClampedTriplet, jsonc, JSONSet } from "./utils.js";
 
 // https://wiki.bedrock.dev/visuals/material-creations.html#overlay-color-in-render-controllers
 // https://wiki.bedrock.dev/documentation/materials.html#entity-alphatest
@@ -43,10 +43,10 @@ export default class BlockGeoMaker extends AsyncFactory {
 	}
 	async init() {
 		let { blockShapes, blockShapeGeos, blockStateDefs, eigenvariants } = await awaitAllEntries({
-			blockShapes: fetch("data/blockShapes.json").then(res => res.jsonc()),
-			blockShapeGeos: fetch("data/blockShapeGeos.json").then(res => res.jsonc()),
-			blockStateDefs: fetch("data/blockStateDefinitions.json").then(res => res.jsonc()),
-			eigenvariants: fetch("data/blockEigenvariants.json").then(res => res.jsonc()),
+			blockShapes: fetch("data/blockShapes.json").then(res => jsonc(res)),
+			blockShapeGeos: fetch("data/blockShapeGeos.json").then(res => jsonc(res)),
+			blockStateDefs: fetch("data/blockStateDefinitions.json").then(res => jsonc(res)),
+			eigenvariants: fetch("data/blockEigenvariants.json").then(res => jsonc(res)),
 		});
 		this.#individualBlockShapes = blockShapes["individual_blocks"];
 		this.#blockShapePatterns = Object.entries(blockShapes["patterns"]).map(([rule, blockShape]) => [new RegExp(rule), blockShape]); // store regular expressions from the start to avoid recompiling them every time

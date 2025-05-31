@@ -7,7 +7,7 @@ import MaterialList from "./MaterialList.js";
 import PreviewRenderer from "./PreviewRenderer.js";
 
 import * as entityScripts from "./entityScripts.molang.js";
-import { addPaddingToImage, awaitAllEntries, CachingFetcher, concatenateFiles, createNumericEnum, desparseArray, exp, floor, getFileExtension, hexColorToClampedTriplet, JSONMap, JSONSet, lcm, loadTranslationLanguage, max, min, overlaySquareImages, pi, removeFileExtension, resizeImageToBlob, round, sha256, translate, UserError } from "./utils.js";
+import { addPaddingToImage, awaitAllEntries, CachingFetcher, concatenateFiles, createNumericEnum, desparseArray, floor, getFileExtension, hexColorToClampedTriplet, jsonc, JSONMap, JSONSet, lcm, loadTranslationLanguage, max, min, onEvent, overlaySquareImages, pi, removeFalsies, removeFileExtension, resizeImageToBlob, round, setImageOpacity, sha256, toBlob, toImage, translate, UserError } from "./utils.js";
 import ResourcePackStack from "./ResourcePackStack.js";
 import BlockUpdater from "./BlockUpdater.js";
 import SpawnAnimationMaker from "./SpawnAnimationMaker.js";
@@ -48,7 +48,7 @@ const HOLOGRAM_LAYER_MODES = createNumericEnum(["SINGLE", "ALL_BELOW"]);
 
 /**
  * Makes a HoloPrint resource pack from a structure file.
- * @param {File|Array<File>} structureFiles Either a singular structure file (`*.mcstructure`), or an array of structure files
+ * @param {File | Array<File>} structureFiles Either a singular structure file (`*.mcstructure`), or an array of structure files
  * @param {HoloPrintConfig} [config]
  * @param {ResourcePackStack} [resourcePackStack]
  * @param {HTMLElement} [previewCont]
@@ -118,7 +118,7 @@ export async function makePack(structureFiles, config = {}, resourcePackStack, p
 		},
 		otherFiles: {
 			packIcon: config.PACK_ICON_BLOB ?? makePackIcon(concatenateFiles(structureFiles)),
-			itemIcons: config.RETEXTURE_CONTROL_ITEMS? fetch("data/itemIcons.json").then(res => res.jsonc()) : undefined
+			itemIcons: config.RETEXTURE_CONTROL_ITEMS? fetch("data/itemIcons.json").then(res => jsonc(res)) : undefined
 		},
 		data: { // these will not be put into the pack
 			blockMetadata: "metadata/vanilladata_modules/mojang-blocks.json",
@@ -417,7 +417,7 @@ export async function makePack(structureFiles, config = {}, resourcePackStack, p
 		"a": `v.hologram.show_tint? ${config.TINT_OPACITY} : 0`
 	};
 	
-	let overlayTexture = await singleWhitePixelTexture.setOpacity(config.WRONG_BLOCK_OVERLAY_COLOR[3]);
+	let overlayTexture = await setImageOpacity(singleWhitePixelTexture, config.WRONG_BLOCK_OVERLAY_COLOR[3]);
 	
 	let totalMaterialCount = materialList.totalMaterialCount;
 	
@@ -547,7 +547,7 @@ export async function makePack(structureFiles, config = {}, resourcePackStack, p
 		let itemIconPatterns = Object.entries(itemIcons).filter(([key]) => key.startsWith("/") && key.endsWith("/")).map(([pattern, itemName]) => [new RegExp(pattern.slice(1, -1), "g"), itemName]);
 		await Promise.all(Object.entries(config.CONTROLS).map(async ([control, itemCriteria]) => {
 			let controlTexturePath = `textures/items/~${control.toLowerCase()}.png`; // because texture compositing works alphabetically not in array order, the ~ forces the control texture to always go on top of the actual item texture
-			let controlTexture = await fetch(`packTemplate/${controlTexturePath}`).then(res => res.toImage());
+			let controlTexture = await fetch(`packTemplate/${controlTexturePath}`).then(res => toImage(res));
 			let paddedTexture = await addPaddingToImage(controlTexture, { // make it small in the top-left corner
 				right: 16,
 				bottom: 16
@@ -641,7 +641,7 @@ export async function makePack(structureFiles, config = {}, resourcePackStack, p
 					let specificOriginalTexturePath = `${itemTexture["texture_data"][itemName]["textures"][variant]}.png`;
 					let originalImage;
 					try {
-						originalImage = await resourcePackStack.fetchResource(specificOriginalTexturePath).then(res => res.toImage());
+						originalImage = await resourcePackStack.fetchResource(specificOriginalTexturePath).then(res => toImage(res));
 					} catch(e) {
 						console.warn(`Failed to load texture ${specificOriginalTexturePath} for control item retexturing!`);
 						return;
@@ -655,7 +655,7 @@ export async function makePack(structureFiles, config = {}, resourcePackStack, p
 					let itemTextureSize = 16;
 					if(resourcePackStack.hasResourcePacks) {
 						try {
-							let originalImage = await resourcePackStack.fetchResource(`${originalTexturePath}.png`).then(res => res.toImage());
+							let originalImage = await resourcePackStack.fetchResource(`${originalTexturePath}.png`).then(res => toImage(res));
 							itemTextureSize = originalImage.width;
 						} catch(e) {
 							console.warn(`Could not load item texture ${originalTexturePath} for overlay texture scaling calculations!`, e);
@@ -707,10 +707,10 @@ export async function makePack(structureFiles, config = {}, resourcePackStack, p
 		packFiles.push([`particles/${particleName}.json`, JSON.stringify(particle)]);
 	});
 	packFiles.push(["particles/saving_backup.json", JSON.stringify(savingBackupParticle)]);
-	packFiles.push(["textures/particle/single_white_pixel.png", await singleWhitePixelTexture.toBlob()]);
-	packFiles.push(["textures/particle/exclamation_mark.png", await exclamationMarkTexture.toBlob()]);
-	packFiles.push(["textures/particle/save_icon.png", await saveIconTexture.toBlob()]);
-	packFiles.push(["textures/entity/overlay.png", await overlayTexture.toBlob()]);
+	packFiles.push(["textures/particle/single_white_pixel.png", await toBlob(singleWhitePixelTexture)]);
+	packFiles.push(["textures/particle/exclamation_mark.png", await toBlob(exclamationMarkTexture)]);
+	packFiles.push(["textures/particle/save_icon.png", await toBlob(saveIconTexture)]);
+	packFiles.push(["textures/entity/overlay.png", await toBlob(overlayTexture)]);
 	packFiles.push(["animations/armor_stand.hologram.animation.json", JSON.stringify(hologramAnimations)]);
 	textureBlobs.forEach(([textureName, blob]) => {
 		packFiles.push([`textures/entity/${textureName}.png`, blob]);
@@ -725,7 +725,7 @@ export async function makePack(structureFiles, config = {}, resourcePackStack, p
 	if(config.MATERIAL_LIST_ENABLED) {
 		packFiles.push(["ui/hud_screen.json", JSON.stringify(hudScreenUI)]);
 		if(highestItemCount >= 1728) {
-			packFiles.push(["font/glyph_E2.png", await customEmojiFont.toBlob()]);
+			packFiles.push(["font/glyph_E2.png", await toBlob(customEmojiFont)]);
 		}
 	}
 	packFiles.push(["texts/languages.json", JSON.stringify(languagesDotJson)]);
@@ -768,7 +768,7 @@ export async function makePack(structureFiles, config = {}, resourcePackStack, p
 				p.dataset.translate = "preview.click_to_view_multiple";
 			}
 			message.appendChild(p);
-			message.onEvent("click", () => {
+			message[onEvent]("click", () => {
 				message.remove();
 				showPreview();
 			});
@@ -844,8 +844,8 @@ export function findLinksInDescription(description) {
 }
 /**
  * Creates an ItemCriteria from arrays of names and tags.
- * @param {string|Array<string>} names
- * @param {string|Array<string>} [tags]
+ * @param {string | Array<string>} names
+ * @param {string | Array<string>} [tags]
  * @returns {ItemCriteria}
  */
 export function createItemCriteria(names, tags = []) { // IDK why I haven't made this a class
@@ -943,7 +943,7 @@ async function readStructureNBT(structureFile) {
  * @template TData
  * @param {{ packTemplate?: TPackTemplate, resources?: TResources, otherFiles?: TOtherFiles, data?: TData }} stuff
  * @param {ResourcePackStack} resourcePackStack
- * @returns {Promise<{ files: { [K in keyof TPackTemplate | keyof TResources | keyof TOtherFiles]?: string|Blob|Record<string, any>|Array<any>|HTMLImageElement }, data: { [K in keyof TData]?: string|Blob|Record<string, any>|Array<any>|HTMLImageElement } }>}
+ * @returns {Promise<{ files: { [K in keyof TPackTemplate | keyof TResources | keyof TOtherFiles]?: string|Blob|Record<string, any>|Array<any>|HTMLImageElement }, data: { [K in keyof TData]?: string|Blob|Record<string, any>|Array<any> | HTMLImageElement } }>}
 */
 async function loadStuff(stuff, resourcePackStack) {
 	let filePromises = {};
@@ -967,8 +967,8 @@ async function loadStuff(stuff, resourcePackStack) {
  * Gets the contents of a response based on the requested file extension (e.g. object from .json, image from .png, etc.).
  * @overload
  * @param {Promise<Response>} resPromise
- * @param {`${string}.${"json"|"material"}`} filePath
- * @returns {Promise<Record<string, any>|Array<any>>}
+ * @param {`${string}.${"json" | "material"}`} filePath
+ * @returns {Promise<Record<string, any> | Array<any>>}
  */
 /**
  * Gets the contents of a response based on the requested file extension (e.g. object from .json, image from .png, etc.).
@@ -999,9 +999,9 @@ async function getResponseContents(resPromise, filePath) {
 	let fileExtension = getFileExtension(filePath);
 	switch(fileExtension) {
 		case "json":
-		case "material": return await res.jsonc();
+		case "material": return await jsonc(res);
 		case "lang": return await res.text();
-		case "png": return await res.toImage();
+		case "png": return await toImage(res);
 	}
 	return await res.blob();
 }
@@ -1371,7 +1371,7 @@ function addPlayerControlsToRenderControllers(config, defaultPlayerRenderControl
 function patchRenderControllers(renderControllers, patches) {
 	return {
 		"format_version": renderControllers["format_version"],
-		"render_controllers": Object.fromEntries(Object.entries(patches).map(([controllerId, patch]) => {
+		"render_controllers": Object.fromEntries(removeFalsies(Object.entries(patches).map(([controllerId, patch]) => {
 			let controller = renderControllers["render_controllers"][controllerId];
 			if(!controller) {
 				console.error(`No render controller ${controllerId} found!`, renderControllers);
@@ -1388,7 +1388,7 @@ function patchRenderControllers(renderControllers, patches) {
 				...controller,
 				"textures": [patch, ...controller["textures"].slice(1)]
 			}];
-		}).removeFalsies())
+		})))
 	};
 }
 /**
@@ -1421,9 +1421,9 @@ async function translateControlItems(config, blockMetadata, itemMetadata, langua
 			let itemInfo = controlsMaterialList.export();
 			let translatedControlName = translate(PLAYER_CONTROL_NAMES[control], language);
 			translatedControlNames[control] = translatedControlName;
-			inGameControls[language] += `\n${translatedControlName}: ${[itemInfo.map(item => `§3${item.translatedName}§r`).join(", "), itemCriteria.tags.map(tag => `§p${tag}§r`).join(", ")].removeFalsies().join("; ")}`;
+			inGameControls[language] += `\n${translatedControlName}: ${removeFalsies([itemInfo.map(item => `§3${item.translatedName}§r`).join(", "), itemCriteria.tags.map(tag => `§p${tag}§r`).join(", ")]).join("; ")}`;
 			
-			let itemsInTags = itemCriteria.tags.filter(tag => !tag.includes(":")).map(tag => itemTags[`minecraft:${tag}`]).removeFalsies().flat().map(itemName => itemName.replace(/^minecraft:/, ""));
+			let itemsInTags = removeFalsies(itemCriteria.tags.filter(tag => !tag.includes(":")).map(tag => itemTags[`minecraft:${tag}`])).flat().map(itemName => itemName.replace(/^minecraft:/, ""));
 			itemsInTags.forEach(itemName => controlsMaterialList.addItem(itemName));
 			controlItemTranslationKeys[control] = new Set();
 			controlsMaterialList.export().forEach(({ translationKey, translatedName }) => {
@@ -1522,7 +1522,7 @@ async function makePackIcon(structureFile) {
  */
 function expandItemCriteria(itemCriteria, itemTags) {
 	let minecraftTags = itemCriteria["tags"].filter(tag => !tag.includes(":")); // we can't find which items are used in custom tags
-	let namespacedItemsFromTags = minecraftTags.map(tag => itemTags[`minecraft:${tag}`]).flat().removeFalsies();
+	let namespacedItemsFromTags = removeFalsies(minecraftTags.map(tag => itemTags[`minecraft:${tag}`]).flat());
 	return [...itemCriteria["names"], ...namespacedItemsFromTags.map(itemName => itemName.replace(/^minecraft:/, ""))];
 }
 /**
@@ -1535,7 +1535,7 @@ function itemCriteriaToMolang(itemCriteria, slot = "slot.weapon.mainhand") {
 	let tags = itemCriteria["tags"].map(tag => tag.includes(":")? tag : `minecraft:${tag}`);
 	let nameQuery = names.length > 0? `q.is_item_name_any('${slot}',${names.map(name => `'${name}'`).join(",")})` : undefined;
 	let tagQuery = tags.length > 0? `q.equipped_item_any_tag('${slot}',${tags.map(tag => `'${tag}'`).join(",")})` : undefined;
-	return [nameQuery, tagQuery].removeFalsies().join("||") || "false";
+	return removeFalsies([nameQuery, tagQuery]).join("||") || "false";
 }
 /**
  * Creates a Molang expression that mimics array access. Defaults to the last element if nothing is found.
@@ -1736,10 +1736,10 @@ function stringifyWithFixedDecimals(value) {
  * @property {Array<number>} WRONG_BLOCK_OVERLAY_COLOR Clamped colour quartet
  * @property {Vec3} INITIAL_OFFSET
  * @property {number} BACKUP_SLOT_COUNT
- * @property {string|undefined} PACK_NAME The name of the completed pack; will default to the structure file names
+ * @property {string | undefined} PACK_NAME The name of the completed pack; will default to the structure file names
  * @property {Blob} PACK_ICON_BLOB Blob for `pack_icon.png`
  * @property {Array<string>} AUTHORS
- * @property {string|undefined} DESCRIPTION
+ * @property {string | undefined} DESCRIPTION
  * @property {number} COMPRESSION_LEVEL
  * @property {number} PREVIEW_BLOCK_LIMIT The maximum number of blocks a structure can have for rendering a preview
  * @property {boolean} SHOW_PREVIEW_SKYBOX
@@ -1770,14 +1770,14 @@ function stringifyWithFixedDecimals(value) {
  * A block as stored in NBT.
  * @typedef {object} NBTBlock
  * @property {string} name The block's ID
- * @property {Record<string, number|string>} states Block states
+ * @property {Record<string, number | string>} states Block states
  * @property {number} version
  */
 /**
  * A block palette entry, similar to how it appears in the NBT, as used in HoloPrint.
  * @typedef {object} Block
  * @property {string} name The block's ID
- * @property {Record<string, number|string>} [states] Block states
+ * @property {Record<string, number | string>} [states] Block states
  * @property {object} [block_entity_data] Block entity data
  */
 /**
@@ -1836,7 +1836,7 @@ function stringifyWithFixedDecimals(value) {
  * @property {string} translatedName
  * @property {number} count How many of this item is required
  * @property {string} partitionedCount A formatted string representing partitions of the total count
- * @property {number|undefined} auxId The item's aux ID
+ * @property {number | undefined} auxId The item's aux ID
  */
 /**
  * Information about a bone in the spawn animation.
@@ -1861,16 +1861,16 @@ function stringifyWithFixedDecimals(value) {
  * @typedef {object} BlockUpdateSchemaFlattenRule
  * @property {string} prefix - The prefix for the flattened property.
  * @property {string} flattenedProperty - The name of the flattened property.
- * @property {"int"|"string"|"byte"} [flattenedPropertyType] - The type of the flattened property.
+ * @property {"int"|"string" | "byte"} [flattenedPropertyType] - The type of the flattened property.
  * @property {string} suffix - The suffix for the flattened property.
  * @property {Record<string, string>} [flattenedValueRemaps] - A mapping of flattened values.
  */
 /**
  * @typedef {object} BlockUpdateSchemaRemappedState
- * @property {Record<string, TypedBlockStateProperty>|null} oldState - The property values before the remapping.
+ * @property {Record<string, TypedBlockStateProperty> | null} oldState - The property values before the remapping.
  * @property {string} [newName] - An optional new name for the block.
  * @property {BlockUpdateSchemaFlattenRule} [newFlattenedName] - An optional flattened property rule providing a new name.
- * @property {Record<string, TypedBlockStateProperty>|null} newState - The new property values after the remapping.
+ * @property {Record<string, TypedBlockStateProperty> | null} newState - The new property values after the remapping.
  * @property {Array<string>} [copiedState] - Optional list of property names to copy from the old state.
  */
 

@@ -1,4 +1,4 @@
-import { AsyncFactory, dirname, sha256, sha256text } from "./utils.js";
+import { AsyncFactory, dirname, sha256, sha256text, toHexadecimalString } from "./utils.js";
 
 export default class LocalResourcePack extends AsyncFactory {
 	/** @type {String} A unique hash for this local resource pack. */
@@ -23,7 +23,7 @@ export default class LocalResourcePack extends AsyncFactory {
 		if(!rootFile) {
 			throw new Error("Couldn't find manifest.json in local resource pack; it will not be loaded!");
 		}
-		this.hash = (await sha256(rootFile)).toHexadecimalString();
+		this.hash = toHexadecimalString(await sha256(rootFile));
 		let rootPackPath = dirname(rootFile.webkitRelativePath);
 		let packFiles = this.files.filter(file => file.webkitRelativePath.startsWith(rootPackPath));
 		let abstractFiles = packFiles.map(file => ({
@@ -37,17 +37,17 @@ export default class LocalResourcePack extends AsyncFactory {
 			}
 		}
 		if(this.aggressiveHashing) {
-			this.hash = (await sha256text(folderSummary.join("\n"))).toHexadecimalString();
+			this.hash = toHexadecimalString(await sha256text(folderSummary.join("\n")));
 		} else if(!this.hash) {
 			let joinedFileNames = abstractFiles.map(file => file.name).join("\n");
-			this.hash = (await sha256text(joinedFileNames)).toHexadecimalString();
+			this.hash = toHexadecimalString(await sha256text(joinedFileNames));
 			console.warn(`Couldn't find manifest.json in local resource pack for hash; using hash ${this.hash} (this should never appear)`);
 		}
 	}
 	/**
 	 * Gets a file from the local resource pack, or undefined if it doesn't exist.
 	 * @param {string} filePath
-	 * @returns {File|undefined}
+	 * @returns {File | undefined}
 	 */
 	getFile(filePath) {
 		return this.#files.get(filePath);

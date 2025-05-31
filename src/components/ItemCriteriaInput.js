@@ -1,4 +1,4 @@
-import { html, htmlCodeToElement } from "../utils.js";
+import { html, htmlCodeToElement, onEvent, onEventAndNow, selectEl, selectEls } from "../utils.js";
 import * as HoloPrint from "../HoloPrint.js";
 import { VanillaDataFetcher } from "../ResourcePackStack.js";
 
@@ -97,11 +97,11 @@ export default class ItemCriteriaInput extends HTMLElement {
 			<button id="addItemButton">+ <span data-translate="item_criteria_input.item_name">Item name</span></button>
 			<button id="addTagButton">+ <span data-translate="item_criteria_input.item_tag">Item tag</span></button>
 		`;
-		this.#criteriaInputsCont = this.shadowRoot.selectEl("#criteriaInputs");
-		this.shadowRoot.selectEl("#addItemButton").onEvent("click", () => {
+		this.#criteriaInputsCont = this.shadowRoot[selectEl]("#criteriaInputs");
+		this.shadowRoot[selectEl]("#addItemButton")[onEvent]("click", () => {
 			this.#addNewInput("item");
 		});
-		this.shadowRoot.selectEl("#addTagButton").onEvent("click", () => {
+		this.shadowRoot[selectEl]("#addTagButton")[onEvent]("click", () => {
 			this.#addNewInput("tag");
 		});
 		
@@ -110,15 +110,15 @@ export default class ItemCriteriaInput extends HTMLElement {
 			task();
 		}
 		
-		this.#criteriaInputsCont.onEventAndNow("input", () => this.#reportFormState());
-		this.onEvent("focus", async e => {
+		this.#criteriaInputsCont[onEventAndNow]("input", () => this.#reportFormState());
+		this[onEvent]("focus", async e => {
 			if(e.composedPath()[0] instanceof this.constructor) { // If this event was triggered from an element in the shadow DOM being .focus()ed, we don't want to focus something else
-				(this.shadowRoot.selectEl("input:invalid") ?? this.shadowRoot.selectEl("input:last-child") ?? this.shadowRoot.selectEl("#addItemButton")).focus();
+				(this.shadowRoot[selectEl]("input:invalid") ?? this.shadowRoot[selectEl]("input:last-child") ?? this.shadowRoot[selectEl]("#addItemButton")).focus();
 			}
 			this.shadowRoot.append(await itemsDatalistPromise, await itemTagsDatalistPromise);
 		});
-		this.onEvent("blur", async () => { // remove empty inputs when focus is lost
-			if(Array.from(this.#criteriaInputsCont.selectEls("input")).filter(input => input.value.trim() == "").map(input => input.remove()).length) {
+		this[onEvent]("blur", async () => { // remove empty inputs when focus is lost
+			if(Array.from(this.#criteriaInputsCont[selectEls]("input")).filter(input => input.value.trim() == "").map(input => input.remove()).length) {
 				this.#reportFormState();
 				this.#removeConsecutiveOrSpacers();
 			}
@@ -148,8 +148,8 @@ export default class ItemCriteriaInput extends HTMLElement {
 		return this.localName;
 	}
 	get value() {
-		let itemNames = Array.from(this.#criteriaInputsCont.selectEls(".itemNameInput")).map(input => input.value.trim());
-		let tagNames = Array.from(this.#criteriaInputsCont.selectEls(".itemTagInput")).map(input => input.value.trim());
+		let itemNames = Array.from(this.#criteriaInputsCont[selectEls](".itemNameInput")).map(input => input.value.trim());
+		let tagNames = Array.from(this.#criteriaInputsCont[selectEls](".itemTagInput")).map(input => input.value.trim());
 		return JSON.stringify(HoloPrint.createItemCriteria(itemNames, tagNames));
 	}
 	set value(stringifiedValue) {
@@ -165,7 +165,7 @@ export default class ItemCriteriaInput extends HTMLElement {
 	
 	#reportFormState() {
 		this.internals.setFormValue(this.value);
-		let allInputs = Array.from(this.#criteriaInputsCont.selectEls("input"));
+		let allInputs = Array.from(this.#criteriaInputsCont[selectEls]("input"));
 		if(allInputs.length == 0) {
 			this.internals.setValidity({
 				tooShort: true
@@ -196,7 +196,7 @@ export default class ItemCriteriaInput extends HTMLElement {
 			"item": `placeholder="Item name" list="itemNamesDatalist" class="itemNameInput" data-translate-placeholder="item_criteria_input.item_name"`,
 			"tag": `placeholder="Tag name" list="itemTagsDatalist" class="itemTagInput" data-translate-placeholder="item_criteria_input.item_tag"`
 		}
-		this.#criteriaInputsCont.selectEl(`input:last-child:placeholder-shown`)?.remove();
+		this.#criteriaInputsCont[selectEl](`input:last-child:placeholder-shown`)?.remove();
 		let lastNode = Array.from(this.#criteriaInputsCont.childNodes).at(-1);
 		if(lastNode && !(lastNode instanceof HTMLSpanElement)) {
 			let orSpan = document.createElement("span");
@@ -205,7 +205,7 @@ export default class ItemCriteriaInput extends HTMLElement {
 			this.#criteriaInputsCont.appendChild(orSpan);
 		}
 		let newInput = htmlCodeToElement(`<input type="text" required pattern="^\\s*(\\w+:)?\\w+\\s*$" spellcheck="false" autocapitalize="off" ${attributesByType[type]}/>`);
-		newInput.onEvent("keydown", this.#inputKeyDownEvent);
+		newInput[onEvent]("keydown", this.#inputKeyDownEvent);
 		if(initialValue != undefined) {
 			newInput.value = initialValue;
 		}
@@ -216,7 +216,7 @@ export default class ItemCriteriaInput extends HTMLElement {
 		this.#reportFormState();
 	}
 	#inputKeyDownEvent = e => { // must be arrow function to keep class scope
-		if(e.target.value != "" && (e.key == "Tab" && !e.shiftKey && e.target == this.#criteriaInputsCont.selectEl("input:last-child") || e.key == "Enter" || e.key == ",")) {
+		if(e.target.value != "" && (e.key == "Tab" && !e.shiftKey && e.target == this.#criteriaInputsCont[selectEl]("input:last-child") || e.key == "Enter" || e.key == ",")) {
 			e.preventDefault();
 			this.#addNewInput(e.target.classList.contains("itemNameInput")? "item" : "tag");
 			this.#reportFormState();

@@ -1,4 +1,4 @@
-import { AsyncFactory, awaitAllEntries, ceil, floor, hexColorToClampedTriplet, JSONSet, max, range, stringToImageData } from "./utils.js";
+import { AsyncFactory, awaitAllEntries, ceil, floor, hexColorToClampedTriplet, jsonc, JSONSet, max, range, stringToImageData, toImage, toImageData } from "./utils.js";
 import TGALoader from "tga-js"; // We could use dynamic import as this isn't used all the time but it's so small it won't matter
 import potpack from "potpack";
 import ResourcePackStack from "./ResourcePackStack.js";
@@ -46,11 +46,11 @@ export default class TextureAtlas extends AsyncFactory {
 	}
 	async init() {
 		let { blocksDotJson, terrainTexture, flipbookTextures, textureAtlasMappings } = await awaitAllEntries({
-			blocksDotJson: this.resourcePackStack.fetchResource("blocks.json").then(res => res.jsonc()),
-			terrainTexture: this.resourcePackStack.fetchResource("textures/terrain_texture.json").then(res => res.jsonc()),
-			flipbookTextures: this.resourcePackStack.fetchResource("textures/flipbook_textures.json").then(res => res.jsonc()),
+			blocksDotJson: this.resourcePackStack.fetchResource("blocks.json").then(res => jsonc(res)),
+			terrainTexture: this.resourcePackStack.fetchResource("textures/terrain_texture.json").then(res => jsonc(res)),
+			flipbookTextures: this.resourcePackStack.fetchResource("textures/flipbook_textures.json").then(res => jsonc(res)),
 			/** @type {import("./data/textureAtlasMappings.json")} */
-			textureAtlasMappings: fetch("data/textureAtlasMappings.json").then(res => res.jsonc())
+			textureAtlasMappings: fetch("data/textureAtlasMappings.json").then(res => jsonc(res))
 		})
 		this.blocksDotJson = blocksDotJson;
 		this.terrainTexture = terrainTexture;
@@ -289,8 +289,8 @@ export default class TextureAtlas extends AsyncFactory {
 			let imageIsTga = false;
 			let imageNotFound = false;
 			if(imageRes.ok) {
-				let image = await imageRes.toImage();
-				imageData = image.toImageData(); // defined in utils.js; just draws the image onto a canvas then gets the image data from there.
+				let image = await toImage(imageRes);
+				imageData = toImageData(image);
 			} else {
 				imageRes = await this.resourcePackStack.fetchResource(`${texturePath}.tga`);
 				if(imageRes.ok) {
@@ -321,11 +321,11 @@ export default class TextureAtlas extends AsyncFactory {
 				imageData = this.#setImageDataOpacity(imageData, opacity);
 			}
 			let { width: imageW, height: imageH } = imageData;
-			let image = await imageData.toImage().catch(e => {
+			let image = await toImage(imageData).catch(e => {
 				console.error(`Failed to decode image data from ${texturePath}: ${e}`);
 				sourceUv = [0, 0];
 				uvSize = [1, 1];
-				return stringToImageData(`Failed to decode ${texturePath}`).toImage(); // hopefully it's an issue with the image loading not the decoding
+				return toImage(stringToImageData(`Failed to decode ${texturePath}`)); // hopefully it's an issue with the image loading not the decoding
 			});
 			
 			if(this.#flipbookTexturesAndSizes.has(texturePath)) {
@@ -445,7 +445,7 @@ export default class TextureAtlas extends AsyncFactory {
 			this.imageBlobs = [["hologram", await can.convertToBlob()]];
 		}
 		
-		// document.body.appendChild(await this.imageBlobs.at(-1)[1].toImage());
+		// document.body.appendChild(toImage(await this.imageBlobs.at(-1)[1]));
 		
 		return imageUvs;
 	}
@@ -501,7 +501,7 @@ export default class TextureAtlas extends AsyncFactory {
 		ctx.fillStyle = config.TEXTURE_OUTLINE_COLOR;
 		ctx.globalAlpha = config.TEXTURE_OUTLINE_OPACITY;
 		
-		/** difference: will compare alpha channel difference; threshold: will only look at the second pixel @type {("threshold"|"difference")} */
+		/** difference: will compare alpha channel difference; threshold: will only look at the second pixel @type {("threshold" | "difference")} */
 		const TEXTURE_OUTLINE_ALPHA_DIFFERENCE_MODE = "threshold";
 		/** If using difference mode, will draw outline between pixels with at least this much alpha difference; if using threshold mode, will draw outline on pixels next to pixels with an alpha less than or equal to this @type {Number} */
 		const TEXTURE_OUTLINE_ALPHA_THRESHOLD = 0;

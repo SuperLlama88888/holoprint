@@ -1,4 +1,4 @@
-import { AsyncFactory, floor, nanToUndefined } from "./utils.js";
+import { AsyncFactory, floor, jsonc, nanToUndefined, removeFalsies } from "./utils.js";
 
 export default class MaterialList extends AsyncFactory {
 	/** @type {Map<String, Number>} */
@@ -38,7 +38,7 @@ export default class MaterialList extends AsyncFactory {
 		}
 	}
 	async init() {
-		let materialListMappings = await fetch("data/materialListMappings.json").then(res => res.jsonc());
+		let materialListMappings = await fetch("data/materialListMappings.json").then(res => jsonc(res));
 		this.#ignoredBlocks = materialListMappings["ignored_blocks"];
 		let blockToItemMappings = Object.entries(materialListMappings["block_to_item_mappings"]);
 		this.#individualBlockToItemMappings = new Map(blockToItemMappings.filter(([blockName]) => !blockName.startsWith("/") && !blockName.endsWith("/")));
@@ -68,7 +68,7 @@ export default class MaterialList extends AsyncFactory {
 	}
 	/**
 	 * Adds a block to the material list.
-	 * @param {string|Block} block
+	 * @param {string | Block} block
 	 * @param {number} [count]
 	 */
 	add(block, count = 1) {
@@ -142,7 +142,7 @@ export default class MaterialList extends AsyncFactory {
 					if(!serializationId && !blockSerializationId) {
 						console.warn(`Cannot find any translation key for ${itemName}!`);
 					} else {
-						console.warn(`Cannot translate ${[serializationId, blockSerializationId].removeFalsies().join(" or ")} for item "${itemName}"!`);
+						console.warn(`Cannot translate ${removeFalsies([serializationId, blockSerializationId]).join(" or ")} for item "${itemName}"!`);
 					}
 					serializationId ??= blockSerializationId ?? itemName;
 					translatedName = serializationId;
@@ -245,7 +245,7 @@ export default class MaterialList extends AsyncFactory {
 	/**
 	 * Finds the aux id for an item.
 	 * @param {string} itemName
-	 * @returns {number|undefined}
+	 * @returns {number | undefined}
 	 */
 	#findItemAuxId(itemName) {
 		return nanToUndefined(this.#itemMetadata.get(`minecraft:${itemName}`)?.["raw_id"] * 65536); // undefined * 65536 = NaN, which breaks optional chaining
@@ -253,7 +253,7 @@ export default class MaterialList extends AsyncFactory {
 	/**
 	 * Finds the aux id for a block.
 	 * @param {string} blockName
-	 * @returns {number|undefined}
+	 * @returns {number | undefined}
 	 */
 	#findBlockAuxId(blockName) {
 		return nanToUndefined(this.#blockMetadata.get(`minecraft:${blockName}`)?.["raw_id"] * 65536);

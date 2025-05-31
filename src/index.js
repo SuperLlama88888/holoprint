@@ -1,5 +1,5 @@
 import { extractStructureFilesFromMcworld } from "mcbe-leveldb-reader";
-import { selectEl, downloadBlob, sleep, selectEls, loadTranslationLanguage, translate, getStackTrace, random, UserError, joinOr, conditionallyGroup, groupByFileExtension, addFilesToFileInput, setFileInputFiles, dispatchInputEvents } from "./utils.js";
+import { selectEl, downloadBlob, sleep, selectEls, loadTranslationLanguage, translate, getStackTrace, random, UserError, joinOr, conditionallyGroup, groupByFileExtension, addFilesToFileInput, setFileInputFiles, dispatchInputEvents, getAllChildren, jsonc, toImage, removeFalsies, clearCacheStorage, onEvent, onEventAndNow } from "./utils.js";
 import * as HoloPrint from "./HoloPrint.js";
 import SupabaseLogger from "./SupabaseLogger.js";
 
@@ -61,11 +61,11 @@ let supabaseLogger;
 let texturePreviewImageCont;
 let texturePreviewImage;
 
-document.onEvent("DOMContentLoaded", () => {
+document[onEvent]("DOMContentLoaded", () => {
 	document.body.appendChild = selectEl("main").appendChild.bind(selectEl("main"));
 	
 	selectEls(`input[type="file"][accept]:not([multiple])`).forEach(input => {
-		input.onEventAndNow("input", e => {
+		input[onEventAndNow]("input", e => {
 			if(!validateFileInputFileTypes(input)) {
 				e?.stopImmediatePropagation();
 			}
@@ -87,13 +87,13 @@ document.onEvent("DOMContentLoaded", () => {
 	let oldPackExtractionError = selectEl("#oldPackExtractionError");
 	structureFilesList = selectEl("#structureFilesList");
 	packNameInput = generatePackForm.elements.namedItem("packName");
-	packNameInput.onEvent("invalid", () => {
+	packNameInput[onEvent]("invalid", () => {
 		packNameInput.setCustomValidity(translateCurrentLanguage("metadata.pack_name.error"));
 	});
-	packNameInput.onEvent("input", () => {
+	packNameInput[onEvent]("input", () => {
 		packNameInput.setCustomValidity("");
 	});
-	structureFilesInput.onEvent("input", () => {
+	structureFilesInput[onEvent]("input", () => {
 		if(!structureFilesInput.files.length) {
 			return;
 		}
@@ -108,7 +108,7 @@ document.onEvent("DOMContentLoaded", () => {
 		}
 		addFilesToFileInput(structureFilesList, filesToAdd);
 	});
-	worldFileInput.onEvent("input", async () => {
+	worldFileInput[onEvent]("input", async () => {
 		worldExtractionMessage.classList.add("hidden");
 		worldExtractionSuccess.classList.add("hidden");
 		worldExtractionError.classList.add("hidden");
@@ -143,7 +143,7 @@ document.onEvent("DOMContentLoaded", () => {
 			worldFileInput.setCustomValidity(worldExtractionError.textContent);
 		}
 	});
-	oldPackInput.onEvent("input", async () => {
+	oldPackInput[onEvent]("input", async () => {
 		oldPackExtractionMessage.classList.add("hidden");
 		oldPackExtractionSuccess.classList.add("hidden");
 		oldPackExtractionError.classList.add("hidden");
@@ -167,7 +167,7 @@ document.onEvent("DOMContentLoaded", () => {
 			oldPackInput.setCustomValidity(oldPackExtractionError.textContent);
 		}
 	});
-	structureFilesList.onEventAndNow("input", updatePackNameInputPlaceholder);
+	structureFilesList[onEventAndNow]("input", updatePackNameInputPlaceholder);
 	completedPacksCont = selectEl("#completedPacksCont");
 	texturePreviewImageCont = selectEl("#texturePreviewImageCont");
 	defaultResourcePackStackPromise = ResourcePackStack.new();
@@ -180,22 +180,22 @@ document.onEvent("DOMContentLoaded", () => {
 	}
 	
 	let dragCounter = 0;
-	document.documentElement.onEvent("dragenter", () => {
+	document.documentElement[onEvent]("dragenter", () => {
 		dragCounter++;
 	});
-	document.documentElement.onEvent("dragover", e => {
+	document.documentElement[onEvent]("dragover", e => {
 		if(e.dataTransfer?.types?.includes("Files")) { // https://html.spec.whatwg.org/multipage/dnd.html#dom-datatransfer-types-dev
 			e.preventDefault();
 			dropFileNotice.classList.remove("hidden");
 		}
 	});
-	document.documentElement.onEvent("dragleave", () => {
+	document.documentElement[onEvent]("dragleave", () => {
 		dragCounter--;
 		if(dragCounter == 0) {
 			dropFileNotice.classList.add("hidden");
 		}
 	});
-	document.documentElement.onEvent("drop", async e => {
+	document.documentElement[onEvent]("drop", async e => {
 		e.preventDefault();
 		dragCounter = 0;
 		dropFileNotice.classList.add("hidden");
@@ -215,7 +215,7 @@ document.onEvent("DOMContentLoaded", () => {
 		logger.patchConsoleMethods();
 	}
 	
-	generatePackForm.onEvent("submit", async e => {
+	generatePackForm[onEvent]("submit", async e => {
 		e.preventDefault();
 		
 		let formData = new FormData(generatePackForm);
@@ -226,7 +226,7 @@ document.onEvent("DOMContentLoaded", () => {
 		}
 		makePack(formData.getAll("structureFiles"), resourcePacks);
 	});
-	generatePackForm.onEvent("input", e => {
+	generatePackForm[onEvent]("input", e => {
 		if(e.target.closest("fieldset")?.classList?.contains("textureSettings") && e.target.hasAttribute("name")) {
 			updateTexturePreview();
 		}
@@ -235,13 +235,13 @@ document.onEvent("DOMContentLoaded", () => {
 	generatePackFormSubmitButton = generatePackForm.elements.namedItem("submit");
 	
 	let opacityModeSelect = generatePackForm.elements.namedItem("opacityMode");
-	opacityModeSelect.onEventAndNow("change", () => {
+	opacityModeSelect[onEventAndNow]("change", () => {
 		generatePackForm.elements.namedItem("opacity").parentElement.classList.toggle("hidden", opacityModeSelect.value == "multiple");
 	});
 	
 	let descriptionTextArea = generatePackForm.elements.namedItem("description");
 	let descriptionLinksCont = selectEl("#descriptionLinksCont");
-	descriptionTextArea.onEventAndNow("input", () => {
+	descriptionTextArea[onEventAndNow]("input", () => {
 		let links = HoloPrint.findLinksInDescription(descriptionTextArea.value);
 		descriptionLinksCont.textContent = "";
 		links.forEach(([_, link], i) => {
@@ -272,13 +272,13 @@ document.onEvent("DOMContentLoaded", () => {
 	});
 	
 	let clearResourcePackCacheButton = selectEl("#clearResourcePackCacheButton");
-	clearResourcePackCacheButton.onEvent("click", async () => {
-		caches.clear();
+	clearResourcePackCacheButton[onEvent]("click", async () => {
+		clearCacheStorage(caches);
 		temporarilyChangeText(clearResourcePackCacheButton, clearResourcePackCacheButton.dataset.resetTranslation);
 	});
 	
 	selectEls(".resetButton").forEach(el => {
-		el.onEvent("click", () => {
+		el[onEvent]("click", () => {
 			let fieldset = el.parentElement;
 			let [elementsBeingReset, elementsToSave] = conditionallyGroup(Array.from(generatePackForm.elements), el => el.localName != "fieldset" && el.localName != "button" && (!fieldset.contains(el) || !el.hasAttribute("name")));
 			let oldValues = elementsToSave.map(el => {
@@ -314,7 +314,7 @@ document.onEvent("DOMContentLoaded", () => {
 	});
 	
 	languageSelector = selectEl("#languageSelector");
-	fetch("translations/languages.json").then(res => res.jsonc()).then(languagesAndNames => {
+	fetch("translations/languages.json").then(res => jsonc(res)).then(languagesAndNames => {
 		languagesAndNames = Object.fromEntries(Object.entries(languagesAndNames).sort((a, b) => a[1] > b[1])); // sort alphabeticallly
 		let availableLanguages = Object.keys(languagesAndNames);
 		if(availableLanguages.length == 1) {
@@ -329,7 +329,7 @@ document.onEvent("DOMContentLoaded", () => {
 		for(let language in languagesAndNames) {
 			languageSelector.appendChild(new Option(languagesAndNames[language], language, false, language == defaultLanguage));
 		}
-		languageSelector.onEventAndNow("change", () => {
+		languageSelector[onEventAndNow]("change", () => {
 			translatePage(languageSelector.value);
 		});
 		
@@ -339,7 +339,7 @@ document.onEvent("DOMContentLoaded", () => {
 				console.log("mutations observed when retranslating:", mutations); // should never happen!
 				return;
 			}
-			let shouldRetranslate = mutations.find(mutation => mutation.type == "childList" && Array.from(mutation.addedNodes).some(node => node instanceof Element && (Array.from(node.attributes).some(attr => attr.name.startsWith("data-translate") || attr.name.startsWith("data-translation-sub-")) || node.getAllChildren().some(el => Array.from(el.attributes).some(attr => attr.name.startsWith("data-translate") || attr.name.startsWith("data-translation-sub-"))))) || mutation.type == "attributes" && (mutation.attributeName.startsWith("data-translate") || mutation.attributeName.startsWith("data-translation-sub-")) && mutation.target.getAttribute(mutation.attributeName) != mutation.oldValue); // retranslate when an element with a translate dataset attribute or a child with a translate dataset attribute is added, or when a translate dataset attribute is changed
+			let shouldRetranslate = mutations.find(mutation => mutation.type == "childList" && Array.from(mutation.addedNodes).some(node => node instanceof Element && (Array.from(node.attributes).some(attr => attr.name.startsWith("data-translate") || attr.name.startsWith("data-translation-sub-")) || getAllChildren(node).some(el => Array.from(el.attributes).some(attr => attr.name.startsWith("data-translate") || attr.name.startsWith("data-translation-sub-"))))) || mutation.type == "attributes" && (mutation.attributeName.startsWith("data-translate") || mutation.attributeName.startsWith("data-translation-sub-")) && mutation.target.getAttribute(mutation.attributeName) != mutation.oldValue); // retranslate when an element with a translate dataset attribute or a child with a translate dataset attribute is added, or when a translate dataset attribute is changed
 			if(shouldRetranslate) {
 				retranslating = true;
 				translatePage(languageSelector.value);
@@ -353,12 +353,12 @@ document.onEvent("DOMContentLoaded", () => {
 			attributeOldValue: true
 		};
 		bodyObserver.observe(document.body, observerConfig);
-		document.body.getAllChildren().filter(el => el.shadowRoot).forEach(el => {
+		getAllChildren(document.body).filter(el => el.shadowRoot).forEach(el => {
 			bodyObserver.observe(el.shadowRoot, observerConfig);
 		});
 	});
 });
-window.onEvent("load", () => { // shadow DOMs aren't populated in the DOMContentLoaded event yet
+window[onEvent]("load", () => { // shadow DOMs aren't populated in the DOMContentLoaded event yet
 	if(location.search == "?generateEnglishTranslations") {
 		translatePage("en_US", true);
 	}
@@ -385,7 +385,7 @@ function updatePackNameInputPlaceholder() {
 	packNameInput.setAttribute("placeholder", HoloPrint.getDefaultPackName(Array.from(structureFilesList.files)));
 }
 async function updateTexturePreview() {
-	texturePreviewImage ??= await defaultResourcePackStackPromise.then(rps => rps.fetchResource(`textures/blocks/${random(["crafting_table_front", "diamond_ore", "blast_furnace_front_off", "brick", "cherry_planks", "chiseled_copper", "cobblestone", "wool_colored_white", "stonebrick", "stone_granite_smooth"])}.png`)).then(res => res.toImage());
+	texturePreviewImage ??= await defaultResourcePackStackPromise.then(rps => rps.fetchResource(`textures/blocks/${random(["crafting_table_front", "diamond_ore", "blast_furnace_front_off", "brick", "cherry_planks", "chiseled_copper", "cobblestone", "wool_colored_white", "stonebrick", "stone_granite_smooth"])}.png`)).then(res => toImage(res));
 	let can = new OffscreenCanvas(texturePreviewImage.width, texturePreviewImage.height);
 	let ctx = can.getContext("2d");
 	ctx.drawImage(texturePreviewImage, 0, 0);
@@ -400,20 +400,20 @@ async function updateTexturePreview() {
 		TEXTURE_OUTLINE_OPACITY: generatePackForm.elements.namedItem("textureOutlineOpacity").value / 100,
 		TEXTURE_OUTLINE_WIDTH: textureOutlineWidth
 	})) : can;
-	let tintlessImage = await outlinedCan.convertToBlob().then(blob => blob.toImage());
+	let tintlessImage = await outlinedCan.convertToBlob().then(blob => toImage(blob));
 	let outlinedCanCtx = outlinedCan.getContext("2d");
 	outlinedCanCtx.fillStyle = generatePackForm.elements.namedItem("tintColor").value;
 	outlinedCanCtx.globalAlpha = generatePackForm.elements.namedItem("tintOpacity").value / 100;
 	outlinedCanCtx.fillRect(0, 0, outlinedCan.width, outlinedCan.height);
-	let tintedImage = await outlinedCan.convertToBlob().then(blob => blob.toImage());
+	let tintedImage = await outlinedCan.convertToBlob().then(blob => toImage(blob));
 	texturePreviewImageCont.textContent = "";
 	texturePreviewImageCont.appendChild(tintlessImage);
 	texturePreviewImageCont.appendChild(tintedImage);
 }
 async function translatePage(language, generateTranslations = false) {
-	let translatableEls = document.documentElement.getAllChildren().filter(el => Array.from(el.attributes).some(attr => attr.name.startsWith("data-translate")));
+	let translatableEls = getAllChildren(document.documentElement).filter(el => Array.from(el.attributes).some(attr => attr.name.startsWith("data-translate")));
 	await loadTranslationLanguage(language);
-	let translations = generateTranslations? await fetch(`translations/${language}.json`).then(res => res.jsonc()) : {};
+	let translations = generateTranslations? await fetch(`translations/${language}.json`).then(res => jsonc(res)) : {};
 	await Promise.all(translatableEls.map(async el => {
 		if("translate" in el.dataset) {
 			let translationKey = el.dataset["translate"];
@@ -541,10 +541,10 @@ async function makePack(structureFiles, localResourcePacks) {
 	}
 	
 	let formData = new FormData(generatePackForm);
-	let authors = formData.get("author").split(",").map(x => x.trim()).removeFalsies();
+	let authors = removeFalsies(formData.get("author").split(",").map(x => x.trim()));
 	/** @type {import("./HoloPrint.js").HoloPrintConfig} */
 	let config = {
-		IGNORED_BLOCKS: formData.get("ignoredBlocks").split(/\W/).removeFalsies(),
+		IGNORED_BLOCKS: removeFalsies(formData.get("ignoredBlocks").split(/\W/)),
 		SCALE: formData.get("scale") / 100,
 		OPACITY: formData.get("opacity") / 100,
 		MULTIPLE_OPACITIES: formData.get("opacityMode") == "multiple",

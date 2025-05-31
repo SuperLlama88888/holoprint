@@ -2,15 +2,55 @@
 
 import stripJsonComments from "strip-json-comments";
 
-/** @returns {Element|null} */
-export const selectEl = selector => document.querySelector(selector);
-/** @returns {NodeListOf<HTMLElement>} */
-export const selectEls = selector => document.querySelectorAll(selector);
+/**
+ * Patches a method onto an object, returning a symbol that can be used to access that method.
+ * @overload
+ * @param {object | Array<object>} objects An object or multiple objects onto which the method patch will be applied
+ * @param {Function} primaryMethod The method that will be patched onto the object(s)
+ * @returns {symbol}
+*/
+/**
+ * Patches a method onto an object, and making a function turn into a symbol during property access, with which the patched method can be accessed. 
+ * @template {Function} F
+ * @overload
+ * @param {object | Array<object>} objects An object or multiple objects onto which the method patch will be applied
+ * @param {Function} primaryMethod The method that will be patched onto the object(s)
+ * @param {F} secondaryMethod The function that will have a patch applied to turn into a symbol during property access
+ * @returns {F & symbol}
+ */
+function symbolPatch(objects, primaryMethod, secondaryMethod) {
+	let symbol = Symbol(primaryMethod.name);
+	if(!Array.isArray(objects)) {
+		objects = [objects];
+	}
+	objects.forEach(object => {
+		Object.defineProperty(object, symbol, { // defaults to nonconfigurable, nonenumerable and unwritable
+			value: primaryMethod
+		});
+	});
+	if(secondaryMethod) {
+		secondaryMethod[Symbol.toPrimitive] = () => symbol; // used during property access: https://tc39.es/ecma262/multipage/abstract-operations.html#sec-toprimitive. throws a TypeError if you're trying to convert to a string, but it's fine for property access because it's a symbol
+		return secondaryMethod;
+	} else {
+		return symbol;
+	}
+}
+
+export const selectEl = symbolPatch([Element.prototype, DocumentFragment.prototype], function selectEl(query) {
+	return this.querySelector(query);
+}, function(/** @type {string} */ query) {
+	return document.querySelector(query);
+});
+export const selectEls = symbolPatch([Element.prototype, DocumentFragment.prototype], function selectEls(query) {
+	return this.querySelectorAll(query);
+}, function(/** @type {string} */ query) {
+	return document.querySelectorAll(query);
+});
 /**
  * Finds the closest descendent of an element or itself that matches a given selector.
  * @param {Element} el
  * @param {string} selector
- * @returns {Element|null}
+ * @returns {Element | null}
  */
 export function closestDescendentOrSelf(el, selector) {
 	if(el.matches(selector)) {
@@ -19,39 +59,43 @@ export function closestDescendentOrSelf(el, selector) {
 	return el.querySelector(selector);
 }
 
-Element.prototype.selectEl = DocumentFragment.prototype.selectEl = function(query) {
-	return this.querySelector(query);
-};
-Element.prototype.selectEls = DocumentFragment.prototype.selectEls = function(query) {
-	return this.querySelectorAll(query);
-};
-Element.prototype.getAllChildren = DocumentFragment.prototype.getAllChildren = function() {
-	let children = Array.from(this.selectEls("*"));
+/**
+ * Gets all children of a node, including those in shadow roots. (Doesn't work with nested shadow roots.)
+ * @param {Element | DocumentFragment} node
+ * @returns {Array<HTMLElement>}
+ */
+export function getAllChildren(node) {
+	let children = Array.from(node[selectEls]("*"));
 	let allChildren = [];
 	while(children.length) {
 		let child = children.shift();
 		allChildren.push(child);
 		if(child.shadowRoot) {
-			allChildren.push(...child.shadowRoot.selectEls("*"));
+			allChildren.push(...child.shadowRoot[selectEls]("*"));
 		}
 	}
 	return allChildren;
-};
+}
 
-EventTarget.prototype.onEvent = EventTarget.prototype.addEventListener;
-EventTarget.prototype.onEvents = function(types, listener, options = false) {
+export const onEvent = symbolPatch(EventTarget.prototype, EventTarget.prototype.addEventListener)
+export const onEvents = symbolPatch(EventTarget.prototype, function onEvents(types, listener, options = false) {
 	types.forEach(type => {
 		this.addEventListener(type, listener, options);
 	});
-};
-EventTarget.prototype.onEventAndNow = function(type, listener, options) {
+});
+export const onEventAndNow = symbolPatch(EventTarget.prototype, function onEventAndNow(type, listener, options) {
 	listener();
 	this.addEventListener(type, listener, options);
-};
+});
 
-Response.prototype.jsonc = Blob.prototype.jsonc = function() {
+/**
+ * Parses a JSONC blob or response.
+ * @param {Response | Blob} val
+ * @returns {Promise<object>}
+ */
+export function jsonc(val) {
 	return new Promise((res, rej) => {
-		this.text().then(text => {
+		val.text().then(text => {
 			let safeText = stripJsonComments(text);
 			let json;
 			try {
@@ -63,103 +107,106 @@ Response.prototype.jsonc = Blob.prototype.jsonc = function() {
 			res(json);
 		}).catch(e => rej(e));
 	});
-};
-Response.prototype.toImage = async function() {
-	let imageBlob = await this.blob();
-	let imageUrl = URL.createObjectURL(imageBlob);
-	let image = new Image();
-	image.src = imageUrl;
-	try {
-		await image.decode();
-	} catch { // Chrome puts arbitrary limits on decoding images because "an error doesn't necessarily mean that the image was invalid": https://issues.chromium.org/issues/40676514 🤦‍♂️
-		return new Promise((res, rej) => { // possibly https://github.com/chromium/chromium/blob/874a0ba26635507d1e847600fd8a512f4a10e1f8/cc/tiles/gpu_image_decode_cache.cc#L91
-			let image2 = new Image();
-			image2.onEvent("load", () => {
-				URL.revokeObjectURL(imageUrl);
-				res(image2);
+}
+/**
+ * Converts a Response, Blob, or ImageData to an Image.
+ * @param {Blob|Response | ImageData} val
+ * @returns {Promise<HTMLImageElement>}
+ */
+export async function toImage(val) {
+	if(val instanceof Blob) {
+		let imageUrl = URL.createObjectURL(val);
+		let image = new Image();
+		image.src = imageUrl;
+		try {
+			await image.decode();
+		} catch { // Chrome puts arbitrary limits on decoding images because "an error doesn't necessarily mean that the image was invalid": https://issues.chromium.org/issues/40676514 🤦‍♂️
+			return new Promise((res, rej) => { // possibly https://github.com/chromium/chromium/blob/874a0ba26635507d1e847600fd8a512f4a10e1f8/cc/tiles/gpu_image_decode_cache.cc#L91
+				let image2 = new Image();
+				image2[onEvent]("load", () => {
+					URL.revokeObjectURL(imageUrl);
+					res(image2);
+				});
+				image2[onEvent]("error", e => {
+					URL.revokeObjectURL(imageUrl);
+					rej(e);
+				});
+				image2.src = imageUrl;
 			});
-			image2.onEvent("error", e => {
-				URL.revokeObjectURL(imageUrl);
-				rej(`Failed to load image from response with status ${this.status} from URL ${this.url}: ${e}`);
-			});
-			image2.src = imageUrl;
-		});
+		}
+		URL.revokeObjectURL(imageUrl);
+		return image;
+	} else if(val instanceof Response) {
+		let imageBlob = await val.blob();
+		try {
+			return toImage(imageBlob);
+		} catch(e) {
+			throw new Error(`Failed to convert response with status ${val.status} from URL ${val.url} to image: ${e}`);
+		}
+	} else if(val instanceof ImageData) {
+		let can = new OffscreenCanvas(val.width, val.height);
+		let ctx = can.getContext("2d");
+		ctx.putImageData(val, 0, 0);
+		let imageBlob = await can.convertToBlob();
+		try {
+			return toImage(imageBlob);
+		} catch(e) {
+			throw new Error(`Failed to decode ImageData with dimensions ${val.width}x${val.height}: ${e}`);
+		}
 	}
-	URL.revokeObjectURL(imageUrl);
-	return image;
-};
-Image.prototype.toImageData = function() {
-	let can = new OffscreenCanvas(this.width, this.height);
+}
+/**
+ * Gets an image's full image data.
+ * @param {HTMLImageElement} image
+ * @returns {ImageData}
+ */
+export function toImageData(image) {
+	let can = new OffscreenCanvas(image.width, image.height);
 	let ctx = can.getContext("2d");
-	ctx.drawImage(this, 0, 0);
+	ctx.drawImage(image, 0, 0);
 	return ctx.getImageData(0, 0, can.width, can.height);
-};
-ImageData.prototype.toImage = async function() {
-	let can = new OffscreenCanvas(this.width, this.height);
+}
+/**
+ * Converts an image to a PNG blob.
+ * @param {HTMLImageElement} image
+ * @returns {Promise<Blob>}
+ */
+export async function toBlob(image) {
+	let can = new OffscreenCanvas(image.width, image.height);
 	let ctx = can.getContext("2d");
-	ctx.putImageData(this, 0, 0);
-	let blob = await can.convertToBlob();
-	let imageUrl = URL.createObjectURL(blob);
-	let image = new Image();
-	image.src = imageUrl;
-	try {
-		await image.decode();
-	} catch {
-		return new Promise((res, rej) => {
-			let image2 = new Image();
-			image2.onEvent("load", () => {
-				URL.revokeObjectURL(imageUrl);
-				res(image2);
-			});
-			image2.onEvent("error", e => {
-				URL.revokeObjectURL(imageUrl);
-				rej(`Failed to decode ImageData with dimensions ${this.width}x${this.height}: ${e}`);
-			});
-			image2.src = imageUrl;
-		});
-	}
-	URL.revokeObjectURL(imageUrl);
-	return image;
-};
-Image.prototype.toBlob = async function() {
-	let can = new OffscreenCanvas(this.width, this.height);
-	let ctx = can.getContext("2d");
-	ctx.drawImage(this, 0, 0);
+	ctx.drawImage(image, 0, 0);
 	return await can.convertToBlob();
-};
-Image.prototype.setOpacity = async function(opacity) {
-	let imageData = this.toImageData();
+}
+/**
+ * Sets the opacity of an image.
+ * @param {HTMLImageElement} image
+ * @param {number} opacity
+ * @returns {Promise<HTMLImageElement>}
+ */
+export async function setImageOpacity(image, opacity) {
+	let imageData = toImageData(image);
 	let data = imageData.data;
 	for(let i = 0; i < data.length; i += 4) {
 		data[i + 3] *= opacity;
 	}
-	return await imageData.toImage();
-};
-Image.prototype.addTint = async function(col) {
-	let imageData = this.toImageData();
+	return await toImage(imageData);
+}
+/**
+ * Adds a tint to an image.
+ * @param {HTMLImageElement} image
+ * @param {Vec3} col
+ * @returns {Promise<HTMLImageElement>}
+ */
+export async function addTintToImage(image, col) {
+	let imageData = toImageData(image);
 	let data = imageData.data;
 	for(let i = 0; i < data.length; i += 4) {
 		data[i] *= col[0];
 		data[i + 1] *= col[1];
 		data[i + 2] *= col[2];
 	}
-	return await imageData.toImage();
-};
-Blob.prototype.toImage = function() {
-	return new Promise((res, rej) => {
-		let img = new Image();
-		let url = URL.createObjectURL(this);
-		img.onEvent("load", () => {
-			URL.revokeObjectURL(url);
-			res(img);
-		});
-		img.onEvent("error", e => {
-			URL.revokeObjectURL(url);
-			rej(e);
-		});
-		img.src = url;
-	});
-};
+	return await toImage(imageData);
+}
 
 export const sleep = async time => new Promise(resolve => setTimeout(resolve, time));
 
@@ -189,9 +236,9 @@ export function random(arr) {
 }
 /**
  * Removes empty slots from a potentially sparse array.
- * @template {Array} T
- * @param {T} arr
- * @returns {T}
+ * @template T
+ * @param {Array<T>} arr
+ * @returns {Array<T>}
  */
 export function desparseArray(arr) {
 	return arr.filter(() => true);
@@ -229,7 +276,7 @@ export function groupBy(items, groupFunc) { // native Object.groupBy is only 89.
 /**
  * Groups files by their file extensions.
  * @param {Array<File>} files
- * @returns {Record<string, Array<File>|undefined>}
+ * @returns {Record<string, Array<File> | undefined>}
  */
 export function groupByFileExtension(files) {
 	return groupBy(files, file => getFileExtension(file));
@@ -299,7 +346,7 @@ export function dirname(path) {
 }
 /**
  * Finds the file extension from a file or filename.
- * @param {File|string} filename
+ * @param {File | string} filename
  * @returns {string}
  */
 export function getFileExtension(filename) {
@@ -332,7 +379,7 @@ export function joinOr(arr, language = "en") {
 /**
  * Sets a file input's files and dispatches input an dchange events.
  * @param {HTMLInputElement} fileInput
- * @param {FileList|Array<File>} files
+ * @param {FileList | Array<File>} files
  */
 export function setFileInputFiles(fileInput, files) {
 	if(!files.length) {
@@ -422,7 +469,7 @@ export async function addPaddingToImage(image, padding) {
 	let ctx = can.getContext("2d");
 	ctx.drawImage(image, left, top);
 	let blob = await can.convertToBlob();
-	return await blob.toImage();
+	return await toImage(blob);
 }
 /**
  * Overlays square images together, with the first image being the base. They can be different dimensions and will be resized to not lose quality.
@@ -456,7 +503,7 @@ export async function resizeImageToBlob(image, width, height = width) {
 
 let translationLanguages = {};
 export async function loadTranslationLanguage(language) {
-	translationLanguages[language] ??= await fetch(`translations/${language}.json`).then(res => res.jsonc()).catch(() => {
+	translationLanguages[language] ??= await fetch(`translations/${language}.json`).then(res => jsonc(res)).catch(() => {
 		console.warn(`Failed to load language ${language} for translations!`);
 		return {};
 	});
@@ -465,7 +512,7 @@ export async function loadTranslationLanguage(language) {
  * Looks up a translation from translations/`language`.json
  * @param {string} translationKey
  * @param {string} language
- * @returns {string|undefined}
+ * @returns {string | undefined}
  */
 export function translate(translationKey, language) {
 	if(!(language in translationLanguages)) {
@@ -476,7 +523,7 @@ export function translate(translationKey, language) {
 }
 
 export function getStackTrace(e = new Error()) {
-	return e.stack.split("\n").slice(1).removeFalsies();
+	return removeFalsies(e.stack.split("\n").slice(1));
 }
 
 /**
@@ -490,19 +537,36 @@ export async function sha256(blob) {
 export async function sha256text(text) {
 	return new Uint8Array(await crypto.subtle.digest("SHA-256", (new TextEncoder()).encode(text)));
 }
-Uint8Array.prototype.toHexadecimalString = function() {
-	return Array.from(this).map(ch => ch.toString(16).padStart(2, "0")).join("");
-};
-Array.prototype.removeFalsies = function() {
-	return this.filter(el => el);
-};
+
+/**
+ * Converts an array of bytes into a hexadecimal string.
+ * @param {Uint8Array} arr
+ * @returns {string}
+ */
+export function toHexadecimalString(arr) {
+	return Array.from(arr).map(ch => ch.toString(16).padStart(2, "0")).join("");
+}
+/**
+ * Removes "falsy" elements from an array
+ * @template T
+ * @param {Array<T>} arr
+ * @returns {Array<T>}
+ */
+export function removeFalsies(arr) {
+	return arr.filter(el => el);
+}
 export function concatenateFiles(files, name) {
 	return new File(files, name ?? files.map(file => file.name).join(","));
 }
 
-CacheStorage.prototype.clear = async function() {
-	(await this.keys()).forEach(cacheName => this.delete(cacheName));
-};
+/**
+ * Clears all caches.
+ * @param {CacheStorage} cacheStorage
+ */
+export async function clearCacheStorage(cacheStorage) {
+	let cacheNames = await cacheStorage.keys();
+	await Promise.all(cacheNames.map(cacheName => cacheStorage.delete(cacheName)));
+}
 
 /**
  * Promise.all() but for objects
@@ -765,3 +829,7 @@ export function createCustomError(name) {
 	};
 }
 export const UserError = createCustomError("UserError");
+
+/**
+ * @typedef {import("./HoloPrint.js").Vec3} Vec3
+ */

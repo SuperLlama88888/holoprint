@@ -1,4 +1,4 @@
-import { addOrdinalSuffix, AsyncFactory, concatenateFiles, sha256 } from "./utils.js";
+import { addOrdinalSuffix, AsyncFactory, concatenateFiles, sha256, toHexadecimalString } from "./utils.js";
 
 export default class SupabaseLogger extends AsyncFactory {
 	projectUrl;
@@ -20,10 +20,10 @@ export default class SupabaseLogger extends AsyncFactory {
 	 */
 	async recordPackCreation(structureFiles) {
 		console.info("Hashing structure files...");
-		let fullFileHashes = await Promise.all(structureFiles.map(async structureFile => (await sha256(structureFile)).toHexadecimalString()));
+		let fullFileHashes = await Promise.all(structureFiles.map(async structureFile => toHexadecimalString(await sha256(structureFile))));
 		let shortFileHashes = fullFileHashes.map(fullFileHash => fullFileHash.slice(0, 8));
 		// console.log(`Full file hashes: ${fullFileHashes}`);
-		let combinedFileHash = (await sha256(concatenateFiles(structureFiles))).toHexadecimalString().slice(0, 8);
+		let combinedFileHash = toHexadecimalString(await sha256(concatenateFiles(structureFiles))).slice(0, 8);
 		console.debug(`Finished hashing structure files! Together: ${combinedFileHash}, individually:`, shortFileHashes);
 		
 		let res = await this.supabase.rpc("record_structure_usage_v2", {

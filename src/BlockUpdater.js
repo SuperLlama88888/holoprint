@@ -211,13 +211,13 @@ export default class BlockUpdater extends AsyncFactory {
 	}
 	/**
 	 * @param {TypedBlockStateProperty} blockStateProperty 
-	 * @returns {number|string}
+	 * @returns {number | string}
 	 */
 	#readBlockStateProperty(blockStateProperty) {
 		return Object.values(blockStateProperty)[0]; // blockStateValue is an object that's either { "string": "value" }, { "int": 0 }, or { "byte": 0 } but it's all the same in JS
 	}
 	/**
-	 * @param {BlockUpdateSchema|BlockUpdateSchemaSkeleton} schema
+	 * @param {BlockUpdateSchema | BlockUpdateSchemaSkeleton} schema
 	 * @returns {number}
 	 */
 	#getSchemaVersion(schema) {
@@ -225,7 +225,7 @@ export default class BlockUpdater extends AsyncFactory {
 	}
 	/**
 	 * "Stringifies" a block with its name and states.
-	 * @param {NBTBlock|Block} block
+	 * @param {NBTBlock | Block} block
 	 * @param {boolean} [includeVersion]
 	 * @returns {string}
 	 */

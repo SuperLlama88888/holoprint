@@ -1,4 +1,4 @@
-import { clamp, createSymbolicEnum, html, isTouchInElementVerticalBounds, max, min, removeFileExtension, sleep } from "../utils.js";
+import { clamp, createSymbolicEnum, html, isTouchInElementVerticalBounds, max, min, onEvent, onEvents, removeFileExtension, selectEl, selectEls, sleep } from "../utils.js";
 
 export default class FileInputTable extends HTMLElement {
 	static observedAttributes = ["file-count-text", "empty-text", "remove-all-text", "hide-file-extensions"];
@@ -12,7 +12,7 @@ export default class FileInputTable extends HTMLElement {
 	#table;
 	/** @type {HTMLParagraphElement} */
 	#fileCountHeading;
-	/** @type {HTMLTableRowElement|null} */
+	/** @type {HTMLTableRowElement | null} */
 	#rowBeingDragged;
 	/** @type {Number} */
 	#touchDragVerticalOffset;
@@ -32,12 +32,12 @@ export default class FileInputTable extends HTMLElement {
 		}
 		this.fileInput = this.children[0];
 		this.#initShadowDom();
-		this.fileInput.onEvent("input", () => this.#updateTable());
+		this.fileInput[onEvent]("input", () => this.#updateTable());
 		
 		this.#updateTable();
 	}
 	attributeChangedCallback(attrName, _, newValue) {
-		let elBoundToAttr = this.shadowRoot.selectEl(`[data-text-attribute="${attrName}"]`);
+		let elBoundToAttr = this.shadowRoot[selectEl](`[data-text-attribute="${attrName}"]`);
 		if(elBoundToAttr) {
 			elBoundToAttr.textContent = newValue;
 			return;
@@ -188,9 +188,9 @@ export default class FileInputTable extends HTMLElement {
 				<table></table>
 			</div>
 		`;
-		this.#fileCountHeading = this.shadowRoot.selectEl("#fileCountHeading");
-		let removeAllFilesButton = this.shadowRoot.selectEl("#removeAllFilesButton");
-		this.#table = this.shadowRoot.selectEl("table");
+		this.#fileCountHeading = this.shadowRoot[selectEl]("#fileCountHeading");
+		let removeAllFilesButton = this.shadowRoot[selectEl]("#removeAllFilesButton");
+		this.#table = this.shadowRoot[selectEl]("table");
 		
 		this.#updateFileCountHeading();
 		this.#updateHasFilesAttribute();
@@ -203,8 +203,8 @@ export default class FileInputTable extends HTMLElement {
 			subtree: true
 		});
 		
-		removeAllFilesButton.onEvent("click", async () => {
-			for(let button of this.#table.selectEls(".deleteButton")) {
+		removeAllFilesButton[onEvent]("click", async () => {
+			for(let button of this.#table[selectEls](".deleteButton")) {
 				button.click();
 				await sleep(FileInputTable.#ANIMATION_LENGTH * 0.15);
 			}
@@ -230,7 +230,7 @@ export default class FileInputTable extends HTMLElement {
 			}
 			this.#updateFileInput();
 		});
-		this.#table.onEvents(["dragstart", "touchstart"], e => {
+		this.#table[onEvents](["dragstart", "touchstart"], e => {
 			if(e.target.classList.contains("dragMoveCell") && getComputedStyle(e.target).opacity != "0") {
 				let row = e.target.closest("tr");
 				if(row.classList.contains("beingDeleted")) {
@@ -250,7 +250,7 @@ export default class FileInputTable extends HTMLElement {
 		}, {
 			passive: false
 		});
-		this.#table.onEvents(["dragover", "touchmove"], e => {
+		this.#table[onEvents](["dragover", "touchmove"], e => {
 			if(!this.#rowBeingDragged) {
 				return;
 			}
@@ -295,7 +295,7 @@ export default class FileInputTable extends HTMLElement {
 		}, {
 			passive: false
 		});
-		this.#table.onEvents(["dragend", "touchend", "touchcancel"], () => {
+		this.#table[onEvents](["dragend", "touchend", "touchcancel"], () => {
 			if(this.#rowBeingDragged) {
 				this.#rowBeingDragged.classList.remove("beingDragged");
 				this.#rowBeingDragged.style.left = "";
@@ -364,7 +364,7 @@ export default class FileInputTable extends HTMLElement {
 	/**
 	 * Plays a small movement animation on a row.
 	 * @param {HTMLTableRowElement} row
-	 * @param {Symbol|undefined} [movement]
+	 * @param {Symbol | undefined} [movement]
 	 * @param {boolean} [highlight]
 	 */
 	#animateRow(row, movement, highlight = true) {
