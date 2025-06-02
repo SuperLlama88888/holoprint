@@ -10,7 +10,7 @@ export default class SpawnAnimationMaker {
 	/**
 	 * Creates a SpawnAnimationMaker for managing the spawn animation.
 	 * @param {HoloPrintConfig} config
-	 * @param {Vec3} structureSize
+	 * @param {I32Vec3} structureSize
 	 */
 	constructor(config, structureSize) {
 		this.config = config;
@@ -139,6 +139,9 @@ export default class SpawnAnimationMaker {
  */
 /**
  * @typedef {import("./HoloPrint.js").Vec3} Vec3
+ */
+/**
+ * @typedef {import("./HoloPrint.js").I32Vec3} I32Vec3
  */
 /**
  * @typedef {import("./HoloPrint.js").SpawnAnimationBone} SpawnAnimationBone

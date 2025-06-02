@@ -1,4 +1,4 @@
-import * as NBT from "nbtify";
+import * as NBT from "nbtify-readonly-typeless";
 import { ZipWriter, TextReader, BlobWriter, BlobReader, ZipReader } from "@zip.js/zip.js";
 
 import BlockGeoMaker from "./BlockGeoMaker.js";
@@ -87,7 +87,7 @@ export async function makePack(structureFiles, config = {}, resourcePackStack, p
 		}
 		throw new UserError(errorMessage);
 	}
-	let structureSizes = nbts.map(nbt => nbt["size"].map(x => +x)); // Stored as Number instances: https://github.com/Offroaders123/NBTify/issues/50
+	let structureSizes = nbts.map(nbt => nbt["size"]);
 	let packName = config.PACK_NAME ?? getDefaultPackName(structureFiles);
 	
 	// Make the pack
@@ -925,14 +925,19 @@ function isNBTValidMcstructure(nbt) {
 /**
  * Reads the NBT of a structure file, returning a JSON object.
  * @param {File} structureFile `*.mcstructure`
- * @returns {Promise<object>}
+ * @returns {Promise<MCStructure>}
  */
 async function readStructureNBT(structureFile) {
 	if(structureFile.size == 0) {
 		throw new UserError(`"${structureFile.name}" is an empty file! Please try exporting your structure again.\nIf you play on a version below 1.20.50, exporting to OneDrive will cause your structure file to be empty.`);
 	}
 	let arrayBuffer = await structureFile.arrayBuffer().catch(e => { throw new Error(`Could not read contents of structure file "${structureFile.name}"!\n${e}`); });
-	let nbt = await NBT.read(arrayBuffer).catch(e => { throw new Error(`Invalid NBT in structure file "${structureFile.name}"!\n${e}`); });
+	let nbt = await NBT.read(arrayBuffer).catch(e => {
+		if(e instanceof NBT.InvalidTagError) {
+			throw new UserError(`"${structureFile.name}" is not a .mcstructure file! Please look at the tutorial on the wiki: https://holoprint-mc.github.io/wiki/creating-packs`);
+		}
+		throw new Error(`Invalid NBT in structure file "${structureFile.name}"!\n${e}`);
+	});
 	return nbt.data;
 }
 /**
@@ -1008,7 +1013,7 @@ async function getResponseContents(resPromise, filePath) {
 /**
  * Removes ignored blocks from the block palette, updates old blocks, and adds block entities as separate entries.
  * @param {Record<string, any>} structure The de-NBT-ed structure file
- * @returns {Promise<{ palette: Array<Block>, indices: [Array<number>, Array<number>] }>}
+ * @returns {Promise<{ palette: Array<Block>, indices: [Int32Array, Int32Array] }>}
  */
 async function tweakBlockPalette(structure, ignoredBlocks) {
 	let palette = structuredClone(structure["palette"]["default"]["block_palette"]);
@@ -1017,7 +1022,7 @@ async function tweakBlockPalette(structure, ignoredBlocks) {
 	let blockUpdater = await BlockUpdater.new(true);
 	let updatedBlocks = 0;
 	for(let [i, block] of Object.entries(palette)) {
-		blockVersions.add(+block["version"]);
+		blockVersions.add(block["version"]);
 		if(blockUpdater.blockNeedsUpdating(block)) {
 			if(await blockUpdater.update(block)) {
 				updatedBlocks++;
@@ -1041,7 +1046,7 @@ async function tweakBlockPalette(structure, ignoredBlocks) {
 	console.log("Block versions:", Array.from(blockVersions), blockVersionsStringified);
 	
 	// add block entities into the block palette (on layer 0)
-	let indices = structure["block_indices"].map(layer => structuredClone(layer).map(i => +i));
+	let indices = structure["block_indices"];
 	let newIndexCache = new JSONMap();
 	let entitylessBlockEntityIndices = new Set(); // contains all the block palette indices for blocks with block entities. since they don't have block entity data yet, and all block entities well be cloned and added to the end of the palette, we can remove all the entries in here from the palette.
 	let blockPositionData = structure["palette"]["default"]["block_position_data"];
@@ -1086,8 +1091,8 @@ async function tweakBlockPalette(structure, ignoredBlocks) {
 }
 /**
  * Combines multiple block palettes into one, and updates indices for each.
- * @param {Array<{palette: Array<Block>, indices: Array<[number, number]>}>} palettesAndIndices
- * @returns {{palette: Array<Block>, indices: Array<Array<[number, number]>>}}
+ * @param {Array<{palette: Array<Block>, indices: [Int32Array, Int32Array]}>} palettesAndIndices
+ * @returns {{palette: Array<Block>, indices: Array<[Int32Array, Int32Array]>}}
  */
 function mergeMultiplePalettesAndIndices(palettesAndIndices) {
 	if(palettesAndIndices.length == 1) {
@@ -1114,7 +1119,7 @@ function mergeMultiplePalettesAndIndices(palettesAndIndices) {
 /**
  * Makes the layer animations and animation controllers. Mutates the original arguments.
  * @param {HoloPrintConfig} config
- * @param {Array<Vec3>} structureSizes
+ * @param {Array<I32Vec3>} structureSizes
  * @param {object} entityDescription
  * @param {object} hologramAnimations
  * @param {object} hologramAnimationControllers
@@ -1221,7 +1226,7 @@ function makeLayerAnimations(config, structureSizes, entityDescription, hologram
  * Adds bounding box particles for a single structure to the hologram animation controllers in-place.
  * @param {Record<string, any>} hologramAnimationControllers
  * @param {number} structureI
- * @param {Vec3} structureSize
+ * @param {I32Vec3} structureSize
  */
 function addBoundingBoxParticles(hologramAnimationControllers, structureI, structureSize) {
 	let outlineParticleSettings = [
@@ -1264,7 +1269,7 @@ function addBoundingBoxParticles(hologramAnimationControllers, structureI, struc
  * @param {Record<string, any>} hologramAnimationControllers
  * @param {number} structureI
  * @param {Array<Record<string, any>>} blocksToValidate
- * @param {Vec3} structureSize
+ * @param {I32Vec3} structureSize
  */
 function addBlockValidationParticles(hologramAnimationControllers, structureI, blocksToValidate, structureSize) {
 	let validateAllState = {
@@ -1712,8 +1717,7 @@ function stringifyWithFixedDecimals(value) {
 }
 
 /**
- * An object for storing HoloPrint config options.
- * @typedef {object} HoloPrintConfig
+ * @typedef {object} HoloPrintConfig An object for storing HoloPrint config options.
  * @property {Array<string>} IGNORED_BLOCKS
  * @property {Array<string>} IGNORED_MATERIAL_LIST_BLOCKS
  * @property {number} SCALE
@@ -1745,8 +1749,7 @@ function stringifyWithFixedDecimals(value) {
  * @property {boolean} SHOW_PREVIEW_SKYBOX
  */
 /**
- * Controls which items are used for in-game controls.
- * @typedef {object} HoloPrintControlsConfig
+ * @typedef {object} HoloPrintControlsConfig Controls which items are used for in-game controls.
  * @property {ItemCriteria} TOGGLE_RENDERING
  * @property {ItemCriteria} CHANGE_OPACITY
  * @property {ItemCriteria} TOGGLE_TINT
@@ -1761,42 +1764,36 @@ function stringifyWithFixedDecimals(value) {
  * @property {ItemCriteria} BACKUP_HOLOGRAM Force armour stands to try and backup the hologram state for 30s.
  */
 /**
- * Stores item names and tags for checking items. Leaving everything empty will check for nothing being held.
- * @typedef {object} ItemCriteria
+ * @typedef {object} ItemCriteria Stores item names and tags for checking items. Leaving everything empty will check for nothing being held.
  * @property {Array<string>} names Item names the matching item could have. The `minecraft:` namespace will be used if no namespace is specified.
  * @property {Array<string>} tags Item tags the matching item could have. The `minecraft:` namespace will be used if no namespace is specified.
  */
 /**
- * A block as stored in NBT.
- * @typedef {object} NBTBlock
+ * @typedef {object} NBTBlock A block as stored in NBT.
  * @property {string} name The block's ID
  * @property {Record<string, number | string>} states Block states
  * @property {number} version
  */
 /**
- * A block palette entry, similar to how it appears in the NBT, as used in HoloPrint.
- * @typedef {object} Block
+ * @typedef {object} Block A block palette entry, similar to how it appears in the NBT, as used in HoloPrint.
  * @property {string} name The block's ID
  * @property {Record<string, number | string>} [states] Block states
  * @property {object} [block_entity_data] Block entity data
  */
 /**
- * An unpositioned bone for geometry files without name or parent. All units/coordinates are relative to (0, 0, 0).
- * @typedef {object} BoneTemplate
+ * @typedef {object} BoneTemplate An unpositioned bone for geometry files without name or parent. All units/coordinates are relative to (0, 0, 0).
  * @property {Vec3} [pivot] The block's center point of rotation
  * @property {Vec3} [rotation] The block's rotation
  * @property {Array} cubes
  */
 /**
- * A positioned bone for geometry files.
- * @typedef {object} Bone
+ * @typedef {object} Bone A positioned bone for geometry files.
  * @augments BoneTemplate
  * @property {string} name
  * @property {string} parent
  */
 /**
- * A texture reference, made in BlockGeoMaker.js and turned into a texture in TextureAtlas.js.
- * @typedef {object} TextureReference
+ * @typedef {object} TextureReference A texture reference, made in BlockGeoMaker.js and turned into a texture in TextureAtlas.js.
  * @property {Vec2} uv UV coordinates
  * @property {Vec2} uv_size	UV size
  * @property {string} block_name Block ID to get the texture from
@@ -1808,8 +1805,7 @@ function stringifyWithFixedDecimals(value) {
  * @property {Vec3} [tint] A tint override
  */
 /**
- * An unresolved texture fragment containing an image path, tint, and UV position and size.
- * @typedef {object} TextureFragment
+ * @typedef {object} TextureFragment An unresolved texture fragment containing an image path, tint, and UV position and size.
  * @property {string} texturePath
  * @property {Vec3} [tint]
  * @property {boolean} [tint_like_png]
@@ -1819,8 +1815,7 @@ function stringifyWithFixedDecimals(value) {
  * @property {boolean} croppable If a texture can be cropped automatically
  */
 /**
- * An image fragment containing an image, UV position, and UV size.
- * @typedef {object} ImageFragment
+ * @typedef {object} ImageFragment An image fragment containing an image, UV position, and UV size.
  * @property {HTMLImageElement} image
  * @property {number} w Width
  * @property {number} h Height
@@ -1829,8 +1824,7 @@ function stringifyWithFixedDecimals(value) {
  * @property {{ x: number, y: number, w: number, h: number }} [crop]
  */
 /**
- * An entry in a material list.
- * @typedef {object} MaterialListEntry
+ * @typedef {object} MaterialListEntry An entry in a material list.
  * @property {string} itemName
  * @property {string} translationKey
  * @property {string} translatedName
@@ -1839,17 +1833,40 @@ function stringifyWithFixedDecimals(value) {
  * @property {number | undefined} auxId The item's aux ID
  */
 /**
- * Information about a bone in the spawn animation.
- * @typedef {object} SpawnAnimationBone
+ * @typedef {object} SpawnAnimationBone Information about a bone in the spawn animation.
  * @property {string} boneName
  * @property {Vec3} blockPos The block position (i.e. in-game blocks relative to the structure origin)
  * @property {Vec3} bonePos The bone position in the model (i.e. measured in geometry space pixels)
  */
 /**
- * A Minecraft animation as seen in `.animation.json` files.
- * @typedef {object} MinecraftAnimation
+ * @typedef {object} MinecraftAnimation A Minecraft animation as seen in `.animation.json` files.
  * @property {number} [animation_length]
  * @property {Record<string, object>} [bones]
+ */
+/**
+ * @typedef {object} MCStructure The parsed NBT of a `.mcstructure` file.
+ * @property {number} format_version Format version, should be always set to 1.
+ * @property {I32Vec3} size Size of the structure in blocks.
+ * @property {object} structure
+ * @property {[Int32Array, Int32Array]} structure.block_indices Block indices for the structure.
+ * @property {Array<EntityNBTCompound>} structure.entities List of entities stored as NBT.
+ * @property {object} structure.palette
+ * @property {object} structure.palette.default
+ * @property {Array<NBTBlock>} structure.palette.default.block_palette List of ordered block entries that the indices refer to.
+ * @property {Record<number, BlockPositionData>} [structure.palette.default.block_position_data] Additional data for individual blocks in the structure.
+ * @property {I32Vec3} structure_world_origin The original world position where the structure was saved.
+ */
+/**
+ * @typedef {Record<string, any>} EntityNBTCompound Represents an entity NBT compound structure (placeholder).
+ */
+/**
+ * @typedef {object} BlockPositionData Additional data for individual blocks.
+ * @property {EntityNBTCompound} [block_entity_data] Block entity data.
+ * @property {Array<TickQueueData>} [tick_queue_data] Scheduled tick information for blocks that need updates.
+ */
+/**
+ * @typedef {object} TickQueueData Represents a scheduled pending tick update. Used in observers.
+ * @property {number} tick_delay Number of ticks remaining before update.
  */
 /**
  * @typedef {object} TypedBlockStateProperty
@@ -1861,7 +1878,7 @@ function stringifyWithFixedDecimals(value) {
  * @typedef {object} BlockUpdateSchemaFlattenRule
  * @property {string} prefix - The prefix for the flattened property.
  * @property {string} flattenedProperty - The name of the flattened property.
- * @property {"int"|"string" | "byte"} [flattenedPropertyType] - The type of the flattened property.
+ * @property {"int" | "string" | "byte"} [flattenedPropertyType] - The type of the flattened property.
  * @property {string} suffix - The suffix for the flattened property.
  * @property {Record<string, string>} [flattenedValueRemaps] - A mapping of flattened values.
  */
@@ -1873,7 +1890,6 @@ function stringifyWithFixedDecimals(value) {
  * @property {Record<string, TypedBlockStateProperty> | null} newState - The new property values after the remapping.
  * @property {Array<string>} [copiedState] - Optional list of property names to copy from the old state.
  */
-
 /**
  * @typedef {object} BlockUpdateSchemaSkeleton
  * @property {string} filename
@@ -1898,10 +1914,12 @@ function stringifyWithFixedDecimals(value) {
  * @property {Record<string, Array<BlockUpdateSchemaRemappedState>>} [remappedStates] - Mapping of remapped states.
  */
 /**
- * 2D vector.
- * @typedef {[number, number]} Vec2
+ * @typedef {[number, number]} Vec2 2D vector.
  */
 /**
- * 3D vector.
- * @typedef {[number, number, number]} Vec3
+ *
+ * @typedef {[number, number, number]} Vec3 3D vector.
+ */
+/**
+ * @typedef {Int32Array & { length: 3 }} I32Vec3
  */

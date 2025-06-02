@@ -821,7 +821,7 @@ export class CachingFetcher extends AsyncFactory {
  * @returns {typeof Error}
  */
 export function createCustomError(name) {
-	return class extends Error {
+	return class extends Error { // can't have a base class that has this.name = new.target.name because esbuild will rename them... :(
 		constructor(message) {
 			super(message);
 			this.name = name;
