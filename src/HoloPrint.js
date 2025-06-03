@@ -1425,11 +1425,10 @@ async function retextureControlItems(config, itemIcons, itemTags, resourceItemTe
 					return;
 				}
 			} else {
-				loadingLegacyItemMappingsPromise ??= new Promise(async (res, rej) => {
-					try {
-						// these mappings are from the old ids to the new ids. we want to go the other way, because bugrock still uses some old ids in item_texture.json
-						legacyItemMappings = new Map();
-						let updateMappings = await pmmpBedrockDataFetcher.fetch("r16_to_current_item_map.json").then(res => res.json());
+				loadingLegacyItemMappingsPromise ??= new Promise(res => {
+					// these mappings are from the old ids to the new ids. we want to go the other way, because bugrock still uses some old ids in item_texture.json
+					legacyItemMappings = new Map();
+					pmmpBedrockDataFetcher.fetch("r16_to_current_item_map.json").then(res => res.json()).then(updateMappings => {
 						Object.entries(updateMappings["simple"]).forEach(([oldName, newName]) => {
 							legacyItemMappings.set(newName.slice(10), [oldName.slice(10), -1]); // first 10 characters are "minecraft:"
 						});
@@ -1439,9 +1438,7 @@ async function retextureControlItems(config, itemIcons, itemTags, resourceItemTe
 							});
 						});
 						res();
-					} catch(e) {
-						rej(e);
-					}
+					});
 				});
 				try {
 					await loadingLegacyItemMappingsPromise;

@@ -155,58 +155,6 @@ export async function toImage(val) {
 		}
 	}
 }
-/**
- * Gets an image's full image data.
- * @param {HTMLImageElement} image
- * @returns {ImageData}
- */
-export function toImageData(image) {
-	let can = new OffscreenCanvas(image.width, image.height);
-	let ctx = can.getContext("2d");
-	ctx.drawImage(image, 0, 0);
-	return ctx.getImageData(0, 0, can.width, can.height);
-}
-/**
- * Converts an image to a PNG blob.
- * @param {HTMLImageElement} image
- * @returns {Promise<Blob>}
- */
-export async function toBlob(image) {
-	let can = new OffscreenCanvas(image.width, image.height);
-	let ctx = can.getContext("2d");
-	ctx.drawImage(image, 0, 0);
-	return await can.convertToBlob();
-}
-/**
- * Sets the opacity of an image.
- * @param {HTMLImageElement} image
- * @param {number} opacity
- * @returns {Promise<HTMLImageElement>}
- */
-export async function setImageOpacity(image, opacity) {
-	let imageData = toImageData(image);
-	let data = imageData.data;
-	for(let i = 0; i < data.length; i += 4) {
-		data[i + 3] *= opacity;
-	}
-	return await toImage(imageData);
-}
-/**
- * Adds a tint to an image.
- * @param {HTMLImageElement} image
- * @param {Vec3} col
- * @returns {Promise<HTMLImageElement>}
- */
-export async function addTintToImage(image, col) {
-	let imageData = toImageData(image);
-	let data = imageData.data;
-	for(let i = 0; i < data.length; i += 4) {
-		data[i] *= col[0];
-		data[i + 1] *= col[1];
-		data[i + 2] *= col[2];
-	}
-	return await toImage(imageData);
-}
 
 export const sleep = async time => new Promise(resolve => setTimeout(resolve, time));
 
@@ -458,6 +406,58 @@ export function stringToImageData(text, textCol = "black", backgroundCol = "whit
 	return ctx.getImageData(0, 0, can.width, can.height);
 }
 /**
+ * Gets an image's full image data.
+ * @param {HTMLImageElement} image
+ * @returns {ImageData}
+ */
+export function toImageData(image) {
+	let can = new OffscreenCanvas(image.width, image.height);
+	let ctx = can.getContext("2d");
+	ctx.drawImage(image, 0, 0);
+	return ctx.getImageData(0, 0, can.width, can.height);
+}
+/**
+ * Converts an image to a PNG blob.
+ * @param {HTMLImageElement} image
+ * @returns {Promise<Blob>}
+ */
+export async function toBlob(image) {
+	let can = new OffscreenCanvas(image.width, image.height);
+	let ctx = can.getContext("2d");
+	ctx.drawImage(image, 0, 0);
+	return await can.convertToBlob();
+}
+/**
+ * Sets the opacity of an image.
+ * @param {HTMLImageElement} image
+ * @param {number} opacity
+ * @returns {Promise<HTMLImageElement>}
+ */
+export async function setImageOpacity(image, opacity) {
+	let imageData = toImageData(image);
+	let data = imageData.data;
+	for(let i = 0; i < data.length; i += 4) {
+		data[i + 3] *= opacity;
+	}
+	return await toImage(imageData);
+}
+/**
+ * Adds a tint to an image.
+ * @param {HTMLImageElement} image
+ * @param {Vec3} col
+ * @returns {Promise<HTMLImageElement>}
+ */
+export async function addTintToImage(image, col) {
+	let imageData = toImageData(image);
+	let data = imageData.data;
+	for(let i = 0; i < data.length; i += 4) {
+		data[i] *= col[0];
+		data[i + 1] *= col[1];
+		data[i + 2] *= col[2];
+	}
+	return await toImage(imageData);
+}
+/**
  * Adds transparent padding around an image.
  * @param {HTMLImageElement} image
  * @param {Partial<{ left: number, right: number, top: number, bottom: number }>} padding Pixels
@@ -547,7 +547,7 @@ export function toHexadecimalString(arr) {
 	return Array.from(arr).map(ch => ch.toString(16).padStart(2, "0")).join("");
 }
 /**
- * Removes "falsy" elements from an array
+ * Removes "falsy" elements from an array.
  * @template T
  * @param {Array<T>} arr
  * @returns {Array<T>}
