@@ -71,20 +71,7 @@ export async function makePack(structureFiles, config = {}, resourcePackStack, p
 	console.info("Finished reading structure NBTs!");
 	console.log("NBTs:", nbts);
 	if(!nbts.every(isNBTValidMcstructure)) {
-		let offendingNBTsAndIndices = nbts.map((nbt, i) => [nbt, i]).filter(([nbt]) => !isNBTValidMcstructure(nbt));
-		let offendingStructureIndices = offendingNBTsAndIndices.map(([_, i]) => i);
-		let offendingStructures = offendingStructureIndices.map(i => removeFileExtension(structureFiles[i].name));
-		let errorMessage = offendingStructures.length > 1? `Structures ${offendingStructures.join(", ")} are not valid .mcstructure files!` : `Structure ${offendingStructures[0]} is not a valid .mcstructure file!`;
-		const otherNBTFileTypes = {
-			"MinecraftDataVersion": "litematic",
-			"TileEntities": "schematic",
-			"Metadata": "sponge",
-			"DataVersion": "nbt"
-		};
-		let probableSourceFileExtension = Object.entries(otherNBTFileTypes).find(([key]) => offendingNBTsAndIndices.some(([nbt]) => key in nbt))?.[1];
-		if(probableSourceFileExtension) {
-			errorMessage += `\nNote: Renaming .${probableSourceFileExtension} to .mcstructure doesn't work, you must create the structure file from inside Minecraft Bedrock! Minecraft Java structures aren't the same as Minecraft Bedrock structures!`;
-		}
+		let errorMessage = getInvalidMcstructureErrorMessage(structureFiles, nbts);
 		throw new UserError(errorMessage);
 	}
 	let structureSizes = nbts.map(nbt => nbt["size"]);
@@ -157,49 +144,7 @@ export async function makePack(structureFiles, config = {}, resourcePackStack, p
 	let defaultTextureIndex = max(textureBlobs.length - 3, 0); // default to 80% opacity
 	
 	console.log("Texture UVs:", textureAtlas.textures);
-	boneTemplatePalette.forEach(boneTemplate => {
-		boneTemplate["cubes"].forEach(cube => {
-			Object.keys(cube["uv"]).forEach(faceName => {
-				let face = cube["uv"][faceName];
-				let imageUv = structuredClone(textureAtlas.textures[face["index"]]);
-				if(face["flip_horizontally"]) {
-					imageUv["uv"][0] += imageUv["uv_size"][0];
-					imageUv["uv_size"][0] *= -1;
-				}
-				if(face["flip_vertically"]) {
-					imageUv["uv"][1] += imageUv["uv_size"][1];
-					imageUv["uv_size"][1] *= -1;
-				}
-				cube["uv"][faceName] = {
-					"uv": imageUv["uv"],
-					"uv_size": imageUv["uv_size"]
-				};
-				if("crop" in imageUv) {
-					let crop = imageUv["crop"];
-					let cropXRem = 1 - crop["w"] - crop["x"]; // remaining horizontal space on the other side of the cropped region
-					let cropYRem = 1 - crop["h"] - crop["y"];
-					if(cube["size"][0] == 0) {
-						cube["origin"][2] += cube["size"][2] * (face["flip_horizontally"]? cropXRem : crop["x"]);
-						cube["origin"][1] += cube["size"][1] * (face["flip_vertically"]? crop["y"] : cropYRem); // the latter term is the distance from the bottom of the texture, which is upwards direction in 3D space.
-						cube["size"][2] *= crop["w"];
-						cube["size"][1] *= crop["h"];
-					} else if(cube["size"][1] == 0) {
-						cube["origin"][0] += cube["size"][0] * (face["flip_horizontally"]? cropXRem : crop["x"]);
-						cube["origin"][2] += cube["size"][2] * (face["flip_vertically"]? cropYRem : crop["y"]);
-						cube["size"][0] *= crop["w"];
-						cube["size"][2] *= crop["h"];
-					} else if(cube["size"][2] == 0) {
-						cube["origin"][0] += cube["size"][0] * (face["flip_horizontally"]? cropXRem : crop["x"]);
-						cube["origin"][1] += cube["size"][1] * (face["flip_vertically"]? crop["y"] : cropYRem);
-						cube["size"][0] *= crop["w"];
-						cube["size"][1] *= crop["h"];
-					} else {
-						console.error("Cannot crop bone template without zero size in one axis:", boneTemplate);
-					}
-				}
-			});
-		});
-	});
+	resolveBoneTemplateTextureUvs(boneTemplatePalette, textureAtlas);
 	console.log("Bone template palette with resolved UVs:", boneTemplatePalette);
 	
 	let structureGeoTemplate = hologramGeo["minecraft:geometry"][0];
@@ -419,8 +364,6 @@ export async function makePack(structureFiles, config = {}, resourcePackStack, p
 	
 	let overlayTexture = await setImageOpacity(singleWhitePixelTexture, config.WRONG_BLOCK_OVERLAY_COLOR[3]);
 	
-	let totalMaterialCount = materialList.totalMaterialCount;
-	
 	// add the particles' short names, and then reference them in the animation controller
 	uniqueBlocksToValidate.forEach(blockName => {
 		let particleName = `validate_${blockName.replace(":", ".")}`;
@@ -430,34 +373,18 @@ export async function makePack(structureFiles, config = {}, resourcePackStack, p
 	let playerRenderControllers = defaultPlayerRenderControllers && addPlayerControlsToRenderControllers(config, defaultPlayerRenderControllers);
 	
 	console.log("Block counts map:", materialList.materials);
-	let finalisedMaterialLists = Object.fromEntries(languagesDotJson.map(language => {
+	let exportedMaterialLists = Object.fromEntries(languagesDotJson.map(language => {
 		materialList.setLanguage(resourceLangFiles[language]); // we could make the material list export to multiple languages simultaneously, but I'm assuming here that there could be gaps between language files so they have to be done separately (for whatever reason... maybe international relations deteriorate and they refuse to translate the new update to Chinese... idk)
 		return [language, materialList.export()];
 	}));
-	let finalisedMaterialList = finalisedMaterialLists["en_US"]; // all languages have the same translation keys, which are used in the material list UI. the translated item names (which are different for every language) are used in the pack description only.
-	console.log("Finalised material list:", finalisedMaterialList);
+	let exportedMaterialListEnglish = exportedMaterialLists["en_US"]; // all languages have the same translation keys, which are used in the material list UI. the translated item names (which are different for every language) are used in the pack description only.
+	console.log("Exported material list:", exportedMaterialListEnglish);
 	
 	// console.log(partitionedBlockCounts);
 	let highestItemCount;
 	if(config.MATERIAL_LIST_ENABLED) {
-		let missingItemAux = blockMetadata["data_items"].find(block => block.name == "minecraft:reserved6")?.["raw_id"] ?? 0;
-		hudScreenUI["material_list_entries"]["controls"].push(...finalisedMaterialList.map(({ translationKey, partitionedCount, auxId }, i) => ({
-			[`material_list_${i}@hud.material_list_entry`]: {
-				"$item_translation_key": translationKey,
-				"$item_count": partitionedCount,
-				"$item_id_aux": auxId ?? missingItemAux,
-				"$background_opacity": i % 2 * 0.2
-			}
-		})));
-		highestItemCount = max(...finalisedMaterialList.map(({ count }) => count));
-		let longestItemNameLength = max(...finalisedMaterialList.map(({ translatedName }) => translatedName.length));
-		let longestCountLength = max(...finalisedMaterialList.map(({ partitionedCount }) => partitionedCount.length));
-		if(longestItemNameLength + longestCountLength >= 43) {
-			hudScreenUI["material_list"]["size"][0] = "50%"; // up from 40%
-			hudScreenUI["material_list"]["max_size"][0] = "50%";
-		}
-		hudScreenUI["material_list"]["size"][1] = finalisedMaterialList.length * 12 + 12; // 12px for each item + 12px for the heading
-		hudScreenUI["material_list_entry"]["controls"][0]["content"]["controls"][3]["item_name"]["size"][0] += `${round(longestCountLength * 4.2 + 10)}px`;
+		addMaterialListUI(exportedMaterialListEnglish, hudScreenUI, blockMetadata);
+		highestItemCount = max(...exportedMaterialListEnglish.map(({ count }) => count));
 	}
 	
 	manifest["header"]["name"] = packName;
@@ -482,62 +409,12 @@ export async function makePack(structureFiles, config = {}, resourcePackStack, p
 		});
 	}
 	
-	let controlsHaveBeenCustomised = JSON.stringify(config.CONTROLS) != JSON.stringify(DEFAULT_PLAYER_CONTROLS);
 	let pmmpBedrockDataFetcher = config.RENAME_CONTROL_ITEMS || config.RETEXTURE_CONTROL_ITEMS? await createPmmpBedrockDataFetcher() : undefined;
 	let itemTags = config.RENAME_CONTROL_ITEMS || config.RETEXTURE_CONTROL_ITEMS? await pmmpBedrockDataFetcher.fetch("item_tags.json").then(res => res.json()) : undefined;
+	let controlsHaveBeenCustomised = JSON.stringify(config.CONTROLS) != JSON.stringify(DEFAULT_PLAYER_CONTROLS);
 	let { inGameControls, controlItemTranslations } = controlsHaveBeenCustomised || config.RENAME_CONTROL_ITEMS? await translateControlItems(config, blockMetadata, itemMetadata, languagesDotJson, resourceLangFiles, itemTags) : {};
 	
-	let packGenerationTime = (new Date()).toLocaleString();
-	const disabledFeatureTranslations = { // these look at the .lang RP files
-		"SPAWN_ANIMATION_ENABLED": "spawn_animation_disabled",
-		"PLAYER_CONTROLS_ENABLED": "player_controls_disabled",
-		"MATERIAL_LIST_ENABLED": "material_list_disabled",
-		"RETEXTURE_CONTROL_ITEMS": "retextured_control_items_disabled",
-		"RENAME_CONTROL_ITEMS": "renamed_control_items_disabled"
-	};
-	let languageFiles = await Promise.all(languagesDotJson.map(async language => {
-		let languageFile = (await fetch(`packTemplate/texts/${language}.lang`).then(res => res.text())).replaceAll("\r\n", "\n"); // I hate windows sometimes (actually quite often now because of windows 11)
-		languageFile = languageFile.replaceAll("{PACK_NAME}", packName);
-		languageFile = languageFile.replaceAll("{PACK_GENERATION_TIME}", packGenerationTime);
-		languageFile = languageFile.replaceAll("{TOTAL_MATERIAL_COUNT}", totalMaterialCount);
-		languageFile = languageFile.replaceAll("{MATERIAL_LIST}", finalisedMaterialLists[language].map(({ translatedName, count }) => `${count} ${translatedName}`).join(", "));
-		
-		// now substitute in the extra bits into the main description if needed
-		if(config.AUTHORS.length) {
-			languageFile = languageFile.replaceAll(/\{STRUCTURE_AUTHORS\[([^)]+)\]\}/g, (useless, delimiter) => config.AUTHORS.join(delimiter));
-			languageFile = languageFile.replaceAll("{AUTHORS_SECTION}", languageFile.match(/pack\.description\.authors=([^\t#\n]+)/)[1]);
-		} else {
-			languageFile = languageFile.replaceAll("{AUTHORS_SECTION}", "");
-		}
-		if(config.DESCRIPTION) {
-			languageFile = languageFile.replaceAll("{DESCRIPTION}", config.DESCRIPTION.replaceAll("\n", "\\n"));
-			languageFile = languageFile.replaceAll("{DESCRIPTION_SECTION}", languageFile.match(/pack\.description\.description=([^\t#\n]+)/)[1]);
-		} else {
-			languageFile = languageFile.replaceAll("{DESCRIPTION_SECTION}", "");
-		}
-		let translatedDisabledFeatures = Object.entries(disabledFeatureTranslations).filter(([feature]) => !config[feature]).map(([feature, translationKey]) => languageFile.match(new RegExp(`pack\\.description\\.${translationKey}=([^\\t#\\n]+)`))[1]).join("\\n");
-		if(translatedDisabledFeatures) {
-			languageFile = languageFile.replaceAll("{DISABLED_FEATURES}", translatedDisabledFeatures);
-			languageFile = languageFile.replaceAll("{DISABLED_FEATURES_SECTION}", languageFile.match(/pack\.description\.disabled_features=([^\t#\n]+)/)[1]);
-		} else {
-			languageFile = languageFile.replaceAll("{DISABLED_FEATURES_SECTION}", "");
-		}
-		if(controlsHaveBeenCustomised) {
-			languageFile = languageFile.replaceAll("{CONTROLS}", inGameControls[language].replaceAll("\n", "\\n"));
-			languageFile = languageFile.replaceAll("{CONTROLS_SECTION}", languageFile.match(/pack\.description\.controls=([^\t#\n]+)/)[1]);
-		} else {
-			languageFile = languageFile.replaceAll("{CONTROLS_SECTION}", "");
-		}
-		
-		languageFile = languageFile.replaceAll(/pack\.description\..+\s*/g, ""); // remove all the description template sections
-		languageFile = languageFile.replaceAll(/\t*#.+/g, ""); // remove comments
-		
-		if(config.RENAME_CONTROL_ITEMS) {
-			languageFile += controlItemTranslations[language];
-		}
-		
-		return [language, languageFile];
-	}));
+	let langFiles = await makeLangFiles(config, languagesDotJson, packName, materialList, exportedMaterialLists, controlsHaveBeenCustomised, inGameControls, controlItemTranslations);
 	
 	let controlItemTextures = [];
 	let hasModifiedTerrainTexture = false;
@@ -597,8 +474,8 @@ export async function makePack(structureFiles, config = {}, resourcePackStack, p
 		}
 	}
 	packFiles.push(["texts/languages.json", JSON.stringify(languagesDotJson)]);
-	languageFiles.forEach(([language, languageFile]) => {
-		packFiles.push([`texts/${language}.lang`, languageFile]);
+	langFiles.forEach(([language, langFile]) => {
+		packFiles.push([`texts/${language}.lang`, langFile]);
 	});
 	
 	await Promise.all(packFiles.map(([fileName, fileContents, comment]) => {
@@ -789,6 +666,29 @@ export async function createPmmpBedrockDataFetcher() {
  */
 function isNBTValidMcstructure(nbt) {
 	return nbt["format_version"] == 1 && "size" in nbt && "structure" in nbt && "structure_world_origin" in nbt;
+}
+/**
+ * Gets the error message for NBT files that aren't .mcstructures.
+ * @param {Array<File>} structureFiles
+ * @param {Array<object>} nbts
+ * @returns {string}
+ */
+function getInvalidMcstructureErrorMessage(structureFiles, nbts) {
+	let offendingNBTsAndIndices = nbts.map((nbt, i) => [nbt, i]).filter(([nbt]) => !isNBTValidMcstructure(nbt));
+	let offendingStructureIndices = offendingNBTsAndIndices.map(([_, i]) => i);
+	let offendingStructures = offendingStructureIndices.map(i => removeFileExtension(structureFiles[i].name));
+	let errorMessage = offendingStructures.length > 1? `Structures ${offendingStructures.join(", ")} are not valid .mcstructure files!` : `Structure ${offendingStructures[0]} is not a valid .mcstructure file!`;
+	const otherNBTFileTypes = {
+		"MinecraftDataVersion": "litematic",
+		"TileEntities": "schematic",
+		"Metadata": "sponge",
+		"DataVersion": "nbt"
+	};
+	let probableSourceFileExtension = Object.entries(otherNBTFileTypes).find(([key]) => offendingNBTsAndIndices.some(([nbt]) => key in nbt))?.[1];
+	if(probableSourceFileExtension) {
+		errorMessage += `\nNote: Renaming .${probableSourceFileExtension} to .mcstructure doesn't work, you must create the structure file from inside Minecraft Bedrock! Minecraft Java structures aren't the same as Minecraft Bedrock structures!`;
+	}
+	return errorMessage;
 }
 /**
  * Reads the NBT of a structure file, returning a JSON object.
@@ -983,6 +883,65 @@ function mergeMultiplePalettesAndIndices(palettesAndIndices) {
 		palette: Array.from(mergedPaletteSet),
 		indices: remappedIndices
 	};
+}
+/**
+ * Resolves the UV coordinates for an array of bone templates.
+ * @param {Array<BoneTemplate>} boneTemplatePalette
+ * @param {TextureAtlas} textureAtlas
+ */
+function resolveBoneTemplateTextureUvs(boneTemplatePalette, textureAtlas) {
+	boneTemplatePalette.forEach(boneTemplate => {
+		boneTemplate["cubes"].forEach(cube => {
+			Object.keys(cube["uv"]).forEach(faceName => {
+				let face = cube["uv"][faceName];
+				let imageUv = structuredClone(textureAtlas.textures[face["index"]]);
+				if(face["flip_horizontally"]) {
+					imageUv["uv"][0] += imageUv["uv_size"][0];
+					imageUv["uv_size"][0] *= -1;
+				}
+				if(face["flip_vertically"]) {
+					imageUv["uv"][1] += imageUv["uv_size"][1];
+					imageUv["uv_size"][1] *= -1;
+				}
+				cube["uv"][faceName] = {
+					"uv": imageUv["uv"],
+					"uv_size": imageUv["uv_size"]
+				};
+				if("crop" in imageUv) {
+					let crop = imageUv["crop"];
+					applyCubeCropping(cube, face, crop);
+				}
+			});
+		});
+	});
+}
+/**
+ * Modifies a cube's size based on the cropping of a face.
+ * @param {object} cube
+ * @param {object} face
+ * @param {object} crop
+ */
+function applyCubeCropping(cube, face, crop) {
+	let cropXRem = 1 - crop["w"] - crop["x"]; // remaining horizontal space on the other side of the cropped region
+	let cropYRem = 1 - crop["h"] - crop["y"];
+	if(cube["size"][0] == 0) {
+		cube["origin"][2] += cube["size"][2] * (face["flip_horizontally"]? cropXRem : crop["x"]);
+		cube["origin"][1] += cube["size"][1] * (face["flip_vertically"]? crop["y"] : cropYRem); // the latter term is the distance from the bottom of the texture, which is upwards direction in 3D space.
+		cube["size"][2] *= crop["w"];
+		cube["size"][1] *= crop["h"];
+	} else if(cube["size"][1] == 0) {
+		cube["origin"][0] += cube["size"][0] * (face["flip_horizontally"]? cropXRem : crop["x"]);
+		cube["origin"][2] += cube["size"][2] * (face["flip_vertically"]? cropYRem : crop["y"]);
+		cube["size"][0] *= crop["w"];
+		cube["size"][2] *= crop["h"];
+	} else if(cube["size"][2] == 0) {
+		cube["origin"][0] += cube["size"][0] * (face["flip_horizontally"]? cropXRem : crop["x"]);
+		cube["origin"][1] += cube["size"][1] * (face["flip_vertically"]? crop["y"] : cropYRem);
+		cube["size"][0] *= crop["w"];
+		cube["size"][1] *= crop["h"];
+	} else {
+		throw new Error("Cannot crop bone template without zero size in one axis!");
+	}
 }
 /**
  * Makes the layer animations and animation controllers. Mutates the original arguments.
@@ -1265,6 +1224,31 @@ function patchRenderControllers(renderControllers, patches) {
 	};
 }
 /**
+ * Adds the material list to the `hud_screen.json` UI file.
+ * @param {Array<MaterialListEntry>} finalisedMaterialList
+ * @param {object} hudScreenUI
+ * @param {object} blockMetadata
+ */
+function addMaterialListUI(finalisedMaterialList, hudScreenUI, blockMetadata) {
+	let missingItemAux = blockMetadata["data_items"].find(block => block.name == "minecraft:reserved6")?.["raw_id"] ?? 0;
+	hudScreenUI["material_list_entries"]["controls"].push(...finalisedMaterialList.map(({ translationKey, partitionedCount, auxId }, i) => ({
+		[`material_list_${i}@hud.material_list_entry`]: {
+			"$item_translation_key": translationKey,
+			"$item_count": partitionedCount,
+			"$item_id_aux": auxId ?? missingItemAux,
+			"$background_opacity": i % 2 * 0.2
+		}
+	})));
+	let longestItemNameLength = max(...finalisedMaterialList.map(({ translatedName }) => translatedName.length));
+	let longestCountLength = max(...finalisedMaterialList.map(({ partitionedCount }) => partitionedCount.length));
+	if(longestItemNameLength + longestCountLength >= 43) {
+		hudScreenUI["material_list"]["size"][0] = "50%"; // up from 40%
+		hudScreenUI["material_list"]["max_size"][0] = "50%";
+	}
+	hudScreenUI["material_list"]["size"][1] = finalisedMaterialList.length * 12 + 12; // 12px for each item + 12px for the heading
+	hudScreenUI["material_list_entry"]["controls"][0]["content"]["controls"][3]["item_name"]["size"][0] += `${round(longestCountLength * 4.2 + 10)}px`;
+}
+/**
  * Translates control items by making a fake material list.
  * @param {HoloPrintConfig} config
  * @param {Record<string, any>} blockMetadata
@@ -1312,6 +1296,72 @@ async function translateControlItems(config, blockMetadata, itemMetadata, langua
 		});
 	});
 	return { inGameControls, controlItemTranslations };
+}
+/**
+ * Makes the `.lang` files for each language.
+ * @param {HoloPrintConfig} config
+ * @param {Array<string>} languagesDotJson
+ * @param {string} packName
+ * @param {MaterialList} materialList
+ * @param {Array<MaterialListEntry>} exportedMaterialLists
+ * @param {boolean} controlsHaveBeenCustomised
+ * @param {Record<string, string>} inGameControls
+ * @param {Record<string, string>} controlItemTranslations
+ * @returns {Promise<Array<[string, string]>>}
+ */
+async function makeLangFiles(config, languagesDotJson, packName, materialList, exportedMaterialLists, controlsHaveBeenCustomised, inGameControls, controlItemTranslations) {
+	const disabledFeatureTranslations = { // these look at the .lang RP files
+		"SPAWN_ANIMATION_ENABLED": "spawn_animation_disabled",
+		"PLAYER_CONTROLS_ENABLED": "player_controls_disabled",
+		"MATERIAL_LIST_ENABLED": "material_list_disabled",
+		"RETEXTURE_CONTROL_ITEMS": "retextured_control_items_disabled",
+		"RENAME_CONTROL_ITEMS": "renamed_control_items_disabled"
+	};
+	let packGenerationTime = (new Date()).toLocaleString();
+	let totalMaterialCount = materialList.totalMaterialCount;
+	return await Promise.all(languagesDotJson.map(async language => {
+		let langFile = (await fetch(`packTemplate/texts/${language}.lang`).then(res => res.text())).replaceAll("\r\n", "\n"); // I hate windows sometimes (actually quite often now because of windows 11)
+		langFile = langFile.replaceAll("{PACK_NAME}", packName);
+		langFile = langFile.replaceAll("{PACK_GENERATION_TIME}", packGenerationTime);
+		langFile = langFile.replaceAll("{TOTAL_MATERIAL_COUNT}", totalMaterialCount);
+		langFile = langFile.replaceAll("{MATERIAL_LIST}", exportedMaterialLists[language].map(({ translatedName, count }) => `${count} ${translatedName}`).join(", "));
+		
+		// now substitute in the extra bits into the main description if needed
+		if(config.AUTHORS.length) {
+			langFile = langFile.replaceAll(/\{STRUCTURE_AUTHORS\[([^)]+)\]\}/g, (_, delimiter) => config.AUTHORS.join(delimiter));
+			langFile = langFile.replaceAll("{AUTHORS_SECTION}", langFile.match(/pack\.description\.authors=([^\t#\n]+)/)[1]);
+		} else {
+			langFile = langFile.replaceAll("{AUTHORS_SECTION}", "");
+		}
+		if(config.DESCRIPTION) {
+			langFile = langFile.replaceAll("{DESCRIPTION}", config.DESCRIPTION.replaceAll("\n", "\\n"));
+			langFile = langFile.replaceAll("{DESCRIPTION_SECTION}", langFile.match(/pack\.description\.description=([^\t#\n]+)/)[1]);
+		} else {
+			langFile = langFile.replaceAll("{DESCRIPTION_SECTION}", "");
+		}
+		let translatedDisabledFeatures = Object.entries(disabledFeatureTranslations).filter(([feature]) => !config[feature]).map(([_, translationKey]) => langFile.match(new RegExp(`pack\\.description\\.${translationKey}=([^\\t#\\n]+)`))[1]).join("\\n");
+		if(translatedDisabledFeatures) {
+			langFile = langFile.replaceAll("{DISABLED_FEATURES}", translatedDisabledFeatures);
+			langFile = langFile.replaceAll("{DISABLED_FEATURES_SECTION}", langFile.match(/pack\.description\.disabled_features=([^\t#\n]+)/)[1]);
+		} else {
+			langFile = langFile.replaceAll("{DISABLED_FEATURES_SECTION}", "");
+		}
+		if(controlsHaveBeenCustomised) {
+			langFile = langFile.replaceAll("{CONTROLS}", inGameControls[language].replaceAll("\n", "\\n"));
+			langFile = langFile.replaceAll("{CONTROLS_SECTION}", langFile.match(/pack\.description\.controls=([^\t#\n]+)/)[1]);
+		} else {
+			langFile = langFile.replaceAll("{CONTROLS_SECTION}", "");
+		}
+		
+		langFile = langFile.replaceAll(/pack\.description\..+\s*/g, ""); // remove all the description template sections
+		langFile = langFile.replaceAll(/\t*#.+/g, ""); // remove comments
+		
+		if(config.RENAME_CONTROL_ITEMS) {
+			langFile += controlItemTranslations[language];
+		}
+		
+		return [language, langFile];
+	}));
 }
 /**
  * Retextures the control items. Modifies `itemTexture` and `terrainTexture`.
