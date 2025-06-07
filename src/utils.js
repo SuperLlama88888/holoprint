@@ -158,7 +158,7 @@ export async function toImage(val) {
 
 export const sleep = async time => new Promise(resolve => setTimeout(resolve, time));
 
-export const { min, max, floor, ceil, sqrt, round, abs, PI: pi, exp } = Math;
+export const { min, max, floor, ceil, sqrt, round, abs, PI: pi, exp, log: ln, tan } = Math;
 export const clamp = (n, lowest, highest) => min(max(n, lowest), highest);
 export const lerp = (a, b, x) => a + (b - a) * x;
 export const nanToUndefined = x => Number.isNaN(x)? undefined : x;

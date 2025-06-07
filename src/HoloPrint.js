@@ -496,8 +496,25 @@ export async function makePack(structureFiles, config = {}, resourcePackStack, p
 	
 	if(previewCont) {
 		let showPreview = () => {
-			hologramGeo["minecraft:geometry"].filter(geo => geo["description"]["identifier"].startsWith("geometry.armor_stand.hologram_")).map(geo => {
-				PreviewRenderer.new(previewCont, textureAtlas, geo, hologramAnimations, config.SHOW_PREVIEW_SKYBOX).catch(e => console.error("Preview renderer error:", e)); // is async but we won't wait for it
+			hologramGeo["minecraft:geometry"].filter(geo => geo["description"]["identifier"].startsWith("geometry.armor_stand.hologram_")).map((geo, structureI) => {
+				// PreviewRenderer.new(previewCont, textureAtlas, geo, hologramAnimations, config.SHOW_PREVIEW_SKYBOX).catch(e => console.error("Preview renderer error:", e)); // is async but we won't wait for it
+				const pointLights = {
+					"lantern": 0xFFAA55,
+					"torch": 0xFFAA55,
+					"redstone_torch": 0x990000
+				};
+				// let pointLightIndices = new Set(blockPalette.map((block, i) => [block.name, i]).filter(([blockName]) => pointLights.includes(blockName)).map(([_, i]) => i));
+				// console.log(pointLightIndices)
+				let blocksWithPointLights = [];
+				allStructureIndicesByLayer[structureI].forEach(layer => {
+					layer.forEach((blockI, i) => {
+						if(blockPalette[blockI]?.["name"] in pointLights) {
+							blocksWithPointLights.push([i, pointLights[blockPalette[blockI]["name"]]]);
+						}
+					});
+				});
+				console.log(blocksWithPointLights)
+				PreviewRenderer.new(previewCont, textureAtlas, boneTemplatePalette, structureSizes[structureI], allStructureIndicesByLayer[structureI], config.SHOW_PREVIEW_SKYBOX, blocksWithPointLights);
 			});
 		};
 		if(totalBlockCount < config.PREVIEW_BLOCK_LIMIT) {
