@@ -187,7 +187,6 @@ export default class PreviewRenderer extends AsyncFactory {
 		});
 		
 		this.#addLighting();
-		this.#initBackground();
 		await this.#initBackground();
 		this.#loop();
 		loadingMessage.replaceWith(can);

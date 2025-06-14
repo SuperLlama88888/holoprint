@@ -52,9 +52,10 @@ const HOLOGRAM_LAYER_MODES = createNumericEnum(["SINGLE", "ALL_BELOW"]);
  * @param {HoloPrintConfig} [config]
  * @param {ResourcePackStack} [resourcePackStack]
  * @param {HTMLElement} [previewCont]
+ * @param {Function} [previewLoadedCallback] A function that will be called once the preview has finished loading
  * @returns {Promise<File>} Resource pack (`*.mcpack`)
  */
-export async function makePack(structureFiles, config = {}, resourcePackStack, previewCont) {
+export async function makePack(structureFiles, config = {}, resourcePackStack, previewCont, previewLoadedCallback) {
 	console.info(`Running HoloPrint ${VERSION}`);
 	if(!resourcePackStack) {
 		console.debug("Waiting for resource pack stack initialisation...");
@@ -491,14 +492,15 @@ export async function makePack(structureFiles, config = {}, resourcePackStack, p
 	console.info(`Finished creating pack in ${(performance.now() - startTime).toFixed(0) / 1000}s!`);
 	
 	if(previewCont) {
-		let showPreview = () => {
-			hologramGeo["minecraft:geometry"].filter(geo => geo["description"]["identifier"].startsWith("geometry.armor_stand.hologram_")).map((geo, structureI) => {
-				PreviewRenderer.new(previewCont, packName, textureAtlas, structureSizes[structureI], blockPalette, boneTemplatePalette, allStructureIndicesByLayer[structureI], {
+		let showPreview = async () => {
+			await Promise.all(structureSizes.map(async (structureSize, structureI) => {
+				await PreviewRenderer.new(previewCont, packName, textureAtlas, structureSize, blockPalette, boneTemplatePalette, allStructureIndicesByLayer[structureI], {
 					showSkybox: config.SHOW_PREVIEW_SKYBOX,
 					showFps: config.SHOW_PREVIEW_WIDGETS,
 					showOptions: config.SHOW_PREVIEW_WIDGETS
 				});
-			});
+			}));
+			previewLoadedCallback?.();
 		};
 		if(totalBlockCount < config.PREVIEW_BLOCK_LIMIT) {
 			showPreview();

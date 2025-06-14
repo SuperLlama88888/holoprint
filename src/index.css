@@ -427,6 +427,7 @@ img:not(#languageSelectorButton), canvas {
 	padding: 0;
 	contain: layout;
 	text-align: center;
+	width: min(80vmin, 100%);
 	
 	& > .previewMessage, & > canvas {
 		width: min(80vmin, 100%);

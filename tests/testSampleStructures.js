@@ -41,13 +41,17 @@ test(async page => {
 				let structureFile = new File([bytes], structureFileName);
 				let previewCont = document.querySelector("#previewCont");
 				let startTime = performance.now();
+				let { promise: previewLoadedPromise, resolve: previewLoadedTrigger } = Promise.withResolvers();
 				let pack = await HoloPrint.makePack(structureFile, {
 					SPAWN_ANIMATION_ENABLED: false,
 					PREVIEW_BLOCK_LIMIT: browserEngine == "chrome"? Infinity : 0, // preview renderer doesn't work on headless Firefox
 					SHOW_PREVIEW_SKYBOX: false,
 					SHOW_PREVIEW_WIDGETS: false
-				}, undefined, previewCont);
+				}, undefined, previewCont, previewLoadedTrigger);
 				let elapsedTime = performance.now() - startTime;
+				if(browserEngine == "chrome") {
+					await previewLoadedPromise;
+				}
 				
 				await fetch("/", {
 					method: "POST",
