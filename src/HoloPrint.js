@@ -70,10 +70,6 @@ export async function makePack(structureFiles, config = {}, resourcePackStack, p
 	let nbts = await Promise.all(structureFiles.map(structureFile => readStructureNBT(structureFile)));
 	console.info("Finished reading structure NBTs!");
 	console.log("NBTs:", nbts);
-	if(!nbts.every(isNBTValidMcstructure)) {
-		let errorMessage = getInvalidMcstructureErrorMessage(structureFiles, nbts);
-		throw new UserError(errorMessage);
-	}
 	let structureSizes = nbts.map(nbt => nbt["size"]);
 	let packName = config.PACK_NAME ?? getDefaultPackName(structureFiles);
 	
@@ -685,23 +681,21 @@ function isNBTValidMcstructure(nbt) {
 	return nbt["format_version"] == 1 && "size" in nbt && "structure" in nbt && "structure_world_origin" in nbt;
 }
 /**
- * Gets the error message for NBT files that aren't .mcstructures.
- * @param {Array<File>} structureFiles
- * @param {Array<object>} nbts
+ * Gets the error message for a NBT file that isn't .mcstructures.
+ * @param {File} structureFile
+ * @param {object} nbt
  * @returns {string}
  */
-function getInvalidMcstructureErrorMessage(structureFiles, nbts) {
-	let offendingNBTsAndIndices = nbts.map((nbt, i) => [nbt, i]).filter(([nbt]) => !isNBTValidMcstructure(nbt));
-	let offendingStructureIndices = offendingNBTsAndIndices.map(([_, i]) => i);
-	let offendingStructures = offendingStructureIndices.map(i => removeFileExtension(structureFiles[i].name));
-	let errorMessage = offendingStructures.length > 1? `Structures ${offendingStructures.join(", ")} are not valid .mcstructure files!` : `Structure ${offendingStructures[0]} is not a valid .mcstructure file!`;
+function getInvalidMcstructureErrorMessage(structureFile, nbt) {
+	let offendingStructureName = removeFileExtension(structureFile.name);
+	let errorMessage = `Structure ${offendingStructureName} is not a valid .mcstructure file!`;
 	const otherNBTFileTypes = {
 		"MinecraftDataVersion": "litematic",
 		"TileEntities": "schematic",
-		"Metadata": "sponge",
+		"Metadata": "schem", // Sponge format
 		"DataVersion": "nbt"
 	};
-	let probableSourceFileExtension = Object.entries(otherNBTFileTypes).find(([key]) => offendingNBTsAndIndices.some(([nbt]) => key in nbt))?.[1];
+	let probableSourceFileExtension = Object.entries(otherNBTFileTypes).find(([key]) => key in nbt)?.[1];
 	if(probableSourceFileExtension) {
 		errorMessage += `\nNote: Renaming .${probableSourceFileExtension} to .mcstructure doesn't work, you must create the structure file from inside Minecraft Bedrock! Minecraft Java structures aren't the same as Minecraft Bedrock structures!`;
 	}
@@ -717,13 +711,37 @@ async function readStructureNBT(structureFile) {
 		throw new UserError(`"${structureFile.name}" is an empty file! Please try exporting your structure again.\nIf you play on a version below 1.20.50, exporting to OneDrive will cause your structure file to be empty.`);
 	}
 	let arrayBuffer = await structureFile.arrayBuffer().catch(e => { throw new Error(`Could not read contents of structure file "${structureFile.name}"!\n${e}`); });
-	let nbt = await NBT.read(arrayBuffer).catch(e => {
+	try {
+		return await readStructureNBTWithOptions(structureFile, arrayBuffer, {
+			endian: "little", // true .mcstructure files are little-endian
+			strict: false // some files have duplicated sections, which makes strict mode throw an error: #68
+		});
+	} catch(e) {
+		console.warn(`Structure file ${structureFile.name} couldn't be read with default .mcstructure NBT read settings. Trying generic settings...`);
+		console.debug(e);
+		return await readStructureNBTWithOptions(structureFile, arrayBuffer); // if the .mcstructure was generated from an external source, it's best to try with generic NBT read settings
+	}
+}
+/**
+ * Reads the NBT of a structure file, returning a JSON object.
+ * @param {File} structureFile `*.mcstructure`
+ * @param {ArrayBuffer} arrayBuffer
+ * @param {Partial<NBT.ReadOptions>} [options]
+ * @returns {Promise<MCStructure>}
+ */
+async function readStructureNBTWithOptions(structureFile, arrayBuffer, options = {}) {
+	let nbtRes = await NBT.read(arrayBuffer, options).catch(e => {
 		if(e instanceof NBT.InvalidTagError) {
 			throw new UserError(`"${structureFile.name}" is not a .mcstructure file! Please look at the tutorial on the wiki: https://holoprint-mc.github.io/wiki/creating-packs`);
 		}
 		throw new Error(`Invalid NBT in structure file "${structureFile.name}"!\n${e}`);
 	});
-	return nbt.data;
+	let nbt = nbtRes.data;
+	if(!isNBTValidMcstructure(nbt)) {
+		let errorMessage = getInvalidMcstructureErrorMessage(structureFile, nbt);
+		throw new UserError(errorMessage);
+	}
+	return nbt;
 }
 /**
  * Loads many files from different sources.
