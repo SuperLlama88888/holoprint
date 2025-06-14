@@ -1,52 +1,144 @@
 import TextureAtlas from "./TextureAtlas.js";
-import { AsyncFactory, floor, ln, max, min, onEventAndNow, pi, tan } from "./utils.js";
+import { abs, AsyncFactory, cosDeg, distanceSquared, downloadFile, max, min, onEventAndNow, pi, sinDeg, tan } from "./utils.js";
 
 import { Model } from "@bridge-editor/model-viewer";
 
-let THREE;
 import { OrbitControls } from "three/addons/controls/OrbitControls.js";
+import * as THREE from "three";
+import Stats from "stats.js";
+import { GUI } from "lil-gui";
 // let StandaloneModelViewer;
 
 export default class PreviewRenderer extends AsyncFactory {
+	static #CAMERA_FOV = 70; // degrees
+	static #POINT_LIGHT_MAX_DISTANCE = 30; // pixels
+	static #POINT_LIGHTS = {
+		"lantern": 0xFFAA55,
+		"redstone_torch": 0x990000,
+		"powered_repeater": 0x330000,
+		"powered_comparator": 0x330000,
+		"end_rod": [0xD0C9BE, 1.35],
+		"fire": 0xFF9955,
+		"lava": 0xFF9955,
+		"campfire[extinguished=0]": [0xFF9955, 0.75],
+		"soul_campfire[extinguished=0]": [0x00FFFF, 0.5],
+		"cave_vines_body_with_berries": [0xFFAA66, 0.75],
+		"cave_vines_head_with_berries": [0xFFAA66, 0.75],
+		
+		"torch": 0xEFE39D, // source: https://learn.microsoft.com/en-us/minecraft/creator/documents/deferredlighting/lightingcustomization?view=minecraft-bedrock-stable
+		"soul_lantern": 0x00FFFF,
+		"soul_torch": 0x00FFFF
+	};
+	static #POINT_LIGHT_DEFAULT_INTENSITY = 1.5;
 	static #DIRECTIONAL_LIGHT_STRENGTH = 0.5;
 	static #FLOOR_SHADOW_DARKNESS = 0.3;
 	
 	cont;
+	packName;
 	textureAtlas;
 	boneTemplatePalette;
 	structureSize;
-	blockIndices;
-	showSkybox;
-	#width;
-	#height;
+	options = {
+		showSkybox: true,
+		maxPointLights: 100, // limited by WebGL uniform limit since Three.js uses uniforms to pass lights to shaders
+		directionalLightHeight: 1, // multiples of the max dimension
+		directionalLightAngle: 120,
+		directionalLightShadowMapResolution: 2,
+		highResolution: false,
+		debugHelpersVisible: false
+	};
+	#canvasSize = min(window.innerWidth, window.innerHeight) * 0.8;
+	#center;
+	#maxDim;
+	#maxDimPixels;
+	#blockPositions = [];
+	/** @type {THREE.DirectionalLight} */
+	#directionalLight;
+	/** @type {Array<PreviewPointLight>} */
+	#pointLights = [];
+	/** @type {Array<THREE.PointLight>} */
+	#pointLightsInScene = [];
+	/** @type {WeakMap<THREE.PointLight, THREE.PointLightHelper>} */
+	#pointLightHelpers = new WeakMap();
+	/** @type {THREE.WebGLRenderer} */
 	#renderer;
+	/** @type {THREE.Scene} */
 	#scene;
+	/** @type {THREE.PerspectiveCamera} */
 	#camera;
+	/** @type {OrbitControls} */
 	#controls;
-	
-	#controlsBeingUpdated;
+	#skyboxCubemap;
+	#shouldRenderNextFrame = true;
+	#stats;
+	#optionsGui;
+	#debugHelpers = [];
 	/**
 	 * Create a preview renderer for a completed geometry file.
 	 * @param {HTMLElement} cont
+	 * @param {string} packName
 	 * @param {TextureAtlas} textureAtlas
-	 * @param {Array<BoneTemplate>} boneTemplatePalette
 	 * @param {I32Vec3} structureSize
+	 * @param {Array<Block>} blockPalette
+	 * @param {Array<BoneTemplate>} boneTemplatePalette
 	 * @param {[Int32Array, Int32Array]} blockIndices
-	 * @param {boolean} [showSkybox] If the skybox should show or not
+	 * @param {Partial<typeof this.options>} [options]
 	 */
-	constructor(cont, textureAtlas, boneTemplatePalette, structureSize, blockIndices, showSkybox = true, blocksWithPointLights) {
+	constructor(cont, packName, textureAtlas, structureSize, blockPalette, boneTemplatePalette, blockIndices, options = {}) {
 		super();
 		this.cont = cont;
+		this.packName = packName;
 		this.textureAtlas = textureAtlas;
-		this.boneTemplatePalette = boneTemplatePalette;
 		this.structureSize = structureSize;
-		this.blockIndices = blockIndices;
-		this.showSkybox = showSkybox;
-		this.blocksWithPointLights = blocksWithPointLights;
+		this.boneTemplatePalette = boneTemplatePalette;
+		this.options = { ...this.options, options };
 		
-		this.#width = min(window.innerWidth, window.innerHeight) * 0.8;
-		this.#height = min(window.innerWidth, window.innerHeight) * 0.8;
-		this.#controlsBeingUpdated = false;
+		this.#center = new THREE.Vector3(-this.structureSize[0] * 8, this.structureSize[1] * 8, -this.structureSize[2] * 8);
+		this.#maxDim = max(...this.structureSize);
+		this.#maxDimPixels = this.#maxDim * 16;
+		
+		this.#stats = new Stats();
+		this.#stats.showPanel(0);
+		this.#stats.dom.classList.add("statsPanel");
+		
+		this.#optionsGui = new GUI({
+			container: this.cont,
+			title: "Options"
+		});
+		this.#optionsGui.hide();
+		this.#optionsGui.close();
+		this.#optionsGui.onChange(() => {
+			this.#shouldRenderNextFrame = true;
+		});
+		
+		let palettePointLights = blockPalette.map(block => (PreviewRenderer.#POINT_LIGHTS[block["name"] + 2] ?? Object.entries(PreviewRenderer.#POINT_LIGHTS).find(([stringifiedBlock]) => this.#checkBlockNameAndStates(stringifiedBlock, block)))?.[1]);
+		
+		for(let x = 0; x < this.structureSize[0]; x++) {
+			for(let y = 0; y < this.structureSize[1]; y++) {
+				for(let z = 0; z < this.structureSize[2]; z++) {
+					let blockI = (x * this.structureSize[1] + y) * this.structureSize[2] + z;
+					for(let layerI = 0; layerI < 2; layerI++) {
+						let paletteI = blockIndices[layerI][blockI];
+						if(!(paletteI in this.boneTemplatePalette)) {
+							continue;
+						}
+						this.#blockPositions[paletteI] ??= [];
+						this.#blockPositions[paletteI].push([x, y, z]);
+						
+						let lightInfo = palettePointLights[paletteI];
+						if(lightInfo) {
+							let [col, intensity] = Array.isArray(lightInfo)? lightInfo : [lightInfo, PreviewRenderer.#POINT_LIGHT_DEFAULT_INTENSITY];
+							this.#pointLights.push({
+								"pos": [-16 * x, 16 * y + 8, -16 * z],
+								"col": col,
+								"intensity": intensity
+							});
+						}
+					}
+				}
+			}
+		}
+		this.options.maxPointLights = min(this.options.maxPointLights, this.#pointLights.length);
 	}
 	async init() {
 		let loadingMessage = document.createElement("div");
@@ -61,7 +153,7 @@ export default class PreviewRenderer extends AsyncFactory {
 		loadingMessage.appendChild(p);
 		this.cont.appendChild(loadingMessage);
 		
-		THREE ??= await import("three"); // @bridge-editor/model-viewer uses this version :(
+		// THREE ??= await import("three");
 		
 		let can = document.createElement("canvas");
 		let imageBlob = this.textureAtlas.imageBlobs.at(-1)[1];
@@ -69,7 +161,7 @@ export default class PreviewRenderer extends AsyncFactory {
 		
 		this.#renderer = new THREE.WebGLRenderer({
 			canvas: can,
-			alpha: !this.showSkybox,
+			alpha: true,
 			antialias: true,
 		});
 		this.#renderer.setPixelRatio(window.devicePixelRatio);
@@ -77,24 +169,51 @@ export default class PreviewRenderer extends AsyncFactory {
 		this.#renderer.shadowMap.type = THREE.PCFShadowMap;
 		this.#setupCameraAndControls(can);
 		this.#scene = new THREE.Scene();
-		if(!this.showSkybox) {
-			this.#scene.background = new THREE.Color(0xCAF0F8);
-		}
 		window[onEventAndNow]("resize", () => this.#setSize());
-		// this.#controls.addEventListener("change", () => {
-		// 	if(!this.#controlsBeingUpdated) {
-		// 		window.requestAnimationFrame(() => this.#render(false));
-		// 	}
-		// });
-		this.#render();
+		this.#controls.addEventListener("change", () => {
+			this.#shouldRenderNextFrame = true;
+			const epsilon = 0.001;
+			if(abs(this.#controls._sphericalDelta.phi) < epsilon) {
+				this.#controls._sphericalDelta.phi = 0;
+			}
+			if(abs(this.#controls._sphericalDelta.theta) < epsilon) {
+				this.#controls._sphericalDelta.theta = 0;
+			}
+		});
 		
 		this.#addLighting();
-		if(this.showSkybox) {
-			await this.#addSkybox();
-		} else {
-			this.#scene.background = null;
-		}
+		this.#initBackground();
+		await this.#initBackground();
+		this.#loop();
 		loadingMessage.replaceWith(can);
+		
+		this.cont.appendChild(this.#stats.dom);
+		if(this.#pointLights.length > 0) {
+			this.#optionsGui.add(this.options, "maxPointLights", 0, this.#pointLights.length, 1).name("Max point lights").onChange(() => this.#initPointLights());
+		}
+		let shadowOption;
+		this.#optionsGui.add(this.#directionalLight, "castShadow").name("Shadows").onChange(() => {
+			if(this.#directionalLight.castShadow) {
+				shadowOption.show();
+			} else {
+				shadowOption.hide();
+			}
+		});
+		shadowOption = this.#optionsGui.add(this.options, "directionalLightShadowMapResolution", 1, 5, 1).name("Shadow resolution").onChange(() => this.#updateDirectionalLightShadowMapSize());
+		this.#optionsGui.add(this.options, "directionalLightAngle", 0, 360, 1).name("Light angle");
+		this.#optionsGui.add(this.options, "directionalLightHeight", 0.1, 2, 0.01).name("Light height");
+		this.#optionsGui.add(this.options, "showSkybox").name("Show skybox").onChange(() => this.#initBackground());
+		this.#optionsGui.add(this.options, "highResolution").name("High resolution").onChange(() => this.#setSize());
+		this.#optionsGui.add(this, "downloadScreenshot").name("Screenshot");
+		this.#optionsGui.add(this.options, "debugHelpersVisible").name("Debug").onChange(() => {
+			if(this.options.debugHelpersVisible) {
+				this.#scene.add(...this.#debugHelpers);
+			} else {
+				this.#scene.remove(...this.#debugHelpers);
+			}
+		});
+		
+		this.#optionsGui.show();
 		
 		// let animator = this.#viewer.getModel().animator;
 		// let animation = this.animations["animations"]["animation.armor_stand.hologram.spawn"];
@@ -104,67 +223,73 @@ export default class PreviewRenderer extends AsyncFactory {
 		// animator.addAnimation("spawn", animation);
 		// animator.play("spawn");
 		
-		let blockPositions = [];
-		for(let x = 0; x < this.structureSize[0]; x++) {
-			for(let y = 0; y < this.structureSize[1]; y++) {
-				for(let z = 0; z < this.structureSize[2]; z++) {
-					let blockI = (x * this.structureSize[1] + y) * this.structureSize[2] + z;
-					for(let layerI = 0; layerI < 1; layerI++) {
-						let paletteI = this.blockIndices[layerI][blockI];
-						if(!(paletteI in this.boneTemplatePalette)) {
-							continue;
-						}
-						blockPositions[paletteI] ??= [];
-						blockPositions[paletteI].push([x, y, z]);
-					}
-				}
-			}
-		}
-		for(let i in blockPositions) {
+		for(let i in this.#blockPositions) {
 			let geo = this.#boneTemplateToGeo(this.boneTemplatePalette[i]);
 			let model = new Model(geo, imageUrl);
 			let group = model.getGroup();
 			group.rotation.set(0, pi, 0);
 			await model.create();
-			let positions = blockPositions[i].map(([x, y, z]) => [-16 * x - 8, 16 * y, -16 * z + 8]);
+			let positions = this.#blockPositions[i].map(([x, y, z]) => [-16 * x - 8, 16 * y, -16 * z + 8]);
 			let material = group.getObjectByProperty("isMesh", true)?.material;
 			if(!material) {
-				console.error(i);
 				continue;
 			}
 			let instancedGroup = this.#instanceGroupAtPositions(group, positions, material);
 			instancedGroup.castShadow = true;
 			instancedGroup.receiveShadow = true;
 			this.#scene.add(instancedGroup);
+			this.#shouldRenderNextFrame = true;
 		}
+
 		
 		URL.revokeObjectURL(imageUrl);
 	}
-	#render(loop = true) {
-		this.#updateControls();
+	async downloadScreenshot() {
+		this.#render();
+		this.#renderer.domElement.toBlob(imageBlob => {
+			let imageFile = new File([imageBlob], `Screenshot ${this.packName}.png`);
+			downloadFile(imageFile);
+		});
+	}
+	
+	#loop() {
+		this.#controls.update();
+		if(this.#shouldRenderNextFrame) {
+			this.#shouldRenderNextFrame = false;
+			this.#render();
+		}
+		
+		window.requestAnimationFrame(() => this.#loop());
+	}
+	#render() {
+		this.#stats.begin();
+		
+		this.#setDirectionalLightPos();
+		this.#updatePointLights();
+		// console.log(this.#renderer.capabilities.maxVertexUniforms, this.#renderer.capabilities.maxFragmentUniforms);
 		this.#renderer.render(this.#scene, this.#camera);
 		
-		if(loop) {
-			window.requestAnimationFrame(() => this.#render());
-		}
-	}
-	#updateControls() {
-		this.#controlsBeingUpdated = true;
-		this.#controls.update();
-		this.#controlsBeingUpdated = false;
+		this.#stats.end();
 	}
 	#setSize() {
-		this.#renderer.setSize(this.#width, this.#height, false);
+		let size = this.#canvasSize * (this.options.highResolution + 1);
+		this.#renderer.setSize(size, size, false);
+	}
+	#setDirectionalLightPos() {
+		let lightSin = sinDeg(this.options.directionalLightAngle);
+		let lightCos = cosDeg(this.options.directionalLightAngle);
+		this.#directionalLight.position.set(this.#center.x + this.#maxDimPixels * lightSin, this.#center.y + this.#maxDimPixels * this.options.directionalLightHeight, this.#center.z + this.#maxDimPixels * lightCos);
 	}
 	#setupCameraAndControls(can) {
-		this.#camera = new THREE.PerspectiveCamera(70, 1, 0.1, 5000);
+		this.#camera = new THREE.PerspectiveCamera(PreviewRenderer.#CAMERA_FOV, 1, 0.1, 5000); // FIX
 		this.#camera.position.x = -20;
 		this.#camera.position.y = 20;
 		this.#camera.position.z = -20;
 		this.#controls = new OrbitControls(this.#camera, can);
 		this.#controls.minDistance = 10;
-		this.#controls.maxDistance = 2000;
+		this.#controls.maxDistance = this.#maxDimPixels / tan(PreviewRenderer.#CAMERA_FOV / 2) * 4;
 		this.#controls.enableDamping = true;
+		this.#controls.dampingFactor = 0.1;
 		
 		// this part is adapted from @bridge-core/model-viewer, itself adapted from https://github.com/mrdoob/three.js/issues/6784#issuecomment-315963625
 		const scale = 1.7;
@@ -176,75 +301,141 @@ export default class PreviewRenderer extends AsyncFactory {
 		this.#camera.lookAt(boundingSphere.center);
 		this.#camera.updateProjectionMatrix();
 		this.#controls.target.set(boundingSphere.center.x, boundingSphere.center.y, boundingSphere.center.z);
-		this.#updateControls();
 	}
 	#addLighting() {
-		let maxDim = max(...this.structureSize);
-		let maxDimPixels = maxDim * 16;
-		let center = new THREE.Vector3(-this.structureSize[0] * 8, this.structureSize[1] * 8, -this.structureSize[2] * 8);
-		let directionalLight = new THREE.DirectionalLight(0xFFFFFF, PreviewRenderer.#DIRECTIONAL_LIGHT_STRENGTH);
-		directionalLight.position.set(center.x + maxDimPixels, center.y + maxDimPixels, center.z + maxDimPixels);
-		directionalLight.target.position.copy(center);
-		function run() {
-			requestAnimationFrame(run);
-			directionalLight.position.set(center.x+maxDimPixels * Math.cos(performance.now() / 1000), center.y + maxDimPixels, center.x+maxDimPixels * Math.sin(performance.now() / 1000))
-		}
-		// run();
-		directionalLight.castShadow = true;
-		let shadowMapSize = min(2 ** floor(2 * ln(maxDim + 10)) * 16, 4096);
-		directionalLight.shadow.mapSize.width = shadowMapSize;
-		directionalLight.shadow.mapSize.height = shadowMapSize;
-		directionalLight.shadow.camera.near = 0.1;
-		directionalLight.shadow.camera.far = maxDimPixels * 4;
-		directionalLight.shadow.camera.left = -maxDimPixels;
-		directionalLight.shadow.camera.right = maxDimPixels;
-		directionalLight.shadow.camera.bottom = -maxDimPixels;
-		directionalLight.shadow.camera.top = maxDimPixels;
-		directionalLight.shadow.bias = -0.001;
-		this.#scene.add(directionalLight);
-		this.#scene.add(directionalLight.target);
+		this.#directionalLight = new THREE.DirectionalLight(0xFFFFFF, PreviewRenderer.#DIRECTIONAL_LIGHT_STRENGTH);
+		this.#directionalLight.position.set(this.#center.x + this.#maxDimPixels, this.#center.y + this.#maxDimPixels, this.#center.z + this.#maxDimPixels);
+		this.#directionalLight.target.position.copy(this.#center);
+		this.#directionalLight.castShadow = true;
+		this.#directionalLight.shadow.camera.near = 0.1;
+		this.#directionalLight.shadow.camera.far = this.#maxDimPixels * 4;
+		this.#directionalLight.shadow.camera.left = -this.#maxDimPixels;
+		this.#directionalLight.shadow.camera.right = this.#maxDimPixels;
+		this.#directionalLight.shadow.camera.bottom = -this.#maxDimPixels;
+		this.#directionalLight.shadow.camera.top = this.#maxDimPixels;
+		this.#directionalLight.shadow.bias = -0.001;
+		this.#scene.add(this.#directionalLight);
+		this.#scene.add(this.#directionalLight.target);
+		this.#updateDirectionalLightShadowMapSize();
+		this.#debugHelpers.push(new THREE.CameraHelper(this.#directionalLight.shadow.camera));
 		
-		let l = new THREE.DirectionalLight(0xFFFFFF, 0.1);
-		l.position.set(center.x + maxDimPixels * 0.6, center.y + maxDimPixels, center.z + maxDimPixels * 3);
-		l.target.position.copy(center);
-		this.#scene.add(l);
-		this.#scene.add(l.target);
-		let l2 = new THREE.DirectionalLight(0xFFFFFF, 0.1);
-		l2.position.set(center.x - maxDimPixels * 0.6, center.y + maxDimPixels, center.z - maxDimPixels * 3);
-		l2.target.position.copy(center);
-		this.#scene.add(l2);
-		this.#scene.add(l2.target);
-		// this.#scene.add(new THREE.DirectionalLightHelper(l, 5))
-		// this.#scene.add(new THREE.DirectionalLightHelper(l2, 5))
-		// this.#scene.add(new THREE.CameraHelper(directionalLight.shadow.camera));
+		// these lights add extra shading on z-facing faces. this is vanilla MC behaviour. lines 53-54 in shaders/glsl/entity.vertex
+		let zLight1 = new THREE.DirectionalLight(0xFFFFFF, 0.1);
+		zLight1.position.set(this.#center.x + this.#maxDimPixels * 0.6, this.#center.y + this.#maxDimPixels, this.#center.z + this.#maxDimPixels * 3);
+		zLight1.target.position.copy(this.#center);
+		this.#scene.add(zLight1);
+		this.#scene.add(zLight1.target);
+		let zLight2 = new THREE.DirectionalLight(0xFFFFFF, 0.1);
+		zLight2.position.set(this.#center.x - this.#maxDimPixels * 0.6, this.#center.y + this.#maxDimPixels, this.#center.z - this.#maxDimPixels * 3);
+		zLight2.target.position.copy(this.#center);
+		this.#scene.add(zLight2);
+		this.#scene.add(zLight2.target);
+		this.#debugHelpers.push(new THREE.DirectionalLightHelper(zLight1, 5), new THREE.DirectionalLightHelper(zLight2, 5));
 		
 		let ambientLight = new THREE.AmbientLight(0xFFFFFF, 0.6);
 		this.#scene.add(ambientLight);
 		
-		let shadowFloor = new THREE.Mesh(new THREE.PlaneGeometry(maxDimPixels * 3, maxDimPixels * 3), new THREE.ShadowMaterial({
+		let shadowFloor = new THREE.Mesh(new THREE.PlaneGeometry(this.#maxDimPixels * 3, this.#maxDimPixels * 3), new THREE.ShadowMaterial({
 			opacity: PreviewRenderer.#FLOOR_SHADOW_DARKNESS
 		}));
 		shadowFloor.rotation.x = -pi / 2;
-		shadowFloor.position.set(center.x, 0, center.z);
+		shadowFloor.position.set(this.#center.x, 0, this.#center.z);
 		shadowFloor.receiveShadow = true;
 		this.#scene.add(shadowFloor);
 		
-		
-		this.blocksWithPointLights.forEach(([i, col]) => {
-			let z = i % this.structureSize[2];
-			let y = floor(i / this.structureSize[2]) % this.structureSize[1];
-			let x = floor(i / this.structureSize[2] / this.structureSize[1]);
-			let light = new THREE.PointLight(col, 3, 40, 1);
-			light.position.set(-16 * x, 16 * y + 8, -16 * z);
+		this.#initPointLights();
+	}
+	/**
+	 * Checks if a block matches a stringified block.
+	 * @param {string} stringifiedBlock
+	 * @param {Block} block
+	 */
+	#checkBlockNameAndStates(stringifiedBlock, block) {
+		let blockName = stringifiedBlock.includes("[")? stringifiedBlock.slice(0, stringifiedBlock.indexOf("[")) : stringifiedBlock;
+		if(blockName != block["name"]) {
+			return false;
+		}
+		let allBlockStates = stringifiedBlock.match(/\[(.+)\]/)?.[1];
+		if(allBlockStates) {
+			let blockStates = allBlockStates.split(",").map(stateAndValue => stateAndValue.split("="));
+			if(!blockStates.every(([name, value]) => block["states"]?.[name] == value)) {
+				return false;
+			}
+		}
+		return true;
+	}
+	#updateDirectionalLightShadowMapSize() {
+		let shadowMapSize = (this.#maxDim < 24? 1024 : this.#maxDim < 45? 2048 : 4096) * 2 ** (this.options.directionalLightShadowMapResolution - 2);
+		this.#directionalLight.shadow.mapSize.set(shadowMapSize, shadowMapSize)
+		this.#directionalLight.shadow.map?.setSize(shadowMapSize, shadowMapSize);
+		this.#directionalLight.shadow.normalBias = 0.1;
+	}
+	#initPointLights() {
+		while(this.#pointLightsInScene.length < this.options.maxPointLights) {
+			let light = new THREE.PointLight(0, 0, PreviewRenderer.#POINT_LIGHT_MAX_DISTANCE, 0.7);
+			this.#pointLightsInScene.push(light);
 			this.#scene.add(light);
-			// this.#scene.add(new THREE.PointLightHelper(light,16))
+			let helper = new THREE.PointLightHelper(light, PreviewRenderer.#POINT_LIGHT_MAX_DISTANCE);
+			this.#debugHelpers.push(helper);
+			this.#pointLightHelpers.set(light, helper);
+			if(this.options.debugHelpersVisible && this.#debugHelpers.length) {
+				this.#scene.add(helper);
+			}
+		}
+		while(this.#pointLightsInScene.length > this.options.maxPointLights) {
+			let light = this.#pointLightsInScene.pop();
+			this.#scene.remove(light);
+			let helper = this.#pointLightHelpers.get(light);
+			this.#scene.remove(helper);
+			this.#debugHelpers.splice(this.#debugHelpers.indexOf(helper), 1);
+		}
+	}
+	#updatePointLights() {
+		let maxLightsInScene = min(this.#pointLights.length, this.options.maxPointLights);
+		if(maxLightsInScene == 0) {
+			return;
+		}
+		let cameraPosVec = this.#camera.getWorldPosition(new THREE.Vector3());
+		let cameraPos = [cameraPosVec.x, cameraPosVec.y, cameraPosVec.z];
+		
+		let lightsInView = this.#getPointLightsInView();
+		
+		let sortedLights = lightsInView.sort((a, b) => distanceSquared(a.pos, cameraPos) - distanceSquared(b.pos, cameraPos));
+		let closestSortedLights = sortedLights.slice(0, this.options.maxPointLights);
+		
+		closestSortedLights.forEach((lightInfo, i) => {
+			this.#pointLightsInScene[i].visible = true;
+			this.#pointLightsInScene[i].position.set(...lightInfo.pos);
+			this.#pointLightsInScene[i].intensity = lightInfo["intensity"];
+			this.#pointLightsInScene[i].color = new THREE.Color(lightInfo["col"]);
+		});
+		if(closestSortedLights.length < maxLightsInScene) {
+			for(let i = closestSortedLights.length; i < maxLightsInScene; i++) {
+				this.#pointLightsInScene[i].intensity = 0; // setting .visible = false causes lag
+			}
+		}
+	}
+	#getPointLightsInView() {
+		let cameraFrustum = new THREE.Frustum();
+		let projMatrix = new THREE.Matrix4();
+		projMatrix.multiplyMatrices(this.#camera.projectionMatrix, this.#camera.matrixWorldInverse);
+		cameraFrustum.setFromProjectionMatrix(projMatrix);
+		return this.#pointLights.filter(light => {
+			let lightSphere = new THREE.Sphere(new THREE.Vector3(...light["pos"]), PreviewRenderer.#POINT_LIGHT_MAX_DISTANCE);
+			return cameraFrustum.intersectsSphere(lightSphere);
 		});
 	}
-	async #addSkybox() {
-		let loader = new THREE.CubeTextureLoader();
-		loader.setPath("assets/previewPanorama/");
-		let cubemap = await loader.loadAsync([1, 3, 4, 5, 0, 2].map(x => `${x}.png`));
-		this.#scene.background = cubemap;
+	async #initBackground() {
+		if(this.options.showSkybox) {
+			if(!this.#skyboxCubemap) {
+				let loader = new THREE.CubeTextureLoader();
+				loader.setPath("assets/previewPanorama/");
+				this.#skyboxCubemap = await loader.loadAsync([1, 3, 4, 5, 0, 2].map(x => `${x}.png`));
+			}
+			this.#scene.background = this.#skyboxCubemap;
+		} else {
+			this.#scene.background = null;
+		}
 	}
 	/**
 	 * Converts a bone template to a geometry object.
@@ -261,7 +452,7 @@ export default class PreviewRenderer extends AsyncFactory {
 		};
 	}
 	// these functions are for the instancing. chatgpt generated these. i have no clue how they work but they do
-	#instanceGroupAtPositions(group, positions, material = new THREE.MeshStandardMaterial({ color: 0x00ff00 })) {
+	#instanceGroupAtPositions(group, positions, material) {
 		// Collect geometries, apply local transforms
 		let geometries = [];
 		group.updateWorldMatrix(true, true);
@@ -273,7 +464,7 @@ export default class PreviewRenderer extends AsyncFactory {
 				geometries.push(geom);
 			}
 		});
-		if(geometries.length === 0) {
+		if(geometries.length == 0) {
 			console.warn("Group contains no meshes");
 			return null;
 		}
@@ -306,8 +497,8 @@ export default class PreviewRenderer extends AsyncFactory {
 					return;
 				}
 				if(!attrArrays[name]) {
-					attrArrays[name] = []
-				};
+					attrArrays[name] = [];
+				}
 				attrArrays[name].push(attr.array);
 				attrItemSizes[name] = attr.itemSize;
 			});
@@ -362,8 +553,14 @@ export default class PreviewRenderer extends AsyncFactory {
 }
 
 /**
+ * @typedef {import("./HoloPrint.js").I32Vec3} I32Vec3
+ */
+/**
+ * @typedef {import("./HoloPrint.js").Block} Block
+ */
+/**
  * @typedef {import("./HoloPrint.js").BoneTemplate} BoneTemplate
  */
 /**
- * @typedef {import("./HoloPrint.js").I32Vec3} I32Vec3
+ * @typedef {import("./HoloPrint.js").PreviewPointLight} PreviewPointLight
  */

@@ -1,5 +1,5 @@
 // Simple logger.
-import { ceil, downloadBlob, getStackTrace, html, onEvent, selectEl } from "../utils.js";
+import { ceil, downloadFile, getStackTrace, html, onEvent, selectEl } from "../utils.js";
 
 export default class SimpleLogger extends HTMLElement {
 	#originTime;
@@ -90,7 +90,7 @@ export default class SimpleLogger extends HTMLElement {
 		`;
 		this.node = this.shadowRoot[selectEl]("#root");
 		this.node[selectEl]("#downloadLogsButton")[onEvent]("click", () => {
-			downloadBlob(new Blob([JSON.stringify(this.allLogs)]), "holoprint_logs.json");
+			downloadFile(new File([JSON.stringify(this.allLogs)], "holoprint_logs.json"));
 		});
 		this.#warningCountNode = this.node[selectEl]("#warningCount");
 		this.#errorCountNode = this.node[selectEl]("#errorCount");

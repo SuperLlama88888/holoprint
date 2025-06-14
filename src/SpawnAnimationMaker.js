@@ -4,8 +4,8 @@ export default class SpawnAnimationMaker {
 	config;
 	structureSize;
 	/** @type {Array<SpawnAnimationBone>} */
-	#animatedBones;
-	#totalAnimationLength;
+	#animatedBones = [];
+	#totalAnimationLength = 0;
 	#randomness;
 	/**
 	 * Creates a SpawnAnimationMaker for managing the spawn animation.
@@ -16,8 +16,6 @@ export default class SpawnAnimationMaker {
 		this.config = config;
 		this.structureSize = structureSize;
 		
-		this.#animatedBones = [];
-		this.#totalAnimationLength = 0;
 		let totalVolume = this.structureSize[0] * this.structureSize[1] * this.structureSize[2];
 		this.#randomness = 2 - 1.9 * exp(-0.005 * totalVolume); // 100 -> ~0.85, 1000 -> ~1.99, asymptotic to 2
 	}

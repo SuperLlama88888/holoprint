@@ -10,7 +10,7 @@ import { AsyncFactory, awaitAllEntries, hexColorToClampedTriplet, jsonc, JSONSet
 export default class BlockGeoMaker extends AsyncFactory {
 	/** @type {HoloPrintConfig} */
 	config;
-	textureRefs;
+	textureRefs = new JSONSet();
 	
 	#individualBlockShapes;
 	#blockShapePatterns;
@@ -18,28 +18,20 @@ export default class BlockGeoMaker extends AsyncFactory {
 	#eigenvariants;
 	
 	#globalBlockStateRotations;
-	#blockShapeBlockStateRotations;
-	#blockNameBlockStateRotations;
-	#blockNamePatternBlockStateRotations;
+	#blockShapeBlockStateRotations = [];
+	#blockNameBlockStateRotations = [];
+	#blockNamePatternBlockStateRotations = [];
 	
 	#globalBlockStateTextureVariants;
-	#blockShapeBlockStateTextureVariants;
-	#blockNameBlockStateTextureVariants;
-	#blockNamePatternBlockStateTextureVariants;
+	#blockShapeBlockStateTextureVariants = [];
+	#blockNameBlockStateTextureVariants = [];
+	#blockNamePatternBlockStateTextureVariants = [];
 	
-	#cachedBlockShapes;
+	#cachedBlockShapes = new Map();
 	
 	constructor(config) {
 		super();
 		this.config = config;
-		this.textureRefs = new JSONSet();
-		this.#cachedBlockShapes = new Map();
-		this.#blockShapeBlockStateRotations = [];
-		this.#blockNameBlockStateRotations = [];
-		this.#blockNamePatternBlockStateRotations = [];
-		this.#blockShapeBlockStateTextureVariants = [];
-		this.#blockNameBlockStateTextureVariants = [];
-		this.#blockNamePatternBlockStateTextureVariants = [];
 	}
 	async init() {
 		let { blockShapes, blockShapeGeos, blockStateDefs, eigenvariants } = await awaitAllEntries({

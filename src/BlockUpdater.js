@@ -2,6 +2,7 @@
 
 import { AsyncFactory, CachingFetcher } from "./utils.js";
 
+/** Updates older blocks to the latest MCBE version. */
 export default class BlockUpdater extends AsyncFactory {
 	static LATEST_VERSION = 18168865; // 1.21.60.33 (1.21.61)
 	static #UPGRADE_SCHEMA_URL = "https://cdn.jsdelivr.net/gh/SuperLlama88888/BedrockBlockUpgradeSchema";
@@ -9,18 +10,10 @@ export default class BlockUpdater extends AsyncFactory {
 	
 	#fetcher;
 	/** @type {Record<String, Array<BlockUpdateSchemaSkeleton>>} */
-	#schemaIndex;
+	#schemaIndex = {};
 	/** @type {Map<String, BlockUpdateSchema>} */
-	#schemas;
+	#schemas = new Map();
 	
-	/**
-	 * Creates a BlockUpdater to update older blocks to the latest MCBE version.
-	 */
-	constructor() {
-		super();
-		this.#schemaIndex = {};
-		this.#schemas = new Map();
-	}
 	async init() {
 		this.#fetcher = await CachingFetcher.new(`BlockUpgrader@${BlockUpdater.#UPGRADE_SCHEMA_VERSION}`, `${BlockUpdater.#UPGRADE_SCHEMA_URL}@${BlockUpdater.#UPGRADE_SCHEMA_VERSION}/`);
 	}

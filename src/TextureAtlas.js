@@ -13,7 +13,7 @@ export default class TextureAtlas extends AsyncFactory {
 	blocksDotJson;
 	terrainTexture;
 	
-	#flipbookTexturesAndSizes;
+	#flipbookTexturesAndSizes = new Map();
 	
 	/** @type {HoloPrintConfig} */
 	config;
@@ -42,14 +42,13 @@ export default class TextureAtlas extends AsyncFactory {
 		super();
 		this.config = config;
 		this.resourcePackStack = resourcePackStack;
-		this.#flipbookTexturesAndSizes = new Map();
 	}
 	async init() {
 		let { blocksDotJson, terrainTexture, flipbookTextures, textureAtlasMappings } = await awaitAllEntries({
 			blocksDotJson: this.resourcePackStack.fetchResource("blocks.json").then(res => jsonc(res)),
 			terrainTexture: this.resourcePackStack.fetchResource("textures/terrain_texture.json").then(res => jsonc(res)),
 			flipbookTextures: this.resourcePackStack.fetchResource("textures/flipbook_textures.json").then(res => jsonc(res)),
-			/** @type {import("./data/textureAtlasMappings.json")} */
+			/** @type {Promise<import("./data/textureAtlasMappings.json")>} */
 			textureAtlasMappings: fetch("data/textureAtlasMappings.json").then(res => jsonc(res))
 		})
 		this.blocksDotJson = blocksDotJson;
@@ -445,7 +444,7 @@ export default class TextureAtlas extends AsyncFactory {
 			this.imageBlobs = [["hologram", await can.convertToBlob()]];
 		}
 		
-		// document.body.appendChild(toImage(await this.imageBlobs.at(-1)[1]));
+		// document.body.appendChild(await toImage(this.imageBlobs.at(-1)[1]));
 		
 		return imageUvs;
 	}

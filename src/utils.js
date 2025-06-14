@@ -110,7 +110,7 @@ export function jsonc(val) {
 }
 /**
  * Converts a Response, Blob, or ImageData to an Image.
- * @param {Blob|Response | ImageData} val
+ * @param {Blob | Response | ImageData} val
  * @returns {Promise<HTMLImageElement>}
  */
 export async function toImage(val) {
@@ -144,10 +144,7 @@ export async function toImage(val) {
 			throw new Error(`Failed to convert response with status ${val.status} from URL ${val.url} to image: ${e}`);
 		}
 	} else if(val instanceof ImageData) {
-		let can = new OffscreenCanvas(val.width, val.height);
-		let ctx = can.getContext("2d");
-		ctx.putImageData(val, 0, 0);
-		let imageBlob = await can.convertToBlob();
+		let imageBlob = await toBlob(val);
 		try {
 			return toImage(imageBlob);
 		} catch(e) {
@@ -158,10 +155,16 @@ export async function toImage(val) {
 
 export const sleep = async time => new Promise(resolve => setTimeout(resolve, time));
 
-export const { min, max, floor, ceil, sqrt, round, abs, PI: pi, exp, log: ln, tan } = Math;
+export const { min, max, floor, ceil, sqrt, round, abs, PI: pi, exp, log: ln, sin, cos, tan } = Math;
 export const clamp = (n, lowest, highest) => min(max(n, lowest), highest);
 export const lerp = (a, b, x) => a + (b - a) * x;
 export const nanToUndefined = x => Number.isNaN(x)? undefined : x;
+export function sinDeg(deg) {
+	return sin(deg * pi / 180);
+}
+export function cosDeg(deg) {
+	return cos(deg * pi / 180);
+}
 
 export function arrayMin(arr) {
 	let min = Infinity;
@@ -190,6 +193,21 @@ export function random(arr) {
  */
 export function desparseArray(arr) {
 	return arr.filter(() => true);
+}
+/**
+ * Makes nulls empty slots in an array.
+ * @template T
+ * @param {Array<T>} arr
+ * @returns {Array<T>}
+ */
+export function makeNullsEmpty(arr) {
+	let res = new Array(arr.length);
+	arr.forEach((item, i) => {
+		if(item !== null) {
+			res[i] = item;
+		}
+	});
+	return res;
 }
 /**
  * Groups an array into two arrays based on a condition function.
@@ -417,14 +435,18 @@ export function toImageData(image) {
 	return ctx.getImageData(0, 0, can.width, can.height);
 }
 /**
- * Converts an image to a PNG blob.
- * @param {HTMLImageElement} image
+ * Converts an image or image data to a PNG blob.
+ * @param {HTMLImageElement | ImageData} val
  * @returns {Promise<Blob>}
  */
-export async function toBlob(image) {
-	let can = new OffscreenCanvas(image.width, image.height);
+export async function toBlob(val) {
+	let can = new OffscreenCanvas(val.width, val.height);
 	let ctx = can.getContext("2d");
-	ctx.drawImage(image, 0, 0);
+	if(val instanceof HTMLImageElement) {
+		ctx.drawImage(val, 0, 0);
+	} else if(val instanceof ImageData) {
+		ctx.putImageData(val, 0, 0);
+	}
 	return await can.convertToBlob();
 }
 /**
@@ -613,12 +635,15 @@ export function gcd(a, b) {
 export function lcm(a, b) {
 	return a * b / gcd(a, b);
 }
+export function distanceSquared(a, b) {
+	return (a[0] - b[0]) * (a[0] - b[0]) + (a[1] - b[1]) * (a[1] - b[1]) + (a[2] - b[2]) * (a[2] - b[2]);
+}
 
-export function downloadBlob(blob, fileName) {
+export function downloadFile(file, filename = file.name) {
 	let a = document.createElement("a");
-	let objectURL = URL.createObjectURL(blob);
+	let objectURL = URL.createObjectURL(file);
 	a.href = objectURL;
-	a.download = fileName ?? blob.name; // blob will have a name if blob is a File
+	a.download = filename;
 	a.click();
 	URL.revokeObjectURL(objectURL);
 }
@@ -656,8 +681,9 @@ export class AsyncFactory {
 	/**
 	 * Creates an instance.
 	 * @template {AsyncFactory} T
-	 * @this {new (...params: any[]) => T}
-	 * @param {...any} params
+	 * @template {any[]} P
+	 * @this {{ new(...params: P): T }}
+	 * @param {P} params
 	 * @returns {Promise<T>}
 	 */
 	static async new(...params) {
@@ -780,11 +806,12 @@ export class CachingFetcher extends AsyncFactory {
 			while(CachingFetcher.BAD_STATUS_CODES.includes(res.status) && fetchAttempsLeft--) {
 				console.debug(`Encountered bad HTTP status ${res.status} from ${fullUrl}, trying again in ${fetchRetryTimeout}ms`);
 				await sleep(fetchRetryTimeout);
+				res = await this.retrieve(fullUrl);
 			}
-			if(fetchAttempsLeft) {
-				await this.#cache.put(cacheLink, res.clone());
+			if(CachingFetcher.BAD_STATUS_CODES.includes(res.status)) {
+				console.error(`Couldn't avoid getting bad HTTP status code ${res.status} for ${fullUrl}`);
 			} else {
-				console.error(`Couldn't avoid getting bad HTTP status codes for ${fullUrl}`);
+				await this.#cache.put(cacheLink, res.clone());
 			}
 		}
 		return res;

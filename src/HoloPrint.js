@@ -493,24 +493,9 @@ export async function makePack(structureFiles, config = {}, resourcePackStack, p
 	if(previewCont) {
 		let showPreview = () => {
 			hologramGeo["minecraft:geometry"].filter(geo => geo["description"]["identifier"].startsWith("geometry.armor_stand.hologram_")).map((geo, structureI) => {
-				// PreviewRenderer.new(previewCont, textureAtlas, geo, hologramAnimations, config.SHOW_PREVIEW_SKYBOX).catch(e => console.error("Preview renderer error:", e)); // is async but we won't wait for it
-				const pointLights = {
-					"lantern": 0xFFAA55,
-					"torch": 0xFFAA55,
-					"redstone_torch": 0x990000
-				};
-				// let pointLightIndices = new Set(blockPalette.map((block, i) => [block.name, i]).filter(([blockName]) => pointLights.includes(blockName)).map(([_, i]) => i));
-				// console.log(pointLightIndices)
-				let blocksWithPointLights = [];
-				allStructureIndicesByLayer[structureI].forEach(layer => {
-					layer.forEach((blockI, i) => {
-						if(blockPalette[blockI]?.["name"] in pointLights) {
-							blocksWithPointLights.push([i, pointLights[blockPalette[blockI]["name"]]]);
-						}
-					});
+				PreviewRenderer.new(previewCont, packName, textureAtlas, structureSizes[structureI], blockPalette, boneTemplatePalette, allStructureIndicesByLayer[structureI], {
+					showSkybox: config.SHOW_PREVIEW_SKYBOX
 				});
-				console.log(blocksWithPointLights)
-				PreviewRenderer.new(previewCont, textureAtlas, boneTemplatePalette, structureSizes[structureI], allStructureIndicesByLayer[structureI], config.SHOW_PREVIEW_SKYBOX, blocksWithPointLights);
 			});
 		};
 		if(totalBlockCount < config.PREVIEW_BLOCK_LIMIT) {
@@ -650,7 +635,7 @@ export function addDefaultConfig(config) {
 			AUTHORS: [],
 			DESCRIPTION: undefined,
 			COMPRESSION_LEVEL: 5, // level 9 was 8 bytes larger than level 5 when I tested... :0
-			PREVIEW_BLOCK_LIMIT: 500,
+			PREVIEW_BLOCK_LIMIT: 2500,
 			SHOW_PREVIEW_SKYBOX: true
 		},
 		...config,
@@ -1943,6 +1928,12 @@ function stringifyWithFixedDecimals(value) {
  * @typedef {object} MinecraftAnimation A Minecraft animation as seen in `.animation.json` files.
  * @property {number} [animation_length]
  * @property {Record<string, object>} [bones]
+ */
+/**
+ * @typedef {object} PreviewPointLight A point light in the structure preview.
+ * @property {Vec3} pos Position in Three.js space
+ * @property {number} col As a hex number, e.g. 0xFF0000
+ * @property {number} intensity
  */
 /**
  * @typedef {object} MCStructure The parsed NBT of a `.mcstructure` file.

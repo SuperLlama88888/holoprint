@@ -415,7 +415,6 @@ img:not(#languageSelectorButton), canvas {
 	display: inline-block;
 	width: 400px;
 	border: 1px solid black;
-	background: url("assets/noise.svg");
 	/* color: #4C33CC;
 	color: #2C33B3;
 	color: #4CF0A0
@@ -424,15 +423,23 @@ img:not(#languageSelectorButton), canvas {
 	color: #D7B3D7; */
 }
 .previewCont {
-	padding: 5px;
+	margin: auto;
+	padding: 0;
+	contain: layout;
 	text-align: center;
-}
-.previewCont > * {
-	width: min(80vmin, 100%);
-	aspect-ratio: 1;
-}
-.previewCont canvas {
-	touch-action: none;
+	
+	& > .previewMessage, & > canvas {
+		width: min(80vmin, 100%);
+		aspect-ratio: 1;
+	}
+	.statsPanel {
+		width: 0;
+		height: 0;
+	}
+	.lil-gui {
+		position: absolute;
+		right: 0;
+	}
 }
 .previewMessage {
 	margin: auto;

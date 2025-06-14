@@ -5,7 +5,7 @@ export default class LocalResourcePack extends AsyncFactory {
 	hash;
 	files;
 	aggressiveHashing;
-	#files;
+	#files = new Map();
 	
 	/**
 	 * Creates a local resource pack from a folder input's file list.
@@ -15,7 +15,6 @@ export default class LocalResourcePack extends AsyncFactory {
 		super();
 		this.files = Array.from(fileList ?? []);
 		this.aggressiveHashing = aggressiveHashing;
-		this.#files = new Map();
 	}
 	async init() {
 		let folderSummary = [];

@@ -1,5 +1,5 @@
 import { extractStructureFilesFromMcworld } from "mcbe-leveldb-reader";
-import { selectEl, downloadBlob, sleep, selectEls, loadTranslationLanguage, translate, getStackTrace, random, UserError, joinOr, conditionallyGroup, groupByFileExtension, addFilesToFileInput, setFileInputFiles, dispatchInputEvents, getAllChildren, jsonc, toImage, removeFalsies, clearCacheStorage, onEvent, onEventAndNow } from "./utils.js";
+import { selectEl, downloadFile, sleep, selectEls, loadTranslationLanguage, translate, getStackTrace, random, UserError, joinOr, conditionallyGroup, groupByFileExtension, addFilesToFileInput, setFileInputFiles, dispatchInputEvents, getAllChildren, jsonc, toImage, removeFalsies, clearCacheStorage, onEvent, onEventAndNow } from "./utils.js";
 import * as HoloPrint from "./HoloPrint.js";
 import SupabaseLogger from "./SupabaseLogger.js";
 
@@ -461,7 +461,7 @@ async function translatePage(language, generateTranslations = false) {
 	}));
 	if(generateTranslations) {
 		translations = Object.fromEntries(Object.entries(translations).sort((a, b) => a[0] > b[0]));
-		downloadBlob(new File([JSON.stringify(translations, null, "\t")], `${language}.json`));
+		downloadFile(new File([JSON.stringify(translations, null, "\t")], `${language}.json`));
 	}
 }
 /**
@@ -616,7 +616,7 @@ async function makePack(structureFiles, localResourcePacks) {
 					}
 				}();
 			}
-			downloadBlob(pack, pack.name);
+			downloadFile(pack, pack.name);
 		};
 	} else {
 		if(generationFailedError) {

@@ -2,8 +2,8 @@ import { AsyncFactory, floor, jsonc, nanToUndefined, removeFalsies } from "./uti
 
 export default class MaterialList extends AsyncFactory {
 	/** @type {Map<String, Number>} */
-	materials;
-	totalMaterialCount;
+	materials = new Map();
+	totalMaterialCount = 0;
 	
 	#blockMetadata;
 	#itemMetadata;
@@ -28,8 +28,6 @@ export default class MaterialList extends AsyncFactory {
 	 */
 	constructor(blockMetadata, itemMetadata, translations) {
 		super();
-		this.materials = new Map();
-		this.totalMaterialCount = 0;
 		
 		this.#blockMetadata = new Map(blockMetadata["data_items"].map(block => [block["name"], block]));
 		this.#itemMetadata = new Map(itemMetadata["data_items"].map(item => [item["name"], item]));
