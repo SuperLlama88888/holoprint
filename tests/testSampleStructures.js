@@ -44,7 +44,8 @@ test(async page => {
 				let pack = await HoloPrint.makePack(structureFile, {
 					SPAWN_ANIMATION_ENABLED: false,
 					PREVIEW_BLOCK_LIMIT: browserEngine == "chrome"? Infinity : 0, // preview renderer doesn't work on headless Firefox
-					SHOW_PREVIEW_SKYBOX: false
+					SHOW_PREVIEW_SKYBOX: false,
+					SHOW_PREVIEW_WIDGETS: false
 				}, undefined, previewCont);
 				let elapsedTime = performance.now() - startTime;
 				
@@ -58,7 +59,7 @@ test(async page => {
 				}).catch(e => console.error(`Failed to upload pack: ${e}, ${e.stack}`));
 				
 				return elapsedTime;
-			}, structureFileName, structureFileContent, browserEngine);
+			}, path.basename(structureFileName), structureFileContent, browserEngine);
 			packsCreated++;
 		} catch(e) {
 			console.error(`Failed to generate pack: ${e}, ${e.stack}`);
@@ -84,7 +85,7 @@ test(async page => {
 			fs.writeFile(filePath, fileBuffer, async err => {
 				if(browserEngine == "chrome") {
 					try {
-						let previewImage = await page.waitForSelector("#previewCont > canvas:last-child");
+						let previewImage = await page.waitForSelector("#previewCont > canvas");
 						await previewImage?.screenshot({
 							path: path.join(screenshotUploadDir, `${fileBasename.slice(0, fileBasename.indexOf("."))}.png`),
 							omitBackground: true

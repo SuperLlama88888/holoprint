@@ -494,7 +494,9 @@ export async function makePack(structureFiles, config = {}, resourcePackStack, p
 		let showPreview = () => {
 			hologramGeo["minecraft:geometry"].filter(geo => geo["description"]["identifier"].startsWith("geometry.armor_stand.hologram_")).map((geo, structureI) => {
 				PreviewRenderer.new(previewCont, packName, textureAtlas, structureSizes[structureI], blockPalette, boneTemplatePalette, allStructureIndicesByLayer[structureI], {
-					showSkybox: config.SHOW_PREVIEW_SKYBOX
+					showSkybox: config.SHOW_PREVIEW_SKYBOX,
+					showFps: config.SHOW_PREVIEW_WIDGETS,
+					showOptions: config.SHOW_PREVIEW_WIDGETS
 				});
 			});
 		};
@@ -636,7 +638,8 @@ export function addDefaultConfig(config) {
 			DESCRIPTION: undefined,
 			COMPRESSION_LEVEL: 5, // level 9 was 8 bytes larger than level 5 when I tested... :0
 			PREVIEW_BLOCK_LIMIT: 2500,
-			SHOW_PREVIEW_SKYBOX: true
+			SHOW_PREVIEW_SKYBOX: true,
+			SHOW_PREVIEW_WIDGETS: true
 		},
 		...config,
 		...{ // overrides (applied after)
@@ -1835,6 +1838,7 @@ function stringifyWithFixedDecimals(value) {
  * @property {number} COMPRESSION_LEVEL
  * @property {number} PREVIEW_BLOCK_LIMIT The maximum number of blocks a structure can have for rendering a preview
  * @property {boolean} SHOW_PREVIEW_SKYBOX
+ * @property {boolean} SHOW_PREVIEW_WIDGETS Whether to show or hide the FPS counter and options menu for previews
  */
 /**
  * @typedef {object} HoloPrintControlsConfig Controls which items are used for in-game controls.

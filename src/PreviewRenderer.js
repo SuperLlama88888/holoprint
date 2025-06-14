@@ -45,7 +45,9 @@ export default class PreviewRenderer extends AsyncFactory {
 		directionalLightAngle: 120,
 		directionalLightShadowMapResolution: 2,
 		highResolution: false,
-		debugHelpersVisible: false
+		debugHelpersVisible: false,
+		showFps: true,
+		showOptions: true
 	};
 	#canvasSize = min(window.innerWidth, window.innerHeight) * 0.8;
 	#center;
@@ -91,27 +93,30 @@ export default class PreviewRenderer extends AsyncFactory {
 		this.textureAtlas = textureAtlas;
 		this.structureSize = structureSize;
 		this.boneTemplatePalette = boneTemplatePalette;
-		this.options = { ...this.options, options };
+		this.options = { ...this.options, ...options };
 		
 		this.#center = new THREE.Vector3(-this.structureSize[0] * 8, this.structureSize[1] * 8, -this.structureSize[2] * 8);
 		this.#maxDim = max(...this.structureSize);
 		this.#maxDimPixels = this.#maxDim * 16;
 		
-		this.#stats = new Stats();
-		this.#stats.showPanel(0);
-		this.#stats.dom.classList.add("statsPanel");
+		if(this.options.showFps) {
+			this.#stats = new Stats();
+			this.#stats.showPanel(0);
+			this.#stats.dom.classList.add("statsPanel");
+		}
+		if(this.options.showOptions) {
+			this.#optionsGui = new GUI({
+				container: this.cont,
+				title: "Options"
+			});
+			this.#optionsGui.hide();
+			this.#optionsGui.close();
+			this.#optionsGui.onChange(() => {
+				this.#shouldRenderNextFrame = true;
+			});
+		}
 		
-		this.#optionsGui = new GUI({
-			container: this.cont,
-			title: "Options"
-		});
-		this.#optionsGui.hide();
-		this.#optionsGui.close();
-		this.#optionsGui.onChange(() => {
-			this.#shouldRenderNextFrame = true;
-		});
-		
-		let palettePointLights = blockPalette.map(block => (PreviewRenderer.#POINT_LIGHTS[block["name"] + 2] ?? Object.entries(PreviewRenderer.#POINT_LIGHTS).find(([stringifiedBlock]) => this.#checkBlockNameAndStates(stringifiedBlock, block)))?.[1]);
+		let palettePointLights = blockPalette.map(block => PreviewRenderer.#POINT_LIGHTS[block["name"]] ?? Object.entries(PreviewRenderer.#POINT_LIGHTS).find(([stringifiedBlock]) => this.#checkBlockNameAndStates(stringifiedBlock, block))?.[1]);
 		
 		for(let x = 0; x < this.structureSize[0]; x++) {
 			for(let y = 0; y < this.structureSize[1]; y++) {
@@ -187,33 +192,36 @@ export default class PreviewRenderer extends AsyncFactory {
 		this.#loop();
 		loadingMessage.replaceWith(can);
 		
-		this.cont.appendChild(this.#stats.dom);
-		if(this.#pointLights.length > 0) {
-			this.#optionsGui.add(this.options, "maxPointLights", 0, this.#pointLights.length, 1).name("Max point lights").onChange(() => this.#initPointLights());
+		if(this.options.showFps) {
+			this.cont.appendChild(this.#stats.dom);
 		}
-		let shadowOption;
-		this.#optionsGui.add(this.#directionalLight, "castShadow").name("Shadows").onChange(() => {
-			if(this.#directionalLight.castShadow) {
-				shadowOption.show();
-			} else {
-				shadowOption.hide();
+		if(this.options.showOptions) {
+			if(this.#pointLights.length > 0) {
+				this.#optionsGui.add(this.options, "maxPointLights", 0, this.#pointLights.length, 1).name("Max point lights").onChange(() => this.#initPointLights());
 			}
-		});
-		shadowOption = this.#optionsGui.add(this.options, "directionalLightShadowMapResolution", 1, 5, 1).name("Shadow resolution").onChange(() => this.#updateDirectionalLightShadowMapSize());
-		this.#optionsGui.add(this.options, "directionalLightAngle", 0, 360, 1).name("Light angle");
-		this.#optionsGui.add(this.options, "directionalLightHeight", 0.1, 2, 0.01).name("Light height");
-		this.#optionsGui.add(this.options, "showSkybox").name("Show skybox").onChange(() => this.#initBackground());
-		this.#optionsGui.add(this.options, "highResolution").name("High resolution").onChange(() => this.#setSize());
-		this.#optionsGui.add(this, "downloadScreenshot").name("Screenshot");
-		this.#optionsGui.add(this.options, "debugHelpersVisible").name("Debug").onChange(() => {
-			if(this.options.debugHelpersVisible) {
-				this.#scene.add(...this.#debugHelpers);
-			} else {
-				this.#scene.remove(...this.#debugHelpers);
-			}
-		});
-		
-		this.#optionsGui.show();
+			let shadowOption;
+			this.#optionsGui.add(this.#directionalLight, "castShadow").name("Shadows").onChange(() => {
+				if(this.#directionalLight.castShadow) {
+					shadowOption.show();
+				} else {
+					shadowOption.hide();
+				}
+			});
+			shadowOption = this.#optionsGui.add(this.options, "directionalLightShadowMapResolution", 1, 5, 1).name("Shadow resolution").onChange(() => this.#updateDirectionalLightShadowMapSize());
+			this.#optionsGui.add(this.options, "directionalLightAngle", 0, 360, 1).name("Light angle");
+			this.#optionsGui.add(this.options, "directionalLightHeight", 0.1, 2, 0.01).name("Light height");
+			this.#optionsGui.add(this.options, "showSkybox").name("Show skybox").onChange(() => this.#initBackground());
+			this.#optionsGui.add(this.options, "highResolution").name("High resolution").onChange(() => this.#setSize());
+			this.#optionsGui.add(this, "downloadScreenshot").name("Screenshot");
+			this.#optionsGui.add(this.options, "debugHelpersVisible").name("Debug").onChange(() => {
+				if(this.options.debugHelpersVisible) {
+					this.#scene.add(...this.#debugHelpers);
+				} else {
+					this.#scene.remove(...this.#debugHelpers);
+				}
+			});
+			this.#optionsGui.show();
+		}
 		
 		// let animator = this.#viewer.getModel().animator;
 		// let animation = this.animations["animations"]["animation.armor_stand.hologram.spawn"];
@@ -262,14 +270,14 @@ export default class PreviewRenderer extends AsyncFactory {
 		window.requestAnimationFrame(() => this.#loop());
 	}
 	#render() {
-		this.#stats.begin();
+		this.#stats?.begin();
 		
 		this.#setDirectionalLightPos();
 		this.#updatePointLights();
 		// console.log(this.#renderer.capabilities.maxVertexUniforms, this.#renderer.capabilities.maxFragmentUniforms);
 		this.#renderer.render(this.#scene, this.#camera);
 		
-		this.#stats.end();
+		this.#stats?.end();
 	}
 	#setSize() {
 		let size = this.#canvasSize * (this.options.highResolution + 1);
@@ -469,8 +477,8 @@ export default class PreviewRenderer extends AsyncFactory {
 			return null;
 		}
 		// Merge geometries manually
-		let merged = this.#mergeBufferGeometries(geometries);
-		let instancedMesh = new THREE.InstancedMesh(merged, material, positions.length);
+		let mergedGeo = this.#mergeBufferGeometries(geometries);
+		let instancedMesh = new THREE.InstancedMesh(mergedGeo, material, positions.length);
 		let dummy = new THREE.Object3D();
 		positions.forEach((pos, i) => {
 			let vecPos = new THREE.Vector3(...pos);
