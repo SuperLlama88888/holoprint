@@ -414,7 +414,7 @@ export default class PreviewRenderer extends AsyncFactory {
 			this.#pointLightsInScene[i].visible = true;
 			this.#pointLightsInScene[i].position.set(...lightInfo.pos);
 			this.#pointLightsInScene[i].intensity = lightInfo["intensity"];
-			this.#pointLightsInScene[i].color = new THREE.Color(lightInfo["col"]);
+			this.#pointLightsInScene[i].color.setHex(lightInfo["col"])
 		});
 		if(closestSortedLights.length < maxLightsInScene) {
 			for(let i = closestSortedLights.length; i < maxLightsInScene; i++) {

@@ -743,7 +743,7 @@ async function readStructureNBTWithOptions(structureFile, arrayBuffer, options =
  * @template TData
  * @param {{ packTemplate?: TPackTemplate, resources?: TResources, otherFiles?: TOtherFiles, data?: TData }} stuff
  * @param {ResourcePackStack} resourcePackStack
- * @returns {Promise<{ files: { [K in keyof TPackTemplate | keyof TResources | keyof TOtherFiles]?: string|Blob|Record<string, any>|Array<any>|HTMLImageElement }, data: { [K in keyof TData]?: string|Blob|Record<string, any>|Array<any> | HTMLImageElement } }>}
+ * @returns {Promise<{ files: { [K in keyof TPackTemplate | keyof TResources | keyof TOtherFiles]?: string | Blob | Record<string, any> | Array | HTMLImageElement }, data: { [K in keyof TData]?: string | Blob | Record<string, any> | Array | HTMLImageElement } }>}
 */
 async function loadStuff(stuff, resourcePackStack) {
 	let filePromises = {};

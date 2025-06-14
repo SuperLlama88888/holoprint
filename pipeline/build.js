@@ -74,7 +74,7 @@ function processDir(dir) {
 }
 /**
  * @param {string} filename
- * @returns {(function(string, string): { code: string, sourceMap: string|undefined }) | undefined}
+ * @returns {(function(string, string): { code: string, sourceMap: string | undefined }) | undefined}
  */
 function findProcessingFunction(filename) {
 	let fileExtension = path.extname(filename);
