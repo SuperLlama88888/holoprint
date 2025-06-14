@@ -692,10 +692,12 @@ function getInvalidMcstructureErrorMessage(structureFile, nbt) {
  * @returns {Promise<MCStructure>}
  */
 async function readStructureNBT(structureFile) {
-	if(structureFile.size == 0) {
+	let arrayBuffer = await structureFile.arrayBuffer().catch(e => {
+		throw new Error(`Could not read contents of structure file "${structureFile.name}"!\n${e}`);
+	});
+	if(structureFile.size == 0) { // this check must happen after reading the bytes, otherwise Google Drive files can't be read on Android Chrome: https://issues.chromium.org/issues/40123366#comment104
 		throw new UserError(`"${structureFile.name}" is an empty file! Please try exporting your structure again.\nIf you play on a version below 1.20.50, exporting to OneDrive will cause your structure file to be empty.`);
 	}
-	let arrayBuffer = await structureFile.arrayBuffer().catch(e => { throw new Error(`Could not read contents of structure file "${structureFile.name}"!\n${e}`); });
 	try {
 		return await readStructureNBTWithOptions(structureFile, arrayBuffer, {
 			endian: "little", // true .mcstructure files are little-endian
