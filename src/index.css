@@ -432,10 +432,14 @@ img:not(#languageSelectorButton), canvas {
 	& > .previewMessage, & > canvas {
 		width: min(80vmin, 100%);
 		aspect-ratio: 1;
+		box-sizing: border-box;
 	}
 	.statsPanel {
 		width: 0;
 		height: 0;
+		canvas {
+			border: none;
+		}
 	}
 	lil-gui {
 		position: absolute;

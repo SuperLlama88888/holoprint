@@ -493,14 +493,16 @@ export async function makePack(structureFiles, config = {}, resourcePackStack, p
 	
 	if(previewCont) {
 		let showPreview = async () => {
-			await Promise.all(structureSizes.map(async (structureSize, structureI) => {
-				await PreviewRenderer.new(previewCont, packName, textureAtlas, structureSize, blockPalette, boneTemplatePalette, allStructureIndicesByLayer[structureI], {
+			let previews = await Promise.all(structureSizes.map(async (structureSize, structureI) => {
+				let cont = structureI == 0? previewCont : previewCont.parentNode.appendChild(previewCont.cloneNode());
+				let name = structureSizes.length == 0? packName : getDefaultPackName([structureFiles[structureI]]);
+				return await PreviewRenderer.new(cont, name, textureAtlas, structureSize, blockPalette, boneTemplatePalette, allStructureIndicesByLayer[structureI], {
 					showSkybox: config.SHOW_PREVIEW_SKYBOX,
 					showFps: config.SHOW_PREVIEW_WIDGETS,
 					showOptions: config.SHOW_PREVIEW_WIDGETS
 				});
 			}));
-			previewLoadedCallback?.();
+			previewLoadedCallback?.(previews);
 		};
 		if(totalBlockCount < config.PREVIEW_BLOCK_LIMIT) {
 			showPreview();
@@ -1452,19 +1454,16 @@ async function retextureControlItems(config, itemIcons, itemTags, resourceItemTe
 					return;
 				}
 			} else {
-				loadingLegacyItemMappingsPromise ??= new Promise(res => {
+				loadingLegacyItemMappingsPromise ??= pmmpBedrockDataFetcher.fetch("r16_to_current_item_map.json").then(res => res.json()).then(updateMappings => {
 					// these mappings are from the old ids to the new ids. we want to go the other way, because bugrock still uses some old ids in item_texture.json
 					legacyItemMappings = new Map();
-					pmmpBedrockDataFetcher.fetch("r16_to_current_item_map.json").then(res => res.json()).then(updateMappings => {
-						Object.entries(updateMappings["simple"]).forEach(([oldName, newName]) => {
-							legacyItemMappings.set(newName.slice(10), [oldName.slice(10), -1]); // first 10 characters are "minecraft:"
+					Object.entries(updateMappings["simple"]).forEach(([oldName, newName]) => {
+						legacyItemMappings.set(newName.slice(10), [oldName.slice(10), -1]); // first 10 characters are "minecraft:"
+					});
+					Object.entries(updateMappings["complex"]).forEach(([oldName, newNames]) => { // complex mappings have indices, used in boats among others
+						Object.entries(newNames).forEach(([index, newName]) => {
+							legacyItemMappings.set(newName.slice(10), [oldName.slice(10), index]);
 						});
-						Object.entries(updateMappings["complex"]).forEach(([oldName, newNames]) => { // complex mappings have indices, used in boats among others
-							Object.entries(newNames).forEach(([index, newName]) => {
-								legacyItemMappings.set(newName.slice(10), [oldName.slice(10), index]);
-							});
-						});
-						res();
 					});
 				});
 				try {

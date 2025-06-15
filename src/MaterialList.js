@@ -40,7 +40,7 @@ export default class MaterialList extends AsyncFactory {
 		this.#ignoredBlocks = materialListMappings["ignored_blocks"];
 		let blockToItemMappings = Object.entries(materialListMappings["block_to_item_mappings"]);
 		this.#individualBlockToItemMappings = new Map(blockToItemMappings.filter(([blockName]) => !blockName.startsWith("/") && !blockName.endsWith("/")));
-		this.#blockToItemPatternMappings = blockToItemMappings.filter(([pattern]) => pattern.startsWith("/") && pattern.endsWith("/")).map(([pattern, item]) => [new RegExp(pattern.slice(1, -1), "g"), item]);
+		this.#blockToItemPatternMappings = blockToItemMappings.filter(([pattern]) => pattern.startsWith("/") && pattern.endsWith("/")).map(([pattern, item]) => [new RegExp(pattern.slice(1, -1)), item]);
 		this.#itemCountMultipliers = Object.entries(materialListMappings["item_count_multipliers"]).map(([key, value]) => {
 			let itemNames = [];
 			let patterns = [];
@@ -78,7 +78,7 @@ export default class MaterialList extends AsyncFactory {
 		if(!itemName) {
 			let matchingPatternAndReplacement = this.#blockToItemPatternMappings.find(([pattern]) => pattern.test(blockName));
 			if(matchingPatternAndReplacement) {
-				itemName = blockName.replaceAll(...matchingPatternAndReplacement);
+				itemName = blockName.replace(...matchingPatternAndReplacement);
 			} else {
 				itemName = blockName;
 			}

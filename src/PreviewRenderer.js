@@ -79,7 +79,7 @@ export default class PreviewRenderer extends AsyncFactory {
 	#debugHelpers = [];
 	/**
 	 * Create a preview renderer for a completed geometry file.
-	 * @param {HTMLElement} cont
+	 * @param {Node} cont
 	 * @param {string} packName
 	 * @param {TextureAtlas} textureAtlas
 	 * @param {I32Vec3} structureSize

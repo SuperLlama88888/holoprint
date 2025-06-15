@@ -32,7 +32,7 @@ export default class LocalResourcePack extends AsyncFactory {
 		for(let file of abstractFiles) {
 			this.#files.set(file.name, file.blob);
 			if(this.aggressiveHashing) {
-				folderSummary.push(file.name, await sha256(file.blob));
+				folderSummary.push(file.name, await sha256text(file.blob));
 			}
 		}
 		if(this.aggressiveHashing) {
