@@ -1,5 +1,4 @@
-import TextureAtlas from "./TextureAtlas.js";
-import { abs, AsyncFactory, cosDeg, distanceSquared, downloadFile, max, min, onEventAndNow, pi, sinDeg, tan } from "./utils.js";
+import { abs, AsyncFactory, cosDeg, distanceSquared, downloadFile, JSONSet, max, min, onEventAndNow, pi, sinDeg, tan, toImageData } from "./utils.js";
 
 import { Model } from "@bridge-editor/model-viewer";
 
@@ -51,6 +50,9 @@ export default class PreviewRenderer extends AsyncFactory {
 		showOptions: true
 	};
 	#canvasSize = min(window.innerWidth, window.innerHeight) * 0.8;
+	#imageBlob;
+	/** @type {ImageData} */
+	#imageBlobData;
 	#center;
 	#maxDim;
 	#maxDimPixels;
@@ -81,7 +83,7 @@ export default class PreviewRenderer extends AsyncFactory {
 	 * Create a preview renderer for a completed geometry file.
 	 * @param {Node} cont
 	 * @param {string} packName
-	 * @param {TextureAtlas} textureAtlas
+	 * @param {import("./TextureAtlas.js").default} textureAtlas
 	 * @param {I32Vec3} structureSize
 	 * @param {Array<Block>} blockPalette
 	 * @param {Array<BoneTemplate>} boneTemplatePalette
@@ -97,6 +99,7 @@ export default class PreviewRenderer extends AsyncFactory {
 		this.boneTemplatePalette = boneTemplatePalette;
 		this.options = { ...this.options, ...options };
 		
+		this.#imageBlob = this.textureAtlas.imageBlobs.at(-1)[1];
 		this.#center = new THREE.Vector3(-this.structureSize[0] * 8, this.structureSize[1] * 8, -this.structureSize[2] * 8);
 		this.#maxDim = max(...this.structureSize);
 		this.#maxDimPixels = this.#maxDim * 16;
@@ -169,8 +172,8 @@ export default class PreviewRenderer extends AsyncFactory {
 		// THREE ??= await import("three");
 		
 		let can = document.createElement("canvas");
-		let imageBlob = this.textureAtlas.imageBlobs.at(-1)[1];
-		let imageUrl = URL.createObjectURL(imageBlob);
+		let imageUrl = URL.createObjectURL(this.#imageBlob);
+		this.#imageBlobData = await toImageData(this.#imageBlob);
 		
 		this.#renderer = new THREE.WebGLRenderer({
 			canvas: can,
@@ -245,7 +248,8 @@ export default class PreviewRenderer extends AsyncFactory {
 		// animator.play("spawn");
 		
 		for(let i in this.#blockPositions) {
-			let geo = this.#boneTemplateToGeo(this.boneTemplatePalette[i]);
+			let boneTemplate = this.boneTemplatePalette[i];
+			let geo = this.#boneTemplateToGeo(boneTemplate);
 			let model = new Model(geo, imageUrl);
 			let group = model.getGroup();
 			group.rotation.set(0, pi, 0);
@@ -255,10 +259,15 @@ export default class PreviewRenderer extends AsyncFactory {
 			if(!material) {
 				continue;
 			}
-			let instancedGroup = this.#instanceGroupAtPositions(group, positions, material);
-			instancedGroup.castShadow = true;
-			instancedGroup.receiveShadow = true;
-			this.#scene.add(instancedGroup);
+			let isTranslucent = this.#isBoneTemplateTranslucent(boneTemplate)
+			material.transparent = isTranslucent; // blocks with 0 alpha textures won't be marked as transparent, but alpha testing (from model-viewer) will make them work correctly
+			let instancedMesh = this.#instanceGroupAtPositions(group, positions, material);
+			if(isTranslucent) {
+				instancedMesh.renderOrder = positions.length; // more common transparent blocks will be rendered after less common transparent blocks, minimising the amount of visual issues
+			}
+			instancedMesh.castShadow = true;
+			instancedMesh.receiveShadow = true;
+			this.#scene.add(instancedMesh);
 			this.#shouldRenderNextFrame = true;
 		}
 
@@ -357,7 +366,7 @@ export default class PreviewRenderer extends AsyncFactory {
 		let ambientLight = new THREE.AmbientLight(0xFFFFFF, 0.6);
 		this.#scene.add(ambientLight);
 		
-		let shadowFloor = new THREE.Mesh(new THREE.PlaneGeometry(this.#maxDimPixels * 3, this.#maxDimPixels * 3), new THREE.ShadowMaterial({
+		let shadowFloor = new THREE.Mesh(new THREE.PlaneGeometry(this.#maxDimPixels * 5, this.#maxDimPixels * 5), new THREE.ShadowMaterial({
 			opacity: PreviewRenderer.#FLOOR_SHADOW_DARKNESS
 		}));
 		shadowFloor.rotation.x = -pi / 2;
@@ -472,6 +481,27 @@ export default class PreviewRenderer extends AsyncFactory {
 			},
 			"bones": [boneTemplate]
 		};
+	}
+	/**
+	 * Checks whether a bone template has translucent textures.
+	 * @param {BoneTemplate} boneTemplate
+	 * @returns {boolean}
+	 */
+	#isBoneTemplateTranslucent(boneTemplate) {
+		let allUvs = boneTemplate["cubes"].map(cube => Object.values(cube["uv"])).flat();
+		let uvs = Array.from(new JSONSet(allUvs));
+		return uvs.some(({ uv, uv_size }) => {
+			for(let x = uv[0]; x < uv[0] + uv_size[0]; x++) {
+				for(let y = uv[1]; y < uv[1] + uv_size[1]; y++) {
+					let i = (y * this.#imageBlobData.width + x) * 4;
+					let alpha = this.#imageBlobData.data[i + 3];
+					if(alpha > 0 && alpha < 255) { // any pixel with a non-full or non-empty alpha channel makes the entire bone template translucent
+						return true;
+					}
+				}
+			}
+			return false;
+		});
 	}
 	// these functions are for the instancing. chatgpt generated these. i have no clue how they work but they do
 	#instanceGroupAtPositions(group, positions, material) {

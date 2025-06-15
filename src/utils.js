@@ -426,11 +426,12 @@ export function stringToImageData(text, textCol = "black", backgroundCol = "whit
 	return ctx.getImageData(0, 0, can.width, can.height);
 }
 /**
- * Gets an image's full image data.
- * @param {HTMLImageElement} image
- * @returns {ImageData}
+ * Gets an image or an image blob's full image data.
+ * @param {HTMLImageElement | Blob} val
+ * @returns {Promise<ImageData>}
  */
-export function toImageData(image) {
+export async function toImageData(val) {
+	let image = val instanceof HTMLImageElement? val : await toImage(val);
 	let can = new OffscreenCanvas(image.width, image.height);
 	let ctx = can.getContext("2d");
 	ctx.drawImage(image, 0, 0);
@@ -458,7 +459,7 @@ export async function toBlob(val) {
  * @returns {Promise<HTMLImageElement>}
  */
 export async function setImageOpacity(image, opacity) {
-	let imageData = toImageData(image);
+	let imageData = await toImageData(image);
 	let data = imageData.data;
 	for(let i = 0; i < data.length; i += 4) {
 		data[i + 3] *= opacity;
@@ -472,7 +473,7 @@ export async function setImageOpacity(image, opacity) {
  * @returns {Promise<HTMLImageElement>}
  */
 export async function addTintToImage(image, col) {
-	let imageData = toImageData(image);
+	let imageData = await toImageData(image);
 	let data = imageData.data;
 	for(let i = 0; i < data.length; i += 4) {
 		data[i] *= col[0];
@@ -558,6 +559,11 @@ export function getStackTrace(e = new Error()) {
 export async function sha256(blob) {
 	return new Uint8Array(await crypto.subtle.digest("SHA-256", await blob.arrayBuffer()));
 }
+/**
+ * Returns the SHA-256 hash of text
+ * @param {string} text
+ * @returns {Promise<Uint8Array>}
+ */
 export async function sha256text(text) {
 	return new Uint8Array(await crypto.subtle.digest("SHA-256", (new TextEncoder()).encode(text)));
 }
@@ -705,10 +711,10 @@ function parseJsonBigIntSafe(value) { // this function is unused but I'm keeping
 	return JSON.parse(value, (_, x, context) => context && Number.isInteger(x) && !Number.isSafeInteger(x)? BigInt(context.source) : x);
 }
 export class JSONSet extends Set {
-	#actualValues;
-	constructor() {
+	#actualValues = new Map();
+	constructor(values) {
 		super();
-		this.#actualValues = new Map();
+		values?.forEach(value => this.add(value));
 	}
 	indexOf(value) { // not part of sets normally! but they keep their order anyway so...
 		let stringifiedValues = Array.from(super[Symbol.iterator]());

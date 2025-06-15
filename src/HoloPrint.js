@@ -52,7 +52,7 @@ const HOLOGRAM_LAYER_MODES = createNumericEnum(["SINGLE", "ALL_BELOW"]);
  * @param {HoloPrintConfig} [config]
  * @param {ResourcePackStack} [resourcePackStack]
  * @param {HTMLElement} [previewCont]
- * @param {Function} [previewLoadedCallback] A function that will be called once the preview has finished loading
+ * @param {function(Array<PreviewRenderer>): void} [previewLoadedCallback] A function that will be called once the preview has finished loading
  * @returns {Promise<File>} Resource pack (`*.mcpack`)
  */
 export async function makePack(structureFiles, config = {}, resourcePackStack, previewCont, previewLoadedCallback) {
@@ -495,7 +495,7 @@ export async function makePack(structureFiles, config = {}, resourcePackStack, p
 		let showPreview = async () => {
 			let previews = await Promise.all(structureSizes.map(async (structureSize, structureI) => {
 				let cont = structureI == 0? previewCont : previewCont.parentNode.appendChild(previewCont.cloneNode());
-				let name = structureSizes.length == 0? packName : getDefaultPackName([structureFiles[structureI]]);
+				let name = structureSizes.length == 1? packName : getDefaultPackName([structureFiles[structureI]]);
 				return await PreviewRenderer.new(cont, name, textureAtlas, structureSize, blockPalette, boneTemplatePalette, allStructureIndicesByLayer[structureI], {
 					showSkybox: config.SHOW_PREVIEW_SKYBOX,
 					showFps: config.SHOW_PREVIEW_WIDGETS,

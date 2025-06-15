@@ -289,7 +289,7 @@ export default class TextureAtlas extends AsyncFactory {
 			let imageNotFound = false;
 			if(imageRes.ok) {
 				let image = await toImage(imageRes);
-				imageData = toImageData(image);
+				imageData = await toImageData(image);
 			} else {
 				imageRes = await this.resourcePackStack.fetchResource(`${texturePath}.tga`);
 				if(imageRes.ok) {
