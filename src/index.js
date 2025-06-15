@@ -9,6 +9,7 @@ import TextureAtlas from "./TextureAtlas.js";
 import ItemCriteriaInput from "./components/ItemCriteriaInput.js";
 import FileInputTable from "./components/FileInputTable.js";
 import SimpleLogger from "./components/SimpleLogger.js";
+import LilGui from "./components/LilGui.js";
 
 const IN_PRODUCTION = false;
 const ACTUAL_CONSOLE_LOG = false;
@@ -210,6 +211,7 @@ document[onEvent]("DOMContentLoaded", () => {
 	});
 	customElements.define("file-input-table", FileInputTable);
 	customElements.define("simple-logger", SimpleLogger);
+	customElements.define("lil-gui", LilGui);
 	if(!ACTUAL_CONSOLE_LOG) {
 		logger = selectEl("#log");
 		logger.patchConsoleMethods();

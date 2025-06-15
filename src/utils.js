@@ -409,7 +409,9 @@ export function isTouchInElementVerticalBounds(touch, el) {
 	return touch.clientY >= domRect.top && touch.clientY <= domRect.bottom;
 }
 export function htmlCodeToElement(htmlCode) {
-	return (new DOMParser()).parseFromString(htmlCode, "text/html").body.firstElementChild;
+	let template = document.createElement("template");
+	template.innerHTML = htmlCode;
+	return template.content.firstElementChild;
 }
 export function stringToImageData(text, textCol = "black", backgroundCol = "white", font = "12px monospace") {
 	let can = new OffscreenCanvas(0, 20);

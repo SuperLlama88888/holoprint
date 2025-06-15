@@ -135,10 +135,10 @@ function processCSS(code, filename, disableSourceMap = false) {
  * @returns {{ code: string }}
  */
 function processJS(code, filename) {
+	code = code.replace("const IN_PRODUCTION = false;", "const IN_PRODUCTION = true;");
 	if(filename == "HoloPrint.js") {
 		code = code.replace(`const VERSION = "dev";`, `const VERSION = "${buildVersion}";`);
 	} else if(filename == "index.js") {
-		code = code.replace("const IN_PRODUCTION = false;", "const IN_PRODUCTION = true;");
 		if(exportHoloPrintLib) {
 			code = `export * from "./HoloPrint.js";` + code;
 		}

@@ -437,7 +437,7 @@ img:not(#languageSelectorButton), canvas {
 		width: 0;
 		height: 0;
 	}
-	.lil-gui {
+	lil-gui {
 		position: absolute;
 		right: 0;
 	}

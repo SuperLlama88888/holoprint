@@ -6,8 +6,9 @@ import { Model } from "@bridge-editor/model-viewer";
 import { OrbitControls } from "three/addons/controls/OrbitControls.js";
 import * as THREE from "three";
 import Stats from "stats.js";
-import { GUI } from "lil-gui";
 // let StandaloneModelViewer;
+
+const IN_PRODUCTION = false;
 
 export default class PreviewRenderer extends AsyncFactory {
 	static #CAMERA_FOV = 70; // degrees
@@ -53,6 +54,7 @@ export default class PreviewRenderer extends AsyncFactory {
 	#center;
 	#maxDim;
 	#maxDimPixels;
+	#lastFrameTime = performance.now();
 	#blockPositions = [];
 	/** @type {THREE.DirectionalLight} */
 	#directionalLight;
@@ -103,12 +105,18 @@ export default class PreviewRenderer extends AsyncFactory {
 			this.#stats = new Stats();
 			this.#stats.showPanel(0);
 			this.#stats.dom.classList.add("statsPanel");
+			this.#stats.dom.childNodes.forEach(can => {
+				let ctx = can.getContext("2d");
+				const defaultFontFamilies = "Helvetica"; // https://github.com/mrdoob/stats.js/blob/71e88f65280fd5c6e91d1f84f0f633d372ed7eae/src/Stats.js#L128
+				ctx.font = ctx.font.replace(defaultFontFamilies, `"Space Grotesk", ${defaultFontFamilies}`);
+			});
 		}
 		if(this.options.showOptions) {
-			this.#optionsGui = new GUI({
-				container: this.cont,
-				title: "Options"
-			});
+			/** @type {import("./components/LilGui.js").default} */
+			let guiEl = document.createElement("lil-gui");
+			this.cont.appendChild(guiEl);
+			this.#optionsGui = guiEl.gui;
+			this.#optionsGui.title("Options");
 			this.#optionsGui.hide();
 			this.#optionsGui.close();
 			this.#optionsGui.onChange(() => {
@@ -178,10 +186,14 @@ export default class PreviewRenderer extends AsyncFactory {
 		this.#controls.addEventListener("change", () => {
 			this.#shouldRenderNextFrame = true;
 			const epsilon = 0.001;
-			if(abs(this.#controls._sphericalDelta.phi) < epsilon) {
+			const targetFps = 60;
+			let timeSinceLastFrame = performance.now() - this.#lastFrameTime;
+			let fps = 1000 / timeSinceLastFrame;
+			let effectiveEpsilon = epsilon * targetFps / fps;
+			if(abs(this.#controls._sphericalDelta.phi) < effectiveEpsilon) {
 				this.#controls._sphericalDelta.phi = 0;
 			}
-			if(abs(this.#controls._sphericalDelta.theta) < epsilon) {
+			if(abs(this.#controls._sphericalDelta.theta) < effectiveEpsilon) {
 				this.#controls._sphericalDelta.theta = 0;
 			}
 		});
@@ -206,19 +218,21 @@ export default class PreviewRenderer extends AsyncFactory {
 					shadowOption.hide();
 				}
 			});
-			shadowOption = this.#optionsGui.add(this.options, "directionalLightShadowMapResolution", 1, 5, 1).name("Shadow resolution").onChange(() => this.#updateDirectionalLightShadowMapSize());
+			shadowOption = this.#optionsGui.add(this.options, "directionalLightShadowMapResolution", 1, 5, 1).name("Shadow quality").onChange(() => this.#updateDirectionalLightShadowMapSize());
 			this.#optionsGui.add(this.options, "directionalLightAngle", 0, 360, 1).name("Light angle");
 			this.#optionsGui.add(this.options, "directionalLightHeight", 0.1, 2, 0.01).name("Light height");
 			this.#optionsGui.add(this.options, "showSkybox").name("Show skybox").onChange(() => this.#initBackground());
 			this.#optionsGui.add(this.options, "highResolution").name("High resolution").onChange(() => this.#setSize());
 			this.#optionsGui.add(this, "downloadScreenshot").name("Screenshot");
-			this.#optionsGui.add(this.options, "debugHelpersVisible").name("Debug").onChange(() => {
-				if(this.options.debugHelpersVisible) {
-					this.#scene.add(...this.#debugHelpers);
-				} else {
-					this.#scene.remove(...this.#debugHelpers);
-				}
-			});
+			if(!IN_PRODUCTION) {
+				this.#optionsGui.add(this.options, "debugHelpersVisible").name("Debug").onChange(() => {
+					if(this.options.debugHelpersVisible) {
+						this.#scene.add(...this.#debugHelpers);
+					} else {
+						this.#scene.remove(...this.#debugHelpers);
+					}
+				});
+			}
 			this.#optionsGui.show();
 		}
 		
@@ -266,6 +280,7 @@ export default class PreviewRenderer extends AsyncFactory {
 			this.#render();
 		}
 		
+		this.#lastFrameTime = performance.now();
 		window.requestAnimationFrame(() => this.#loop());
 	}
 	#render() {
