@@ -50,6 +50,7 @@ export default class PreviewRenderer extends AsyncFactory {
 		showOptions: true
 	};
 	#canvasSize = min(window.innerWidth, window.innerHeight) * 0.8;
+	#loadingMessage;
 	#can;
 	#imageBlob;
 	/** @type {ImageData} */
@@ -106,6 +107,18 @@ export default class PreviewRenderer extends AsyncFactory {
 		this.#maxDim = max(...this.structureSize);
 		this.#maxDimPixels = this.#maxDim * 16;
 		
+		this.#loadingMessage = document.createElement("div");
+		this.#loadingMessage.classList.add("previewMessage");
+		let p = document.createElement("p");
+		let span = document.createElement("span");
+		span.dataset.translate = "preview.loading";
+		p.appendChild(span);
+		let loader = document.createElement("div");
+		loader.classList.add("loader");
+		p.appendChild(loader);
+		this.#loadingMessage.appendChild(p);
+		this.cont.appendChild(this.#loadingMessage);
+		
 		if(this.options.showFps) {
 			this.#stats = new Stats();
 			this.#stats.showPanel(0);
@@ -124,7 +137,7 @@ export default class PreviewRenderer extends AsyncFactory {
 			let guiEl = document.createElement("lil-gui");
 			this.cont.appendChild(guiEl);
 			this.#optionsGui = guiEl.gui;
-			this.#optionsGui.title("Options");
+			this.#optionsGui.$title.dataset.translate = "preview.options";
 			this.#optionsGui.hide();
 			this.#optionsGui.close();
 			this.#optionsGui.onChange(() => {
@@ -162,18 +175,6 @@ export default class PreviewRenderer extends AsyncFactory {
 		this.options.maxPointLights = min(this.options.maxPointLights, this.#pointLights.length);
 	}
 	async init() {
-		let loadingMessage = document.createElement("div");
-		loadingMessage.classList.add("previewMessage");
-		let p = document.createElement("p");
-		let span = document.createElement("span");
-		span.dataset.translate = "preview.loading";
-		p.appendChild(span);
-		let loader = document.createElement("div");
-		loader.classList.add("loader");
-		p.appendChild(loader);
-		loadingMessage.appendChild(p);
-		this.cont.appendChild(loadingMessage);
-		
 		// THREE ??= await import("three");
 		
 		let imageUrl = URL.createObjectURL(this.#imageBlob);
@@ -208,37 +209,37 @@ export default class PreviewRenderer extends AsyncFactory {
 		this.#addLighting();
 		await this.#initBackground();
 		this.#loop();
-		loadingMessage.replaceWith(this.#can);
+		this.#loadingMessage.replaceWith(this.#can);
 		
 		if(this.options.showFps) {
 			this.cont.appendChild(this.#stats.dom);
 		}
 		if(this.options.showOptions) {
 			if(this.#pointLights.length > 0) {
-				this.#optionsGui.add(this.options, "maxPointLights", 0, this.#pointLights.length, 1).name("Max point lights").onChange(() => this.#initPointLights());
+				this.#guiLocName(this.#optionsGui.add(this.options, "maxPointLights", 0, this.#pointLights.length, 1).onChange(() => this.#initPointLights()), "preview.options.maxPointLights");
 			}
 			let shadowOption;
-			this.#optionsGui.add(this.#directionalLight, "castShadow").name("Shadows").onChange(() => {
+			this.#guiLocName(this.#optionsGui.add(this.#directionalLight, "castShadow").onChange(() => {
 				if(this.#directionalLight.castShadow) {
 					shadowOption.show();
 				} else {
 					shadowOption.hide();
 				}
-			});
-			shadowOption = this.#optionsGui.add(this.options, "directionalLightShadowMapResolution", 1, 5, 1).name("Shadow quality").onChange(() => this.#updateDirectionalLightShadowMapSize());
-			this.#optionsGui.add(this.options, "directionalLightAngle", 0, 360, 1).name("Light angle");
-			this.#optionsGui.add(this.options, "directionalLightHeight", 0.1, 2, 0.01).name("Light height");
-			this.#optionsGui.add(this.options, "showSkybox").name("Show skybox").onChange(() => this.#initBackground());
-			this.#optionsGui.add(this.options, "highResolution").name("High resolution").onChange(() => this.#setSize());
-			this.#optionsGui.add(this, "downloadScreenshot").name("Screenshot");
+			}), "preview.options.shadowsEnabled");
+			shadowOption = this.#guiLocName(this.#optionsGui.add(this.options, "directionalLightShadowMapResolution", 1, 5, 1).onChange(() => this.#updateDirectionalLightShadowMapSize()), "preview.options.shadowQuality");
+			this.#guiLocName(this.#optionsGui.add(this.options, "directionalLightAngle", 0, 360, 1), "preview.options.lightAngle");
+			this.#guiLocName(this.#optionsGui.add(this.options, "directionalLightHeight", 0.1, 2, 0.01), "preview.options.lightHeight");
+			this.#guiLocName(this.#optionsGui.add(this.options, "showSkybox").onChange(() => this.#initBackground()), "preview.options.showSkybox");
+			this.#guiLocName(this.#optionsGui.add(this.options, "highResolution").onChange(() => this.#setSize()), "preview.options.highRes");
+			this.#guiLocName(this.#optionsGui.add(this, "downloadScreenshot"), "preview.options.takeScreenshot");
 			if(!IN_PRODUCTION) {
-				this.#optionsGui.add(this.options, "debugHelpersVisible").name("Debug").onChange(() => {
+				this.#optionsGui.add(this.options, "debugHelpersVisible").onChange(() => {
 					if(this.options.debugHelpersVisible) {
 						this.#scene.add(...this.#debugHelpers);
 					} else {
 						this.#scene.remove(...this.#debugHelpers);
 					}
-				});
+				}).name("Debug");
 			}
 			this.#optionsGui.show();
 		}
@@ -274,12 +275,11 @@ export default class PreviewRenderer extends AsyncFactory {
 			this.#scene.add(instancedMesh);
 			this.#shouldRenderNextFrame = true;
 		}
-
 		
 		URL.revokeObjectURL(imageUrl);
 	}
 	/** Downloads a screenshot of the preview. */
-	async downloadScreenshot() {
+	downloadScreenshot() {
 		this.#render();
 		this.#renderer.domElement.toBlob(imageBlob => {
 			let imageFile = new File([imageBlob], `Screenshot ${this.packName}.png`);
@@ -306,6 +306,17 @@ export default class PreviewRenderer extends AsyncFactory {
 		this.#renderer.render(this.#scene, this.#camera);
 		
 		this.#stats?.end();
+	}
+	/**
+	 * Adds the localised name to a lil-gui controller.
+	 * @template {import("lil-gui").Controller} T
+	 * @param {T} controller
+	 * @param {string} translationKey
+	 * @returns {T}
+	 */
+	#guiLocName(controller, translationKey) {
+		controller.$name.dataset.translate = translationKey;
+		return controller;
 	}
 	/** Sets the canvas size, scaling up if the high resolution option is enabled. */
 	#setSize() {
@@ -406,7 +417,8 @@ export default class PreviewRenderer extends AsyncFactory {
 	}
 	/** Sets the size of the directional light's shadow map. */
 	#updateDirectionalLightShadowMapSize() {
-		let shadowMapSize = (this.#maxDim < 24? 1024 : this.#maxDim < 45? 2048 : 4096) * 2 ** (this.options.directionalLightShadowMapResolution - 2);
+		let optionsFactor = 2 ** (this.options.directionalLightShadowMapResolution - 2);
+		let shadowMapSize = (this.#maxDim < 24? 1024 : this.#maxDim < 45? 2048 : 4096) * optionsFactor;
 		this.#directionalLight.shadow.mapSize.set(shadowMapSize, shadowMapSize)
 		this.#directionalLight.shadow.map?.setSize(shadowMapSize, shadowMapSize);
 	}
@@ -539,10 +551,6 @@ export default class PreviewRenderer extends AsyncFactory {
 				geometries.push(geom);
 			}
 		});
-		if(geometries.length == 0) {
-			console.warn("Group contains no meshes");
-			return null;
-		}
 		// Merge geometries manually
 		let mergedGeo = this.#mergeBufferGeometries(geometries);
 		let instancedMesh = new THREE.InstancedMesh(mergedGeo, material, positions.length);
@@ -576,9 +584,7 @@ export default class PreviewRenderer extends AsyncFactory {
 				if(!attr) {
 					return;
 				}
-				if(!attrArrays[name]) {
-					attrArrays[name] = [];
-				}
+				attrArrays[name] ??= [];
 				attrArrays[name].push(attr.array);
 				attrItemSizes[name] = attr.itemSize;
 			});

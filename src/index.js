@@ -17,27 +17,6 @@ const ACTUAL_CONSOLE_LOG = false;
 const supabaseProjectUrl = "https://gnzyfffwvulwxbczqpgl.supabase.co";
 const supabaseApiKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImduenlmZmZ3dnVsd3hiY3pxcGdsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MjMwMjE3NzgsImV4cCI6MjAzODU5Nzc3OH0.AWMhFcP3PiMD3dMC_SeIVuPx128KVpgfkZ5qBStDuVw";
 
-window.OffscreenCanvas ??= class OffscreenCanvas {
-	constructor(w, h) {
-		console.debug("Using OffscreenCanvas polyfill");
-		this.canvas = document.createElement("canvas");
-		this.canvas.width = w;
-		this.canvas.height = h;
-		this.canvas.convertToBlob = () => {
-			return new Promise((res, rej) => {
-				this.canvas.toBlob(blob => {
-					if(blob) {
-						res(blob);
-					} else {
-						rej();
-					}
-				});
-			});
-		};
-		return this.canvas;
-	}
-};
-
 let dropFileNotice;
 
 /** @type {HTMLFormElement} */
@@ -341,12 +320,17 @@ document[onEvent]("DOMContentLoaded", () => {
 				console.log("mutations observed when retranslating:", mutations); // should never happen!
 				return;
 			}
-			let shouldRetranslate = mutations.find(mutation => mutation.type == "childList" && Array.from(mutation.addedNodes).some(node => node instanceof Element && (Array.from(node.attributes).some(attr => attr.name.startsWith("data-translate") || attr.name.startsWith("data-translation-sub-")) || getAllChildren(node).some(el => Array.from(el.attributes).some(attr => attr.name.startsWith("data-translate") || attr.name.startsWith("data-translation-sub-"))))) || mutation.type == "attributes" && (mutation.attributeName.startsWith("data-translate") || mutation.attributeName.startsWith("data-translation-sub-")) && mutation.target.getAttribute(mutation.attributeName) != mutation.oldValue); // retranslate when an element with a translate dataset attribute or a child with a translate dataset attribute is added, or when a translate dataset attribute is changed
+			let allAddedChildren = mutations.flatMap(mutation => Array.from(mutation.addedNodes)).filter(node => node instanceof Element);
+			let shouldRetranslate = allAddedChildren.some(node => Array.from(node.attributes).some(attr => attr.name.startsWith("data-translate") || attr.name.startsWith("data-translation-sub-")) || getAllChildren(node).some(el => Array.from(el.attributes).some(attr => attr.name.startsWith("data-translate") || attr.name.startsWith("data-translation-sub-")))) || mutations.find(mutation => mutation.type == "attributes" && (mutation.attributeName.startsWith("data-translate") || mutation.attributeName.startsWith("data-translation-sub-")) && mutation.target.getAttribute(mutation.attributeName) != mutation.oldValue); // retranslate when an element with a translate dataset attribute or a child with a translate dataset attribute is added, or when a translate dataset attribute is changed
 			if(shouldRetranslate) {
 				retranslating = true;
 				translatePage(languageSelector.value);
 				retranslating = false;
 			}
+			let newShadowRoots = removeFalsies(allAddedChildren.map(node => node.shadowRoot));
+			newShadowRoots.forEach(shadowRoot => {
+				bodyObserver.observe(shadowRoot, observerConfig);
+			});
 		});
 		let observerConfig = {
 			childList: true,

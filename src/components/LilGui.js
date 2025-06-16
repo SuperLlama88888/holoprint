@@ -3,7 +3,7 @@ import { html, htmlCodeToElement, selectEls } from "../utils.js";
 
 export default class LilGui extends HTMLElement {
 	/** @type {HTMLStyleElement} */
-	static lilGuiStylesheet;
+	static #lilGuiStylesheet;
 	
 	/** @type {GUI} */
 	gui;
@@ -18,21 +18,21 @@ export default class LilGui extends HTMLElement {
 		this.gui = new GUI({
 			container: this.shadowRoot
 		});
-		if(!LilGui.lilGuiStylesheet) {
-			LilGui.lilGuiStylesheet = Array.from(selectEls("head > style")).find(el => !previousStyles.has(el));
-			LilGui.lilGuiStylesheet.remove();
+		if(!LilGui.#lilGuiStylesheet) {
+			LilGui.#lilGuiStylesheet = Array.from(selectEls("head > style")).find(el => !previousStyles.has(el));
+			LilGui.#lilGuiStylesheet.remove();
 		}
-		this.shadowRoot.appendChild(LilGui.lilGuiStylesheet.cloneNode(true));
+		this.shadowRoot.appendChild(LilGui.#lilGuiStylesheet.cloneNode(true));
 		this.shadowRoot.appendChild(htmlCodeToElement(html`
 			<style>
 				:host {
-					width: calc(100% - 80px);
+					width: min(calc(100% - 80px), 245px);
 				}
 				.lil-gui {
 					--font-family: "Space Grotesk", monospace;
 					--widget-height: 20px !important;
 					--spacing: 4px !important;
-					--width: min(100%, 245px);
+					--width: 100%;
 					float: right;
 				}
 			</style>

@@ -494,6 +494,9 @@ export async function makePack(structureFiles, config = {}, resourcePackStack, p
 	if(previewCont) {
 		let showPreview = async () => {
 			let previews = await Promise.all(structureSizes.map(async (structureSize, structureI) => {
+				if(structureI > 0) {
+					previewCont.parentNode.appendChild(document.createElement("hr"));
+				}
 				let cont = structureI == 0? previewCont : previewCont.parentNode.appendChild(previewCont.cloneNode());
 				let name = structureSizes.length == 1? packName : getDefaultPackName([structureFiles[structureI]]);
 				return await PreviewRenderer.new(cont, name, textureAtlas, structureSize, blockPalette, boneTemplatePalette, allStructureIndicesByLayer[structureI], {

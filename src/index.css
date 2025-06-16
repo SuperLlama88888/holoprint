@@ -429,8 +429,10 @@ img:not(#languageSelectorButton), canvas {
 	text-align: center;
 	width: min(80vmin, 100%);
 	
-	& > .previewMessage, & > canvas {
+	& > .previewMessage, & > canvas, & ~ hr {
 		width: min(80vmin, 100%);
+	}
+	& > .previewMessage, & > canvas {
 		aspect-ratio: 1;
 		box-sizing: border-box;
 	}
@@ -441,9 +443,11 @@ img:not(#languageSelectorButton), canvas {
 			border: none;
 		}
 	}
-	lil-gui {
-		position: absolute;
-		right: 0;
+	@media (min-width: 451px) and (min-height: 451px) {
+		lil-gui {
+			position: absolute;
+			right: 0;
+		}
 	}
 }
 .previewMessage {
