@@ -216,7 +216,7 @@ export function makeNullsEmpty(arr) {
  * Groups an array into two arrays based on a condition function.
  * @template T
  * @param {Array<T>} arr
- * @param {function(T): boolean} conditionFunc
+ * @param {(item: T) => boolean} conditionFunc
  * @returns {[Array<T>, Array<T>]}
  */
 export function conditionallyGroup(arr, conditionFunc) {
@@ -230,7 +230,7 @@ export function conditionallyGroup(arr, conditionFunc) {
  * Separates array items based on the result of a grouping function.
  * @template T
  * @param {Array<T>} items
- * @param {function(T): string} groupFunc
+ * @param {(item: T) => string} groupFunc
  * @returns {Record<string, Array<T>>}
  */
 export function groupBy(items, groupFunc) { // native Object.groupBy is only 89.47% on caniuse...

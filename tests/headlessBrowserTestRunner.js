@@ -11,8 +11,8 @@ export const plainTextHeaders = {
 };
 
 /**
- * @param {function(puppeteer.Page): Promise<boolean>} testBody
- * @param {function(http.IncomingMessage): Promise<void>} [httpReqFunc]
+ * @param {(page: puppeteer.Page) => Promise<boolean>} testBody
+ * @param {(req: http.IncomingMessage, res: http.ServerResponse, page: puppeteer.Page) => Promise<void>} [httpReqFunc]
  * @param {string} [codeDirectory]
  */
 export async function test(testBody, httpReqFunc, codeDirectory = "dist") {
@@ -81,8 +81,8 @@ export async function test(testBody, httpReqFunc, codeDirectory = "dist") {
 	}
 }
 /**
- * @param {function(puppeteer.Page): Promise<boolean>} testBody
- * @param {function(http.IncomingMessage): Promise<void>} [httpReqFunc]
+ * @param {(page: puppeteer.Page) => Promise<boolean>} testBody
+ * @param {(req: http.IncomingMessage, res: http.ServerResponse, page: puppeteer.Page) => Promise<void>} [httpReqFunc]
  */
 export async function testOnSourceCode(testBody, httpReqFunc) {
 	await test(testBody, httpReqFunc, "src");

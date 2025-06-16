@@ -111,7 +111,7 @@ export default class SpawnAnimationMaker {
 	}
 	/**
 	 * Creates an animation from keyframes.
-	 * @param {function(number): any} animFunc The function to be animated with keyframes
+	 * @param {(keyframe: number) => any} animFunc The function to be animated with keyframes
 	 * @param {Array<number>} keyframes
 	 * @param {number} delay
 	 * @returns {Record<string, number>}

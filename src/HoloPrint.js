@@ -52,7 +52,7 @@ const HOLOGRAM_LAYER_MODES = createNumericEnum(["SINGLE", "ALL_BELOW"]);
  * @param {HoloPrintConfig} [config]
  * @param {ResourcePackStack} [resourcePackStack]
  * @param {HTMLElement} [previewCont]
- * @param {function(Array<PreviewRenderer>): void} [previewLoadedCallback] A function that will be called once the preview has finished loading
+ * @param {(previews: Array<PreviewRenderer>) => void} [previewLoadedCallback] A function that will be called once the preview has finished loading
  * @returns {Promise<File>} Resource pack (`*.mcpack`)
  */
 export async function makePack(structureFiles, config = {}, resourcePackStack, previewCont, previewLoadedCallback) {
