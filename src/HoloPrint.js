@@ -1939,7 +1939,7 @@ function stringifyWithFixedDecimals(value) {
 /**
  * @typedef {object} PreviewPointLight A point light in the structure preview.
  * @property {Vec3} pos Position in Three.js space
- * @property {number} col As a hex number, e.g. 0xFF0000
+ * @property {import("three").Color} col As a hex number, e.g. 0xFF0000
  * @property {number} intensity
  */
 /**

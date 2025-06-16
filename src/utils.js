@@ -165,6 +165,9 @@ export function sinDeg(deg) {
 export function cosDeg(deg) {
 	return cos(deg * pi / 180);
 }
+export function tanDeg(deg) {
+	return tan(deg * pi / 180);
+}
 
 export function arrayMin(arr) {
 	let min = Infinity;

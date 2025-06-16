@@ -1,4 +1,4 @@
-import { abs, AsyncFactory, cosDeg, distanceSquared, downloadFile, JSONSet, max, min, onEventAndNow, pi, sinDeg, tan, toImageData } from "./utils.js";
+import { abs, AsyncFactory, cosDeg, distanceSquared, downloadFile, JSONSet, max, min, onEventAndNow, pi, sinDeg, tanDeg, toImageData } from "./utils.js";
 
 import { Model } from "@bridge-editor/model-viewer";
 
@@ -50,6 +50,7 @@ export default class PreviewRenderer extends AsyncFactory {
 		showOptions: true
 	};
 	#canvasSize = min(window.innerWidth, window.innerHeight) * 0.8;
+	#can;
 	#imageBlob;
 	/** @type {ImageData} */
 	#imageBlobData;
@@ -99,6 +100,7 @@ export default class PreviewRenderer extends AsyncFactory {
 		this.boneTemplatePalette = boneTemplatePalette;
 		this.options = { ...this.options, ...options };
 		
+		this.#can = document.createElement("canvas");
 		this.#imageBlob = this.textureAtlas.imageBlobs.at(-1)[1];
 		this.#center = new THREE.Vector3(-this.structureSize[0] * 8, this.structureSize[1] * 8, -this.structureSize[2] * 8);
 		this.#maxDim = max(...this.structureSize);
@@ -109,6 +111,9 @@ export default class PreviewRenderer extends AsyncFactory {
 			this.#stats.showPanel(0);
 			this.#stats.dom.classList.add("statsPanel");
 			this.#stats.dom.childNodes.forEach(can => {
+				if(!(can instanceof HTMLCanvasElement)) {
+					return;
+				}
 				let ctx = can.getContext("2d");
 				const defaultFontFamilies = "Helvetica"; // https://github.com/mrdoob/stats.js/blob/71e88f65280fd5c6e91d1f84f0f633d372ed7eae/src/Stats.js#L128
 				ctx.font = ctx.font.replace(defaultFontFamilies, `"Space Grotesk", ${defaultFontFamilies}`);
@@ -146,7 +151,7 @@ export default class PreviewRenderer extends AsyncFactory {
 							let [col, intensity] = Array.isArray(lightInfo)? lightInfo : [lightInfo, PreviewRenderer.#POINT_LIGHT_DEFAULT_INTENSITY];
 							this.#pointLights.push({
 								"pos": [-16 * x, 16 * y + 8, -16 * z],
-								"col": col,
+								"col": new THREE.Color(col),
 								"intensity": intensity
 							});
 						}
@@ -171,19 +176,18 @@ export default class PreviewRenderer extends AsyncFactory {
 		
 		// THREE ??= await import("three");
 		
-		let can = document.createElement("canvas");
 		let imageUrl = URL.createObjectURL(this.#imageBlob);
 		this.#imageBlobData = await toImageData(this.#imageBlob);
 		
 		this.#renderer = new THREE.WebGLRenderer({
-			canvas: can,
+			canvas: this.#can,
 			alpha: true,
 			antialias: true,
 		});
 		this.#renderer.setPixelRatio(window.devicePixelRatio);
 		this.#renderer.shadowMap.enabled = true;
 		this.#renderer.shadowMap.type = THREE.PCFShadowMap;
-		this.#setupCameraAndControls(can);
+		this.#setupCameraAndControls();
 		this.#scene = new THREE.Scene();
 		window[onEventAndNow]("resize", () => this.#setSize());
 		this.#controls.addEventListener("change", () => {
@@ -204,7 +208,7 @@ export default class PreviewRenderer extends AsyncFactory {
 		this.#addLighting();
 		await this.#initBackground();
 		this.#loop();
-		loadingMessage.replaceWith(can);
+		loadingMessage.replaceWith(this.#can);
 		
 		if(this.options.showFps) {
 			this.cont.appendChild(this.#stats.dom);
@@ -274,6 +278,7 @@ export default class PreviewRenderer extends AsyncFactory {
 		
 		URL.revokeObjectURL(imageUrl);
 	}
+	/** Downloads a screenshot of the preview. */
 	async downloadScreenshot() {
 		this.#render();
 		this.#renderer.domElement.toBlob(imageBlob => {
@@ -302,37 +307,40 @@ export default class PreviewRenderer extends AsyncFactory {
 		
 		this.#stats?.end();
 	}
+	/** Sets the canvas size, scaling up if the high resolution option is enabled. */
 	#setSize() {
 		let size = this.#canvasSize * (this.options.highResolution + 1);
 		this.#renderer.setSize(size, size, false);
 	}
+	/** Sets the directional light position. */
 	#setDirectionalLightPos() {
 		let lightSin = sinDeg(this.options.directionalLightAngle);
 		let lightCos = cosDeg(this.options.directionalLightAngle);
 		this.#directionalLight.position.set(this.#center.x + this.#maxDimPixels * lightSin, this.#center.y + this.#maxDimPixels * this.options.directionalLightHeight, this.#center.z + this.#maxDimPixels * lightCos);
 	}
-	#setupCameraAndControls(can) {
-		this.#camera = new THREE.PerspectiveCamera(PreviewRenderer.#CAMERA_FOV, 1, 0.1, 5000); // FIX
-		this.#camera.position.x = -20;
-		this.#camera.position.y = 20;
-		this.#camera.position.z = -20;
-		this.#controls = new OrbitControls(this.#camera, can);
+	/** Initialises and positions the camera and orbit controls. */
+	#setupCameraAndControls() {
+		let controlsMaxDist = this.#maxDimPixels / tanDeg(PreviewRenderer.#CAMERA_FOV / 2) * 5;
+		this.#camera = new THREE.PerspectiveCamera(PreviewRenderer.#CAMERA_FOV, 1, 0.1, controlsMaxDist * 1.25);
+		this.#controls = new OrbitControls(this.#camera, this.#can);
 		this.#controls.minDistance = 10;
-		this.#controls.maxDistance = this.#maxDimPixels / tan(PreviewRenderer.#CAMERA_FOV / 2) * 4;
+		this.#controls.maxDistance = controlsMaxDist;
 		this.#controls.enableDamping = true;
 		this.#controls.dampingFactor = 0.1;
 		
 		// this part is adapted from @bridge-core/model-viewer, itself adapted from https://github.com/mrdoob/three.js/issues/6784#issuecomment-315963625
 		const scale = 1.7;
-		let boundingSphere = new THREE.Box3(new THREE.Vector3(this.structureSize[0] * -16, 0, this.structureSize[2] * -16), new THREE.Vector3(0, this.structureSize[1] * 16, 0)).getBoundingSphere(new THREE.Sphere());
-		let objectAngularSize = this.#camera.fov * pi / 180 * scale;
-		let distanceToCamera = boundingSphere.radius / tan(objectAngularSize / 2);
+		let boundingBox = new THREE.Box3(new THREE.Vector3(this.structureSize[0] * -16, 0, this.structureSize[2] * -16), new THREE.Vector3(0, this.structureSize[1] * 16, 0));
+		let boundingSphere = boundingBox.getBoundingSphere(new THREE.Sphere());
+		let objectAngularSize = this.#camera.fov * scale;
+		let distanceToCamera = boundingSphere.radius / tanDeg(objectAngularSize / 2);
 		let len = distanceToCamera * Math.SQRT2;
 		this.#camera.position.set(len, len, len);
 		this.#camera.lookAt(boundingSphere.center);
 		this.#camera.updateProjectionMatrix();
-		this.#controls.target.set(boundingSphere.center.x, boundingSphere.center.y, boundingSphere.center.z);
+		this.#controls.target.copy(boundingSphere.center);
 	}
+	/** Adds the main directional light, the z-lights, the ambient light, the shadow floor, and the point lights. */
 	#addLighting() {
 		this.#directionalLight = new THREE.DirectionalLight(0xFFFFFF, PreviewRenderer.#DIRECTIONAL_LIGHT_STRENGTH);
 		this.#directionalLight.position.set(this.#center.x + this.#maxDimPixels, this.#center.y + this.#maxDimPixels, this.#center.z + this.#maxDimPixels);
@@ -345,6 +353,7 @@ export default class PreviewRenderer extends AsyncFactory {
 		this.#directionalLight.shadow.camera.bottom = -this.#maxDimPixels;
 		this.#directionalLight.shadow.camera.top = this.#maxDimPixels;
 		this.#directionalLight.shadow.bias = -0.001;
+		this.#directionalLight.shadow.normalBias = 0.1;
 		this.#scene.add(this.#directionalLight);
 		this.#scene.add(this.#directionalLight.target);
 		this.#updateDirectionalLightShadowMapSize();
@@ -395,12 +404,13 @@ export default class PreviewRenderer extends AsyncFactory {
 		}
 		return true;
 	}
+	/** Sets the size of the directional light's shadow map. */
 	#updateDirectionalLightShadowMapSize() {
 		let shadowMapSize = (this.#maxDim < 24? 1024 : this.#maxDim < 45? 2048 : 4096) * 2 ** (this.options.directionalLightShadowMapResolution - 2);
 		this.#directionalLight.shadow.mapSize.set(shadowMapSize, shadowMapSize)
 		this.#directionalLight.shadow.map?.setSize(shadowMapSize, shadowMapSize);
-		this.#directionalLight.shadow.normalBias = 0.1;
 	}
+	/** Syncs the number of point lights in the scene with how many should be rendered. */
 	#initPointLights() {
 		while(this.#pointLightsInScene.length < this.options.maxPointLights) {
 			let light = new THREE.PointLight(0, 0, PreviewRenderer.#POINT_LIGHT_MAX_DISTANCE, 0.7);
@@ -421,6 +431,7 @@ export default class PreviewRenderer extends AsyncFactory {
 			this.#debugHelpers.splice(this.#debugHelpers.indexOf(helper), 1);
 		}
 	}
+	/** Finds which point lights should be rendered, and shows them. */
 	#updatePointLights() {
 		let maxLightsInScene = min(this.#pointLights.length, this.options.maxPointLights);
 		if(maxLightsInScene == 0) {
@@ -438,7 +449,7 @@ export default class PreviewRenderer extends AsyncFactory {
 			this.#pointLightsInScene[i].visible = true;
 			this.#pointLightsInScene[i].position.set(...lightInfo.pos);
 			this.#pointLightsInScene[i].intensity = lightInfo["intensity"];
-			this.#pointLightsInScene[i].color.setHex(lightInfo["col"])
+			this.#pointLightsInScene[i].color.copy(lightInfo["col"])
 		});
 		if(closestSortedLights.length < maxLightsInScene) {
 			for(let i = closestSortedLights.length; i < maxLightsInScene; i++) {
@@ -446,6 +457,10 @@ export default class PreviewRenderer extends AsyncFactory {
 			}
 		}
 	}
+	/**
+	 * Finds all the point lights in the camera's view.
+	 * @returns {Array<PreviewPointLight>}
+	 */
 	#getPointLightsInView() {
 		let cameraFrustum = new THREE.Frustum();
 		let projMatrix = new THREE.Matrix4();
@@ -456,6 +471,7 @@ export default class PreviewRenderer extends AsyncFactory {
 			return cameraFrustum.intersectsSphere(lightSphere);
 		});
 	}
+	/** Adds the background skybox, or clears the background, depending on current options. */
 	async #initBackground() {
 		if(this.options.showSkybox) {
 			if(!this.#skyboxCubemap) {
@@ -504,12 +520,19 @@ export default class PreviewRenderer extends AsyncFactory {
 		});
 	}
 	// these functions are for the instancing. chatgpt generated these. i have no clue how they work but they do
+	/**
+	 * Creates an instanced mesh from a group.
+	 * @param {THREE.Group} group
+	 * @param {Array<Vec3>} positions
+	 * @param {THREE.Material} material
+	 * @returns {THREE.InstancedMesh}
+	 */
 	#instanceGroupAtPositions(group, positions, material) {
 		// Collect geometries, apply local transforms
 		let geometries = [];
 		group.updateWorldMatrix(true, true);
 		group.traverse(child => {
-			if(child.isMesh) {
+			if(child instanceof THREE.Mesh) {
 				let geom = child.geometry.clone();
 				let mat4 = child.matrixWorld.clone();
 				geom.applyMatrix4(mat4);
@@ -532,6 +555,11 @@ export default class PreviewRenderer extends AsyncFactory {
 		});
 		return instancedMesh;
 	}
+	/**
+	 * Merges multiple buffer geometries into one.
+	 * @param {Array<THREE.BufferGeometry>} geometries
+	 * @returns {THREE.BufferGeometry}
+	 */
 	#mergeBufferGeometries(geometries) {
 		let mergedGeometry = new THREE.BufferGeometry();
 		let attributes = ["position", "uv"];
@@ -606,6 +634,9 @@ export default class PreviewRenderer extends AsyncFactory {
 
 /**
  * @typedef {import("./HoloPrint.js").I32Vec3} I32Vec3
+ */
+/**
+ * @typedef {import("./HoloPrint.js").Vec3} Vec3
  */
 /**
  * @typedef {import("./HoloPrint.js").Block} Block
