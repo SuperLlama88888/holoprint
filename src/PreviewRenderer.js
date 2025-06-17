@@ -189,8 +189,8 @@ export default class PreviewRenderer extends AsyncFactory {
 		this.#renderer.shadowMap.enabled = true;
 		this.#renderer.shadowMap.type = THREE.PCFShadowMap;
 		this.#setupCameraAndControls();
+		this.#setSize();
 		this.#scene = new THREE.Scene();
-		window[onEventAndNow]("resize", () => this.#setSize());
 		this.#controls.addEventListener("change", () => {
 			this.#shouldRenderNextFrame = true;
 			const epsilon = 0.001;

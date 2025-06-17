@@ -12,10 +12,12 @@ export default class MaterialList extends AsyncFactory {
 	// I wish I could use import...with to import these from materialListMappings.json, which would have worked with esbuild, but it doesn't let me load JSONC... sad...
 	#ignoredBlocks;
 	#individualBlockToItemMappings;
+	/** @type {Array<[RegExp, string]>} */
 	#blockToItemPatternMappings;
 	#itemCountMultipliers;
 	#specialBlockEntityProperties;
 	#individualSerializationIdPatches;
+	/** @type {Array<[RegExp, string]>} */
 	#serializationIdPatternPatches;
 	#blocksMissingSerializationIds;
 	#translationPatches;
@@ -60,7 +62,7 @@ export default class MaterialList extends AsyncFactory {
 		this.#specialBlockEntityProperties = materialListMappings["special_block_entity_properties"];
 		let serializationIdPatches = Object.entries(materialListMappings["serialization_id_patches"]);
 		this.#individualSerializationIdPatches = new Map(serializationIdPatches.filter(([serializationId]) => !serializationId.startsWith("/") && !serializationId.endsWith("/")));
-		this.#serializationIdPatternPatches = serializationIdPatches.filter(([pattern]) => pattern.startsWith("/") && pattern.endsWith("/")).map(([pattern, serializationId]) => [new RegExp(pattern.slice(1, -1), "g"), serializationId]);
+		this.#serializationIdPatternPatches = serializationIdPatches.filter(([pattern]) => pattern.startsWith("/") && pattern.endsWith("/")).map(([pattern, serializationId]) => [new RegExp(pattern.slice(1, -1)), serializationId]);
 		this.#blocksMissingSerializationIds = materialListMappings["blocks_missing_serialization_ids"];
 		this.#translationPatches = materialListMappings["translation_patches"];
 	}
@@ -213,7 +215,7 @@ export default class MaterialList extends AsyncFactory {
 		} else {
 			let matchingPatternAndReplacement = this.#serializationIdPatternPatches.find(([pattern]) => pattern.test(serializationId));
 			if(matchingPatternAndReplacement) {
-				serializationId = serializationId.replaceAll(...matchingPatternAndReplacement);
+				serializationId = serializationId.replace(...matchingPatternAndReplacement);
 			}
 		}
 		return serializationId.endsWith(".name")? serializationId : `${serializationId}.name`; // apple, breeze rod, trial keys, warped fungus on a stick, and wind charges end with .name already smh :/
