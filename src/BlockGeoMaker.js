@@ -20,7 +20,6 @@ export default class BlockGeoMaker extends AsyncFactory {
 	#globalBlockStateRotations;
 	#blockShapeBlockStateRotations = new Map();
 	#blockNameBlockStateRotations = new Map();
-	#blockNamePatternBlockStateRotations = [];
 	
 	#globalBlockStateTextureVariants;
 	#blockShapeBlockStateTextureVariants = new Map();
@@ -55,13 +54,9 @@ export default class BlockGeoMaker extends AsyncFactory {
 			});
 		});
 		Object.entries(blockStateDefs["rotations"]["block_names"] ?? {}).forEach(([blockNames, rotationDefs]) => {
-			if(blockNames.startsWith("/") && blockNames.endsWith("/")) {
-				this.#blockNamePatternBlockStateRotations.push([new RegExp(blockNames.slice(1, -1)), rotationDefs]);
-			} else {
-				blockNames.split(",").forEach(blockName => {
-					this.#blockNameBlockStateRotations.set(blockName, rotationDefs); // todo: make these Maps?
-				});
-			}
+			blockNames.split(",").forEach(blockName => {
+				this.#blockNameBlockStateRotations.set(blockName, rotationDefs);
+			});
 		});
 		
 		this.#globalBlockStateTextureVariants = blockStateDefs["texture_variants"]["*"];
@@ -102,7 +97,7 @@ export default class BlockGeoMaker extends AsyncFactory {
 		let blockNameSpecificRotations = this.#blockNameBlockStateRotations.get(blockName);
 		let statesAndBlockEntityData = this.#getBlockStatesAndEntityDataEntries(block);
 		statesAndBlockEntityData.forEach(([blockStateName, blockStateValue]) => {
-			let rotations = blockNameSpecificRotations?.[blockStateName] ?? this.#blockNamePatternBlockStateRotations.find(([pattern, rotations]) => pattern.test(blockName) && blockName in rotations)?.[1] ?? blockShapeSpecificRotations?.[blockStateName] ?? this.#globalBlockStateRotations[blockStateName]; // order: block name (exact match), block name (regular expression pattern), block shape, global
+			let rotations = blockNameSpecificRotations?.[blockStateName] ?? blockShapeSpecificRotations?.[blockStateName] ?? this.#globalBlockStateRotations[blockStateName]; // order: block name (exact match), block shape, global
 			if(!rotations) {
 				return; // this block state doesn't control rotation
 			}
@@ -831,9 +826,6 @@ export default class BlockGeoMaker extends AsyncFactory {
  */
 /**
  * @typedef {import("./HoloPrint.js").BoneTemplate} BoneTemplate
- */
-/**
- * @typedef {import("./HoloPrint.js").Bone} Bone
  */
 /**
  * @typedef {import("./HoloPrint.js").HoloPrintConfig} HoloPrintConfig

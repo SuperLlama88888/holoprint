@@ -1794,7 +1794,7 @@ function functionToMolang(func, vars = {}) {
 }
 /**
  * JSON.stringify(), but shortens numbers to at most 4 decimal places to avoid JS floating-point errors making stringified numbers long.
- * @param {*} value
+ * @param {any} value
  * @returns {string}
  */
 function stringifyWithFixedDecimals(value) {
@@ -1881,12 +1881,6 @@ function stringifyWithFixedDecimals(value) {
  * @property {Vec3} [pivot] The block's center point of rotation
  * @property {Vec3} [rotation] The block's rotation
  * @property {Array} cubes
- */
-/**
- * @typedef {object} Bone A positioned bone for geometry files.
- * @augments BoneTemplate
- * @property {string} name
- * @property {string} parent
  */
 /**
  * @typedef {object} TextureReference A texture reference, made in BlockGeoMaker.js and turned into a texture in TextureAtlas.js.

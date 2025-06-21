@@ -1,4 +1,4 @@
-import { abs, AsyncFactory, cosDeg, distanceSquared, downloadFile, JSONSet, max, min, onEventAndNow, pi, sinDeg, tanDeg, toImageData } from "./utils.js";
+import { abs, AsyncFactory, cosDeg, distanceSquared, downloadFile, JSONSet, max, min, pi, sinDeg, tanDeg, toImageData } from "./utils.js";
 
 import { Model } from "@bridge-editor/model-viewer";
 

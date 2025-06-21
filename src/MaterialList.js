@@ -181,9 +181,7 @@ export default class MaterialList extends AsyncFactory {
 			this.#translations.set(line.slice(0, eqI), line.slice(eqI + 1));
 		});
 	}
-	/**
-	 * Clears the material list.
-	 */
+	/** Clears the material list. */
 	clear() {
 		this.materials.clear();
 		this.totalMaterialCount = 0;
