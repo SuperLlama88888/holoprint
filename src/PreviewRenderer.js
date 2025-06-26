@@ -264,7 +264,7 @@ export default class PreviewRenderer extends AsyncFactory {
 			if(!material) {
 				continue;
 			}
-			let isTranslucent = this.#isBoneTemplateTranslucent(boneTemplate)
+			let isTranslucent = this.#isBoneTemplateTranslucent(boneTemplate);
 			material.transparent = isTranslucent; // blocks with 0 alpha textures won't be marked as transparent, but alpha testing (from model-viewer) will make them work correctly
 			let instancedMesh = this.#instanceGroupAtPositions(group, positions, material);
 			if(isTranslucent) {
@@ -516,7 +516,22 @@ export default class PreviewRenderer extends AsyncFactory {
 	 * @returns {boolean}
 	 */
 	#isBoneTemplateTranslucent(boneTemplate) {
-		let allUvs = boneTemplate["cubes"].map(cube => Object.values(cube["uv"])).flat();
+		let allUvs = boneTemplate["cubes"].flatMap(cube => Object.values(cube["uv"])).map(({ uv, uv_size }) => {
+			let scaledUv = [uv[0] * this.#imageBlobData.width / this.textureAtlas.textureWidth, uv[1] * this.#imageBlobData.height / this.textureAtlas.textureHeight];
+			let scaledUvSize = [uv_size[0] * this.#imageBlobData.width / this.textureAtlas.textureWidth, uv_size[1] * this.#imageBlobData.height / this.textureAtlas.textureHeight];
+			if(scaledUvSize[0] < 0) {
+				scaledUvSize[0] *= -1;
+				scaledUv[0] -= scaledUvSize[0];
+			}
+			if(scaledUvSize[1] < 0) {
+				scaledUvSize[1] *= -1;
+				scaledUv[1] -= scaledUvSize[1];
+			}
+			return {
+				uv: scaledUv,
+				uv_size: scaledUvSize
+			};
+		});
 		let uvs = Array.from(new JSONSet(allUvs));
 		return uvs.some(({ uv, uv_size }) => {
 			for(let x = uv[0]; x < uv[0] + uv_size[0]; x++) {
