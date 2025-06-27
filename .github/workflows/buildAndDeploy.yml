@@ -7,23 +7,21 @@ on:
 permissions: read-all
 jobs:
   build:
-    name: Build and Minify
+    name: Build
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4.1.1
-      - name: Setup Node
-        uses: actions/setup-node@v4
-        with:
-          node-version: 22
-          cache: "npm"
-          cache-dependency-path: 'ci-cd/package-lock.json'
       - name: Build
-        run: bash ci-cd/build.sh ${{ github.ref_name }} && rm -r tests
+        run: |
+          cd pipeline
+          npm ci
+          cd ..
+          node pipeline/build.js --browser=${{ github.ref_name }} && rm -r tests
       - name: Upload files as artifact
         uses: actions/upload-pages-artifact@v3.0.1
         with:
-          path: .
+          path: dist/
   deploy:
     name: Deploy
     needs: build

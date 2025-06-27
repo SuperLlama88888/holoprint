@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html lang="en">
+	<head>
+		<title data-translate="app_name">HoloPrint</title>
+		<meta charset="UTF-8">
+		<meta name="viewport" content="width=device-width, initial-scale=1">
+		<meta name="description" content="Minecraft Bedrock build tool, like Litematica or Schematica. Create MCBE resource packs to show holograms of schematics. Make MCPE building easier!">
+		<meta name="keywords" content="holoprint, litematica bedrock">
+		
+		<meta property="og:url" content="https://holoprint-mc.github.io">
+		<meta property="og:type" content="website">
+		<meta property="og:title" content="HoloPrint">
+		<meta property="og:description" content="Minecraft Bedrock build tool, like Litematica or Schematica. Create MCBE resource packs to show holograms of schematics. Make MCPE building easier!">
+		<meta property="og:image" content="https://holoprint-mc.github.io/assets/banner_1200x630.png">
+		<meta property="og:image:width" content="1200">
+		<meta property="og:image:height" content="630">
+		<meta property="og:image" content="https://holoprint-mc.github.io/assets/logo_192.png">
+		<meta property="og:image:width" content="192">
+		<meta property="og:image:height" content="192">
+		<meta property="og:image" content="https://holoprint-mc.github.io/assets/banner.png">
+		<meta property="og:image:width" content="720">
+		<meta property="og:image:height" content="210">
+		<script type="application/ld+json">
+			{
+				"@context": "https://schema.org",
+				"@type": "WebApplication",
+				"name": "HoloPrint",
+				"url": "https://holoprint-mc.github.io",
+				"description": "Minecraft Bedrock build tool, like Litematica or Schematica. Create MCBE resource packs to show holograms of schematics. Make MCPE building easier!",
+				"applicationCategory": "UtilitiesApplication",
+				"browserRequirements": "Requires JavaScript",
+				"operatingSystem": "All",
+				"keywords": "holoprint, litematica bedrock",
+				"image": "https://holoprint-mc.github.io/assets/logo_192.png",
+				"author": {
+					"@type": "Person",
+					"name": "SuperLlama88888",
+					"url": "https://github.com/SuperLlama88888"
+				},
+				"hasPart": [
+					{
+						"@type": "WebPage",
+						"url": "https://holoprint-mc.github.io/wiki",
+						"name": "HoloPrint Wiki"
+					},
+					{
+						"@type": "WebPage",
+						"url": "https://holoprint-mc.github.io/wiki/creating-packs",
+						"name": "HoloPrint Wiki - Tutorial"
+					},
+					{
+						"@type": "WebPage",
+						"url": "https://holoprint-mc.github.io/wiki/faq",
+						"name": "HoloPrint Wiki - FAQ"
+					}
+				],
+				"offers": {
+					"@type": "Offer",
+					"price": "0"
+				}
+			}
+		</script> <!-- Google wants me to add all these random things for a rich search result -->
+		<meta name="google-site-verification" content="KvFing8WMIePsj6J3Ed5BvcylweI7EL4D2lwVkKqcOE"> <!-- allows me to track how well it appears on google. this is NOT google analytics. -->
+		
+		<link rel="manifest" href="manifest.webmanifest"/>
+		<link rel="icon" sizes="48x48" href="favicon.ico"/>
+		<link rel="icon" sizes="192x192" href="assets/logo_192.png"/>
+		
+		<link rel="stylesheet" href="https://fonts.bunny.net/css?family=catamaran:400,500,700&display=swap"/>
+		<link rel="stylesheet" href="https://fonts.bunny.net/css?family=space-grotesk:400&display=swap"/>
+		<link rel="stylesheet" href="assets/MaterialSymbols.css"/>
+		
+		<link rel="stylesheet" href="index.css"/>
+		<script type="importmap">
+			{
+				"imports": {
+					"nbtify-readonly-typeless": "https://esm.sh/nbtify-readonly-typeless@1.1.2?keep-names",
+					"mcbe-leveldb-reader": "https://esm.sh/mcbe-leveldb-reader@1.0.3?exports=extractStructureFilesFromMcworld",
+					"tga-js": "https://esm.sh/tga-js@1.1.1",
+					"potpack": "https://esm.sh/potpack@2.0.0",
+					"deepmerge": "https://esm.sh/deepmerge@4.3.1",
+					"@supabase/supabase-js": "https://esm.sh/@supabase/supabase-js@2?exports=createClient",
+					"three": "https://esm.sh/three@0.147.0",
+					"three/addons/": "https://esm.sh/three@0.177.0/addons/",
+					"stats.js": "https://esm.sh/stats.js@0.17.0",
+					"lil-gui": "https://esm.sh/lil-gui@0.20",
+					"@bridge-editor/model-viewer": "https://esm.sh/@bridge-editor/model-viewer@0.8.1?exports=StandaloneModelViewer,Model",
+					"@zip.js/zip.js": "https://esm.sh/@zip.js/zip.js@2.7.60?exports=ZipWriter,TextReader,BlobWriter,BlobReader,ZipReader",
+					"strip-json-comments": "https://esm.sh/strip-json-comments@5.0.1"
+				}
+			}
+		</script>
+		<script src="index.js" type="module"></script>
+	</head>
+	<body>
+		<main>
+			<h1 data-translate="app_name">HoloPrint</h1>
+			<div id="responsiveWidthWrapper">
+				<form action="javascript:" id="generatePackForm">
+				<fieldset>
+					<legend data-translate="generate_heading">Generate HoloPrint resource pack (<code>*.mcpack</code>)</legend>
+						<div class="multiTabCont" id="structureFileInputCont">
+							<input type="radio" checked name="configTabs2" form="" id="structureFilesTab"/>
+							<label for="structureFilesTab" class="buttonlike" data-translate="structure_files.heading">Structure files</label>
+							<fieldset>
+								<legend data-translate="structure_files.upload">Upload structure files (<code>*.mcstructure</code>)</legend>
+								<label>
+									<input type="file" accept=".mcstructure" multiple form="" autocomplete="off" id="structureFilesInput"/>
+									<div class="buttonlike"><p data-translate="upload.button">Upload a file</p><p data-translate="upload.button.drop_notice">Or drop files here</p></div>
+								</label>
+								<span class="hidden" id="notStructureFileError" data-translate="structure_files.error">Please upload only <code>.mcstructure</code> files.</span>
+							</fieldset>
+							<input type="radio" name="configTabs2" form="" id="extractFromWorldTab"/>
+							<label for="extractFromWorldTab" class="buttonlike" data-translate="extract_from_world.heading">Extract from world</label>
+							<fieldset>
+								<legend data-translate="extract_from_world.upload">Upload world file (<code>*.mcworld</code>, <code>*.zip</code>)</legend>
+								<label>
+									<input type="file" accept=".mcworld,.zip" form="" autocomplete="off" id="worldFileInput"/>
+									<div class="buttonlike"><p data-translate="upload.button.world">Upload a world file</p><p data-translate="upload.button.drop_notice">Or drop files here</p></div>
+								</label>
+								<span class="hidden" id="worldExtractionMessage" data-translate="extract_from_world.extracting">Extracting structures from world...</span>
+								<span class="hidden" id="worldExtractionSuccess" data-translate="extract_from_world.success"></span>
+								<span class="hidden" id="worldExtractionError" data-translate="extract_from_world.error">No saved structures found!</span>
+								<span class="hidden" id="worldExtractionWorldError" data-translate="extract_from_world.world_error"></span>
+							</fieldset>
+							<input type="radio" name="configTabs2" form="" id="updatePackTab"/>
+							<label for="updatePackTab" class="buttonlike" data-translate="update_pack.heading">Update pack</label>
+							<fieldset>
+								<legend data-translate="update_pack.upload">Upload old Structura/HoloPrint pack (<code>*.mcpack</code>)</legend>
+								<label>
+									<input type="file" accept=".mcpack" form="" autocomplete="off" id="oldPackInput"/>
+									<div class="buttonlike"><p data-translate="upload.button.old_pack">Upload an old pack</p><p data-translate="upload.button.drop_notice">Or drop files here</p></div>
+								</label>
+								<span class="hidden" id="oldPackExtractionMessage" data-translate="update_pack.extracting">Extracting structure files...</span>
+								<span class="hidden" id="oldPackExtractionSuccess" data-translate="update_pack.success">Successfully found old structure files!</span>
+								<span class="hidden" id="oldPackExtractionError" data-translate="update_pack.error">Pack is not a Structura/HoloPrint pack! <small>(No structure files were found.)</small></span>
+							</fieldset>
+						</div>
+						<file-input-table hide-file-extensions file-text-count="{COUNT} file[s] selected" data-translate-file-text-count="file_input_table.count" empty-text="No files are selected" data-translate-empty-text="file_input_table.empty" remove-all-text="Remove all" data-translate-remove-all-text="file_input_table.remove_all">
+							<input type="file" accept=".mcstructure" multiple required name="structureFiles" id="structureFilesList"/>
+						</file-input-table>
+						<div class="multiTabCont">
+							<input type="radio" checked name="configTabs" form="" id="settingsTab"/>
+							<label for="settingsTab" class="buttonlike" data-translate="settings.heading">Settings</label>
+							<fieldset>
+								<legend data-translate="settings.heading">Settings</legend>
+								<label><span data-translate="settings.ghost_block_scale">Ghost block scale:</span> <input type="number" min="70" max="100" step="1" value="95" name="scale"/>%</label>
+								<fieldset class="expandable textureSettings">
+									<legend><label><span data-translate="settings.textures">Textures</span><input type="checkbox"/></label></legend>
+									<div>
+										<div>
+											<label><span data-translate="settings.textures.tint.color">Overlay tint:</span> <input type="color" value="#579EFA" name="tintColor"/></label>
+											<label><span data-translate="settings.textures.tint.opacity">Overlay tint opacity:</span> <input type="number" min="1" max="100" value="20" name="tintOpacity"/>%</label>
+											<label><span data-translate="settings.textures.outline.width">Texture outline width:</span> <select name="textureOutlineWidth">
+												<option value="0" data-translate="settings.textures.outline.width.no_outline">None</option>
+												<option value="0.125">0.125px</option>
+												<option value="0.25" selected>0.25px</option>
+												<option value="0.5">0.5px</option>
+												<option value="1">1px</option>
+											</select></label>
+											<label><span data-translate="settings.textures.outline.color">Texture outline color:</span> <input type="color" value="#0000FF" name="textureOutlineColor"/></label>
+											<label><span data-translate="settings.textures.outline.opacity">Texture outline opacity:</span> <input type="number" min="10" max="100" value="65" name="textureOutlineOpacity"/>%</label>
+										</div>
+										<div id="texturePreviewCont">
+											<span data-translate="settings.textures.tint.toggleable_in_game">Tint can be turned on/off in-game</span>
+											<div id="texturePreviewImageCont">
+												<div class="loader"></div>
+											</div>
+										</div>
+									</div>
+								</fieldset>
+								<fieldset class="expandable">
+									<legend><label><span data-translate="settings.player_controls">In-game controls (<a href="https://holoprint-mc.github.io/wiki/hologram-controls" target="_blank">Wiki</a>)</span><input type="checkbox"/></label></legend>
+									<div id="playerControlsInputCont"></div>
+								</fieldset>
+								<fieldset class="expandable">
+									<legend><label><span data-translate="settings.features">Features</span><input type="checkbox"/></label></legend>
+									<div>
+										<table>
+											<tr><td><label data-translate="settings.features.spawn_animation" for="c1">Spawn animation:</label></td><td><input type="checkbox" name="spawnAnimationEnabled" checked id="c1"/></td></tr>
+											<tr><td><label data-translate="settings.features.player_controls" for="c2">Player controls:</label></td><td><input type="checkbox" name="playerControlsEnabled" checked id="c2"/></td></tr>
+											<tr><td><label data-translate="settings.features.material_list" for="c3">Material list:</label></td><td><input type="checkbox" name="materialListEnabled" checked id="c3"/></td></tr>
+											<tr><td><label data-translate="settings.features.retexture_control_items" for="c4">Retexture control items:</label></td><td><input type="checkbox" name="retextureControlItems" checked id="c4"/></td></tr>
+											<tr><td><label data-translate="settings.features.rename_control_items" for="c5">Rename control items:</label></td><td><input type="checkbox" name="renameControlItems" checked id="c5"/></td></tr>
+										</table>
+									</div>
+								</fieldset>
+								<label><span data-translate="settings.mini_size">Mini display size: </span><select name="miniSize">
+									<option value="0.125" selected data-translate="settings.mini_size.small">Small</option>
+									<option value="0.0625" data-translate="settings.mini_size.smaller">Smaller</option>
+									<option value="0.03125" data-translate="settings.mini_size.tiny">Tiny</option>
+									<option value="0" data-translate="settings.mini_size.hidden">Hidden</option>
+								</select></label>
+								<label><span data-translate="settings.ignored_blocks">Ignored blocks:</span> <input type="text" name="ignoredBlocks" placeholder="block_1 block_2 etc." data-translate-placeholder="settings.ignored_blocks.placeholder"/></label>
+								<details>
+									<summary data-translate="settings.advanced">Advanced</summary>
+									<label><span data-translate="settings.initial_offset">Initial offset:</span> <input type="number" min="-999" max="999" step="1" value="0" placeholder="0" name="initialOffsetX"/> / <input type="number" min="-999" max="999" step="1" value="0" placeholder="0" name="initialOffsetY"/> / <input type="number" min="-999" max="999" step="1" value="0" placeholder="0" name="initialOffsetZ"/></label>
+									<label><span data-translate="settings.backup_slot_count">Backup slot count:</span> <input type="number" min="0" max="30" step="1" value="10" name="backupSlotCount"/></label>
+									<label><span data-translate="settings.control_item_texture_scale">Control item texture scale:</span> <input type="number" min="1" max="64" step="1" value="1" name="controlItemTextureScale"/></label>
+									<label><span data-translate="settings.opacity_mode">Opacity mode:</span> <select name="opacityMode">
+										<option value="multiple" selected data-translate="settings.opacity_mode.in_game_controls">In-game controls</option>
+										<option value="single" data-translate="settings.opacity_mode.fixed_opacity">Single option</option>
+									</select></label>
+									<label class="hidden"><span data-translate="settings.opacity">Hologram opacity:</span> <input type="number" min="10" max="100" step="5" value="80" name="opacity"/>%</label>
+								</details>
+								<button type="button" class="resetButton" data-translate="reset" data-reset-translation="settings.reset">Reset</button>
+							</fieldset>
+							<input type="radio" name="configTabs" form="" id="metadataTab"/>
+							<label for="metadataTab" class="buttonlike" data-translate="metadata.heading">Metadata</label>
+							<fieldset>
+								<legend data-translate="metadata.heading">Metadata</legend>
+								<label><span data-translate="metadata.pack_name">Pack name:</span> <code><input type="text" pattern="[^\/]*" name="packName"/></code></label>
+								<label><span data-translate="metadata.pack_icon">Pack icon (<code>*.png</code>):</span> <input type="file" accept=".png" name="packIcon"/></label>
+								<label><span data-translate="metadata.structure_author">Structure author:</span> <input type="text" placeholder="MinecraftLover123" name="author" data-translate-placeholder="metadata.structure_author.placeholder"/></label>
+								<label><span data-translate="metadata.description">Description:</span><br/><textarea placeholder="This is my epic house!" rows="4" cols="20" name="description" data-translate-placeholder="metadata.description.placeholder"></textarea></label>
+								<div id="descriptionLinksCont"></div>
+								<label><span data-translate="metadata.compression_level">Compression level:</span> <input type="number" min="0" max="9" step="1" value="5" name="compressionLevel"/></label>
+								<button type="button" class="resetButton" data-translate="reset" data-reset-translation="metadata.reset">Reset</button>
+							</fieldset>
+							<input type="radio" name="configTabs" form="" id="resourcesTab"/>
+							<label for="resourcesTab" class="buttonlike" data-translate="resource_packs.heading">Resource packs</label>
+							<fieldset>
+								<legend data-translate="resource_packs.heading">Resource packs</legend>
+								<label><span data-translate="resource_packs.upload_local">Upload a local resource pack:</span><br/><input type="file" webkitdirectory name="localResourcePack"/></label>
+								<button type="button" id="clearResourcePackCacheButton" data-translate="resource_packs.clear_cache" data-reset-translation="resource_packs.cache_reset">Clear resource pack cache</button>
+								<button type="button" class="resetButton" data-translate="reset" data-reset-translation="resource_packs.reset">Reset</button>
+							</fieldset>
+						</div>
+						<button name="submit" id="generatePackButton" data-translate="generate">Generate pack</button>
+						<small id="termsOfUseNotice" data-translate="terms_of_use_notice">By generating a pack with HoloPrint, you agree to the <a href="https://github.com/SuperLlama88888/holoprint/blob/main/TERMS_OF_USE.md" target="_blank">Terms of Use</a>. (It's really short!)</small>
+					</fieldset>
+				</form>
+				<div id="completedPacksCont"></div>
+				<simple-logger id="log"></simple-logger>
+			</div>
+			<div id="languageSelectorCont" title="Change language" data-translate-title="change_language">
+				<div id="languageSelectorButton"></div>
+				<select id="languageSelector">
+					<option value="en_US">English</option> <!-- Other options will be added later in JS -->
+				</select>
+			</div>
+		</main>
+		<div id="dropFileNotice" class="hidden">
+			<h1 data-translate="upload.drop_file">Drop your files here</h1>
+		</div>
+	</body>
+</html>

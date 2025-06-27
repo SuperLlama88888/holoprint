@@ -40,14 +40,16 @@ jobs:
         uses: actions/checkout@v4.1.1
       - name: Build
         run: |
-          sed -i '1i export * from "./HoloPrint.js";' index.js
-          bash ci-cd/build.sh
+          cd pipeline
+          npm ci
+          cd ..
+          node pipeline/build.js --export-holoprint-lib
       - name: Upload built code
         if: matrix.browser == 'Firefox'
         uses: actions/upload-artifact@v4.4.3
         with:
           name: build
-          path: .
+          path: dist
       - name: Test Sample Structures on ${{ matrix.browser }}
         run: |
           npm install @actions/core puppeteer mime-types

@@ -18,7 +18,9 @@ body:
     id: structurefile
     attributes:
       label: Attach structure file
-      description: If a specific structure causes this error, upload the structure file(s) here.
+      description: Add a structure file (`.mcstructure`) that causes this issue here.
+    validations:
+      required: true
   - type: textarea
     id: logs
     attributes:
@@ -40,6 +42,7 @@ body:
       label: Operating system
       description: What type of device are you on?
       options:
+        - (Unselected)
         - Android
         - Windows
         - Linux (any)
@@ -54,6 +57,7 @@ body:
       label: Browser
       description: Which web browser are you using?
       options:
+        - (Unselected)
         - Chrome
         - Safari
         - Edge
