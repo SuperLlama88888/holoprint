@@ -899,11 +899,11 @@ export default class BlockGeoMaker extends AsyncFactory {
 	static resolveTemplateFaceUvs(faces, textureAtlas) {
 		return faces.map(face => {
 			let imageUv = textureAtlas.uvs[face["textureRefI"]];
+			face["vertices"].sort((a, b) => a["corner"] - b["corner"]);
 			if("crop" in imageUv) {
 				this.#applyFaceCropping(face, imageUv["crop"]);
 			}
-			let sortedVertices = face["vertices"].sort((a, b) => a["corner"] - b["corner"]);
-			let vertices = [sortedVertices[0], sortedVertices[1], sortedVertices[3], sortedVertices[2]]; // go around in a square
+			let vertices = [face["vertices"][0], face["vertices"][1], face["vertices"][3], face["vertices"][2]]; // go around in a square
 			return {
 				"normal": face["normal"],
 				"vertices": vertices.map(vertex => ({
