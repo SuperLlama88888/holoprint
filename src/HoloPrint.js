@@ -143,7 +143,7 @@ export async function makePack(structureFiles, config = {}, resourcePackStack, p
 	
 	console.log("Texture UVs:", textureAtlas.uvs);
 	let polyMeshTemplatePalette = unresolvedPolyMeshTemplatePalette.map(polyMeshTemplate => BlockGeoMaker.resolveTemplateFaceUvs(polyMeshTemplate, textureAtlas));
-	console.log("Bone template palette with resolved UVs:", polyMeshTemplatePalette);
+	console.log("Poly mesh template palette with resolved UVs:", polyMeshTemplatePalette);
 	
 	let structureGeoTemplate = hologramGeo["minecraft:geometry"][0];
 	hologramGeo["minecraft:geometry"].splice(0, 1);
@@ -185,12 +185,12 @@ export async function makePack(structureFiles, config = {}, resourcePackStack, p
 						let paletteI = blockPaletteIndices[blockI];
 						if(!(paletteI in polyMeshTemplatePalette)) {
 							if(paletteI in blockPalette) {
-								console.error(`A bone template wasn't made for blockPalette[${paletteI}] = ${blockPalette[paletteI]["name"]}!`);
+								console.error(`A poly mesh template wasn't made for blockPalette[${paletteI}] = ${blockPalette[paletteI]["name"]}!`);
 							}
 							return;
 						}
 						let polyMeshTemplateFaces = polyMeshTemplatePalette[paletteI];
-						// console.table({x, y, z, i, paletteI, boneTemplate});
+						// console.table({x, y, z, i, paletteI, polyMeshTemplateFaces});
 						
 						let blockCoordinateName = `b_${x}_${y}_${z}`;
 						let geoSpaceBlockPos = [-16 * x - 8, 16 * y, 16 * z - 8]; // I got these values from trial and error with blockbench (which makes the x negative I think. it's weird.)
@@ -1811,12 +1811,6 @@ function stringifyWithFixedDecimals(value) {
  * @typedef {object} PolyMeshTemplateVertexWithUv
  * @property {Vec3} pos
  * @property {Vec2} uv
- */
-/**
- * @typedef {object} BoneTemplate An unpositioned bone for geometry files without name or parent. All units/coordinates are relative to (0, 0, 0).
- * @property {Vec3} [pivot] The block's center point of rotation
- * @property {Vec3} [rotation] The block's rotation
- * @property {Array} cubes
  */
 /**
  * @typedef {object} TextureReference A texture reference, made in BlockGeoMaker.js and turned into a texture in TextureAtlas.js.

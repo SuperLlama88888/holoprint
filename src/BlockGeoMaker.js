@@ -680,13 +680,13 @@ export default class BlockGeoMaker extends AsyncFactory {
 		cubes.forEach(cube => {
 			let mass = cube.w * cube.h * cube.d; // assume uniform mass density
 			totalMass += mass;
-			center = addVec3(center, mulVec3(addVec3(cube["pos"], cube["size"]), mass / 2));
+			center = addVec3(center, mulVec3(addVec3(cube["pos"], mulVec3(cube["size"], 0.5)), mass));
 		});
 		if(totalMass == 0) { // all cubes must be flat
 			cubes.forEach(cube => {
 				let mass = max(cube.w, 1) * max(cube.h, 1) * max(cube.d, 1);
 				totalMass += mass;
-				center = addVec3(center, mulVec3(addVec3(cube["pos"], cube["size"]), mass / 2));
+				center = addVec3(center, mulVec3(addVec3(cube["pos"], mulVec3(cube["size"], 0.5)), mass));
 			});
 		}
 		if(totalMass == 0) {
