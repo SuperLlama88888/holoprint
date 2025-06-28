@@ -168,6 +168,38 @@ export function cosDeg(deg) {
 export function tanDeg(deg) {
 	return tan(deg * pi / 180);
 }
+export function rotate([x, y], angle) {
+    let c = cos(angle);
+    let s = sin(angle);
+    return [x * c - y * s, x * s + y * c];
+}
+export function rotateDeg(p, deg) {
+	return rotate(p, deg * pi / 180);
+}
+/**
+ * @param {Vec2} a
+ * @param {Vec2} b
+ * @returns {Vec2}
+ */
+export function subVec2(a, b) {
+	return [a[0] - b[0], a[1] - b[1]];
+}
+/**
+ * @param {Vec3} a
+ * @param {Vec3} b
+ * @returns {Vec3}
+ */
+export function addVec3(a, b) {
+	return [a[0] + b[0], a[1] + b[1], a[2] + b[2]];
+}
+/**
+ * @param {Vec3} vec
+ * @param {number} factor
+ * @returns {Vec3}
+ */
+export function mulVec3(vec, factor) {
+	return [vec[0] * factor, vec[1] * factor, vec[2] * factor];
+}
 
 export function arrayMin(arr) {
 	let min = Infinity;
@@ -713,20 +745,37 @@ function stringifyJsonBigIntSafe(value) {
 function parseJsonBigIntSafe(value) { // this function is unused but I'm keeping it here because it works well with the function above
 	return JSON.parse(value, (_, x, context) => context && Number.isInteger(x) && !Number.isSafeInteger(x)? BigInt(context.source) : x);
 }
+/**
+ * @template T
+ * @extends {Set<T>}
+ */
 export class JSONSet extends Set {
+	/** @type {Map<string, number>} */
+	#indices = new Map();
 	#actualValues = new Map();
 	constructor(values) {
 		super();
 		values?.forEach(value => this.add(value));
 	}
-	indexOf(value) { // not part of sets normally! but they keep their order anyway so...
-		let stringifiedValues = Array.from(super[Symbol.iterator]());
-		return stringifiedValues.indexOf(this.#stringify(value));
+	/** Not part of regular sets! Constant time indexing. */
+	indexOf(value) {
+		return this.#indices.get(this.#stringify(value));
+	}
+	addI(value) {
+		let stringifiedValue = this.#stringify(value);
+		super.add(stringifiedValue);
+		if(!this.#actualValues.has(stringifiedValue)) {
+			this.#actualValues.set(stringifiedValue, structuredClone(value));
+			this.#indices.set(stringifiedValue, this.size - 1);
+			return this.size - 1;
+		}
+		return this.#indices.get(stringifiedValue);
 	}
 	add(value) {
 		let stringifiedValue = this.#stringify(value);
 		if(!this.#actualValues.has(stringifiedValue)) {
 			this.#actualValues.set(stringifiedValue, structuredClone(value));
+			this.#indices.set(stringifiedValue, this.size);
 		}
 		return super.add(stringifiedValue);
 	}
@@ -735,6 +784,11 @@ export class JSONSet extends Set {
 	}
 	has(value) {
 		return super.has(this.#stringify(value))
+	}
+	clear() {
+		this.#indices.clear();
+		this.#actualValues.clear();
+		return super.clear();
 	}
 	[Symbol.iterator]() {
 		return this.#actualValues.values();

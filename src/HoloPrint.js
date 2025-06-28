@@ -11,6 +11,7 @@ import { addPaddingToImage, awaitAllEntries, CachingFetcher, concatenateFiles, c
 import ResourcePackStack from "./ResourcePackStack.js";
 import BlockUpdater from "./BlockUpdater.js";
 import SpawnAnimationMaker from "./SpawnAnimationMaker.js";
+import PolyMeshMaker from "./PolyMeshMaker.js";
 
 export const VERSION = "dev";
 export const IGNORED_BLOCKS = ["air", "piston_arm_collision", "sticky_piston_arm_collision"]; // blocks to be ignored when scanning the structure file
@@ -128,11 +129,11 @@ export async function makePack(structureFiles, config = {}, resourcePackStack, p
 	window.blockIndices = allStructureIndicesByLayer;
 	
 	let blockGeoMaker = await BlockGeoMaker.new(config);
-	// makeBoneTemplate() is an impure function and adds texture references to the textureRefs set property.
-	let boneTemplatePalette = blockPalette.map(block => blockGeoMaker.makeBoneTemplate(block));
+	// makePolyMeshTemplates() is an impure function and adds texture references to the textureRefs set property.
+	let unresolvedPolyMeshTemplatePalette = blockGeoMaker.makePolyMeshTemplates(blockPalette);
 	console.info("Finished making block geometry templates!");
 	console.log("Block geo maker:", blockGeoMaker);
-	console.log("Bone template palette:", structuredClone(boneTemplatePalette));
+	console.log("Poly mesh template palette:", structuredClone(unresolvedPolyMeshTemplatePalette));
 	
 	let textureAtlas = await TextureAtlas.new(config, resourcePackStack);
 	let textureRefs = Array.from(blockGeoMaker.textureRefs);
@@ -140,9 +141,9 @@ export async function makePack(structureFiles, config = {}, resourcePackStack, p
 	let textureBlobs = textureAtlas.imageBlobs;
 	let defaultTextureIndex = max(textureBlobs.length - 3, 0); // default to 80% opacity
 	
-	console.log("Texture UVs:", textureAtlas.textures);
-	resolveBoneTemplateTextureUvs(boneTemplatePalette, textureAtlas);
-	console.log("Bone template palette with resolved UVs:", boneTemplatePalette);
+	console.log("Texture UVs:", textureAtlas.uvs);
+	let polyMeshTemplatePalette = unresolvedPolyMeshTemplatePalette.map(polyMeshTemplate => BlockGeoMaker.resolveTemplateFaceUvs(polyMeshTemplate, textureAtlas));
+	console.log("Bone template palette with resolved UVs:", polyMeshTemplatePalette);
 	
 	let structureGeoTemplate = hologramGeo["minecraft:geometry"][0];
 	hologramGeo["minecraft:geometry"].splice(0, 1);
@@ -161,8 +162,8 @@ export async function makePack(structureFiles, config = {}, resourcePackStack, p
 	let totalBlocksToValidateByStructureByLayer = [];
 	let uniqueBlocksToValidate = new Set();
 	
+	let polyMeshMaker = new PolyMeshMaker();
 	let materialList = await MaterialList.new(blockMetadata, itemMetadata);
-	let spawnAnimationMaker = config.SPAWN_ANIMATION_ENABLED && new SpawnAnimationMaker(config, structureSizes[0]);
 	allStructureIndicesByLayer.forEach((structureIndicesByLayer, structureI) => {
 		let structureSize = structureSizes[structureI];
 		let geoShortName = `hologram_${structureI}`;
@@ -175,13 +176,6 @@ export async function makePack(structureFiles, config = {}, resourcePackStack, p
 		let blocksToValidateByLayer = [];
 		
 		for(let y = 0; y < structureSize[1]; y++) {
-			let layerName = `l_${y}`;
-			geo["bones"].push({
-				"name": layerName,
-				"parent": "hologram_offset_wrapper",
-				"pivot": [8, 0, -8]
-			});
-			
 			let blocksToValidateCurrentLayer = 0; // "layer" in here refers to y-coordinate, NOT structure layer
 			for(let x = 0; x < structureSize[0]; x++) {
 				for(let z = 0; z < structureSize[2]; z++) {
@@ -189,67 +183,20 @@ export async function makePack(structureFiles, config = {}, resourcePackStack, p
 					let firstBoneForThisCoordinate = true; // second-layer blocks (e.g. water in waterlogged blocks) will be at the same position
 					structureIndicesByLayer.forEach((blockPaletteIndices, layerI) => {
 						let paletteI = blockPaletteIndices[blockI];
-						if(!(paletteI in boneTemplatePalette)) {
+						if(!(paletteI in polyMeshTemplatePalette)) {
 							if(paletteI in blockPalette) {
 								console.error(`A bone template wasn't made for blockPalette[${paletteI}] = ${blockPalette[paletteI]["name"]}!`);
 							}
 							return;
 						}
-						let boneTemplate = boneTemplatePalette[paletteI];
+						let polyMeshTemplateFaces = polyMeshTemplatePalette[paletteI];
 						// console.table({x, y, z, i, paletteI, boneTemplate});
 						
 						let blockCoordinateName = `b_${x}_${y}_${z}`;
-						let boneName = blockCoordinateName;
-						if(!firstBoneForThisCoordinate) {
-							boneName += `_${layerI}`;
-						}
-						if(config.SPAWN_ANIMATION_ENABLED && structureI == 0 && structureFiles.length > 1) {
-							boneName += "_a"; // different bone name in order for the animation to not affect blocks in the same position in other structures
-						}
-						let bonePos = [-16 * x - 8, 16 * y, 16 * z - 8]; // I got these values from trial and error with blockbench (which makes the x negative I think. it's weird.)
-						let positionedBoneTemplate = blockGeoMaker.positionBoneTemplate(boneTemplate, bonePos);
-						let bonesToAdd = [{
-							"name": boneName,
-							"parent": layerName,
-							"pivot": bonePos.map(x => x + 8), // prevent flickering
-							...positionedBoneTemplate
-						}];
-						let rotWrapperBones = new JSONMap();
-						let extraRotCounter = 0;
-						bonesToAdd[0]["cubes"] = bonesToAdd[0]["cubes"].filter(cube => {
-							if("extra_rots" in cube) { // cubes that copy with rotation in both the cube and the copied cube need wrapper bones to handle multiple rotations
-								let extraRots = cube["extra_rots"];
-								delete cube["extra_rots"];
-								if(!rotWrapperBones.has(extraRots)) { // some rotations may be the same, so we use a map to cache the wrapper bone this cube should be added to
-									let wrapperBones = [];
-									let parentBoneName = boneName;
-									extraRots.forEach(extraRot => {
-										let wrapperBoneName = `${boneName}_rot_wrapper_${extraRotCounter++}`;
-										wrapperBones.push({
-											"name": wrapperBoneName,
-											"parent": parentBoneName,
-											"rotation": extraRot["rot"],
-											"pivot": extraRot["pivot"]
-										});
-										parentBoneName = wrapperBoneName;
-									});
-									bonesToAdd.push(...wrapperBones);
-									wrapperBones.at(-1)["cubes"] = [];
-									rotWrapperBones.set(extraRots, wrapperBones.at(-1));
-								}
-								rotWrapperBones.get(extraRots)["cubes"].push(cube);
-								return false;
-							} else {
-								return true;
-							}
-						});
-						geo["bones"].push(...bonesToAdd);
-						
+						let geoSpaceBlockPos = [-16 * x - 8, 16 * y, 16 * z - 8]; // I got these values from trial and error with blockbench (which makes the x negative I think. it's weird.)
+						polyMeshMaker.add(polyMeshTemplateFaces, geoSpaceBlockPos);
 						if(firstBoneForThisCoordinate) { // we only need 1 locator for each block position, even though there may be 2 bones in this position because of the 2nd layer
-							hologramGeo["minecraft:geometry"][2]["bones"][1]["locators"][blockCoordinateName] ??= bonePos.map(x => x + 8);
-						}
-						if(config.SPAWN_ANIMATION_ENABLED && structureI == 0) {
-							spawnAnimationMaker.addBone(boneName, [x, y, z], bonePos);
+							hologramGeo["minecraft:geometry"][2]["bones"][1]["locators"][blockCoordinateName] ??= geoSpaceBlockPos.map(x => x + 8); // 2nd geometry is for particle alignment
 						}
 						
 						let block = blockPalette[paletteI];
@@ -270,6 +217,16 @@ export async function makePack(structureFiles, config = {}, resourcePackStack, p
 					});
 				}
 			}
+			let layerName = `l_${y}`;
+			/** @type {import("@bridge-editor/model-viewer").IBoneSchema} */
+			let layerBone = {
+				"name": layerName,
+				"parent": "hologram_offset_wrapper",
+				"pivot": [8, 0, -8],
+				"poly_mesh": polyMeshMaker.export()
+			};
+			geo["bones"].push(layerBone);
+			polyMeshMaker.clear();
 			blocksToValidateByLayer.push(blocksToValidateCurrentLayer);
 		}
 		hologramGeo["minecraft:geometry"].push(geo);
@@ -282,6 +239,12 @@ export async function makePack(structureFiles, config = {}, resourcePackStack, p
 	
 	makeLayerAnimations(config, structureSizes, entityDescription, hologramAnimations, hologramAnimationControllers);
 	if(config.SPAWN_ANIMATION_ENABLED) {
+		let maxHeight = max(...structureSizes.map(structureSize => structureSize[1]));
+		let spawnAnimationMaker = new SpawnAnimationMaker(config, [1, maxHeight, 1]);
+		for(let y = 0; y < maxHeight; y++) {
+			let layerName = `l_${y}`;
+			spawnAnimationMaker.addBone(layerName, [0, y, 0], [0, 16 * y, 0]);
+		}
 		hologramAnimations["animations"]["animation.armor_stand.hologram.spawn"] = spawnAnimationMaker.makeAnimation();
 	}
 	
@@ -499,7 +462,7 @@ export async function makePack(structureFiles, config = {}, resourcePackStack, p
 				}
 				let cont = structureI == 0? previewCont : previewCont.parentNode.appendChild(previewCont.cloneNode());
 				let name = structureSizes.length == 1? packName : getDefaultPackName([structureFiles[structureI]]);
-				return await PreviewRenderer.new(cont, name, textureAtlas, structureSize, blockPalette, boneTemplatePalette, allStructureIndicesByLayer[structureI], {
+				return await PreviewRenderer.new(cont, name, textureAtlas, structureSize, blockPalette, polyMeshTemplatePalette, allStructureIndicesByLayer[structureI], {
 					showSkybox: config.SHOW_PREVIEW_SKYBOX,
 					showFps: config.SHOW_PREVIEW_WIDGETS,
 					showOptions: config.SHOW_PREVIEW_WIDGETS
@@ -819,7 +782,7 @@ async function tweakBlockPalette(structure, ignoredBlocks) {
 	let palette = structuredClone(structure["palette"]["default"]["block_palette"]);
 	
 	let blockVersions = new Set(); // version should be constant for all blocks. just wanted to test this
-	let blockUpdater = await BlockUpdater.new(true);
+	let blockUpdater = await BlockUpdater.new();
 	let updatedBlocks = 0;
 	for(let [i, block] of Object.entries(palette)) {
 		blockVersions.add(block["version"]);
@@ -915,65 +878,6 @@ function mergeMultiplePalettesAndIndices(palettesAndIndices) {
 		palette: Array.from(mergedPaletteSet),
 		indices: remappedIndices
 	};
-}
-/**
- * Resolves the UV coordinates for an array of bone templates.
- * @param {Array<BoneTemplate>} boneTemplatePalette
- * @param {TextureAtlas} textureAtlas
- */
-function resolveBoneTemplateTextureUvs(boneTemplatePalette, textureAtlas) {
-	boneTemplatePalette.forEach(boneTemplate => {
-		boneTemplate["cubes"].forEach(cube => {
-			Object.keys(cube["uv"]).forEach(faceName => {
-				let face = cube["uv"][faceName];
-				let imageUv = structuredClone(textureAtlas.textures[face["index"]]);
-				if(face["flip_horizontally"]) {
-					imageUv["uv"][0] += imageUv["uv_size"][0];
-					imageUv["uv_size"][0] *= -1;
-				}
-				if(face["flip_vertically"]) {
-					imageUv["uv"][1] += imageUv["uv_size"][1];
-					imageUv["uv_size"][1] *= -1;
-				}
-				cube["uv"][faceName] = {
-					"uv": imageUv["uv"],
-					"uv_size": imageUv["uv_size"]
-				};
-				if("crop" in imageUv) {
-					let crop = imageUv["crop"];
-					applyCubeCropping(cube, face, crop);
-				}
-			});
-		});
-	});
-}
-/**
- * Modifies a cube's size based on the cropping of a face.
- * @param {object} cube
- * @param {object} face
- * @param {object} crop
- */
-function applyCubeCropping(cube, face, crop) {
-	let cropXRem = 1 - crop["w"] - crop["x"]; // remaining horizontal space on the other side of the cropped region
-	let cropYRem = 1 - crop["h"] - crop["y"];
-	if(cube["size"][0] == 0) {
-		cube["origin"][2] += cube["size"][2] * (face["flip_horizontally"]? cropXRem : crop["x"]);
-		cube["origin"][1] += cube["size"][1] * (face["flip_vertically"]? crop["y"] : cropYRem); // the latter term is the distance from the bottom of the texture, which is upwards direction in 3D space.
-		cube["size"][2] *= crop["w"];
-		cube["size"][1] *= crop["h"];
-	} else if(cube["size"][1] == 0) {
-		cube["origin"][0] += cube["size"][0] * (face["flip_horizontally"]? cropXRem : crop["x"]);
-		cube["origin"][2] += cube["size"][2] * (face["flip_vertically"]? cropYRem : crop["y"]);
-		cube["size"][0] *= crop["w"];
-		cube["size"][2] *= crop["h"];
-	} else if(cube["size"][2] == 0) {
-		cube["origin"][0] += cube["size"][0] * (face["flip_horizontally"]? cropXRem : crop["x"]);
-		cube["origin"][1] += cube["size"][1] * (face["flip_vertically"]? crop["y"] : cropYRem);
-		cube["size"][0] *= crop["w"];
-		cube["size"][1] *= crop["h"];
-	} else {
-		throw new Error("Cannot crop bone template without zero size in one axis!");
-	}
 }
 /**
  * Makes the layer animations and animation controllers. Mutates the original arguments.
@@ -1877,6 +1781,38 @@ function stringifyWithFixedDecimals(value) {
  * @property {object} [block_entity_data] Block entity data
  */
 /**
+ * @typedef {object} PolyMesh A `poly_mesh` object as in geometry files.
+ * @property {boolean} [normalized_uvs]
+ * @property {Array<Vec3>} normals
+ * @property {Array<Vec2>} uvs
+ * @property {Array<Vec3>} positions
+ * @property {Array<PolyMeshFace>} polys
+ */
+/**
+ * @typedef {[Vec3, Vec3, Vec3, Vec3]} PolyMeshFace A square face.
+ */
+/**
+ * @typedef {object} PolyMeshTemplateFace
+ * @property {Vec3} normal
+ * @property {number} textureRefI
+ * @property {[PolyMeshTemplateVertex, PolyMeshTemplateVertex, PolyMeshTemplateVertex, PolyMeshTemplateVertex]} vertices
+ */
+/**
+ * @typedef {object} PolyMeshTemplateVertex
+ * @property {Vec3} pos
+ * @property {number} corner 0: top left, 1: top right, 2: bottom left, 3: bottom right
+ */
+/**
+ * @typedef {object} PolyMeshTemplateFaceWithUvs
+ * @property {Vec3} normal
+ * @property {[PolyMeshTemplateVertexWithUv, PolyMeshTemplateVertexWithUv, PolyMeshTemplateVertexWithUv, PolyMeshTemplateVertexWithUv]} vertices
+ */
+/**
+ * @typedef {object} PolyMeshTemplateVertexWithUv
+ * @property {Vec3} pos
+ * @property {Vec2} uv
+ */
+/**
  * @typedef {object} BoneTemplate An unpositioned bone for geometry files without name or parent. All units/coordinates are relative to (0, 0, 0).
  * @property {Vec3} [pivot] The block's center point of rotation
  * @property {Vec3} [rotation] The block's rotation
@@ -1889,7 +1825,6 @@ function stringifyWithFixedDecimals(value) {
  * @property {string} block_name Block ID to get the texture from
  * @property {string} texture_face Which face's texture to use
  * @property {number} variant Which terrain_texture.json variant to use
- * @property {boolean} croppable If a texture can be cropped automatically
  * @property {string} [texture_path_override] An overriding texture file path to look at
  * @property {string} [terrain_texture_override] A terrain texture key override; will override block_name and texture_face
  * @property {Vec3} [tint] A tint override
@@ -1902,7 +1837,6 @@ function stringifyWithFixedDecimals(value) {
  * @property {number} opacity
  * @property {Vec2} uv
  * @property {Vec2} uv_size
- * @property {boolean} croppable If a texture can be cropped automatically
  */
 /**
  * @typedef {object} ImageFragment An image fragment containing an image, UV position, and UV size.
@@ -1911,7 +1845,7 @@ function stringifyWithFixedDecimals(value) {
  * @property {number} h Height
  * @property {number} sourceX
  * @property {number} sourceY
- * @property {{ x: number, y: number, w: number, h: number }} [crop]
+ * @property {Rectangle} [crop]
  */
 /**
  * @typedef {object} MaterialListEntry An entry in a material list.
@@ -2010,10 +1944,16 @@ function stringifyWithFixedDecimals(value) {
  * @property {Record<string, Array<BlockUpdateSchemaRemappedState>>} [remappedStates] - Mapping of remapped states.
  */
 /**
+ * @typedef {object} Rectangle
+ * @property {number} x
+ * @property {number} y
+ * @property {number} w
+ * @property {number} h
+ */
+/**
  * @typedef {[number, number]} Vec2 2D vector.
  */
 /**
- *
  * @typedef {[number, number, number]} Vec3 3D vector.
  */
 /**

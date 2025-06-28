@@ -2,13 +2,12 @@
 // READ: this also looks pretty comprehensive: https://github.com/MCBE-Development-Wiki/mcbe-dev-home/blob/main/docs/misc/enums/block_shape.md
 // https://github.com/bricktea/MCStructure/blob/main/docs/1.16.201/enums/B.md
 
-import { AsyncFactory, awaitAllEntries, hexColorToClampedTriplet, jsonc, JSONSet } from "./utils.js";
+import { addVec3, AsyncFactory, awaitAllEntries, hexColorToClampedTriplet, jsonc, JSONSet, max, mulVec3, rotateDeg } from "./utils.js";
 
 // https://wiki.bedrock.dev/visuals/material-creations.html#overlay-color-in-render-controllers
 // https://wiki.bedrock.dev/documentation/materials.html#entity-alphatest
 
 export default class BlockGeoMaker extends AsyncFactory {
-	/** @type {HoloPrintConfig} */
 	config;
 	textureRefs = new JSONSet();
 	
@@ -28,6 +27,7 @@ export default class BlockGeoMaker extends AsyncFactory {
 	
 	#cachedBlockShapes = new Map();
 	
+	/** @param {HoloPrintConfig} config */
 	constructor(config) {
 		super();
 		this.config = config;
@@ -76,71 +76,37 @@ export default class BlockGeoMaker extends AsyncFactory {
 		});
 	}
 	/**
-	 * Makes a bone template (i.e. unpositioned, nameless bone with geometry) from a block. Texture UVs are unresolved, and are indices for the textureRefs property.
-	 * @param {Block} block
-	 * @returns {BoneTemplate}
+	 * Makes poly mesh templates from a block palette.
+	 * @param {Array<Block>} blockPalette
+	 * @returns {Array<Array<PolyMeshTemplateFace>>}
 	 */
-	makeBoneTemplate(block) {
+	makePolyMeshTemplates(blockPalette) {
+		return blockPalette.map(block => this.#makePolyMeshTemplate(block));
+	}
+	/**
+	 * Makes a poly mesh template (i.e. an array of poly mesh template faces) from a block. Texture UVs are unresolved, and are indices for the textureRefs property.
+	 * @param {Block} block
+	 * @returns {Array<PolyMeshTemplateFace>}
+	 */
+	#makePolyMeshTemplate(block) {
 		let blockName = block["name"];
 		let blockShape = this.#getBlockShape(blockName);
-		let boneCubes = this.#makeBoneCubes(block, blockShape);
-		if(boneCubes.length == 0) {
-			console.debug(`No cubes are being rendered for block ${blockName}`);
+		let faces = this.#makePolyMeshTemplateFaces(block, blockShape);
+		if(faces.length == 0) {
+			console.debug(`No faces are being rendered for block ${blockName}`);
 		}
-		let bone = {
-			"cubes": boneCubes
-		};
 		if(blockShape.includes("{")) {
 			blockShape = blockShape.slice(0, blockShape.indexOf("{"));
 		}
-		let blockShapeSpecificRotations = this.#blockShapeBlockStateRotations.get(blockShape);
-		let blockNameSpecificRotations = this.#blockNameBlockStateRotations.get(blockName);
-		let statesAndBlockEntityData = this.#getBlockStatesAndEntityDataEntries(block);
-		statesAndBlockEntityData.forEach(([blockStateName, blockStateValue]) => {
-			let rotations = blockNameSpecificRotations?.[blockStateName] ?? blockShapeSpecificRotations?.[blockStateName] ?? this.#globalBlockStateRotations[blockStateName]; // order: block name (exact match), block shape, global
-			if(!rotations) {
-				return; // this block state doesn't control rotation
-			}
-			
-			if(!(blockStateValue in rotations)) {
-				console.error(`Block state value ${blockStateValue} for rotation block state ${blockStateName} not found on ${blockName}...`, block);
-				return;
-			}
-			if("rotation" in bone) {
-				console.debug(`Multiple rotation block states for block ${block["name"]}; adding them all together!`);
-				bone["rotation"] = bone["rotation"].map((x, i) => x + rotations[blockStateValue][i]);
-			} else {
-				bone["rotation"] = rotations[blockStateValue];
-				bone["pivot"] = [8, 8, 8];
-			}
-		});
-		if(bone["rotation"]?.every(x => x == 0)) {
-			delete bone["rotation"];
-			delete bone["pivot"];
-		}
-		return bone;
-	}
-	/**
-	 * Absolutely positions a bone template.
-	 * @param {BoneTemplate} boneTemplate
-	 * @param {Vec3} blockPos The position where the bone will be moved to.
-	 * @returns {BoneTemplate}
-	 */
-	positionBoneTemplate(boneTemplate, blockPos) {
-		let bone = structuredClone(boneTemplate);
-		bone["cubes"].forEach(boneCube => {
-			boneCube["origin"] = boneCube["origin"].map((x, i) => x + blockPos[i]);
-			if("pivot" in boneCube) {
-				boneCube["pivot"] = boneCube["pivot"].map((x, i) => x + blockPos[i]);
-			}
-			boneCube["extra_rots"]?.forEach(extraRot => {
-				extraRot["pivot"] = extraRot["pivot"].map((x, i) => x + blockPos[i]);
+		let rotation = this.#getBlockRotation(block, blockShape);
+		if(rotation) {
+			faces.forEach(face => {
+				face["vertices"].forEach(vertex => {
+					vertex["pos"] = this.#applyEulerRotation(vertex["pos"], rotation, [8, 8, 8]); // (8, 8, 8) is the block center and the pivot for all block-wide rotations
+				});
 			});
-		});
-		if("pivot" in bone) {
-			bone["pivot"] = bone["pivot"].map((x, i) => x + blockPos[i]);
 		}
-		return bone;
+		return faces;
 	}
 	/**
 	 * Gets the block shape for a specific block.
@@ -161,12 +127,12 @@ export default class BlockGeoMaker extends AsyncFactory {
 		return blockShape;
 	}
 	/**
-	 * Makes the cubes in a bone from a block.
+	 * Makes the poly mesh faces for a block.
 	 * @param {Block} block
 	 * @param {string} blockShape
-	 * @returns {Array}
+	 * @returns {Array<PolyMeshTemplateFace>}
 	 */
-	#makeBoneCubes(block, blockShape) {
+	#makePolyMeshTemplateFaces(block, blockShape) {
 		let specialTexture;
 		if(blockShape.includes("{")) {
 			[, blockShape, specialTexture] = blockShape.match(/^(\w+)\{(textures\/[\w\/]+)\}$/);
@@ -178,7 +144,7 @@ export default class BlockGeoMaker extends AsyncFactory {
 			unfilteredCubes = structuredClone(this.#blockShapeGeos["block"]);
 		}
 		let filteredCubes = [];
-		let boneCubes = [];
+		let allFaces = [];
 		while(unfilteredCubes.length) {
 			// For each unfiltered cube, we add it to filteredCubes if we've checked the "if" flag. If there are copies, we then add them back to unfilteredCubes.
 			let cube = unfilteredCubes.shift();
@@ -267,19 +233,21 @@ export default class BlockGeoMaker extends AsyncFactory {
 				}
 				blockToCopy["#copied_via_copy_block"] = true; // I will learn rust if mojang adds this to the structure NBT
 				let newBlockShape = this.#getBlockShape(blockToCopy["name"]);
-				let newBoneCubes = this.#makeBoneCubes(blockToCopy, newBlockShape);
+				let newFaces = this.#makePolyMeshTemplateFaces(blockToCopy, newBlockShape);
 				if("translate" in cube) {
-					newBoneCubes.forEach(boneCube => {
-						boneCube["origin"] = boneCube["origin"].map((x, i) => x + cube["translate"][i]);
-						if("pivot" in boneCube) {
-							boneCube["pivot"] = boneCube["pivot"].map((x, i) => x + cube["translate"][i]);
+					newFaces.forEach(face => {
+						for(let i = 0; i < 4; i++) {
+							face["vertices"][i]["pos"] = addVec3(face["vertices"][i]["pos"], cube["translate"]);
 						}
 					});
 				}
-				boneCubes.push(...newBoneCubes);
+				allFaces.push(...newFaces);
 			} else {
 				filteredCubes.push(cube);
 			}
+		}
+		if(filteredCubes.length == 0) {
+			return [];
 		}
 		// add easy property accessors. I could make a class if I wanted to
 		filteredCubes.forEach(cube => {
@@ -299,29 +267,21 @@ export default class BlockGeoMaker extends AsyncFactory {
 		let variantWithoutEigenvariant;
 		
 		cubes.forEach(cube => {
-			let boneCube = {
-				"origin": cube["pos"],
-				"size": cube["size"],
-				"uv": this.#calculateUv(cube)
-			};
+			let uv = this.#calculateUv(cube);
 			
-			let croppable = false;
 			// When the size of a cube in a direction is 0, we can remove all faces but 1. Because we have DisableCulling in the material, this single face will render from the back as well.
 			// On a side note, if there wasn't the DisableCulling material state and we rendered both faces on opposite sides, the texture wouldn't be mirrored on the other side, so this is another bug fix ig
 			if(cube.w == 0) {
 				// 0 width: only render west
-				["east", "down", "up", "north", "south"].forEach(faceName => delete boneCube["uv"][faceName]);
-				croppable = true;
+				["east", "down", "up", "north", "south"].forEach(faceName => delete uv[faceName]);
 			}
 			if(cube.h == 0) {
 				// 0 height: only render down
-				["west", "east", "up", "north", "south"].forEach(faceName => delete boneCube["uv"][faceName]);
-				croppable = true;
+				["west", "east", "up", "north", "south"].forEach(faceName => delete uv[faceName]);
 			}
 			if(cube.d == 0) {
 				// 0 depth: only render north
-				["west", "east", "down", "up", "south"].forEach(faceName => delete boneCube["uv"][faceName]);
-				croppable = true;
+				["west", "east", "down", "up", "south"].forEach(faceName => delete uv[faceName]);
 			}
 			
 			let cubeVariant;
@@ -342,15 +302,16 @@ export default class BlockGeoMaker extends AsyncFactory {
 				cubeVariant = variant; // default variant for this block
 			}
 			
+			/** @type {Array<PolyMeshTemplateFace>} */
+			let faces = [];
+			
 			let textureSize = cube["texture_size"] ?? [16, 16];
 			// add generic keys to all faces, and convert texture references into indices
-			for(let faceName in boneCube["uv"]) {
+			Object.entries(uv).forEach(([faceName, face]) => {
 				let isSideFace = ["west", "east", "north", "south"].includes(faceName);
-				let face = boneCube["uv"][faceName];
 				let textureFace = cube["textures"]?.[faceName] ?? (isSideFace? cube["textures"]?.["side"] : undefined) ?? cube["textures"]?.["*"] ?? faceName;
 				if(textureFace == "none") {
-					delete boneCube["uv"][faceName];
-					continue;
+					return;
 				}
 				textureFace = this.#interpolateInBlockValues(cube["block_override"] ?? block, textureFace, cube);
 				let textureRef = {
@@ -358,8 +319,7 @@ export default class BlockGeoMaker extends AsyncFactory {
 					"uv_size": face["uv_size"].map((x, i) => x / textureSize[i]),
 					"block_name": blockName,
 					"texture_face": textureFace,
-					"variant": cubeVariant,
-					"croppable": croppable
+					"variant": cubeVariant
 				};
 				if(textureFace == "#tex") {
 					if(specialTexture) {
@@ -401,35 +361,85 @@ export default class BlockGeoMaker extends AsyncFactory {
 					flipTextureHorizontally ^= faceName != "north" && faceName != "south";
 					flipTextureVertically ^= faceName == "up";
 				}
-				boneCube["uv"][faceName] = {
-					"index": this.textureRefs.indexOf(textureRef),
-					"flip_horizontally": (faceName == "down" || faceName == "up") ^ flipTextureHorizontally, // in MC the down/up faces are rotated 180 degrees compared to how they are in geometry; this can be faked by flipping both axes. I don't want to use uv_rotation since that's a 1.21 thing and I want support back to 1.16.
-					"flip_vertically": (faceName == "down" || faceName == "up") ^ flipTextureVertically
-				};
+				let vertices = this.#getVertices(cube, faceName);
+				if((faceName == "down" || faceName == "up") ^ flipTextureHorizontally) { // in MC the down/up faces are rotated 180 degrees compared to how they are in geometry; this can be faked by flipping both axes.
+					[vertices[0]["corner"], vertices[1]["corner"]] = [vertices[1]["corner"], vertices[0]["corner"]];
+					[vertices[2]["corner"], vertices[3]["corner"]] = [vertices[3]["corner"], vertices[2]["corner"]];
+				}
+				if((faceName == "down" || faceName == "up") ^ flipTextureVertically) {
+					[vertices[0]["corner"], vertices[2]["corner"]] = [vertices[2]["corner"], vertices[0]["corner"]];
+					[vertices[1]["corner"], vertices[3]["corner"]] = [vertices[3]["corner"], vertices[1]["corner"]];
+				}
+				for(let i = 0; i < 4; i++) {
+					let vertex = vertices[i];
+					if("rot" in cube) {
+						vertex["pos"] = this.#applyEulerRotation(vertex["pos"], cube["rot"], cube["pivot"] ?? [8, 8, 8]);
+					}
+					cube["extra_rots"]?.reverse()?.forEach(extraRot => {
+						vertex["pos"] = this.#applyEulerRotation(vertex["pos"], extraRot["rot"], extraRot["pivot"]);
+					});
+					if("translate" in cube) {
+						vertex["pos"] = addVec3(vertex["pos"], cube["translate"]);
+					}
+				}
+				faces.push({
+					"normal": this.#getSurfaceNormal(faceName),
+					"textureRefI": this.textureRefs.indexOf(textureRef),
+					"vertices": vertices
+				});
+			});
+			
+			allFaces.push(...faces);
+		});
+		let centerOfMass = this.#calculateCenterOfMass(cubes);
+		allFaces = this.#scaleFaces(allFaces, centerOfMass);
+		return allFaces;
+	}
+	/**
+	 * Gets the block rotation for an entire block based on block states.
+	 * @param {Block} block
+	 * @param {string} blockShape
+	 * @returns {Vec3 | null}
+	 */
+	#getBlockRotation(block, blockShape) {
+		let blockName = block["name"];
+		let blockShapeSpecificRotations = this.#blockShapeBlockStateRotations.get(blockShape);
+		let blockNameSpecificRotations = this.#blockNameBlockStateRotations.get(blockName);
+		let statesAndBlockEntityData = this.#getBlockStatesAndEntityDataEntries(block);
+		let rotation = null;
+		statesAndBlockEntityData.forEach(([blockStateName, blockStateValue]) => {
+			let rotations = blockNameSpecificRotations?.[blockStateName] ?? blockShapeSpecificRotations?.[blockStateName] ?? this.#globalBlockStateRotations[blockStateName]; // order: block name (exact match), block shape, global
+			if(!rotations) {
+				return; // this block state doesn't control rotation
 			}
 			
-			if("rot" in cube) {
-				boneCube["rotation"] = cube["rot"];
-				boneCube["pivot"] = cube["pivot"] ?? [8, 8, 8]; // we set the pivot for this cube to be the center of it. if we don't specify this it would look at the pivot for the bone, which would be different if we're doing our fancy animations.
+			if(!(blockStateValue in rotations)) {
+				console.error(`Block state value ${blockStateValue} for rotation block state ${blockStateName} not found on ${blockName}...`, block);
+				return;
 			}
-			if("extra_rots" in cube) {
-				boneCube["extra_rots"] = cube["extra_rots"];
+			if(rotation) {
+				console.debug(`Multiple rotation block states for block ${block["name"]}; adding them all together!`);
+				rotation = addVec3(rotation, rotations[blockStateValue]);
+			} else {
+				rotation = rotations[blockStateValue];
 			}
-			if("translate" in cube) {
-				boneCube["origin"] = boneCube["origin"].map((x, i) => x + cube["translate"][i]);
-				if("rot" in cube) {
-					boneCube["pivot"] = boneCube["pivot"].map((x, i) => x + cube["translate"][i]);
-				}
-				if("extra_rots" in cube) {
-					boneCube["extra_rots"].forEach(extraRot => {
-						extraRot["pivot"] = extraRot["pivot"].map((x, i) => x + cube["translate"][i]);
-					});
-				}
-			}
-			boneCube = this.#scaleBoneCube(boneCube);
-			boneCubes.push(boneCube);
 		});
-		return boneCubes;
+		return rotation;
+	}
+	/**
+	 * Applies Euler rotations on a position in 3D space in the order X-Y-Z.
+	 * @param {Vec3} pos
+	 * @param {Vec3} rotation Angles in degrees
+	 * @param {Vec3} pivot
+	 * @returns {Vec3}
+	 */
+	#applyEulerRotation(pos, rotation, pivot) {
+		let res = addVec3(pos, mulVec3(pivot, -1));
+		[res[1], res[2]] = rotateDeg([res[1], res[2]], -rotation[0]); // idk why but it's negative
+		[res[0], res[2]] = rotateDeg([res[0], res[2]], -rotation[1]);
+		[res[0], res[1]] = rotateDeg([res[0], res[1]], -rotation[2]);
+		res = addVec3(res, pivot);
+		return res;
 	}
 	/**
 	 * Returns the entries of a block's states and block entity data (prefixed by `entity.`; only first-level properties are supported).
@@ -622,22 +632,85 @@ export default class BlockGeoMaker extends AsyncFactory {
 			};
 		}
 	}
-	/** Scales a bone cube towards (8, 8, 8).
-	 * @param {object} boneCube
-	 * @returns {object}
+	/**
+	 * Gets the default vertices for a cube and a specific face side.
+	 * @param {object} cube
+	 * @param {"west" | "east" | "down" | "up" | "north" | "south"} faceName
+	 * @returns {[PolyMeshTemplateVertex, PolyMeshTemplateVertex, PolyMeshTemplateVertex, PolyMeshTemplateVertex]}
 	 */
-	#scaleBoneCube(boneCube) {
-		boneCube["origin"] = boneCube["origin"].map(x => (x - 8) * this.config.SCALE + 8);
-		boneCube["size"] = boneCube["size"].map(x => x * this.config.SCALE);
-		if("pivot" in boneCube) {
-			boneCube["pivot"] = boneCube["pivot"].map(x => (x - 8) * this.config.SCALE + 8);
+	#getVertices(cube, faceName) {
+		let { pos, size } = cube;
+		const cubeFaces = {
+			"west": [[1, 1, 0], [1, 1, 1], [1, 0, 0], [1, 0, 1]],
+			"east": [[0, 1, 1], [0, 1, 0], [0, 0, 1], [0, 0, 0]],
+			"down": [[0, 0, 0], [1, 0, 0], [0, 0, 1], [1, 0, 1]],
+			"up": [[0, 1, 1], [1, 1, 1], [0, 1, 0], [1, 1, 0]],
+			"north": [[0, 1, 0], [1, 1, 0], [0, 0, 0], [1, 0, 0]],
+			"south": [[1, 1, 1], [0, 1, 1], [1, 0, 1], [0, 0, 1]]
 		}
-		if("extra_rots" in boneCube) {
-			boneCube["extra_rots"].forEach(extraRot => {
-				extraRot["pivot"] = extraRot["pivot"].map(x => (x - 8) * this.config.SCALE + 8);
+		return cubeFaces[faceName].map(([a, b, c], i) => ({
+			"pos": [pos[0] + size[0] * a, pos[1] + size[1] * b, pos[2] + size[2] * c],
+			"corner": i
+		}));
+	}
+	/**
+	 * Gets the surface normal for a specific face of a cube.
+	 * @param {"west" | "east" | "down" | "up" | "north" | "south"} faceName
+	 * @returns {Vec3}
+	 */
+	#getSurfaceNormal(faceName) {
+		return [0, 1, 0]; // TODO: add lighting by enabling FANCY
+		// switch(faceName) {
+		// 	case "west": return [-1, 0, 0];
+		// 	case "east": return [1, 0, 0];
+		// 	case "down": return [0, 1, 0];
+		// 	case "up": return [0, -1, 0];
+		// 	case "north": return [0, 0, -1];
+		// 	case "south": return [0, 0, 1];
+		// }
+	}
+	/**
+	 * Calculates the center of mass of some cubes, assuming mass = volume. If all cubes are flat it will take surface area for mass.
+	 * @param {Array<object>} cubes
+	 * @returns {Vec3}
+	 */
+	#calculateCenterOfMass(cubes) {
+		let center = [0, 0, 0];
+		let totalMass = 0;
+		cubes.forEach(cube => {
+			let mass = cube.w * cube.h * cube.d; // assume uniform mass density
+			totalMass += mass;
+			center = addVec3(center, mulVec3(addVec3(cube["pos"], cube["size"]), mass / 2));
+		});
+		if(totalMass == 0) { // all cubes must be flat
+			cubes.forEach(cube => {
+				let mass = max(cube.w, 1) * max(cube.h, 1) * max(cube.d, 1);
+				totalMass += mass;
+				center = addVec3(center, mulVec3(addVec3(cube["pos"], cube["size"]), mass / 2));
 			});
 		}
-		return boneCube;
+		if(totalMass == 0) {
+			console.error("0 mass...");
+			return [8, 8, 8];
+		}
+		center = mulVec3(center, 1 / totalMass);
+		return center;
+	}
+	/**
+	 * Scales poly mesh templates faces towards a center of mass.
+	 * @param {Array<PolyMeshTemplateFace>} faces
+	 * @param {Vec3} centerOfMass
+	 * @returns {Array<PolyMeshTemplateFace>}
+	 */
+	#scaleFaces(faces, centerOfMass) {
+		return faces.map(face => {
+			for(let i = 0; i < 4; i++) {
+				let v = face["vertices"][i];
+				let translated = addVec3(v["pos"], mulVec3(centerOfMass, -1));
+				v["pos"] = addVec3(mulVec3(translated, this.config.SCALE), centerOfMass); // I long for the day when ECMAScript has native vector types like in GLSL. This is equivalent to (v["pos"] - centerOfMass) * scale + centerOfMass
+			}
+			return face;
+		});
 	}
 	#checkBlockStateConditional(block, conditional) {
 		let trimmedConditional = conditional.replaceAll(/\s/g, "");
@@ -816,17 +889,54 @@ export default class BlockGeoMaker extends AsyncFactory {
 		}
 		return false;
 	}
+	
+	/**
+	 * Resolves UVs in template faces.
+	 * @param {Array<PolyMeshTemplateFace>} faces
+	 * @param {TextureAtlas} textureAtlas
+	 * @returns {Array<PolyMeshTemplateFaceWithUvs>}
+	 */
+	static resolveTemplateFaceUvs(faces, textureAtlas) {
+		return faces.map(face => {
+			let imageUv = textureAtlas.uvs[face["textureRefI"]];
+			if("crop" in imageUv) {
+				this.#applyFaceCropping(face, imageUv["crop"]);
+			}
+			let sortedVertices = face["vertices"].sort((a, b) => a["corner"] - b["corner"]);
+			let vertices = [sortedVertices[0], sortedVertices[1], sortedVertices[3], sortedVertices[2]]; // go around in a square
+			return {
+				"normal": face["normal"],
+				"vertices": vertices.map(vertex => ({
+					"pos": vertex["pos"],
+					"uv": [(imageUv["uv"][0] + imageUv["uv_size"][0] * (vertex["corner"] & 1)) / textureAtlas.textureWidth, 1 - (imageUv["uv"][1] + imageUv["uv_size"][1] * (vertex["corner"] >> 1)) / textureAtlas.textureHeight]
+				}))
+			};
+		});
+	}
+	/**
+	 * Crops a face, modifying the input object.
+	 * @param {PolyMeshTemplateFace} face
+	 * @param {Rectangle} crop
+	 */
+	static #applyFaceCropping(face, crop) {
+		let v0 = face["vertices"][0];
+		let v1 = face["vertices"][1];
+		let v2 = face["vertices"][2];
+		let v3 = face["vertices"][3];
+		let v0pos = v0["pos"];
+		let v1pos = v1["pos"];
+		let v2pos = v2["pos"];
+		let v3pos = v3["pos"];
+		let textureXDir = [v1pos[0] - v0pos[0], v1pos[1] - v0pos[1], v1pos[2] - v0pos[2]]; // v1pos - v0pos
+		let textureYDir = [v2pos[0] - v0pos[0], v2pos[1] - v0pos[1], v2pos[2] - v0pos[2]]; // v2pos - v0pos
+		let cropXRem = 1 - crop["w"] - crop["x"]; // remaining horizontal space on the other side of the cropped region
+		let cropYRem = 1 - crop["h"] - crop["y"];
+		v0["pos"] = addVec3(v0pos, [textureXDir[0] * crop["x"] + textureYDir[0] * crop["y"], textureXDir[1] * crop["x"] + textureYDir[1] * crop["y"], textureXDir[2] * crop["x"] + textureYDir[2] * crop["y"]]);
+		v1["pos"] = addVec3(v1pos, [-textureXDir[0] * cropXRem + textureYDir[0] * crop["y"], -textureXDir[1] * cropXRem + textureYDir[1] * crop["y"], -textureXDir[2] * cropXRem + textureYDir[2] * crop["y"]]);
+		v2["pos"] = addVec3(v2pos, [textureXDir[0] * crop["x"] - textureYDir[0] * cropYRem, textureXDir[1] * crop["x"] - textureYDir[1] * cropYRem, textureXDir[2] * crop["x"] - textureYDir[2] * cropYRem]);
+		v3["pos"] = addVec3(v3pos, [-textureXDir[0] * cropXRem - textureYDir[0] * cropYRem, -textureXDir[1] * cropXRem - textureYDir[1] * cropYRem, -textureXDir[2] * cropXRem - textureYDir[2] * cropYRem]);
+	}
 }
 
-/**
- * @typedef {import("./HoloPrint.js").Vec3} Vec3
- */
-/**
- * @typedef {import("./HoloPrint.js").Block} Block
- */
-/**
- * @typedef {import("./HoloPrint.js").BoneTemplate} BoneTemplate
- */
-/**
- * @typedef {import("./HoloPrint.js").HoloPrintConfig} HoloPrintConfig
- */
+/** @import { Vec3, Block, HoloPrintConfig, PolyMeshTemplateFaceWithUvs, PolyMeshTemplateFace, Rectangle, PolyMeshTemplateVertex } from "./HoloPrint.js"  */
+/** @import TextureAtlas from "./TextureAtlas.js" */

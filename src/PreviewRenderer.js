@@ -1,11 +1,9 @@
-import { abs, AsyncFactory, cosDeg, distanceSquared, downloadFile, JSONSet, max, min, pi, sinDeg, tanDeg, toImageData } from "./utils.js";
+import { abs, AsyncFactory, cosDeg, distanceSquared, downloadFile, JSONSet, max, min, pi, round, sinDeg, subVec2, tanDeg, toImageData } from "./utils.js";
 
-import { Model } from "@bridge-editor/model-viewer";
-
-import { OrbitControls } from "three/addons/controls/OrbitControls.js";
+import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
 import * as THREE from "three";
 import Stats from "stats.js";
-// let StandaloneModelViewer;
+import PolyMeshMaker from "./PolyMeshMaker.js";
 
 const IN_PRODUCTION = false;
 
@@ -17,26 +15,26 @@ export default class PreviewRenderer extends AsyncFactory {
 		"redstone_torch": 0x990000,
 		"powered_repeater": 0x330000,
 		"powered_comparator": 0x330000,
-		"end_rod": [0xD0C9BE, 1.35],
+		"end_rod": [0xD0C9BE, 67.5],
 		"fire": 0xFF9955,
 		"lava": 0xFF9955,
-		"campfire[extinguished=0]": [0xFF9955, 0.75],
-		"soul_campfire[extinguished=0]": [0x00FFFF, 0.5],
-		"cave_vines_body_with_berries": [0xFFAA66, 0.75],
-		"cave_vines_head_with_berries": [0xFFAA66, 0.75],
+		"campfire[extinguished=0]": [0xFF9955, 37.5],
+		"soul_campfire[extinguished=0]": [0x00FFFF, 25],
+		"cave_vines_body_with_berries": [0xFFAA66, 37.5],
+		"cave_vines_head_with_berries": [0xFFAA66, 37.5],
 		
 		"torch": 0xEFE39D, // source: https://learn.microsoft.com/en-us/minecraft/creator/documents/deferredlighting/lightingcustomization?view=minecraft-bedrock-stable
 		"soul_lantern": 0x00FFFF,
 		"soul_torch": 0x00FFFF
 	};
-	static #POINT_LIGHT_DEFAULT_INTENSITY = 1.5;
-	static #DIRECTIONAL_LIGHT_STRENGTH = 0.5;
+	static #POINT_LIGHT_DEFAULT_INTENSITY = 75;
+	static #DIRECTIONAL_LIGHT_STRENGTH = 1.57;
 	static #FLOOR_SHADOW_DARKNESS = 0.3;
 	
 	cont;
 	packName;
 	textureAtlas;
-	boneTemplatePalette;
+	polyMeshTemplatePalette;
 	structureSize;
 	options = {
 		showSkybox: true,
@@ -88,17 +86,17 @@ export default class PreviewRenderer extends AsyncFactory {
 	 * @param {import("./TextureAtlas.js").default} textureAtlas
 	 * @param {I32Vec3} structureSize
 	 * @param {Array<Block>} blockPalette
-	 * @param {Array<BoneTemplate>} boneTemplatePalette
+	 * @param {Array<Array<PolyMeshTemplateFaceWithUvs>>} polyMeshTemplatePalette
 	 * @param {[Int32Array, Int32Array]} blockIndices
 	 * @param {Partial<typeof this.options>} [options]
 	 */
-	constructor(cont, packName, textureAtlas, structureSize, blockPalette, boneTemplatePalette, blockIndices, options = {}) {
+	constructor(cont, packName, textureAtlas, structureSize, blockPalette, polyMeshTemplatePalette, blockIndices, options = {}) {
 		super();
 		this.cont = cont;
 		this.packName = packName;
 		this.textureAtlas = textureAtlas;
 		this.structureSize = structureSize;
-		this.boneTemplatePalette = boneTemplatePalette;
+		this.polyMeshTemplatePalette = polyMeshTemplatePalette;
 		this.options = { ...this.options, ...options };
 		
 		this.#can = document.createElement("canvas");
@@ -153,7 +151,7 @@ export default class PreviewRenderer extends AsyncFactory {
 					let blockI = (x * this.structureSize[1] + y) * this.structureSize[2] + z;
 					for(let layerI = 0; layerI < 2; layerI++) {
 						let paletteI = blockIndices[layerI][blockI];
-						if(!(paletteI in this.boneTemplatePalette)) {
+						if(!(paletteI in this.polyMeshTemplatePalette)) {
 							continue;
 						}
 						this.#blockPositions[paletteI] ??= [];
@@ -163,7 +161,7 @@ export default class PreviewRenderer extends AsyncFactory {
 						if(lightInfo) {
 							let [col, intensity] = Array.isArray(lightInfo)? lightInfo : [lightInfo, PreviewRenderer.#POINT_LIGHT_DEFAULT_INTENSITY];
 							this.#pointLights.push({
-								"pos": [-16 * x, 16 * y + 8, -16 * z],
+								"pos": [-16 * x - 8, 16 * y + 8, -16 * z - 8],
 								"col": new THREE.Color(col),
 								"intensity": intensity
 							});
@@ -177,7 +175,6 @@ export default class PreviewRenderer extends AsyncFactory {
 	async init() {
 		// THREE ??= await import("three");
 		
-		let imageUrl = URL.createObjectURL(this.#imageBlob);
 		this.#imageBlobData = await toImageData(this.#imageBlob);
 		
 		this.#renderer = new THREE.WebGLRenderer({
@@ -252,21 +249,28 @@ export default class PreviewRenderer extends AsyncFactory {
 		// animator.addAnimation("spawn", animation);
 		// animator.play("spawn");
 		
+		let texture = await this.#createTexture();
+		let regularMat = new THREE.MeshLambertMaterial({
+			map: texture,
+			side: THREE.DoubleSide,
+			alphaTest: 0.2
+		});
+		let transparentMat = new THREE.MeshLambertMaterial({
+			map: texture,
+			side: THREE.DoubleSide,
+			alphaTest: 0.2,
+			transparent: true
+		});
 		for(let i in this.#blockPositions) {
-			let boneTemplate = this.boneTemplatePalette[i];
-			let geo = this.#boneTemplateToGeo(boneTemplate);
-			let model = new Model(geo, imageUrl);
-			let group = model.getGroup();
-			group.rotation.set(0, pi, 0);
-			await model.create();
-			let positions = this.#blockPositions[i].map(([x, y, z]) => [-16 * x - 8, 16 * y, -16 * z + 8]);
-			let material = group.getObjectByProperty("isMesh", true)?.material;
-			if(!material) {
+			let polyMeshTemplate = this.polyMeshTemplatePalette[i];
+			if(!polyMeshTemplate.length) {
 				continue;
 			}
-			let isTranslucent = this.#isBoneTemplateTranslucent(boneTemplate);
-			material.transparent = isTranslucent; // blocks with 0 alpha textures won't be marked as transparent, but alpha testing (from model-viewer) will make them work correctly
-			let instancedMesh = this.#instanceGroupAtPositions(group, positions, material);
+			let geo = this.#polyMeshTemplateToBufferGeo(polyMeshTemplate);
+			let positions = this.#blockPositions[i].map(([x, y, z]) => [-16 * x - 16, 16 * y, -16 * z - 16]);
+			let isTranslucent = this.#isPolyMeshTemplateTranslucent(polyMeshTemplate);
+			let material = isTranslucent? transparentMat : regularMat;
+			let instancedMesh = this.#instanceBufferGeoAtPositions(geo, positions, material);
 			if(isTranslucent) {
 				instancedMesh.renderOrder = positions.length; // more common transparent blocks will be rendered after less common transparent blocks, minimising the amount of visual issues
 			}
@@ -275,8 +279,6 @@ export default class PreviewRenderer extends AsyncFactory {
 			this.#scene.add(instancedMesh);
 			this.#shouldRenderNextFrame = true;
 		}
-		
-		URL.revokeObjectURL(imageUrl);
 	}
 	/** Downloads a screenshot of the preview. */
 	downloadScreenshot() {
@@ -350,6 +352,8 @@ export default class PreviewRenderer extends AsyncFactory {
 		this.#camera.lookAt(boundingSphere.center);
 		this.#camera.updateProjectionMatrix();
 		this.#controls.target.copy(boundingSphere.center);
+		
+		this.#debugHelpers.push(new THREE.AxesHelper(16));
 	}
 	/** Adds the main directional light, the z-lights, the ambient light, the shadow floor, and the point lights. */
 	#addLighting() {
@@ -371,19 +375,19 @@ export default class PreviewRenderer extends AsyncFactory {
 		this.#debugHelpers.push(new THREE.CameraHelper(this.#directionalLight.shadow.camera));
 		
 		// these lights add extra shading on z-facing faces. this is vanilla MC behaviour. lines 53-54 in shaders/glsl/entity.vertex
-		let zLight1 = new THREE.DirectionalLight(0xFFFFFF, 0.1);
+		let zLight1 = new THREE.DirectionalLight(0xFFFFFF, 0.31);
 		zLight1.position.set(this.#center.x + this.#maxDimPixels * 0.6, this.#center.y + this.#maxDimPixels, this.#center.z + this.#maxDimPixels * 3);
 		zLight1.target.position.copy(this.#center);
 		this.#scene.add(zLight1);
 		this.#scene.add(zLight1.target);
-		let zLight2 = new THREE.DirectionalLight(0xFFFFFF, 0.1);
+		let zLight2 = new THREE.DirectionalLight(0xFFFFFF, 0.31);
 		zLight2.position.set(this.#center.x - this.#maxDimPixels * 0.6, this.#center.y + this.#maxDimPixels, this.#center.z - this.#maxDimPixels * 3);
 		zLight2.target.position.copy(this.#center);
 		this.#scene.add(zLight2);
 		this.#scene.add(zLight2.target);
 		this.#debugHelpers.push(new THREE.DirectionalLightHelper(zLight1, 5), new THREE.DirectionalLightHelper(zLight2, 5));
 		
-		let ambientLight = new THREE.AmbientLight(0xFFFFFF, 0.6);
+		let ambientLight = new THREE.AmbientLight(0xFFFFFF, 1.88);
 		this.#scene.add(ambientLight);
 		
 		let shadowFloor = new THREE.Mesh(new THREE.PlaneGeometry(this.#maxDimPixels * 5, this.#maxDimPixels * 5), new THREE.ShadowMaterial({
@@ -425,7 +429,7 @@ export default class PreviewRenderer extends AsyncFactory {
 	/** Syncs the number of point lights in the scene with how many should be rendered. */
 	#initPointLights() {
 		while(this.#pointLightsInScene.length < this.options.maxPointLights) {
-			let light = new THREE.PointLight(0, 0, PreviewRenderer.#POINT_LIGHT_MAX_DISTANCE, 0.7);
+			let light = new THREE.PointLight(0, 0, PreviewRenderer.#POINT_LIGHT_MAX_DISTANCE, 0.35);
 			this.#pointLightsInScene.push(light);
 			this.#scene.add(light);
 			let helper = new THREE.PointLightHelper(light, PreviewRenderer.#POINT_LIGHT_MAX_DISTANCE);
@@ -496,49 +500,68 @@ export default class PreviewRenderer extends AsyncFactory {
 			this.#scene.background = null;
 		}
 	}
-	/**
-	 * Converts a bone template to a geometry object.
-	 * @param {BoneTemplate} boneTemplate
-	 * @returns {import("@bridge-editor/model-viewer").IGeoSchema}
-	 */
-	#boneTemplateToGeo(boneTemplate) {
-		return {
-			"description": {
-				"texture_width": this.textureAtlas.atlasWidth,
-				"texture_height": this.textureAtlas.atlasHeight
-			},
-			"bones": [boneTemplate]
-		};
+	/** @returns {Promise<THREE.Texture>} */
+	async #createTexture() {
+		let texture = new THREE.DataTexture(this.#imageBlobData.data, this.#imageBlobData.width, this.#imageBlobData.height, THREE.RGBAFormat);
+		texture.colorSpace = THREE.SRGBColorSpace;
+		texture.minFilter = THREE.LinearFilter; // helps make the texture outlines more visible and far-away textures less noisy, at the expense of occasional texture bleeding
+		texture.flipY = true;
+		texture.needsUpdate = true;
+		return texture;
 	}
 	/**
-	 * Checks whether a bone template has translucent textures.
-	 * @param {BoneTemplate} boneTemplate
+	 * Converts a poly mesh template to a Three.js BufferGeometry.
+	 * @param {Array<PolyMeshTemplateFaceWithUvs>} polyMeshTemplate
+	 * @returns {THREE.BufferGeometry}
+	 */
+	#polyMeshTemplateToBufferGeo(polyMeshTemplate) {
+		let polyMeshMaker = new PolyMeshMaker();
+		polyMeshMaker.add(polyMeshTemplate);
+		let polyMesh = polyMeshMaker.export();
+		let i = 0;
+		let positions = [], normals = [], uvs = [], indices = [];
+		polyMesh["polys"].forEach(face => {
+			face.forEach(([posIndex, normalIndex, uvIndex]) => {
+				let pos = polyMesh.positions[posIndex];
+				positions.push(pos[0], pos[1], 16 - pos[2]);
+				normals.push(...polyMesh.normals[normalIndex]);
+				uvs.push(...polyMesh.uvs[uvIndex]);
+			});
+			indices.push(i + 2, i + 1, i, i + 2, i, i + 3);
+			i += face.length;
+		});
+		let geo = new THREE.BufferGeometry();
+		geo.setAttribute("position", new THREE.BufferAttribute(new Float32Array(positions), 3));
+		geo.setAttribute("normal", new THREE.BufferAttribute(new Float32Array(normals), 3));
+		geo.setAttribute("uv", new THREE.BufferAttribute(new Float32Array(uvs), 2));
+		geo.setIndex(indices);
+		geo.computeVertexNormals();
+		return geo;
+	}
+	/**
+	 * Checks whether a poly mesh template has translucent textures.
+	 * @param {Array<PolyMeshTemplateFaceWithUvs>} polyMeshTemplate
 	 * @returns {boolean}
 	 */
-	#isBoneTemplateTranslucent(boneTemplate) {
-		let allUvs = boneTemplate["cubes"].flatMap(cube => Object.values(cube["uv"])).map(({ uv, uv_size }) => {
-			let scaledUv = [uv[0] * this.#imageBlobData.width / this.textureAtlas.textureWidth, uv[1] * this.#imageBlobData.height / this.textureAtlas.textureHeight];
-			let scaledUvSize = [uv_size[0] * this.#imageBlobData.width / this.textureAtlas.textureWidth, uv_size[1] * this.#imageBlobData.height / this.textureAtlas.textureHeight];
-			if(scaledUvSize[0] < 0) {
-				scaledUvSize[0] *= -1;
-				scaledUv[0] -= scaledUvSize[0];
-			}
-			if(scaledUvSize[1] < 0) {
-				scaledUvSize[1] *= -1;
-				scaledUv[1] -= scaledUvSize[1];
-			}
-			return {
-				uv: scaledUv,
-				uv_size: scaledUvSize
-			};
+	#isPolyMeshTemplateTranslucent(polyMeshTemplate) {
+		let allUvs = polyMeshTemplate.map(face => {
+			let uvCoords = face["vertices"].map(v => v["uv"]);
+			let xs = uvCoords.map(([x]) => round(x * this.#imageBlobData.width));
+			let ys = uvCoords.map(([, y]) => round((1 - y) * this.#imageBlobData.height));
+			let minUvCoords = [min(...xs), min(...ys)];
+			let maxUvCoords = [max(...xs), max(...ys)];
+			let unscaledUvSize = subVec2(maxUvCoords, minUvCoords);
+			let uv = [minUvCoords[0], minUvCoords[1]];
+			let uvSize = [unscaledUvSize[0], unscaledUvSize[1]];
+			return { uv, uvSize };
 		});
 		let uvs = Array.from(new JSONSet(allUvs));
-		return uvs.some(({ uv, uv_size }) => {
-			for(let x = uv[0]; x < uv[0] + uv_size[0]; x++) {
-				for(let y = uv[1]; y < uv[1] + uv_size[1]; y++) {
+		return uvs.some(({ uv, uvSize }) => {
+			for(let x = uv[0]; x < uv[0] + uvSize[0]; x++) {
+				for(let y = uv[1]; y < uv[1] + uvSize[1]; y++) {
 					let i = (y * this.#imageBlobData.width + x) * 4;
 					let alpha = this.#imageBlobData.data[i + 3];
-					if(alpha > 0 && alpha < 255) { // any pixel with a non-full or non-empty alpha channel makes the entire bone template translucent
+					if(alpha > 0 && alpha < 255) { // any pixel with a non-full or non-empty alpha channel makes the entire geo translucent
 						return true;
 					}
 				}
@@ -546,29 +569,15 @@ export default class PreviewRenderer extends AsyncFactory {
 			return false;
 		});
 	}
-	// these functions are for the instancing. chatgpt generated these. i have no clue how they work but they do
 	/**
 	 * Creates an instanced mesh from a group.
-	 * @param {THREE.Group} group
+	 * @param {THREE.BufferGeometry} bufferGeo
 	 * @param {Array<Vec3>} positions
 	 * @param {THREE.Material} material
 	 * @returns {THREE.InstancedMesh}
 	 */
-	#instanceGroupAtPositions(group, positions, material) {
-		// Collect geometries, apply local transforms
-		let geometries = [];
-		group.updateWorldMatrix(true, true);
-		group.traverse(child => {
-			if(child instanceof THREE.Mesh) {
-				let geom = child.geometry.clone();
-				let mat4 = child.matrixWorld.clone();
-				geom.applyMatrix4(mat4);
-				geometries.push(geom);
-			}
-		});
-		// Merge geometries manually
-		let mergedGeo = this.#mergeBufferGeometries(geometries);
-		let instancedMesh = new THREE.InstancedMesh(mergedGeo, material, positions.length);
+	#instanceBufferGeoAtPositions(bufferGeo, positions, material) { // todo: investigate better performance w/ InstancedBufferGeometry
+		let instancedMesh = new THREE.InstancedMesh(bufferGeo, material, positions.length);
 		let dummy = new THREE.Object3D();
 		positions.forEach((pos, i) => {
 			let vecPos = new THREE.Vector3(...pos);
@@ -578,93 +587,6 @@ export default class PreviewRenderer extends AsyncFactory {
 		});
 		return instancedMesh;
 	}
-	/**
-	 * Merges multiple buffer geometries into one.
-	 * @param {Array<THREE.BufferGeometry>} geometries
-	 * @returns {THREE.BufferGeometry}
-	 */
-	#mergeBufferGeometries(geometries) {
-		let mergedGeometry = new THREE.BufferGeometry();
-		let attributes = ["position", "uv"];
-		let mergedAttributes = {};
-		let attrArrays = {};
-		let attrItemSizes = {};
-		let vertexCountOffsets = [];
-		let totalVertices = 0;
-		// Track vertex offsets and gather attribute arrays
-		geometries.forEach((geom, i) => {
-			vertexCountOffsets[i] = totalVertices;
-			attributes.forEach(name => {
-				let attr = geom.getAttribute(name);
-				if(!attr) {
-					return;
-				}
-				attrArrays[name] ??= [];
-				attrArrays[name].push(attr.array);
-				attrItemSizes[name] = attr.itemSize;
-			});
-			totalVertices += geom.getAttribute("position").count;
-		});
-		// Merge each attribute
-		Object.entries(attrArrays).forEach(([name, arrays]) => {
-			let totalLength = arrays.reduce((sum, arr) => sum + arr.length, 0);
-			let merged = new Float32Array(totalLength);
-			let offset = 0;
-			arrays.forEach(arr => {
-				merged.set(arr, offset);
-				offset += arr.length;
-			});
-			mergedAttributes[name] = new THREE.BufferAttribute(merged, attrItemSizes[name]);
-		});
-		Object.entries(mergedAttributes).forEach(([name, attr]) => {
-			mergedGeometry.setAttribute(name, attr);
-		});
-		// Merge indices
-		let indexArrays = geometries.map((geom, i) => {
-			let index = geom.index;
-			let offset = vertexCountOffsets[i];
-			if(!index) {
-				// Build index manually if non-indexed
-				let count = geom.getAttribute("position").count;
-				let generated = new Uint32Array(count);
-				for(let j = 0; j < count; j++) {
-					generated[j] = j + offset;
-				}
-				return generated;
-			} else {
-				let arr = index.array;
-				let adjusted = new Uint32Array(arr.length);
-				for(let j = 0; j < arr.length; j++) {
-					adjusted[j] = arr[j] + offset;
-				}
-				return adjusted;
-			}
-		});
-		let totalIndexCount = indexArrays.reduce((sum, arr) => sum + arr.length, 0);
-		let mergedIndex = new Uint32Array(totalIndexCount);
-		let indexOffset = 0;
-		indexArrays.forEach(arr => {
-			mergedIndex.set(arr, indexOffset);
-			indexOffset += arr.length;
-		});
-		mergedGeometry.setIndex(new THREE.BufferAttribute(mergedIndex, 1));
-		mergedGeometry.computeVertexNormals(); // fix normals because the bridge model viewer has broken normals on rotated bones
-		return mergedGeometry;
-	}
 }
 
-/**
- * @typedef {import("./HoloPrint.js").I32Vec3} I32Vec3
- */
-/**
- * @typedef {import("./HoloPrint.js").Vec3} Vec3
- */
-/**
- * @typedef {import("./HoloPrint.js").Block} Block
- */
-/**
- * @typedef {import("./HoloPrint.js").BoneTemplate} BoneTemplate
- */
-/**
- * @typedef {import("./HoloPrint.js").PreviewPointLight} PreviewPointLight
- */
+/** @import { I32Vec3, Vec3, Block, PreviewPointLight, PolyMeshTemplateFaceWithUvs} from "./HoloPrint.js" */

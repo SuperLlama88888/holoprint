@@ -19,8 +19,11 @@ export default class TextureAtlas extends AsyncFactory {
 	config;
 	resourcePackStack;
 	
-	/** When makeAtlas() is called, this will contain UV coordinates and sizes for texture references passed as input, as well as cropping information. */
-	textures;
+	/**
+	 * When makeAtlas() is called, this will contain UV coordinates and sizes for texture references passed as input, as well as cropping information.
+	 * @type {Array<{ uv: Vec2, uv_size: Vec2, crop?: Rectangle }>}
+	 */
+	uvs;
 	
 	/**
 	 * Contains the actual texture atlas images: [textureName, imageBlob]
@@ -123,8 +126,7 @@ export default class TextureAtlas extends AsyncFactory {
 				"tint_like_png": tintLikePng,
 				"opacity": opacity,
 				"uv": textureRef["uv"],
-				"uv_size": textureRef["uv_size"],
-				"croppable": textureRef["croppable"]
+				"uv_size": textureRef["uv_size"]
 			};
 			allTextureFragments.add(textureFragment);
 			textureImageIndices.push(allTextureFragments.indexOf(textureFragment));
@@ -146,7 +148,7 @@ export default class TextureAtlas extends AsyncFactory {
 		let imageUvs = await this.#stitchTextureAtlas(imageFragments);
 		console.log("Image UVs:", imageUvs);
 		
-		this.textures = textureImageIndices.map(i => imageUvs[i]);
+		this.uvs = textureImageIndices.map(i => imageUvs[i]);
 	}
 	
 	/**
@@ -306,7 +308,7 @@ export default class TextureAtlas extends AsyncFactory {
 			return { imageData, imageIsTga, imageNotFound };
 		}));
 		let imageDataByTexturePath = new Map(allTexturePaths.map((texturePath, i) => [texturePath, allImageData[i]]));
-		return await Promise.all(Array.from(textureFragments).map(async ({ texturePath, tint, tint_like_png: tintLikePng, opacity, uv: sourceUv, uv_size: uvSize, croppable }) => {
+		return await Promise.all(Array.from(textureFragments).map(async ({ texturePath, tint, tint_like_png: tintLikePng, opacity, uv: sourceUv, uv_size: uvSize }) => {
 			let { imageData, imageIsTga, imageNotFound } = imageDataByTexturePath.get(texturePath);
 			if(imageNotFound) {
 				sourceUv = [0, 0];
@@ -336,9 +338,8 @@ export default class TextureAtlas extends AsyncFactory {
 			let sourceY = sourceUv[1] * imageH;
 			let w = uvSize[0] * imageW;
 			let h = uvSize[1] * imageH;
-			let crop;
-			// croppable = false;
-			if(croppable) {
+			let crop = null;
+			if(Number.isInteger(sourceX) && Number.isInteger(sourceY) && Number.isInteger(w) && Number.isInteger(h)) { // textures with non-integral dimensions are wacky so I'm just going to say they can't be cropped... there aren't many blocks like this fortunately
 				let old = { sourceX, sourceY, w, h };
 				let extremePixels = this.#findMostExtremePixels(image, sourceX, sourceY, w, h);
 				sourceX = extremePixels["minX"];
@@ -353,6 +354,8 @@ export default class TextureAtlas extends AsyncFactory {
 				};
 				if(crop["x"] != 0 || crop["y"] != 0 || crop["w"] != 1 || crop["h"] != 1) {
 					console.debug(`Cropped part of image ${texturePath} to`, crop);
+				} else {
+					crop = null;
 				}
 			}
 			let imageFragment = {
@@ -362,7 +365,7 @@ export default class TextureAtlas extends AsyncFactory {
 				"w": w,
 				"h": h
 			};
-			if(croppable) {
+			if(crop) {
 				imageFragment["crop"] = crop;
 			}
 			return imageFragment;
@@ -371,7 +374,7 @@ export default class TextureAtlas extends AsyncFactory {
 	/**
 	 * Stitches together images with widths and heights, and puts the UV coordinates and sizes into the textureUvs property.
 	 * @param {Array<ImageFragment>} imageFragments
-	 * @returns {Promise<Array<{ uv: [number, number], uv_size: [number, number], crop?: object }>>}
+	 * @returns {Promise<Array<{ uv: [number, number], uv_size: [number, number], crop?: Rectangle }>>}
 	 */
 	async #stitchTextureAtlas(imageFragments) {
 		imageFragments.forEach((imageFragment, i) => {
@@ -396,7 +399,7 @@ export default class TextureAtlas extends AsyncFactory {
 				imageFragment["h"] = ceil(imageFragment["h"]);
 			}
 		});
-		let imageFragments2 = imageFragments.map(imageFragment => ({ ... imageFragment }));
+		let imageFragments2 = imageFragments.map(imageFragment => ({ ...imageFragment }));
 		let packing1 = potpack(imageFragments);
 		let packing2 = potpack(imageFragments2.sort((a, b) => b.h - a.h || b.w - a.w)); // width presort
 		let packing = packing1.fill > packing2.fill? packing1 : packing2; // In my testing on 100 structures, 10 times no width presort was better, 17 times width presort was better, and the rest they were equal. On average, width presorting improved space efficiency by 0.1385%. Since potpack takes just a couple ms, it's best to look at both and take the better one.
@@ -432,6 +435,9 @@ export default class TextureAtlas extends AsyncFactory {
 			return imageUv;
 		});
 		
+		// ctx = can.getContext("2d");
+		// ctx.fillStyle = "#00F3";
+		// ctx.fillRect(0, 0, can.width, can.height);
 		if(this.config.TEXTURE_OUTLINE_WIDTH != 0) {
 			can = TextureAtlas.addTextureOutlines(can, imageFragments, this.config);
 		}
