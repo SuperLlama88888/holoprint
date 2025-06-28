@@ -83,7 +83,7 @@ export default class PreviewRenderer extends AsyncFactory {
 	 * Create a preview renderer for a completed geometry file.
 	 * @param {Node} cont
 	 * @param {string} packName
-	 * @param {import("./TextureAtlas.js").default} textureAtlas
+	 * @param {TextureAtlas} textureAtlas
 	 * @param {I32Vec3} structureSize
 	 * @param {Array<Block>} blockPalette
 	 * @param {Array<Array<PolyMeshTemplateFaceWithUvs>>} polyMeshTemplatePalette
@@ -131,7 +131,7 @@ export default class PreviewRenderer extends AsyncFactory {
 			});
 		}
 		if(this.options.showOptions) {
-			/** @type {import("./components/LilGui.js").default} */
+			/** @type {LilGui} */
 			let guiEl = document.createElement("lil-gui");
 			this.cont.appendChild(guiEl);
 			this.#optionsGui = guiEl.gui;
@@ -311,7 +311,7 @@ export default class PreviewRenderer extends AsyncFactory {
 	}
 	/**
 	 * Adds the localised name to a lil-gui controller.
-	 * @template {import("lil-gui").Controller} T
+	 * @template {Controller} T
 	 * @param {T} controller
 	 * @param {string} translationKey
 	 * @returns {T}
@@ -590,3 +590,6 @@ export default class PreviewRenderer extends AsyncFactory {
 }
 
 /** @import { I32Vec3, Vec3, Block, PreviewPointLight, PolyMeshTemplateFaceWithUvs} from "./HoloPrint.js" */
+/** @import TextureAtlas from "./TextureAtlas.js" */
+/** @import LilGui from "./components/LilGui.js" */
+/** @import { Controller } from "lil-gui" */

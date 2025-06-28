@@ -922,6 +922,4 @@ export function createCustomError(name) {
 }
 export const UserError = createCustomError("UserError");
 
-/**
- * @typedef {import("./HoloPrint.js").Vec3} Vec3
- */
+/** @import { Vec2, Vec3 } from "./HoloPrint.js" */

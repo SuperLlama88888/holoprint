@@ -132,18 +132,4 @@ export default class SpawnAnimationMaker {
 	}
 }
 
-/**
- * @typedef {import("./HoloPrint.js").HoloPrintConfig} HoloPrintConfig
- */
-/**
- * @typedef {import("./HoloPrint.js").Vec3} Vec3
- */
-/**
- * @typedef {import("./HoloPrint.js").I32Vec3} I32Vec3
- */
-/**
- * @typedef {import("./HoloPrint.js").SpawnAnimationBone} SpawnAnimationBone
- */
-/**
- * @typedef {import("./HoloPrint.js").MinecraftAnimation} MinecraftAnimation
- */
+/** @import { HoloPrintConfig, Vec3, I32Vec3, SpawnAnimationBone, MinecraftAnimation } from "./HoloPrint.js" */

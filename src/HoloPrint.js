@@ -218,7 +218,6 @@ export async function makePack(structureFiles, config = {}, resourcePackStack, p
 				}
 			}
 			let layerName = `l_${y}`;
-			/** @type {import("@bridge-editor/model-viewer").IBoneSchema} */
 			let layerBone = {
 				"name": layerName,
 				"parent": "hologram_offset_wrapper",
@@ -439,7 +438,7 @@ export async function makePack(structureFiles, config = {}, resourcePackStack, p
 	});
 	
 	await Promise.all(packFiles.map(([fileName, fileContents, comment]) => {
-		/** @type {import("@zip.js/zip.js").ZipWriterAddDataOptions} */
+		/** @type {ZipWriterAddDataOptions} */
 		let options = {
 			comment,
 			level: config.COMPRESSION_LEVEL
@@ -1715,6 +1714,7 @@ function stringifyWithFixedDecimals(value) {
 	});
 }
 
+/** @import { ZipWriterAddDataOptions } from "@zip.js/zip.js" */
 /**
  * @typedef {object} HoloPrintConfig An object for storing HoloPrint config options.
  * @property {Array<string>} IGNORED_BLOCKS

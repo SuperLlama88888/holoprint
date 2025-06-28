@@ -528,7 +528,7 @@ async function makePack(structureFiles, localResourcePacks) {
 	
 	let formData = new FormData(generatePackForm);
 	let authors = removeFalsies(formData.get("author").split(",").map(x => x.trim()));
-	/** @type {import("./HoloPrint.js").HoloPrintConfig} */
+	/** @type {HoloPrintConfig} */
 	let config = {
 		IGNORED_BLOCKS: removeFalsies(formData.get("ignoredBlocks").split(/\W/)),
 		SCALE: formData.get("scale") / 100,
@@ -620,3 +620,5 @@ async function makePack(structureFiles, localResourcePacks) {
 	
 	generatePackFormSubmitButton.disabled = false;
 }
+
+/** @import { HoloPrintConfig } from "./HoloPrint.js" */

@@ -605,18 +605,4 @@ export default class TextureAtlas extends AsyncFactory {
 	}
 }
 
-/**
- * @typedef {import("./HoloPrint.js").TextureReference} TextureReference
- */
-/**
- * @typedef {import("./HoloPrint.js").TextureFragment} TextureFragment
- */
-/**
- * @typedef {import("./HoloPrint.js").ImageFragment} ImageFragment
- */
-/**
- * @typedef {import("./HoloPrint.js").HoloPrintConfig} HoloPrintConfig
- */
-/**
- * @typedef {import("./HoloPrint.js").Vec3} Vec3
- */
+/** @import { TextureReference, TextureFragment, ImageFragment, HoloPrintConfig, Vec3, Vec2, Rectangle } from "./HoloPrint.js" */
