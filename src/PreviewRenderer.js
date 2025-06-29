@@ -530,7 +530,7 @@ export default class PreviewRenderer extends AsyncFactory {
 		let polyMeshMaker = new PolyMeshMaker();
 		polyMeshMaker.add(polyMeshTemplate);
 		let polyMesh = polyMeshMaker.export();
-		let i = 0;
+		let i = 0; // this bit is adapted from https://github.com/bridge-core/model-viewer/blob/main/lib/PolyMesh.ts#L45
 		let positions = [], normals = [], uvs = [], indices = [];
 		polyMesh["polys"].forEach(face => {
 			face.forEach(([posIndex, normalIndex, uvIndex]) => {
