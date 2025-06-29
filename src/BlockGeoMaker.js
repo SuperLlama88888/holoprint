@@ -264,6 +264,7 @@ export default class BlockGeoMaker extends AsyncFactory {
 			}])));
 		});
 		let cubes = this.#mergeCubes(filteredCubes);
+		cubes.sort((a, b) => a.w * a.h * a.d - b.w * b.h * b.d); // make larger cubes be rendered later. this helps for blocks like slime and honey where the inner cube has to be rendered before the outer cube
 		
 		let blockName = block["name"];
 		let variant = this.#getTextureVariant(block);
