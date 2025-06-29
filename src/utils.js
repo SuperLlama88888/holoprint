@@ -155,7 +155,7 @@ export async function toImage(val) {
 
 export const sleep = async time => new Promise(resolve => setTimeout(resolve, time));
 
-export const { min, max, floor, ceil, sqrt, round, abs, PI: pi, exp, log: ln, sin, cos, tan } = Math;
+export const { min, max, floor, ceil, sqrt, round, abs, PI: pi, exp, log: ln, sin, cos, tan, hypot } = Math;
 export const clamp = (n, lowest, highest) => min(max(n, lowest), highest);
 export const lerp = (a, b, x) => a + (b - a) * x;
 export const nanToUndefined = x => Number.isNaN(x)? undefined : x;
@@ -199,6 +199,21 @@ export function addVec3(a, b) {
  */
 export function mulVec3(vec, factor) {
 	return [vec[0] * factor, vec[1] * factor, vec[2] * factor];
+}
+/**
+ * @param {Vec3} a
+ * @param {Vec3} b
+ * @returns {Vec3}
+ */
+export function crossProduct(a, b) {
+	return [a[1] * b[2] - a[2] * b[1], a[2] * b[0] - a[0] * b[2], a[0] * b[1] - a[1] * b[0]];
+}
+/**
+ * @param {Vec3} vec
+ * @returns {Vec3}
+ */
+export function normalizeVec3(vec) {
+	return mulVec3(vec, 1 / hypot(...vec))
 }
 
 export function arrayMin(arr) {

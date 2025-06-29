@@ -2,7 +2,7 @@
 // READ: this also looks pretty comprehensive: https://github.com/MCBE-Development-Wiki/mcbe-dev-home/blob/main/docs/misc/enums/block_shape.md
 // https://github.com/bricktea/MCStructure/blob/main/docs/1.16.201/enums/B.md
 
-import { addVec3, AsyncFactory, awaitAllEntries, hexColorToClampedTriplet, jsonc, JSONSet, max, mulVec3, rotateDeg } from "./utils.js";
+import { addVec3, AsyncFactory, awaitAllEntries, crossProduct, hexColorToClampedTriplet, jsonc, JSONSet, max, mulVec3, normalizeVec3, rotateDeg, subVec3 } from "./utils.js";
 
 // https://wiki.bedrock.dev/visuals/material-creations.html#overlay-color-in-render-controllers
 // https://wiki.bedrock.dev/documentation/materials.html#entity-alphatest
@@ -102,6 +102,7 @@ export default class BlockGeoMaker extends AsyncFactory {
 		let rotation = this.#getBlockRotation(block, blockShape);
 		if(rotation) {
 			faces.forEach(face => {
+				face["normal"] = this.#applyEulerRotation(face["normal"], rotation, [8, 8, 8]);
 				face["vertices"].forEach(vertex => {
 					vertex["pos"] = this.#applyEulerRotation(vertex["pos"], rotation, [8, 8, 8]); // (8, 8, 8) is the block center and the pivot for all block-wide rotations
 				});
@@ -386,8 +387,12 @@ export default class BlockGeoMaker extends AsyncFactory {
 						vertex["pos"] = addVec3(vertex["pos"], cube["translate"]);
 					}
 				}
+				let surfaceNormal = this.#getSurfaceNormal(vertices);
+				if(Object.keys(uv).length == 1 && surfaceNormal[1] < 0) {
+					surfaceNormal = mulVec3(surfaceNormal, -1);
+				}
 				faces.push({
-					"normal": this.#getSurfaceNormal(faceName),
+					"normal": surfaceNormal,
 					"textureRefI": this.textureRefs.indexOf(textureRef),
 					"vertices": vertices
 				});
@@ -661,19 +666,14 @@ export default class BlockGeoMaker extends AsyncFactory {
 	}
 	/**
 	 * Gets the surface normal for a specific face of a cube.
-	 * @param {"west" | "east" | "down" | "up" | "north" | "south"} faceName
+	 * @param {[PolyMeshTemplateVertex, PolyMeshTemplateVertex, PolyMeshTemplateVertex, PolyMeshTemplateVertex]} vertices
 	 * @returns {Vec3}
 	 */
-	#getSurfaceNormal(faceName) {
-		return [0, 1, 0]; // TODO: add lighting by enabling FANCY
-		// switch(faceName) {
-		// 	case "west": return [-1, 0, 0];
-		// 	case "east": return [1, 0, 0];
-		// 	case "down": return [0, 1, 0];
-		// 	case "up": return [0, -1, 0];
-		// 	case "north": return [0, 0, -1];
-		// 	case "south": return [0, 0, 1];
-		// }
+	#getSurfaceNormal(vertices) {
+		let dir1 = subVec3(vertices[1]["pos"], vertices[0]["pos"]);
+		let dir2 = subVec3(vertices[2]["pos"], vertices[0]["pos"]);
+		let normal = normalizeVec3(crossProduct(dir1, dir2));
+		return normal;
 	}
 	/**
 	 * Calculates the center of mass of some cubes, assuming mass = volume. If all cubes are flat it will take surface area for mass.
