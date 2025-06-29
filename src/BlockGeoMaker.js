@@ -91,9 +91,10 @@ export default class BlockGeoMaker extends AsyncFactory {
 	#makePolyMeshTemplate(block) {
 		let blockName = block["name"];
 		let blockShape = this.#getBlockShape(blockName);
-		let faces = this.#makePolyMeshTemplateFaces(block, blockShape);
-		if(faces.length == 0) {
+		let { faces, centerOfMass } = this.#makePolyMeshTemplateFaces(block, blockShape);
+		if(!faces) {
 			console.debug(`No faces are being rendered for block ${blockName}`);
+			return [];
 		}
 		if(blockShape.includes("{")) {
 			blockShape = blockShape.slice(0, blockShape.indexOf("{"));
@@ -105,7 +106,9 @@ export default class BlockGeoMaker extends AsyncFactory {
 					vertex["pos"] = this.#applyEulerRotation(vertex["pos"], rotation, [8, 8, 8]); // (8, 8, 8) is the block center and the pivot for all block-wide rotations
 				});
 			});
+			centerOfMass = this.#applyEulerRotation(centerOfMass, rotation, [8, 8, 8]);
 		}
+		faces = this.#scaleFaces(faces, centerOfMass);
 		return faces;
 	}
 	/**
@@ -130,7 +133,7 @@ export default class BlockGeoMaker extends AsyncFactory {
 	 * Makes the poly mesh faces for a block.
 	 * @param {Block} block
 	 * @param {string} blockShape
-	 * @returns {Array<PolyMeshTemplateFace>}
+	 * @returns {{ faces?: Array<PolyMeshTemplateFace>, centerOfMass?: Vec3 }}
 	 */
 	#makePolyMeshTemplateFaces(block, blockShape) {
 		let specialTexture;
@@ -233,7 +236,7 @@ export default class BlockGeoMaker extends AsyncFactory {
 				}
 				blockToCopy["#copied_via_copy_block"] = true; // I will learn rust if mojang adds this to the structure NBT
 				let newBlockShape = this.#getBlockShape(blockToCopy["name"]);
-				let newFaces = this.#makePolyMeshTemplateFaces(blockToCopy, newBlockShape);
+				let { faces: newFaces } = this.#makePolyMeshTemplateFaces(blockToCopy, newBlockShape);
 				if("translate" in cube) {
 					newFaces.forEach(face => {
 						for(let i = 0; i < 4; i++) {
@@ -247,7 +250,7 @@ export default class BlockGeoMaker extends AsyncFactory {
 			}
 		}
 		if(filteredCubes.length == 0) {
-			return [];
+			return {};
 		}
 		// add easy property accessors. I could make a class if I wanted to
 		filteredCubes.forEach(cube => {
@@ -392,8 +395,10 @@ export default class BlockGeoMaker extends AsyncFactory {
 			allFaces.push(...faces);
 		});
 		let centerOfMass = this.#calculateCenterOfMass(cubes);
-		allFaces = this.#scaleFaces(allFaces, centerOfMass);
-		return allFaces;
+		return {
+			faces: allFaces,
+			centerOfMass
+		};
 	}
 	/**
 	 * Gets the block rotation for an entire block based on block states.

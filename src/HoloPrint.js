@@ -242,7 +242,7 @@ export async function makePack(structureFiles, config = {}, resourcePackStack, p
 		let spawnAnimationMaker = new SpawnAnimationMaker(config, [1, maxHeight, 1]);
 		for(let y = 0; y < maxHeight; y++) {
 			let layerName = `l_${y}`;
-			spawnAnimationMaker.addBone(layerName, [0, y, 0], [0, 16 * y, 0]);
+			spawnAnimationMaker.addBone(layerName, [0, y, 0], [0, 16 * y, -16]);
 		}
 		hologramAnimations["animations"]["animation.armor_stand.hologram.spawn"] = spawnAnimationMaker.makeAnimation();
 	}
