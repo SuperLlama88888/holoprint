@@ -63,6 +63,7 @@
 ### 致谢
 - [Structura](https://github.com/RavinMaddHatter/Structura)：灵感来源与项目基础，特别感谢 [RavinMaddHatter](https://github.com/RavinMaddHatter) 以及 [其他贡献者](https://github.com/RavinMaddHatter/Structura/graphs/contributors)。
 - [Tab键玩家列表UI](https://github.com/YuuhaLand/Tabkey_Playerlist_UI)：材料清单 UI 的底层实现。（作者 [YuuhaLand](https://github.com/YuuhaLand)）
+- Nextr: Control item textures (tweaked)
 - [Indyfficient](https://www.youtube.com/@Indyfficient)：通过攻击盔甲架切换结构的创意。
 - [Prowl8413](https://www.youtube.com/@Prowl8413)：开发过程中的反馈支持。
 - **参考文档：**
@@ -76,6 +77,9 @@
   - [tga.js](https://github.com/vthibault/tga.js): TGA 到 PNG 的图片转换。
   - [potpack](https://github.com/mapbox/potpack)：纹理图集打包。
   - [JSZip](https://github.com/Stuk/jszip)：压缩打包。
-  - [bridge-model-viewer](https://github.com/bridge-core/model-viewer) 与 [three.js](https://github.com/mrdoob/three.js)：3D 预览渲染。
+  - [Minecraft Creator Tools](https://github.com/Mojang/minecraft-creator-tools): LevelDB reader
+  - [three.js](https://github.com/mrdoob/three.js)：3D 预览渲染。
+  - [stats.js](https://github.com/mrdoob/stats.js) and [lil-gui](https://github.com/georgealways/lil-gui): Preview widgets
+  - [Supabase](https://supabase.com): Free database for recording packs created
   - [strip-json-comments](https://github.com/sindresorhus/strip-json-comments)：JSON 注释清理。
   - [deepmerge](https://github.com/TehShrike/deepmerge)：JSON 合并工具。

@@ -103,6 +103,7 @@ async function setupBrowserAndPage(status) {
 		width: 1920,
 		height: 1080
 	});
+	page.setDefaultTimeout(5000);
 	page.on("console", log => {
 		let logOrigin = log.location()?.url;
 		let logText = log.text();

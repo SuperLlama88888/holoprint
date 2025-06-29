@@ -18,7 +18,7 @@ I also wonder if we could have a "rotation lock" option which makes the hologram
 						// Snap to nearest block. Unfortunately looks glitchy when moving since it takes a tick for the position to update.
 						// x and z of armor stands is +0.5
 						0, //"-16 * (q.position(0) - 0.5 - math.floor(q.position(0) - 0.5))",
-						"-16 * (q.position(1) - math.floor(q.position(1)))",
+						"-16 * (q.position(1) - math.floor(q.position(1))) - 0.125", // entity models are 0.125px above blocks for some reason
 						0 //"-16 * (q.position(2) - math.floor(q.position(2)))"
 					],
 					"rotation": [

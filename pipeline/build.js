@@ -94,7 +94,6 @@ function findProcessingFunction(filename) {
  * @returns {{ code: string }}
  */
 function processHTML(code, filename) {
-	// code = code.replaceAll(/<style>([^]+?)<\/style>/g, (_, css) => `<style>${processCSS(css, filename, true).code}</style>`);
 	code = code.replaceAll(/<script type="(importmap|application\/ld\+json)">([^]+?)<\/script>/g, (_, scriptType, json) => `<script type="${scriptType}">${processJSON(json).code}</script>`);
 	code = minifyHTML(code, {
 		removeComments: true,

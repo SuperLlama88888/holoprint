@@ -243,24 +243,4 @@ export default class BlockUpdater extends AsyncFactory {
 	}
 }
 
-/**
- * @typedef {import("./HoloPrint.js").NBTBlock} NBTBlock
- */
-/**
- * @typedef {import("./BlockGeoMaker.js").Block} Block
- */
-/**
- * @typedef {import("./HoloPrint.js").BlockUpdateSchemaSkeleton} BlockUpdateSchemaSkeleton
- */
-/**
- * @typedef {import("./HoloPrint.js").BlockUpdateSchema} BlockUpdateSchema
- */
-/**
- * @typedef {import("./HoloPrint.js").TypedBlockStateProperty} TypedBlockStateProperty
- */
-/**
- * @typedef {import("./HoloPrint.js").BlockUpdateSchemaFlattenRule} BlockUpdateSchemaFlattenRule
- */
-/**
- * @typedef {import("./HoloPrint.js").BlockUpdateSchemaRemappedState} BlockUpdateSchemaRemappedState
- */
+/** @import { NBTBlock, Block, BlockUpdateSchemaSkeleton, BlockUpdateSchema, TypedBlockStateProperty, BlockUpdateSchemaFlattenRule } from "./HoloPrint.js" */

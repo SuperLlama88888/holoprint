@@ -258,9 +258,4 @@ export default class MaterialList extends AsyncFactory {
 	}
 }
 
-/**
- * @typedef {import("./HoloPrint.js").MaterialListEntry} MaterialListEntry
- */
-/**
- * @typedef {import("./BlockGeoMaker.js").Block} Block
- */
+/** @import { MaterialListEntry, Block } from "./HoloPrint.js" */

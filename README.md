@@ -63,6 +63,7 @@ Special thanks to **kizoku246** for the house in these images!
 ### Credit
 - [Structura](https://github.com/RavinMaddHatter/Structura): Inspiration, laying the foundation for this project. Without the work of [RavinMaddHatter](https://github.com/RavinMaddHatter) and [others](https://github.com/RavinMaddHatter/Structura/graphs/contributors), this project would've taken tens of hours more to get started.
 - [Tab Key Playerlist UI](https://github.com/YuuhaLand/Tabkey_Playerlist_UI) by [YuuhaLand](https://github.com/YuuhaLand): Foundation for the material list UI
+- Nextr: Control item textures (tweaked)
 - [Indyfficient](https://www.youtube.com/@Indyfficient): The idea of changing structure by hitting the armour stand
 - [Prowl8413](https://www.youtube.com/@Prowl8413): General feedback during development
 - Documentation:
@@ -76,6 +77,9 @@ Special thanks to **kizoku246** for the house in these images!
   - [tga.js](https://github.com/vthibault/tga.js): TGA to PNG image conversion
   - [potpack](https://github.com/mapbox/potpack): Texture atlas packing
   - [JSZip](https://github.com/Stuk/jszip): Pack zipping
-  - [bridge-model-viewer](https://github.com/bridge-core/model-viewer) and [three.js](https://github.com/mrdoob/three.js): Preview rendering
+  - [Minecraft Creator Tools](https://github.com/Mojang/minecraft-creator-tools): LevelDB reader
+  - [three.js](https://github.com/mrdoob/three.js): Preview rendering
+  - [stats.js](https://github.com/mrdoob/stats.js) and [lil-gui](https://github.com/georgealways/lil-gui): Preview widgets
+  - [Supabase](https://supabase.com): Free database for recording packs created
   - [strip-json-comments](https://github.com/sindresorhus/strip-json-comments): Removes comments from JSON files
   - [deepmerge](https://github.com/TehShrike/deepmerge): Merges JSON files
