@@ -162,7 +162,7 @@ export async function makePack(structureFiles, config = {}, resourcePackStack, p
 	let totalBlocksToValidateByStructureByLayer = [];
 	let uniqueBlocksToValidate = new Set();
 	
-	let polyMeshMaker = new PolyMeshMaker();
+	let polyMeshMaker = new PolyMeshMaker(polyMeshTemplatePalette);
 	let materialList = await MaterialList.new(blockMetadata, itemMetadata);
 	allStructureIndicesByLayer.forEach((structureIndicesByLayer, structureI) => {
 		let structureSize = structureSizes[structureI];
@@ -181,20 +181,19 @@ export async function makePack(structureFiles, config = {}, resourcePackStack, p
 				for(let z = 0; z < structureSize[2]; z++) {
 					let blockI = (x * structureSize[1] + y) * structureSize[2] + z;
 					let firstBoneForThisCoordinate = true; // second-layer blocks (e.g. water in waterlogged blocks) will be at the same position
-					structureIndicesByLayer.forEach((blockPaletteIndices, layerI) => {
+					for(let layerI = 0; layerI < 2; layerI++) {
+						let blockPaletteIndices = structureIndicesByLayer[layerI];
 						let paletteI = blockPaletteIndices[blockI];
 						if(!(paletteI in polyMeshTemplatePalette)) {
 							if(paletteI in blockPalette) {
 								console.error(`A poly mesh template wasn't made for blockPalette[${paletteI}] = ${blockPalette[paletteI]["name"]}!`);
 							}
-							return;
+							continue;
 						}
-						let polyMeshTemplateFaces = polyMeshTemplatePalette[paletteI];
-						// console.table({x, y, z, i, paletteI, polyMeshTemplateFaces});
 						
 						let blockCoordinateName = `b_${x}_${y}_${z}`;
 						let geoSpaceBlockPos = [-16 * x - 8, 16 * y, 16 * z - 8]; // I got these values from trial and error with blockbench (which makes the x negative I think. it's weird.)
-						polyMeshMaker.add(polyMeshTemplateFaces, geoSpaceBlockPos);
+						polyMeshMaker.addPaletteEntry(paletteI, geoSpaceBlockPos);
 						if(firstBoneForThisCoordinate) { // we only need 1 locator for each block position, even though there may be 2 bones in this position because of the 2nd layer
 							hologramGeo["minecraft:geometry"][2]["bones"][1]["locators"][blockCoordinateName] ??= geoSpaceBlockPos.map(x => x + 8); // 2nd geometry is for particle alignment
 						}
@@ -214,7 +213,7 @@ export async function makePack(structureFiles, config = {}, resourcePackStack, p
 						}
 						firstBoneForThisCoordinate = false;
 						totalBlockCount++;
-					});
+					}
 				}
 			}
 			let layerName = `l_${y}`;

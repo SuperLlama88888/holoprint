@@ -750,19 +750,23 @@ function parseJsonBigIntSafe(value) { // this function is unused but I'm keeping
  * @extends {Set<T>}
  */
 export class JSONSet extends Set {
+	stringify = stringifyJsonBigIntSafe;
 	/** @type {Map<string, number>} */
 	#indices = new Map();
 	#actualValues = new Map();
-	constructor(values) {
+	constructor(values, stringifyFunc) {
 		super();
 		values?.forEach(value => this.add(value));
+		if(stringifyFunc) {
+			this.stringify = stringifyFunc;
+		}
 	}
 	/** Not part of regular sets! Constant time indexing. */
 	indexOf(value) {
-		return this.#indices.get(this.#stringify(value));
+		return this.#indices.get(this.stringify(value));
 	}
 	addI(value) {
-		let stringifiedValue = this.#stringify(value);
+		let stringifiedValue = this.stringify(value);
 		super.add(stringifiedValue);
 		if(!this.#actualValues.has(stringifiedValue)) {
 			this.#actualValues.set(stringifiedValue, structuredClone(value));
@@ -772,7 +776,7 @@ export class JSONSet extends Set {
 		return this.#indices.get(stringifiedValue);
 	}
 	add(value) {
-		let stringifiedValue = this.#stringify(value);
+		let stringifiedValue = this.stringify(value);
 		if(!this.#actualValues.has(stringifiedValue)) {
 			this.#actualValues.set(stringifiedValue, structuredClone(value));
 			this.#indices.set(stringifiedValue, this.size);
@@ -780,10 +784,10 @@ export class JSONSet extends Set {
 		return super.add(stringifiedValue);
 	}
 	delete(value) {
-		return super.delete(this.#stringify(value));
+		return super.delete(this.stringify(value));
 	}
 	has(value) {
-		return super.has(this.#stringify(value))
+		return super.has(this.stringify(value))
 	}
 	clear() {
 		this.#indices.clear();
@@ -813,9 +817,6 @@ export class JSONSet extends Set {
 	}
 	values() {
 		return this[Symbol.iterator]();
-	}
-	#stringify(value) {
-		return stringifyJsonBigIntSafe(value);
 	}
 }
 export class JSONMap extends Map { // very barebones
