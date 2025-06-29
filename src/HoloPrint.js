@@ -468,7 +468,7 @@ export async function makePack(structureFiles, config = {}, resourcePackStack, p
 			}));
 			previewLoadedCallback?.(previews);
 		};
-		if(totalBlockCount < config.PREVIEW_BLOCK_LIMIT) {
+		if(totalBlockCount < config.PREVIEW_BLOCK_LIMIT && removeFalsies(blockPalette).length < 250) {
 			showPreview();
 		} else {
 			let message = document.createElement("div");

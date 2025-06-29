@@ -1,9 +1,11 @@
 import { abs, AsyncFactory, cosDeg, distanceSquared, downloadFile, JSONSet, max, min, pi, round, sinDeg, subVec2, tanDeg, toImageData } from "./utils.js";
-
-import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
-import * as THREE from "three";
-import Stats from "stats.js";
 import PolyMeshMaker from "./PolyMeshMaker.js";
+
+import Stats from "stats.js"; // library not a file
+
+/** @type {typeof import("three")} */
+let THREE;
+let OrbitControls;
 
 const IN_PRODUCTION = false;
 
@@ -34,8 +36,10 @@ export default class PreviewRenderer extends AsyncFactory {
 	cont;
 	packName;
 	textureAtlas;
-	polyMeshTemplatePalette;
 	structureSize;
+	blockPalette;
+	polyMeshTemplatePalette;
+	blockIndices;
 	options = {
 		showSkybox: true,
 		maxPointLights: 100, // limited by WebGL uniform limit since Three.js uses uniforms to pass lights to shaders
@@ -53,10 +57,12 @@ export default class PreviewRenderer extends AsyncFactory {
 	#imageBlob;
 	/** @type {ImageData} */
 	#imageBlobData;
+	/** @type {THREE.Vector3} */
 	#center;
 	#maxDim;
 	#maxDimPixels;
 	#lastFrameTime = performance.now();
+	/** @type {Array<Array<Vec3>>} */
 	#blockPositions = [];
 	/** @type {THREE.DirectionalLight} */
 	#directionalLight;
@@ -74,10 +80,12 @@ export default class PreviewRenderer extends AsyncFactory {
 	#camera;
 	/** @type {OrbitControls} */
 	#controls;
+	/** @type {THREE.CubeTexture} */
 	#skyboxCubemap;
 	#shouldRenderNextFrame = true;
 	#stats;
 	#optionsGui;
+	/** @type {Array<THREE.Object3D>} */
 	#debugHelpers = [];
 	/**
 	 * Create a preview renderer for a completed geometry file.
@@ -96,12 +104,13 @@ export default class PreviewRenderer extends AsyncFactory {
 		this.packName = packName;
 		this.textureAtlas = textureAtlas;
 		this.structureSize = structureSize;
+		this.blockPalette = blockPalette;
 		this.polyMeshTemplatePalette = polyMeshTemplatePalette;
+		this.blockIndices = blockIndices;
 		this.options = { ...this.options, ...options };
 		
 		this.#can = document.createElement("canvas");
 		this.#imageBlob = this.textureAtlas.imageBlobs.at(-1)[1];
-		this.#center = new THREE.Vector3(-this.structureSize[0] * 8, this.structureSize[1] * 8, -this.structureSize[2] * 8);
 		this.#maxDim = max(...this.structureSize);
 		this.#maxDimPixels = this.#maxDim * 16;
 		
@@ -142,39 +151,12 @@ export default class PreviewRenderer extends AsyncFactory {
 				this.#shouldRenderNextFrame = true;
 			});
 		}
-		
-		let palettePointLights = blockPalette.map(block => PreviewRenderer.#POINT_LIGHTS[block["name"]] ?? Object.entries(PreviewRenderer.#POINT_LIGHTS).find(([stringifiedBlock]) => this.#checkBlockNameAndStates(stringifiedBlock, block))?.[1]);
-		
-		for(let x = 0; x < this.structureSize[0]; x++) {
-			for(let y = 0; y < this.structureSize[1]; y++) {
-				for(let z = 0; z < this.structureSize[2]; z++) {
-					let blockI = (x * this.structureSize[1] + y) * this.structureSize[2] + z;
-					for(let layerI = 0; layerI < 2; layerI++) {
-						let paletteI = blockIndices[layerI][blockI];
-						if(!(paletteI in this.polyMeshTemplatePalette)) {
-							continue;
-						}
-						this.#blockPositions[paletteI] ??= [];
-						this.#blockPositions[paletteI].push([x, y, z]);
-						
-						let lightInfo = palettePointLights[paletteI];
-						if(lightInfo) {
-							let [col, intensity] = Array.isArray(lightInfo)? lightInfo : [lightInfo, PreviewRenderer.#POINT_LIGHT_DEFAULT_INTENSITY];
-							this.#pointLights.push({
-								"pos": [-16 * x - 8, 16 * y + 8, -16 * z - 8],
-								"col": new THREE.Color(col),
-								"intensity": intensity
-							});
-						}
-					}
-				}
-			}
-		}
-		this.options.maxPointLights = min(this.options.maxPointLights, this.#pointLights.length);
 	}
 	async init() {
-		// THREE ??= await import("three");
+		THREE ??= await import("three");
+		OrbitControls ??= (await import("three/examples/jsm/controls/OrbitControls.js")).OrbitControls;
 		
+		this.#center = new THREE.Vector3(-this.structureSize[0] * 8, this.structureSize[1] * 8, -this.structureSize[2] * 8);
 		this.#imageBlobData = await toImageData(this.#imageBlob);
 		
 		this.#renderer = new THREE.WebGLRenderer({
@@ -213,7 +195,7 @@ export default class PreviewRenderer extends AsyncFactory {
 		}
 		if(this.options.showOptions) {
 			if(this.#pointLights.length > 0) {
-				this.#guiLocName(this.#optionsGui.add(this.options, "maxPointLights", 0, this.#pointLights.length, 1).onChange(() => this.#initPointLights()), "preview.options.maxPointLights");
+				this.#guiLocName(this.#optionsGui.add(this.options, "maxPointLights", 0, this.#pointLights.length, 1).onChange(() => this.#createPointLightsInScene()), "preview.options.maxPointLights");
 			}
 			let shadowOption;
 			this.#guiLocName(this.#optionsGui.add(this.#directionalLight, "castShadow").onChange(() => {
@@ -399,6 +381,7 @@ export default class PreviewRenderer extends AsyncFactory {
 		this.#scene.add(shadowFloor);
 		
 		this.#initPointLights();
+		this.#createPointLightsInScene();
 	}
 	/**
 	 * Checks if a block matches a stringified block.
@@ -426,8 +409,37 @@ export default class PreviewRenderer extends AsyncFactory {
 		this.#directionalLight.shadow.mapSize.set(shadowMapSize, shadowMapSize)
 		this.#directionalLight.shadow.map?.setSize(shadowMapSize, shadowMapSize);
 	}
-	/** Syncs the number of point lights in the scene with how many should be rendered. */
 	#initPointLights() {
+		let palettePointLights = this.blockPalette.map(block => PreviewRenderer.#POINT_LIGHTS[block["name"]] ?? Object.entries(PreviewRenderer.#POINT_LIGHTS).find(([stringifiedBlock]) => this.#checkBlockNameAndStates(stringifiedBlock, block))?.[1]);
+		for(let x = 0; x < this.structureSize[0]; x++) {
+			for(let y = 0; y < this.structureSize[1]; y++) {
+				for(let z = 0; z < this.structureSize[2]; z++) {
+					let blockI = (x * this.structureSize[1] + y) * this.structureSize[2] + z;
+					for(let layerI = 0; layerI < 2; layerI++) {
+						let paletteI = this.blockIndices[layerI][blockI];
+						if(!(paletteI in this.polyMeshTemplatePalette)) {
+							continue;
+						}
+						this.#blockPositions[paletteI] ??= [];
+						this.#blockPositions[paletteI].push([x, y, z]);
+						
+						let lightInfo = palettePointLights[paletteI];
+						if(lightInfo) {
+							let [col, intensity] = Array.isArray(lightInfo)? lightInfo : [lightInfo, PreviewRenderer.#POINT_LIGHT_DEFAULT_INTENSITY];
+							this.#pointLights.push({
+								"pos": [-16 * x - 8, 16 * y + 8, -16 * z - 8],
+								"col": new THREE.Color(col),
+								"intensity": intensity
+							});
+						}
+					}
+				}
+			}
+		}
+		this.options.maxPointLights = min(this.options.maxPointLights, this.#pointLights.length);
+	}
+	/** Syncs the number of point lights in the scene with how many should be rendered. */
+	#createPointLightsInScene() {
 		while(this.#pointLightsInScene.length < this.options.maxPointLights) {
 			let light = new THREE.PointLight(0, 0, PreviewRenderer.#POINT_LIGHT_MAX_DISTANCE, 0.35);
 			this.#pointLightsInScene.push(light);
@@ -593,3 +605,5 @@ export default class PreviewRenderer extends AsyncFactory {
 /** @import TextureAtlas from "./TextureAtlas.js" */
 /** @import LilGui from "./components/LilGui.js" */
 /** @import { Controller } from "lil-gui" */
+/** @import * as THREE from "three" */
+/** @import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js" */
