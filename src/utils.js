@@ -193,6 +193,14 @@ export function addVec3(a, b) {
 	return [a[0] + b[0], a[1] + b[1], a[2] + b[2]];
 }
 /**
+ * @param {Vec3} a
+ * @param {Vec3} b
+ * @returns {Vec3}
+ */
+export function subVec3(a, b) {
+	return [a[0] - b[0], a[1] - b[1], a[2] - b[2]];
+}
+/**
  * @param {Vec3} vec
  * @param {number} factor
  * @returns {Vec3}

@@ -354,7 +354,7 @@ export default class BlockGeoMaker extends AsyncFactory {
 						textureRef["tint"] = hexColorToClampedTriplet(tint);
 					} else {
 						// this is from cauldrons; colour is a 32-bit ARGB colour
-						let colorCode = 4294967296 + Number(tint); // 4294967296 = 2 ** 32
+						let colorCode = 2 ** 32 + Number(tint);
 						textureRef["tint"] = [colorCode >> 16 & 0xFF, colorCode >> 8 & 0xFF, colorCode & 0xFF].map(x => x / 255);
 					}
 				}
@@ -933,8 +933,8 @@ export default class BlockGeoMaker extends AsyncFactory {
 		let v1pos = v1["pos"];
 		let v2pos = v2["pos"];
 		let v3pos = v3["pos"];
-		let textureXDir = [v1pos[0] - v0pos[0], v1pos[1] - v0pos[1], v1pos[2] - v0pos[2]]; // v1pos - v0pos
-		let textureYDir = [v2pos[0] - v0pos[0], v2pos[1] - v0pos[1], v2pos[2] - v0pos[2]]; // v2pos - v0pos
+		let textureXDir = subVec3(v1pos, v0pos);
+		let textureYDir = subVec3(v2pos, v0pos);
 		let cropXRem = 1 - crop["w"] - crop["x"]; // remaining horizontal space on the other side of the cropped region
 		let cropYRem = 1 - crop["h"] - crop["y"];
 		v0["pos"] = addVec3(v0pos, [textureXDir[0] * crop["x"] + textureYDir[0] * crop["y"], textureXDir[1] * crop["x"] + textureYDir[1] * crop["y"], textureXDir[2] * crop["x"] + textureYDir[2] * crop["y"]]);

@@ -135,8 +135,6 @@ export default class TextureAtlas extends AsyncFactory {
 			// 	"uv": textureRef["uv"],
 			// 	"uv_size": textureRef["uv_size"]
 			// })
-			
-			// console.count("add terrain texture key"); // TODO: optimise by putting block names and sides into a set, which would reduce the number of terrain texture keys to resolve into texture paths.
 		});
 		
 		console.log("Texture image indices:", textureImageIndices);
