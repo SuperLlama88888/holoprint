@@ -487,7 +487,7 @@ export default class TextureAtlas extends AsyncFactory {
 	}
 	/** Add an outline around each texture.
 	 * @param {OffscreenCanvas} ogCan
-	 * @param {Array<{ x: number, y: number, w: number, h: number }>} imagePositions
+	 * @param {Array<Rectangle>} imagePositions
 	 * @param {HoloPrintConfig} config
 	 * @returns {OffscreenCanvas}
 	 */

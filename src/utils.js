@@ -223,6 +223,13 @@ export function crossProduct(a, b) {
 export function normalizeVec3(vec) {
 	return mulVec3(vec, 1 / hypot(...vec))
 }
+/**
+ * @param {Vec3} vec
+ * @returns {Vec3}
+ */
+export function vec3ToFixed(vec, decimals) {
+	return [+vec[0].toFixed(decimals), +vec[1].toFixed(decimals), +vec[2].toFixed(decimals)];
+}
 
 export function arrayMin(arr) {
 	let min = Infinity;

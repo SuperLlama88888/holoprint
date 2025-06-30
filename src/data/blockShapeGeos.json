@@ -4608,8 +4608,8 @@
 		},
 		{
 			"if": "#copied_via_copy_block",
-			"pos": [0.5, 0, 8],
-			"size": [15, 12, 0],
+			"pos": [1, 0, 8],
+			"size": [14, 12, 0],
 			"rot": [0, 45, 0],
 			"textures": {
 				"*": "west"
@@ -4617,8 +4617,8 @@
 		},
 		{
 			"if": "#copied_via_copy_block",
-			"pos": [0.5, 0, 8],
-			"size": [15, 12, 0],
+			"pos": [1, 0, 8],
+			"size": [14, 12, 0],
 			"rot": [0, -45, 0],
 			"textures": {
 				"*": "west"
@@ -4724,7 +4724,9 @@
 			"size": [6, 0, 6],
 			"textures": {
 				"*": "textures/blocks/dirt"
-			}
+			},
+			"flip_textures_vertically": ["*"],
+			"tint": "#999999"
 		},
 		{
 			"if": "update_bit == 1",

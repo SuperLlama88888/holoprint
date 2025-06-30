@@ -161,6 +161,8 @@ export async function makePack(structureFiles, config = {}, resourcePackStack, p
 	let totalBlocksToValidateByStructure = [];
 	let totalBlocksToValidateByStructureByLayer = [];
 	let uniqueBlocksToValidate = new Set();
+	let maxHeight = max(...structureSizes.map(structureSize => structureSize[1]));
+	let layerIsEmpty = (new Array(maxHeight)).fill(true);
 	
 	let polyMeshMaker = new PolyMeshMaker(polyMeshTemplatePalette);
 	let materialList = await MaterialList.new(blockMetadata, itemMetadata);
@@ -213,6 +215,7 @@ export async function makePack(structureFiles, config = {}, resourcePackStack, p
 						}
 						firstBoneForThisCoordinate = false;
 						totalBlockCount++;
+						layerIsEmpty[y] = false;
 					}
 				}
 			}
@@ -237,11 +240,12 @@ export async function makePack(structureFiles, config = {}, resourcePackStack, p
 	
 	makeLayerAnimations(config, structureSizes, entityDescription, hologramAnimations, hologramAnimationControllers);
 	if(config.SPAWN_ANIMATION_ENABLED) {
-		let maxHeight = max(...structureSizes.map(structureSize => structureSize[1]));
 		let spawnAnimationMaker = new SpawnAnimationMaker(config, [1, maxHeight, 1]);
 		for(let y = 0; y < maxHeight; y++) {
-			let layerName = `l_${y}`;
-			spawnAnimationMaker.addBone(layerName, [0, y, 0], [0, 16 * y, -16]);
+			if(!layerIsEmpty[y]) {
+				let layerName = `l_${y}`;
+				spawnAnimationMaker.addBone(layerName, [0, y, 0], [0, 16 * y, -16]);
+			}
 		}
 		hologramAnimations["animations"]["animation.armor_stand.hologram.spawn"] = spawnAnimationMaker.makeAnimation();
 	}

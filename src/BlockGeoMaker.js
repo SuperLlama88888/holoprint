@@ -2,7 +2,7 @@
 // READ: this also looks pretty comprehensive: https://github.com/MCBE-Development-Wiki/mcbe-dev-home/blob/main/docs/misc/enums/block_shape.md
 // https://github.com/bricktea/MCStructure/blob/main/docs/1.16.201/enums/B.md
 
-import { addVec3, AsyncFactory, awaitAllEntries, crossProduct, hexColorToClampedTriplet, jsonc, JSONSet, max, mulVec3, normalizeVec3, rotateDeg, subVec3 } from "./utils.js";
+import { addVec3, AsyncFactory, awaitAllEntries, crossProduct, hexColorToClampedTriplet, jsonc, JSONSet, max, mulVec3, normalizeVec3, rotateDeg, vec3ToFixed, subVec3 } from "./utils.js";
 
 // https://wiki.bedrock.dev/visuals/material-creations.html#overlay-color-in-render-controllers
 // https://wiki.bedrock.dev/documentation/materials.html#entity-alphatest
@@ -102,7 +102,7 @@ export default class BlockGeoMaker extends AsyncFactory {
 		let rotation = this.#getBlockRotation(block, blockShape);
 		if(rotation) {
 			faces.forEach(face => {
-				face["normal"] = this.#applyEulerRotation(face["normal"], rotation, [8, 8, 8]);
+				face["normal"] = this.#applyEulerRotation(face["normal"], rotation, [0, 0, 0]);
 				face["vertices"].forEach(vertex => {
 					vertex["pos"] = this.#applyEulerRotation(vertex["pos"], rotation, [8, 8, 8]); // (8, 8, 8) is the block center and the pivot for all block-wide rotations
 				});
@@ -110,6 +110,9 @@ export default class BlockGeoMaker extends AsyncFactory {
 			centerOfMass = this.#applyEulerRotation(centerOfMass, rotation, [8, 8, 8]);
 		}
 		faces = this.#scaleFaces(faces, centerOfMass);
+		faces.forEach(face => {
+			face["normal"] = vec3ToFixed(face["normal"], 4);
+		});
 		return faces;
 	}
 	/**
@@ -387,16 +390,15 @@ export default class BlockGeoMaker extends AsyncFactory {
 						vertex["pos"] = addVec3(vertex["pos"], cube["translate"]);
 					}
 				}
-				let surfaceNormal = this.#getSurfaceNormal(vertices);
-				if(Object.keys(uv).length == 1 && surfaceNormal[1] < 0) {
-					surfaceNormal = mulVec3(surfaceNormal, -1);
-				}
 				faces.push({
-					"normal": surfaceNormal,
+					"normal": this.#getSurfaceNormal(vertices),
 					"textureRefI": this.textureRefs.indexOf(textureRef),
 					"vertices": vertices
 				});
 			});
+			if(faces.length == 1 && faces[0]["normal"][1] < 0) {
+				faces[0]["normal"] = mulVec3(faces[0]["normal"], -1);
+			}
 			
 			allFaces.push(...faces);
 		});
