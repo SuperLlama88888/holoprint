@@ -21,7 +21,7 @@ export default class TextureAtlas extends AsyncFactory {
 	
 	/**
 	 * When makeAtlas() is called, this will contain UV coordinates and sizes for texture references passed as input, as well as cropping information.
-	 * @type {Array<{ uv: Vec2, uv_size: Vec2, crop?: Rectangle }>}
+	 * @type {Array<{ uv: Vec2, uv_size: Vec2, transparency: number, crop?: Rectangle }>}
 	 */
 	uvs;
 	
@@ -372,7 +372,7 @@ export default class TextureAtlas extends AsyncFactory {
 	/**
 	 * Stitches together images with widths and heights, and puts the UV coordinates and sizes into the textureUvs property.
 	 * @param {Array<ImageFragment>} imageFragments
-	 * @returns {Promise<Array<{ uv: [number, number], uv_size: [number, number], crop?: Rectangle }>>}
+	 * @returns {Promise<Array<{ uv: [number, number], uv_size: [number, number], transparency: number, crop?: Rectangle }>>}
 	 */
 	async #stitchTextureAtlas(imageFragments) {
 		imageFragments.forEach((imageFragment, i) => {
@@ -431,6 +431,10 @@ export default class TextureAtlas extends AsyncFactory {
 				imageUv["crop"] = imageFragment["crop"];
 			}
 			return imageUv;
+		});
+		let transparencies = this.#getImageFragmentTransparencies(can, imageFragments);
+		transparencies.forEach((transparency, i) => {
+			imageUvs[i]["transparency"] = transparency;
 		});
 		
 		// ctx = can.getContext("2d");
@@ -557,6 +561,25 @@ export default class TextureAtlas extends AsyncFactory {
 		});
 		
 		return can;
+	}
+	/**
+	 * Calculates the transparencies of each image fragment.
+	 * @param {OffscreenCanvas} can
+	 * @param {Array<Rectangle>} imageFragments
+	 * @returns {Array<number>}
+	 */
+	#getImageFragmentTransparencies(can, imageFragments) {
+		let imageData = can.getContext("2d").getImageData(0, 0, can.width, can.height);
+		return imageFragments.map(({ x: startX, y: startY, w, h }) => {
+			let totalTransparency = 0;
+			for(let x = startX; x < startX + w; x++) {
+				for(let y = startY; y < startY + h; y++) {
+					let i = (y * can.width + x) * 4;
+					totalTransparency += 255 - imageData.data[i + 3];
+				}
+			}
+			return totalTransparency / (w * h);
+		});
 	}
 	#setCanvasOpacity(can, alpha) {
 		let newCan = new OffscreenCanvas(can.width, can.height);

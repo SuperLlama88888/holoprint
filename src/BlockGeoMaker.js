@@ -111,7 +111,12 @@ export default class BlockGeoMaker extends AsyncFactory {
 		}
 		faces = this.#scaleFaces(faces, centerOfMass);
 		faces.forEach(face => {
-			face["normal"] = vec3ToFixed(face["normal"], 4);
+			if(face["fullbright"]) {
+				face["normal"] = [0, 1, 0];
+				delete face["fullbright"];
+			} else {
+				face["normal"] = vec3ToFixed(face["normal"], 4);
+			}
 		});
 		return faces;
 	}
@@ -137,7 +142,7 @@ export default class BlockGeoMaker extends AsyncFactory {
 	 * Makes the poly mesh faces for a block.
 	 * @param {Block} block
 	 * @param {string} blockShape
-	 * @returns {{ faces?: Array<PolyMeshTemplateFace>, centerOfMass?: Vec3 }}
+	 * @returns {{ faces?: Array<PolyMeshTemplateFace & { fullbright?: boolean }>, centerOfMass?: Vec3 }}
 	 */
 	#makePolyMeshTemplateFaces(block, blockShape) {
 		let specialTexture;
@@ -274,6 +279,7 @@ export default class BlockGeoMaker extends AsyncFactory {
 		let variant = this.#getTextureVariant(block);
 		let variantWithoutEigenvariant;
 		
+		let allCubesAreFlat = true;
 		cubes.forEach(cube => {
 			let uv = this.#calculateUv(cube);
 			
@@ -312,7 +318,6 @@ export default class BlockGeoMaker extends AsyncFactory {
 			
 			/** @type {Array<PolyMeshTemplateFace>} */
 			let faces = [];
-			
 			let textureSize = cube["texture_size"] ?? [16, 16];
 			// add generic keys to all faces, and convert texture references into indices
 			Object.entries(uv).forEach(([faceName, face]) => {
@@ -396,12 +401,22 @@ export default class BlockGeoMaker extends AsyncFactory {
 					"vertices": vertices
 				});
 			});
-			if(faces.length == 1 && faces[0]["normal"][1] < 0) {
-				faces[0]["normal"] = mulVec3(faces[0]["normal"], -1);
+			if(faces.length == 1) {
+				if(faces[0]["normal"][1] < 0) {
+					faces[0]["normal"] = mulVec3(faces[0]["normal"], -1);
+				}
+			} else {
+				allCubesAreFlat = false;
 			}
 			
 			allFaces.push(...faces);
 		});
+		if(allCubesAreFlat) {
+			allFaces.forEach(face => {
+				face["fullbright"] = true; // blocks with only flat textures always appear at maximum brightness. source: me
+			});
+			console.debug(`Making ${blockName} full bright!`);
+		}
 		let centerOfMass = this.#calculateCenterOfMass(cubes);
 		return {
 			faces: allFaces,
@@ -914,6 +929,7 @@ export default class BlockGeoMaker extends AsyncFactory {
 			let vertices = [face["vertices"][0], face["vertices"][1], face["vertices"][3], face["vertices"][2]]; // go around in a square
 			return {
 				"normal": face["normal"],
+				"transparency": imageUv["transparency"],
 				"vertices": vertices.map(vertex => ({
 					"pos": vertex["pos"],
 					"uv": [(imageUv["uv"][0] + imageUv["uv_size"][0] * (vertex["corner"] & 1)) / textureAtlas.textureWidth, 1 - (imageUv["uv"][1] + imageUv["uv_size"][1] * (vertex["corner"] >> 1)) / textureAtlas.textureHeight]

@@ -54,6 +54,7 @@ export default class PreviewRenderer extends AsyncFactory {
 	#canvasSize = min(window.innerWidth, window.innerHeight) * 0.8;
 	#loadingMessage;
 	#can;
+	#polyMeshMaker;
 	#imageBlob;
 	/** @type {ImageData} */
 	#imageBlobData;
@@ -110,6 +111,7 @@ export default class PreviewRenderer extends AsyncFactory {
 		this.options = { ...this.options, ...options };
 		
 		this.#can = document.createElement("canvas");
+		this.#polyMeshMaker = new PolyMeshMaker(polyMeshTemplatePalette);
 		this.#imageBlob = this.textureAtlas.imageBlobs.at(-1)[1];
 		this.#maxDim = max(...this.structureSize);
 		this.#maxDimPixels = this.#maxDim * 16;
@@ -245,10 +247,10 @@ export default class PreviewRenderer extends AsyncFactory {
 		});
 		for(let i in this.#blockPositions) {
 			let polyMeshTemplate = this.polyMeshTemplatePalette[i];
-			if(!polyMeshTemplate.length) {
+			if(!polyMeshTemplate.length) { // a template is an array of faces. no faces = nothing to be rendered for this block
 				continue;
 			}
-			let geo = this.#polyMeshTemplateToBufferGeo(polyMeshTemplate);
+			let geo = this.#polyMeshTemplateToBufferGeo(i);
 			let positions = this.#blockPositions[i].map(([x, y, z]) => [-16 * x - 16, 16 * y, -16 * z - 16]);
 			let isTranslucent = this.#isPolyMeshTemplateTranslucent(polyMeshTemplate);
 			let material = isTranslucent? transparentMat : regularMat;
@@ -522,14 +524,14 @@ export default class PreviewRenderer extends AsyncFactory {
 		return texture;
 	}
 	/**
-	 * Converts a poly mesh template to a Three.js BufferGeometry.
-	 * @param {Array<PolyMeshTemplateFaceWithUvs>} polyMeshTemplate
+	 * Converts a poly mesh template in the palette to a Three.js BufferGeometry.
+	 * @param {number} polyMeshTemplatePaletteI
 	 * @returns {THREE.BufferGeometry}
 	 */
-	#polyMeshTemplateToBufferGeo(polyMeshTemplate) {
-		let polyMeshMaker = new PolyMeshMaker();
-		polyMeshMaker.add(polyMeshTemplate);
-		let polyMesh = polyMeshMaker.export();
+	#polyMeshTemplateToBufferGeo(polyMeshTemplatePaletteI) {
+		this.#polyMeshMaker.add(polyMeshTemplatePaletteI);
+		let polyMesh = this.#polyMeshMaker.export();
+		this.#polyMeshMaker.clear();
 		let i = 0; // this bit is adapted from https://github.com/bridge-core/model-viewer/blob/main/lib/PolyMesh.ts#L45
 		let positions = [], normals = [], uvs = [], indices = [];
 		polyMesh["polys"].forEach(face => {
