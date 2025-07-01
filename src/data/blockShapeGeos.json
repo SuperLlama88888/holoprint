@@ -5004,8 +5004,8 @@
 	],
 	"template_shulker_box": [ // since this relies on the shulker model, the two halves are split
 		{
-			"pos": [0.01, 0, 0.01], // bottom part must be slightly inset to avoid z-fighting
-			"size": [15.98, 8, 15.98],
+			"pos": [0, 0, 0],
+			"size": [16, 8, 16],
 			"uv": {
 				"side": [0, 44],
 				"down": [32, 28]
@@ -5020,8 +5020,8 @@
 			"texture_size": [64, 64]
 		},
 		{
-			"pos": [0, 4, 0],
-			"size": [16, 12, 16],
+			"pos": [0.05, 4, 0.05], // top part must be slightly inset to avoid z-fighting
+			"size": [15.9, 12, 15.9],
 			"uv": {
 				"side": [0, 16],
 				"up": [16, 0]
