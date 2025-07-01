@@ -4226,36 +4226,6 @@
 			}
 		}
 	],
-	"template_sea_pickle_opening": [ // this is the top face of the main cube, it's split up so it doesn't cull the face below
-		{
-			"pos": [0, 0, 0],
-			"size": [4, 0, 1],
-			"uv": {
-				"*": [4, 1]
-			}
-		},
-		{
-			"pos": [0, 0, 3],
-			"size": [4, 0, 1],
-			"uv": {
-				"*": [4, 4]
-			}
-		},
-		{
-			"pos": [0, 0, 1],
-			"size": [1, 0, 2],
-			"uv": {
-				"*": [4, 2]
-			}
-		},
-		{
-			"pos": [3, 0, 1],
-			"size": [1, 0, 2],
-			"uv": {
-				"*": [7, 2]
-			}
-		}
-	],
 	"template_sea_pickle_4px": [
 		{
 			"pos": [0, 0, 0],
@@ -4272,8 +4242,11 @@
 			}
 		},
 		{
-			"copy": "template_sea_pickle_opening",
-			"translate": [0, 4, 0]
+			"pos": [0, 4, 0],
+			"size": [4, 0, 4],
+			"uv": {
+				"*": [4, 1]
+			}
 		},
 		{
 			"pos": [0, 3.125, 0],
@@ -4304,8 +4277,11 @@
 			}
 		},
 		{
-			"copy": "template_sea_pickle_opening",
-			"translate": [0, 5, 0]
+			"pos": [0, 5, 0],
+			"size": [4, 0, 4],
+			"uv": {
+				"*": [4, 1]
+			}
 		},
 		{
 			"pos": [0, 4.125, 0],
@@ -4336,8 +4312,11 @@
 			}
 		},
 		{
-			"copy": "template_sea_pickle_opening",
-			"translate": [0, 6, 0]
+			"pos": [0, 6, 0],
+			"size": [4, 0, 4],
+			"uv": {
+				"*": [4, 1]
+			}
 		},
 		{
 			"pos": [0, 5.125, 0],
@@ -4368,8 +4347,11 @@
 			}
 		},
 		{
-			"copy": "template_sea_pickle_opening",
-			"translate": [0, 7, 0]
+			"pos": [0, 7, 0],
+			"size": [4, 0, 4],
+			"uv": {
+				"*": [4, 1]
+			}
 		},
 		{
 			"pos": [0, 6.125, 0],
@@ -4673,8 +4655,7 @@
 			"pos": [0, 0, 0],
 			"size": [16, 16, 16],
 			"textures": {
-				"down": "side",
-				"*": "none" // the other glass shell culls the rest of the beacon, so I had to  remove it except for at the bottom :(
+				"*": "side"
 			}
 		},
 		{
@@ -4696,28 +4677,9 @@
 		{
 			"pos": [5, 0, 5],
 			"size": [6, 6, 6],
-			"textures": {
-				"up": "none" // it culls the dirt inside :(
-			},
 			"uv": {
 				"down": [5, 10] // flower pots in-game use the top texture for the bottom but it looks better with the side texture
 			}
-		},
-		{
-			"pos": [5, 6, 5],
-			"size": [6, 0, 1]
-		},
-		{
-			"pos": [5, 6, 10],
-			"size": [6, 0, 1]
-		},
-		{
-			"pos": [5, 6, 6],
-			"size": [1, 0, 4]
-		},
-		{
-			"pos": [10, 6, 6],
-			"size": [1, 0, 4]
 		},
 		{
 			"pos": [5, 4, 5],
