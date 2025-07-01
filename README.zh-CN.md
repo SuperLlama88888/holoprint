@@ -63,7 +63,7 @@
 ### 致谢
 - [Structura](https://github.com/RavinMaddHatter/Structura)：灵感来源与项目基础，特别感谢 [RavinMaddHatter](https://github.com/RavinMaddHatter) 以及 [其他贡献者](https://github.com/RavinMaddHatter/Structura/graphs/contributors)。
 - [Tab键玩家列表UI](https://github.com/YuuhaLand/Tabkey_Playerlist_UI)：材料清单 UI 的底层实现。（作者 [YuuhaLand](https://github.com/YuuhaLand)）
-- Nextr: Control item textures (tweaked)
+- [Nextr](https://mcpedl.com/user/nextr): Control item textures (tweaked)
 - [Indyfficient](https://www.youtube.com/@Indyfficient)：通过攻击盔甲架切换结构的创意。
 - [Prowl8413](https://www.youtube.com/@Prowl8413)：开发过程中的反馈支持。
 - **参考文档：**
