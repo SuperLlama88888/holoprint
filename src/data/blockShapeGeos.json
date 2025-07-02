@@ -513,7 +513,7 @@
 		{
 			"pos": [1, 0, 3],
 			"size": [6, 0, 10],
-			"rot": [0, 0, 4.0563],
+			"rot": [0, 0, 9],
 			"pivot": [7, 0, 8],
 			"textures": {
 				"*": "textures/entity/enchanting_table_book"
@@ -526,7 +526,7 @@
 		{
 			"pos": [9, 0, 3],
 			"size": [6, 0, 10],
-			"rot": [0, 0, -4.0563],
+			"rot": [0, 0, -9],
 			"pivot": [9, 0, 8],
 			"textures": {
 				"*": "textures/entity/enchanting_table_book"
@@ -550,7 +550,7 @@
 		{
 			"pos": [3, 0, 4],
 			"size": [5, 1, 8],
-			"rot": [0, 0, 4.0563],
+			"rot": [0, 0, 9],
 			"pivot": [8, 1, 8],
 			"textures": {
 				"*": "textures/entity/enchanting_table_book",
@@ -564,7 +564,7 @@
 		{
 			"pos": [8, 0, 4],
 			"size": [5, 1, 8],
-			"rot": [0, 0, -4.0563],
+			"rot": [0, 0, -9],
 			"pivot": [8, 1, 8],
 			"textures": {
 				"*": "textures/entity/enchanting_table_book",
@@ -578,7 +578,7 @@
 		{
 			"pos": [3, 1, 4],
 			"size": [5, 0, 8],
-			"rot": [0, 0, 24.3380],
+			"rot": [0, 0, 24],
 			"pivot": [8, 1, 8],
 			"textures": {
 				"*": "textures/entity/enchanting_table_book"
@@ -591,7 +591,7 @@
 		{
 			"pos": [8, 1, 4],
 			"size": [5, 0, 8],
-			"rot": [0, 0, -24.3380],
+			"rot": [0, 0, -24],
 			"pivot": [8, 1, 8],
 			"textures": {
 				"*": "textures/entity/enchanting_table_book"
@@ -3438,12 +3438,24 @@
 			"pos": [4, 2, 4],
 			"size": [8, 13, 8],
 			"textures": {
-				"*": "north" // TODO: use the proper side texture for east/west. currently it's rotated 90 degrees for no reason so we'll have to have a second cube. the in-game difference is barely noticeable.
+				"south": "north",
+				"east": "west",
+				"up": "none"
 			},
 			"uv": {
-				"side": [8, 3],
+				"side": [2, 8],
+				"north": [8, 3],
 				"south": [0, 0]
-			}
+			},
+			"uv_sizes": {
+				"east": [13, 8],
+				"west": [13, 8]
+			},
+			"uv_rot": {
+				"east": 90,
+				"west": 90
+			},
+			"flip_textures_horizontally": ["west"]
 		},
 		{
 			"pos": [0.0125, 12, 0],
@@ -3455,7 +3467,11 @@
 			"uv": {
 				"side": [0, 4],
 				"south": [0, 0],
-				"up": [0, 1]
+				"up": [0, 1],
+				"down": [0, 0]
+			},
+			"uv_rot": {
+				"down": 180
 			}
 		},
 		{

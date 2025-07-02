@@ -368,13 +368,24 @@ export default class BlockGeoMaker extends AsyncFactory {
 				}
 				
 				this.textureRefs.add(textureRef);
+				let vertices = this.#getVertices(cube, faceName);
+				let uvRot = cube["uv_rot"]?.[faceName] ?? (isSideFace? cube["uv_rot"]?.["side"] : undefined) ?? cube["uv_rot"]?.["*"];
+				if(uvRot) {
+					while(uvRot >= 90) {
+						[vertices[0]["corner"], vertices[1]["corner"], vertices[3]["corner"], vertices[2]["corner"]] = [vertices[2]["corner"], vertices[0]["corner"], vertices[1]["corner"], vertices[3]["corner"]];
+						uvRot -= 90;
+					}
+					while(uvRot <= -90) {
+						[vertices[2]["corner"], vertices[0]["corner"], vertices[1]["corner"], vertices[3]["corner"]] = [vertices[0]["corner"], vertices[1]["corner"], vertices[3]["corner"], vertices[2]["corner"]];
+						uvRot += 90;
+					}
+				}
 				let flipTextureHorizontally = cube["flip_textures_horizontally"]?.includes(faceName) ^ (isSideFace && cube["flip_textures_horizontally"]?.includes("side")) ^ cube["flip_textures_horizontally"]?.includes("*");
 				let flipTextureVertically = cube["flip_textures_vertically"]?.includes(faceName) ^ (isSideFace && cube["flip_textures_vertically"]?.includes("side")) ^ cube["flip_textures_vertically"]?.includes("*");
 				if("box_uv" in cube) { // box uv does some flipping automatically
 					flipTextureHorizontally ^= faceName != "north" && faceName != "south";
 					flipTextureVertically ^= faceName == "up";
 				}
-				let vertices = this.#getVertices(cube, faceName);
 				if((faceName == "down" || faceName == "up") ^ flipTextureHorizontally) { // in MC the down/up faces are rotated 180 degrees compared to how they are in geometry; this can be faked by flipping both axes.
 					[vertices[0]["corner"], vertices[1]["corner"]] = [vertices[1]["corner"], vertices[0]["corner"]];
 					[vertices[2]["corner"], vertices[3]["corner"]] = [vertices[3]["corner"], vertices[2]["corner"]];

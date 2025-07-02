@@ -106,6 +106,21 @@
 						},
 						"additionalProperties": false
 					},
+					"uv_rot": {
+						"description": "Rotates the UV for each face. Processed before `flip_textures_horizontally` and `flip_textures_vertically`",
+						"type": "object",
+						"propertyNames": {
+							"enum": ["west", "east", "down", "up", "north", "south", "side", "*"]
+						},
+						"patternProperties": {
+							".": {
+								"description": "The UV rotation for this face, in degrees.",
+								"type": "number",
+								"multipleOf": 90
+							}
+						},
+						"additionalProperties": false
+					},
 					"box_uv": {
 						"description": "UV coordinates for box UV.",
 						"type": "array",
