@@ -432,7 +432,8 @@ export default class TextureAtlas extends AsyncFactory {
 			}
 			return imageUv;
 		});
-		let transparencies = this.#getImageFragmentTransparencies(can, imageFragments);
+		let canImageData = can.getContext("2d").getImageData(0, 0, can.width, can.height);
+		let transparencies = this.#getImageFragmentTransparencies(canImageData, imageFragments);
 		transparencies.forEach((transparency, i) => {
 			imageUvs[i]["transparency"] = transparency;
 		});
@@ -441,7 +442,7 @@ export default class TextureAtlas extends AsyncFactory {
 		// ctx.fillStyle = "#00F3";
 		// ctx.fillRect(0, 0, can.width, can.height);
 		if(this.config.TEXTURE_OUTLINE_WIDTH != 0) {
-			can = TextureAtlas.addTextureOutlines(can, imageFragments, this.config);
+			can = TextureAtlas.addTextureOutlines(can, imageFragments, this.config, canImageData);
 		}
 		
 		if(this.config.MULTIPLE_OPACITIES) {
@@ -493,9 +494,10 @@ export default class TextureAtlas extends AsyncFactory {
 	 * @param {OffscreenCanvas} ogCan
 	 * @param {Array<Rectangle>} imagePositions
 	 * @param {HoloPrintConfig} config
+	 * @param {ImageData} [imageData]
 	 * @returns {OffscreenCanvas}
 	 */
-	static addTextureOutlines(ogCan, imagePositions, config) {
+	static addTextureOutlines(ogCan, imagePositions, config, imageData) {
 		let scale = max(1 / config.TEXTURE_OUTLINE_WIDTH, 1);
 		let can = new OffscreenCanvas(ogCan.width * scale, ogCan.height * scale);
 		
@@ -503,7 +505,7 @@ export default class TextureAtlas extends AsyncFactory {
 		ctx.imageSmoothingEnabled = false;
 		ctx.drawImage(ogCan, 0, 0, can.width, can.height);
 		
-		let imageData = ogCan.getContext("2d").getImageData(0, 0, ogCan.width, ogCan.height);
+		imageData ??= ogCan.getContext("2d").getImageData(0, 0, ogCan.width, ogCan.height);
 		
 		ctx.fillStyle = config.TEXTURE_OUTLINE_COLOR;
 		ctx.globalAlpha = config.TEXTURE_OUTLINE_OPACITY;
@@ -564,17 +566,16 @@ export default class TextureAtlas extends AsyncFactory {
 	}
 	/**
 	 * Calculates the transparencies of each image fragment.
-	 * @param {OffscreenCanvas} can
+	 * @param {ImageData} imageData
 	 * @param {Array<Rectangle>} imageFragments
 	 * @returns {Array<number>}
 	 */
-	#getImageFragmentTransparencies(can, imageFragments) {
-		let imageData = can.getContext("2d").getImageData(0, 0, can.width, can.height);
+	#getImageFragmentTransparencies(imageData, imageFragments) {
 		return imageFragments.map(({ x: startX, y: startY, w, h }) => {
 			let totalTransparency = 0;
 			for(let x = startX; x < startX + w; x++) {
 				for(let y = startY; y < startY + h; y++) {
-					let i = (y * can.width + x) * 4;
+					let i = (y * imageData.width + x) * 4;
 					totalTransparency += 255 - imageData.data[i + 3];
 				}
 			}
