@@ -2471,7 +2471,9 @@
 			"size": [16, 16, 16],
 			"textures": {
 				"up": "carried.up"
-			}
+			},
+			"flip_textures_horizontally": ["up"],
+			"flip_textures_vertically": ["up"]
 		},
 		{
 			"if": "entity.State == 1 || entity.State == 2", // pushing or extended
@@ -2505,7 +2507,7 @@
 			}
 		},
 		{
-			"if": "entity.Sticky == 0 && entity.State == 1 || entity.Sticky == 0 && entity.State == 2", // pushing or extended
+			"if": "entity.State == 1 || entity.State == 2", // pushing or extended
 			"pos": [0, 28, 0],
 			"size": [16, 4, 16],
 			"textures": {
@@ -2516,21 +2518,9 @@
 				"side": [0, 16],
 				"down": [32, 0],
 				"up": [16, 0]
-			}
-		},
-		{
-			"if": "entity.Sticky == 1 && entity.State == 1 || entity.Sticky == 1 && entity.State == 2", // pushing or extended
-			"pos": [0, 28, 0],
-			"size": [16, 4, 16],
-			"textures": {
-				"*": "#tex"
 			},
-			"texture_size": [128, 32],
-			"uv": {
-				"side": [0, 16],
-				"down": [32, 0],
-				"up": [16, 0]
-			}
+			"flip_textures_horizontally": ["up"],
+			"flip_textures_vertically": ["up"]
 		}
 	],
 	"dispenser": [
