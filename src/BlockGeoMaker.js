@@ -2,7 +2,7 @@
 // READ: this also looks pretty comprehensive: https://github.com/MCBE-Development-Wiki/mcbe-dev-home/blob/main/docs/misc/enums/block_shape.md
 // https://github.com/bricktea/MCStructure/blob/main/docs/1.16.201/enums/B.md
 
-import { addVec3, AsyncFactory, awaitAllEntries, crossProduct, hexColorToClampedTriplet, jsonc, JSONSet, max, mulVec3, normalizeVec3, rotateDeg, vec3ToFixed, subVec3 } from "./utils.js";
+import { addVec3, AsyncFactory, awaitAllEntries, crossProduct, hexColorToClampedTriplet, jsonc, JSONSet, max, mulVec3, normalizeVec3, rotateDeg, vec3ToFixed, subVec3, conditionallyGroup } from "./utils.js";
 
 // https://wiki.bedrock.dev/visuals/material-creations.html#overlay-color-in-render-controllers
 // https://wiki.bedrock.dev/documentation/materials.html#entity-alphatest
@@ -113,10 +113,10 @@ export default class BlockGeoMaker extends AsyncFactory {
 		faces.forEach(face => {
 			if(face["fullbright"]) {
 				face["normal"] = [0, 1, 0];
-				delete face["fullbright"];
 			} else {
 				face["normal"] = vec3ToFixed(face["normal"], 4);
 			}
+			delete face["fullbright"];
 		});
 		return faces;
 	}
@@ -169,12 +169,13 @@ export default class BlockGeoMaker extends AsyncFactory {
 				}
 				blockOverride["states"] = { ...blockOverride["states"], ...cube["block_states"] };
 				cube["block_override"] = blockOverride;
+				delete cube["block_states"];
 			}
 			if("if" in cube) {
 				if(!this.#checkBlockStateConditional(cube["block_override"] ?? block, cube["if"])) {
 					continue;
 				}
-				delete cube["if"]; // later on, when determining if a bone cube is mergeable, we only allow cubes with "pos" and "size" keys. I am lazy so it only checks if there are exactly 2 keys in the cube. hence, we need to delete the "if" key here.
+				delete cube["if"];
 			}
 			if("terrain_texture" in cube) {
 				cube["terrain_texture"] = this.#interpolateInBlockValues(cube["block_override"] ?? block, cube["terrain_texture"], cube);
@@ -272,7 +273,7 @@ export default class BlockGeoMaker extends AsyncFactory {
 				}
 			}])));
 		});
-		let cubes = this.#mergeCubes(filteredCubes);
+		let cubes = this.#optimizeGeometry(filteredCubes);
 		cubes.sort((a, b) => a.w * a.h * a.d - b.w * b.h * b.d); // make larger cubes be rendered later. this helps for blocks like slime and honey where the inner cube has to be rendered before the outer cube
 		
 		let blockName = block["name"];
@@ -316,7 +317,7 @@ export default class BlockGeoMaker extends AsyncFactory {
 				cubeVariant = variant; // default variant for this block
 			}
 			
-			/** @type {Array<PolyMeshTemplateFace>} */
+			/** @type {Array<PolyMeshTemplateFace & { fullbright: boolean }>} */
 			let faces = [];
 			let textureSize = cube["texture_size"] ?? [16, 16];
 			// add generic keys to all faces, and convert texture references into indices
@@ -409,7 +410,8 @@ export default class BlockGeoMaker extends AsyncFactory {
 				faces.push({
 					"normal": this.#getSurfaceNormal(vertices),
 					"textureRefI": this.textureRefs.indexOf(textureRef),
-					"vertices": vertices
+					"vertices": vertices,
+					"fullbright": Boolean(cube["fullbright"])
 				});
 			});
 			if(faces.length == 1) {
@@ -489,30 +491,24 @@ export default class BlockGeoMaker extends AsyncFactory {
 		return [...Object.entries(block["states"] ?? {}), ...Object.entries(block["block_entity_data"] ?? {}).map(([key, value]) => [`entity.${key}`, value])];
 	}
 	/**
-	 * Merges cubes together greedily.
+	 * Optimises geometries by merging adjacent cubes and culling hidden faces.
 	 * @param {Array<object>} cubes
 	 * @returns {Array<object>}
 	 */
-	#mergeCubes(cubes) {
-		let unmergeableCubes = [];
-		let mergeableCubes = [];
-		cubes.forEach(cube => {
-			if(!cube["size"].some(x => x == 0) && Object.keys(cube).length == 2) { // 2 keys: pos and size
-				mergeableCubes.push(cube);
-			} else {
-				unmergeableCubes.push(cube);
-			}
-		});
+	#optimizeGeometry(cubes) {
+		let [unoptimizableCubes, optimizableCubes] = conditionallyGroup(cubes, cube => !("rot" in cube || "translate" in cube));
+		let mergeableGroups = new Map(optimizableCubes.map(cube => [cube, this.#getMergingGroup(cube)]));
 		
 		let mergedCubes = [];
-		mergeableCubes.forEach(cube1 => { // this is the cube we're trying to add to mergedCubes
+		optimizableCubes.forEach(cube1 => { // this is the cube we're trying to add to mergedCubes
 			tryMerging: while(true) {
 				for(let [i, cube2] of mergedCubes.entries()) {
-					if(this.#tryMergeCubesOneWay(cube1, cube2)) {
+					let mergeable = mergeableGroups.get(cube1) == mergeableGroups.get(cube2);
+					if(this.#tryMergeCubesOneWayAndCullFaces(cube1, cube2, mergeable)) {
 						console.debug("Merged cube", cube2, "into", cube1);
 						mergedCubes.splice(i, 1);
 						continue tryMerging; // since boneCube1 has been mutated, this stops the current comparison of boneCube1 with the already merged cubes, and makes it start again.
-					} else if(this.#tryMergeCubesOneWay(cube2, cube1)) {
+					} else if(this.#tryMergeCubesOneWayAndCullFaces(cube2, cube1, mergeable)) {
 						console.debug("Merged cube", cube1, "into", cube2);
 						mergedCubes.splice(i, 1);
 						cube1 = cube2;
@@ -524,7 +520,63 @@ export default class BlockGeoMaker extends AsyncFactory {
 			mergedCubes.push(cube1);
 		});
 		
-		return [...unmergeableCubes, ...mergedCubes];
+		return [...unoptimizableCubes, ...mergedCubes];
+	}
+	/**
+	 * Returns a "merging group" for a cube. Cubes in the same merging group can be merged together. It doesn't affect face culling.
+	 * @param {object} cube
+	 * @returns {number | string}
+	 */
+	#getMergingGroup(cube) {
+		if(cube["disable_merging"] || "uv" in cube || "uv_sizes" in cube || "uv_rot" in cube || "box_uv" in cube) {
+			return NaN; // in JS, NaN == NaN is false, disabling these cubes from being merged at all
+		} else {
+			return JSON.stringify([cube["textures"], cube["texture_size"], cube["block_override"], cube["terrain_texture"], cube["variant"], cube["ignore_eigenvariant"], cube["tint"], cube["fullbright"], cube["flip_textures_horizontally"], cube["flip_textures_vertically"], cube["arrays"]]); // these are all the properties that could exist on a cube at this point - basically, two cubes have to be identical in all of these in order to be mergeable
+		} 
+	}
+	/**
+	 * Unpurely tries to merge the second cube into the first if it is positively adjacent, and culls hidden faces if they are touching.
+	 * @param {object} cube1
+	 * @param {object} cube2
+	 * @param {boolean} mergeable If the cubes can be merged
+	 * @returns {boolean} If the second cube was merged into the first.
+	 */
+	#tryMergeCubesOneWayAndCullFaces(cube1, cube2, mergeable) {
+		if(cube1.x + cube1.w == cube2.x) { // cube 2 is to the right of cube 1
+			if(mergeable && cube1.y == cube2.y && cube1.z == cube2.z && cube1.h == cube2.h && cube1.d == cube2.d) {
+				cube1.w += cube2.w; // grow cube 1...
+				return true;
+			} else if(cube1.y >= cube2.y && cube1.y + cube1.h <= cube2.y + cube2.h && cube1.z >= cube2.z && cube1.z + cube1.d <= cube2.z + cube2.d) { // right face of cube1 fits within left face of cube2
+				cube1["textures"] ??= {};
+				cube1["textures"]["west"] = "none";
+			} else if(cube2.y >= cube1.y && cube2.y + cube2.h <= cube1.y + cube1.h && cube2.z >= cube1.z && cube2.z + cube2.d <= cube1.z + cube1.d) { // left face of cube2 fits within right face of cube1
+				cube2["textures"] ??= {};
+				cube2["textures"]["east"] = "none";
+			}
+		} else if(cube1.y + cube1.h == cube2.y) { // cube 2 is above cube 1
+			if(mergeable && cube1.x == cube2.x && cube1.z == cube2.z && cube1.w == cube2.w && cube1.d == cube2.d) {
+				cube1.h += cube2.h;
+				return true;
+			} else if(cube1.x >= cube2.x && cube1.x + cube1.w <= cube2.x + cube2.w && cube1.z >= cube2.z && cube1.z + cube1.d <= cube2.z + cube2.d) { // top face of cube1 fits within bottom face of cube2
+				cube1["textures"] ??= {};
+				cube1["textures"]["up"] = "none";
+			} else if(cube2.x >= cube1.x && cube2.x + cube2.w <= cube1.x + cube1.w && cube2.z >= cube1.z && cube2.z + cube2.d <= cube1.z + cube1.d) { // bottom face of cube2 fits within top face of cube1
+				cube2["textures"] ??= {};
+				cube2["textures"]["down"] = "none";
+			}
+		} else if(cube1.z + cube1.d == cube2.z) { // cube 2 is behind cube 1
+			if(mergeable && cube1.x == cube2.x && cube1.y == cube2.y && cube1.w == cube2.w && cube1.h == cube2.h) {
+				cube1.d += cube2.d;
+				return true;
+			} else if(cube1.x >= cube2.x && cube1.x + cube1.w <= cube2.x + cube2.w && cube1.y >= cube2.y && cube1.y + cube1.h <= cube2.y + cube2.h) { // back face of cube1 fits within front face of cube2
+				cube1["textures"] ??= {};
+				cube1["textures"]["south"] = "none";
+			} else if(cube2.x >= cube1.x && cube2.x + cube2.w <= cube1.x + cube1.w && cube2.y >= cube1.y && cube2.y + cube2.h <= cube1.y + cube1.h) { // front face of cube2 fits within back face of cube1
+				cube2["textures"] ??= {};
+				cube2["textures"]["north"] = "none";
+			}
+		}
+		return false;
 	}
 	/**
 	 * Gets the index of the variant to use in terrain_texture.json for a block.
@@ -897,31 +949,6 @@ export default class BlockGeoMaker extends AsyncFactory {
 			return value;
 		});
 		return wholeStringValue ?? substitutedExpression;
-	}
-	/**
-	 * Unpurely tries to merge the second cube into the first if the second is more positive than the first.
-	 * @param {object} cube1
-	 * @param {object} cube2
-	 * @returns {boolean} If the second cube was merged into the first.
-	 */
-	#tryMergeCubesOneWay(cube1, cube2) {
-		if(cube1.x + cube1.w == cube2.x) { // bone cube 2 is to the right of bone cube 1
-			if(cube1.y == cube2.y && cube1.z == cube2.z && cube1.h == cube2.h && cube1.d == cube2.d) {
-				cube1.w += cube2.w; // grow cube 1...
-				return true;
-			}
-		} else if(cube1.y + cube1.h == cube2.y) { // bone cube 2 is above bone cube 1
-			if(cube1.x == cube2.x && cube1.z == cube2.z && cube1.w == cube2.w && cube1.d == cube2.d) {
-				cube1.h += cube2.h;
-				return true;
-			}
-		} else if(cube1.z + cube1.d == cube2.z) { // bone cube 2 is behind bone cube 1
-			if(cube1.x == cube2.x && cube1.y == cube2.y && cube1.w == cube2.w && cube1.h == cube2.h) {
-				cube1.d += cube2.d;
-				return true;
-			}
-		}
-		return false;
 	}
 	
 	/**

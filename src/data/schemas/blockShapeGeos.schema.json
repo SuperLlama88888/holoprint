@@ -219,6 +219,10 @@
 						"type": "string",
 						"pattern": "^(#[0-9a-fA-F]{6})|(\\$\\{.+\\})$"
 					},
+					"fullbright": {
+						"description": "Makes the cube appear at maximum brightness by setting the surface normal to be vertical.",
+						"type": "boolean"
+					},
 					"flip_textures_horizontally": {
 						"description": "An array of faces that will have their textures horizontally flipped.",
 						"type": "array",

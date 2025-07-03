@@ -1168,7 +1168,8 @@
 				"up": [7, 6]
 			},
 			"textures": {
-				"east": "west" // without this, the east side of levers would be fully cobblestone
+				"east": "west", // without this, the east side of levers would be fully cobblestone
+				"down": "none"
 			},
 			"rot": [-40, 0, 0],
 			"pivot": [8, 0, 8]
@@ -1183,7 +1184,8 @@
 				"up": [7, 6]
 			},
 			"textures": {
-				"east": "west" // without this, the east side of levers would be fully cobblestone
+				"east": "west", // without this, the east side of levers would be fully cobblestone
+				"down": "none"
 			},
 			"rot": [40, 0, 0],
 			"pivot": [8, 0, 8]
@@ -3796,7 +3798,8 @@
 			"rot": [-45, 0, 0],
 			"pivot": [8, 6, 14],
 			"textures": {
-				"*": "down"
+				"*": "down",
+				"south": "none"
 			},
 			"uv": {
 				"*": [7, 9]
@@ -3835,7 +3838,8 @@
 			"rot": [10, 0, 0],
 			"pivot": [7.4, 5.2, 10],
 			"textures": {
-				"*": "down"
+				"*": "down",
+				"south": "none"
 			},
 			"uv": {
 				"*": [7, 9]
@@ -3872,7 +3876,8 @@
 			"rot": [30, 0, 0],
 			"pivot": [8, 6, 14],
 			"textures": {
-				"*": "down"
+				"*": "down",
+				"south": "none"
 			},
 			"uv": {
 				"*": [7, 9]
@@ -4671,10 +4676,11 @@
 			"size": [16, 16, 16],
 			"textures": {
 				"*": "side"
-			}
+			},
+			"fullbright": true
 		},
 		{
-			"pos": [2, 0, 2],
+			"pos": [2, 0.01, 2], // move obsidian bit slightly up to avoid z-fighting
 			"size": [12, 3, 12],
 			"textures": {
 				"*": "down"
