@@ -39,7 +39,7 @@ export default class PolyMeshMaker {
 		let usedPaletteEntries = Object.entries(this.#blocks).filter(([, val]) => val.length);
 		usedPaletteEntries.sort(([, a], [, b]) => b.length - a.length); // makes more common blocks have smaller indices
 		let polysAndTransparencies = [];
-		let beforePairs = [];
+		let facesToBeReordered = [];
 		usedPaletteEntries.forEach(([paletteI, blockPositions]) => {
 			let faces = this.templatePalette[+paletteI];
 			for(let faceI = 0; faceI < faces.length; faceI++) {
@@ -56,9 +56,9 @@ export default class PolyMeshMaker {
 					polys.push(facePolys);
 					if(this.#positionsWithMultipleBlocks.has(blockPos)) {
 						let pairI = this.#positionsWithMultipleBlocks.get(blockPos);
-						beforePairs[pairI] ??= [];
-						beforePairs[pairI][layer] ??= [];
-						beforePairs[pairI][layer].push(facePolys);
+						facesToBeReordered[pairI] ??= [];
+						facesToBeReordered[pairI][layer] ??= [];
+						facesToBeReordered[pairI][layer].push(facePolys);
 					}
 				});
 				polysAndTransparencies.push({
@@ -69,7 +69,7 @@ export default class PolyMeshMaker {
 		});
 		polysAndTransparencies.sort((a, b) => a["transparency"] - b["transparency"]); // transparent blocks rendered later
 		let polys = [].concat(...polysAndTransparencies.map(a => a["polys"])); // this is faster than .flat: https://stackoverflow.com/questions/61411776/is-js-native-array-flat-slow-for-depth-1
-		beforePairs.forEach(([primaryLayerFaces, secondaryLayerFaces]) => {
+		facesToBeReordered.forEach(([primaryLayerFaces, secondaryLayerFaces]) => {
 			let earliestSecondaryLayerFaceI = min(...secondaryLayerFaces.map(face => polys.indexOf(face)));
 			primaryLayerFaces.forEach(face => {
 				let primaryLayerFaceI = polys.indexOf(face);
