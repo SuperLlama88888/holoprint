@@ -225,6 +225,7 @@ export function normalizeVec3(vec) {
 }
 /**
  * @param {Vec3} vec
+ * @param {number} decimals
  * @returns {Vec3}
  */
 export function vec3ToFixed(vec, decimals) {
@@ -849,21 +850,32 @@ export class JSONSet extends Set {
 		return this[Symbol.iterator]();
 	}
 }
+/**
+ * @template K
+ * @template V
+ * @extends {Map<string, V>}
+ */
 export class JSONMap extends Map { // very barebones
-	constructor() {
+	stringify = stringifyJsonBigIntSafe;
+	constructor(entries, stringifyFunc) {
 		super();
+		entries?.forEach(([key, value]) => this.set(key, value));
+		if(stringifyFunc) {
+			this.stringify = stringifyFunc;
+		}
 	}
 	get(key) {
-		return super.get(this.#stringify(key));
+		return super.get(this.stringify(key));
 	}
 	has(key) {
-		return super.has(this.#stringify(key));
+		return super.has(this.stringify(key));
 	}
+	/**
+	 * @param {K} key
+	 * @param {V} value
+	 */
 	set(key, value) {
-		return super.set(this.#stringify(key), value)
-	}
-	#stringify(value) {
-		return stringifyJsonBigIntSafe(value);
+		return super.set(this.stringify(key), value);
 	}
 }
 export class CachingFetcher extends AsyncFactory {

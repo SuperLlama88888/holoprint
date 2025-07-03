@@ -195,7 +195,7 @@ export async function makePack(structureFiles, config = {}, resourcePackStack, p
 						
 						let blockCoordinateName = `b_${x}_${y}_${z}`;
 						let geoSpaceBlockPos = [-16 * x - 8, 16 * y, 16 * z - 8]; // I got these values from trial and error with blockbench (which makes the x negative I think. it's weird.)
-						polyMeshMaker.add(paletteI, geoSpaceBlockPos);
+						polyMeshMaker.add(paletteI, geoSpaceBlockPos, layerI);
 						if(firstBoneForThisCoordinate) { // we only need 1 locator for each block position, even though there may be 2 bones in this position because of the 2nd layer
 							hologramGeo["minecraft:geometry"][2]["bones"][1]["locators"][blockCoordinateName] ??= geoSpaceBlockPos.map(x => x + 8); // 2nd geometry is for particle alignment
 						}
