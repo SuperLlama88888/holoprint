@@ -107,7 +107,8 @@
 			"pos": [7, 7, 0],
 			"size": [2, 4, 1],
 			"textures": {
-				"*": "#tex"
+				"*": "#tex",
+				"south": "none"
 			},
 			"texture_size": [64, 64],
 			"uv": {
@@ -134,27 +135,30 @@
 			"size": [16, 15, 16]
 		}
 	],
-	"torch": [
+	"template_torch": [
 		{
-			"if": "torch_facing_direction == top",
 			"pos": [7, 0, 7],
 			"size": [2, 10, 2],
 			"uv": {
 				"up": [7, 6],
 				"down": [7, 14]
 			}
+		}
+	],
+	"torch": [
+		{
+			"if": "torch_facing_direction == top",
+			"copy": "template_torch"
 		},
 		{
 			"if": "torch_facing_direction != top", // the rest of the rotations are handled in blockStateDefinitions.json
-			"pos": [-1, 3.5, 7],
-			"size": [2, 10, 2],
-			"uv": {
-				"up": [7, 6],
-				"down": [7, 14],
-				"side": [7, 6]
-			},
-			"rot": [0, 0, 22.5],
-			"pivot": [0, 3.5, 8]
+			"copy": "template_torch",
+			"transform": [
+				[1, 0.4, 0, -8],
+				[0, 1, 0, 3.4],
+				[0, 0, 1, 0],
+				[0, 0, 0, 1]
+			]
 		}
 	],
 	"template_redstone_torch": [
@@ -194,9 +198,12 @@
 		{
 			"if": "torch_facing_direction != top", // the rest of the rotations are handled in blockStateDefinitions.json
 			"copy": "template_redstone_torch",
-			"translate": [-8, 3.5, 0],
-			"rot": [0, 0, 22.5],
-			"pivot": [8, 0, 8]
+			"transform": [
+				[1, 0.4, 0, -8],
+				[0, 1, 0, 3.4],
+				[0, 0, 1, 0],
+				[0, 0, 0, 1]
+			]
 		}
 	],
 	"fence": [ // fences don't have block states, we'll have to read blocks next to each other :((
@@ -513,7 +520,7 @@
 		{
 			"pos": [1, 0, 3],
 			"size": [6, 0, 10],
-			"rot": [0, 0, 4.0563],
+			"rot": [0, 0, 9],
 			"pivot": [7, 0, 8],
 			"textures": {
 				"*": "textures/entity/enchanting_table_book"
@@ -526,7 +533,7 @@
 		{
 			"pos": [9, 0, 3],
 			"size": [6, 0, 10],
-			"rot": [0, 0, -4.0563],
+			"rot": [0, 0, -9],
 			"pivot": [9, 0, 8],
 			"textures": {
 				"*": "textures/entity/enchanting_table_book"
@@ -550,7 +557,7 @@
 		{
 			"pos": [3, 0, 4],
 			"size": [5, 1, 8],
-			"rot": [0, 0, 4.0563],
+			"rot": [0, 0, 9],
 			"pivot": [8, 1, 8],
 			"textures": {
 				"*": "textures/entity/enchanting_table_book",
@@ -564,7 +571,7 @@
 		{
 			"pos": [8, 0, 4],
 			"size": [5, 1, 8],
-			"rot": [0, 0, -4.0563],
+			"rot": [0, 0, -9],
 			"pivot": [8, 1, 8],
 			"textures": {
 				"*": "textures/entity/enchanting_table_book",
@@ -578,7 +585,7 @@
 		{
 			"pos": [3, 1, 4],
 			"size": [5, 0, 8],
-			"rot": [0, 0, 24.3380],
+			"rot": [0, 0, 24],
 			"pivot": [8, 1, 8],
 			"textures": {
 				"*": "textures/entity/enchanting_table_book"
@@ -591,7 +598,7 @@
 		{
 			"pos": [8, 1, 4],
 			"size": [5, 0, 8],
-			"rot": [0, 0, -24.3380],
+			"rot": [0, 0, -24],
 			"pivot": [8, 1, 8],
 			"textures": {
 				"*": "textures/entity/enchanting_table_book"
@@ -610,6 +617,15 @@
 		{
 			"copy": "template_book",
 			"translate": [0, 13, 0]
+		}
+	],
+	"loom": [
+		{
+			"pos": [0, 0, 0],
+			"size": [16, 16, 16],
+			"uv_rot": {
+				"up": 180
+			}
 		}
 	],
 	"carpet": [
@@ -1159,7 +1175,8 @@
 				"up": [7, 6]
 			},
 			"textures": {
-				"east": "west" // without this, the east side of levers would be fully cobblestone
+				"east": "west", // without this, the east side of levers would be fully cobblestone
+				"down": "none"
 			},
 			"rot": [-40, 0, 0],
 			"pivot": [8, 0, 8]
@@ -1174,7 +1191,8 @@
 				"up": [7, 6]
 			},
 			"textures": {
-				"east": "west" // without this, the east side of levers would be fully cobblestone
+				"east": "west", // without this, the east side of levers would be fully cobblestone
+				"down": "none"
 			},
 			"rot": [40, 0, 0],
 			"pivot": [8, 0, 8]
@@ -2162,7 +2180,9 @@
 			"size": [16, 1, 6],
 			"rot": [0, 90, 0],
 			"textures": {
-				"*": "side"
+				"*": "side",
+				"north": "none",
+				"south": "none"
 			},
 			"uv": {
 				"*": [0, 14],
@@ -2176,7 +2196,9 @@
 			"size": [16, 1, 6],
 			"rot": [0, 90, 0],
 			"textures": {
-				"*": "down"
+				"*": "down",
+				"north": "none",
+				"south": "none"
 			},
 			"uv": {
 				"*": [0, 14],
@@ -2471,7 +2493,9 @@
 			"size": [16, 16, 16],
 			"textures": {
 				"up": "carried.up"
-			}
+			},
+			"flip_textures_horizontally": ["up"],
+			"flip_textures_vertically": ["up"]
 		},
 		{
 			"if": "entity.State == 1 || entity.State == 2", // pushing or extended
@@ -2505,7 +2529,7 @@
 			}
 		},
 		{
-			"if": "entity.Sticky == 0 && entity.State == 1 || entity.Sticky == 0 && entity.State == 2", // pushing or extended
+			"if": "entity.State == 1 || entity.State == 2", // pushing or extended
 			"pos": [0, 28, 0],
 			"size": [16, 4, 16],
 			"textures": {
@@ -2516,21 +2540,9 @@
 				"side": [0, 16],
 				"down": [32, 0],
 				"up": [16, 0]
-			}
-		},
-		{
-			"if": "entity.Sticky == 1 && entity.State == 1 || entity.Sticky == 1 && entity.State == 2", // pushing or extended
-			"pos": [0, 28, 0],
-			"size": [16, 4, 16],
-			"textures": {
-				"*": "#tex"
 			},
-			"texture_size": [128, 32],
-			"uv": {
-				"side": [0, 16],
-				"down": [32, 0],
-				"up": [16, 0]
-			}
+			"flip_textures_horizontally": ["up"],
+			"flip_textures_vertically": ["up"]
 		}
 	],
 	"dispenser": [
@@ -2756,7 +2768,10 @@
 		{
 			"if": "#copied_via_copy_block",
 			"pos": [6, 0, 6],
-			"size": [4, 12, 4]
+			"size": [4, 12, 4],
+			"textures": {
+				"down": "none"
+			}
 		}
 	],
 	"double_plant": [
@@ -3259,31 +3274,31 @@
 	"cauldron": [
 		{ // walls
 			"pos": [0, 3, 0],
-			"size": [2, 13, 16],
+			"size": [16, 13, 2],
 			"textures": {
 				"side": "north",
 				"down": "south"
 			}
 		},
 		{
-			"pos": [14, 3, 0],
-			"size": [2, 13, 16],
+			"pos": [0, 3, 14],
+			"size": [16, 13, 2],
 			"textures": {
 				"side": "north",
 				"down": "south"
 			}
 		},
 		{
-			"pos": [2, 3, 0],
-			"size": [12, 13, 2],
+			"pos": [0, 3, 2],
+			"size": [2, 13, 12],
 			"textures": {
 				"side": "north",
 				"down": "south"
 			}
 		},
 		{
-			"pos": [2, 3, 14],
-			"size": [12, 13, 2],
+			"pos": [14, 3, 2],
+			"size": [2, 13, 12],
 			"textures": {
 				"side": "north",
 				"down": "south"
@@ -3333,7 +3348,7 @@
 		},
 		{
 			"pos": [0, 0, 12],
-			"size": [2, 3, 4],
+			"size": [2, 3, 2],
 			"textures": {
 				"side": "north"
 			}
@@ -3448,12 +3463,24 @@
 			"pos": [4, 2, 4],
 			"size": [8, 13, 8],
 			"textures": {
-				"*": "north" // TODO: use the proper side texture for east/west. currently it's rotated 90 degrees for no reason so we'll have to have a second cube. the in-game difference is barely noticeable.
+				"south": "north",
+				"east": "west",
+				"up": "none"
 			},
 			"uv": {
-				"side": [8, 3],
+				"side": [2, 8],
+				"north": [8, 3],
 				"south": [0, 0]
-			}
+			},
+			"uv_sizes": {
+				"east": [13, 8],
+				"west": [13, 8]
+			},
+			"uv_rot": {
+				"east": 90,
+				"west": 90
+			},
+			"flip_textures_horizontally": ["west"]
 		},
 		{
 			"pos": [0.0125, 12, 0],
@@ -3465,7 +3492,11 @@
 			"uv": {
 				"side": [0, 4],
 				"south": [0, 0],
-				"up": [0, 1]
+				"up": [0, 1],
+				"down": [0, 0]
+			},
+			"uv_rot": {
+				"down": 180
 			}
 		},
 		{
@@ -3781,7 +3812,8 @@
 			"rot": [-45, 0, 0],
 			"pivot": [8, 6, 14],
 			"textures": {
-				"*": "down"
+				"*": "down",
+				"south": "none"
 			},
 			"uv": {
 				"*": [7, 9]
@@ -3820,7 +3852,8 @@
 			"rot": [10, 0, 0],
 			"pivot": [7.4, 5.2, 10],
 			"textures": {
-				"*": "down"
+				"*": "down",
+				"south": "none"
 			},
 			"uv": {
 				"*": [7, 9]
@@ -3857,7 +3890,8 @@
 			"rot": [30, 0, 0],
 			"pivot": [8, 6, 14],
 			"textures": {
-				"*": "down"
+				"*": "down",
+				"south": "none"
 			},
 			"uv": {
 				"*": [7, 9]
@@ -4138,7 +4172,8 @@
 			},
 			"uv": {
 				"*": [0, 4]
-			}
+			},
+			"fullbright": true
 		},
 		{
 			"pos": [8, 8, 0],
@@ -4149,7 +4184,8 @@
 			},
 			"uv": {
 				"*": [0, 4]
-			}
+			},
+			"fullbright": true
 		}
 	],
 	"lilypad": [
@@ -4226,54 +4262,18 @@
 			}
 		}
 	],
-	"template_sea_pickle_opening": [ // this is the top face of the main cube, it's split up so it doesn't cull the face below
-		{
-			"pos": [0, 0, 0],
-			"size": [4, 0, 1],
-			"uv": {
-				"*": [4, 1]
-			}
-		},
-		{
-			"pos": [0, 0, 3],
-			"size": [4, 0, 1],
-			"uv": {
-				"*": [4, 4]
-			}
-		},
-		{
-			"pos": [0, 0, 1],
-			"size": [1, 0, 2],
-			"uv": {
-				"*": [4, 2]
-			}
-		},
-		{
-			"pos": [3, 0, 1],
-			"size": [1, 0, 2],
-			"uv": {
-				"*": [7, 2]
-			}
-		}
-	],
 	"template_sea_pickle_4px": [
 		{
 			"pos": [0, 0, 0],
 			"size": [4, 4, 4],
-			"textures": {
-				"up": "none"
-			},
 			"uv": {
 				"down": [8, 1],
+				"up": [4, 1],
 				"north": [0, 12],
 				"east": [4, 12],
 				"south": [8, 12],
 				"west": [12, 12]
 			}
-		},
-		{
-			"copy": "template_sea_pickle_opening",
-			"translate": [0, 4, 0]
 		},
 		{
 			"pos": [0, 3.125, 0],
@@ -4292,20 +4292,14 @@
 		{
 			"pos": [0, 0, 0],
 			"size": [4, 5, 4],
-			"textures": {
-				"up": "none"
-			},
 			"uv": {
 				"down": [8, 1],
+				"up": [4, 1],
 				"north": [0, 11],
 				"east": [4, 11],
 				"south": [8, 11],
 				"west": [12, 11]
 			}
-		},
-		{
-			"copy": "template_sea_pickle_opening",
-			"translate": [0, 5, 0]
 		},
 		{
 			"pos": [0, 4.125, 0],
@@ -4324,20 +4318,14 @@
 		{
 			"pos": [0, 0, 0],
 			"size": [4, 6, 4],
-			"textures": {
-				"up": "none"
-			},
 			"uv": {
 				"down": [8, 1],
+				"up": [4, 1],
 				"north": [0, 10],
 				"east": [4, 10],
 				"south": [8, 10],
 				"west": [12, 10]
 			}
-		},
-		{
-			"copy": "template_sea_pickle_opening",
-			"translate": [0, 6, 0]
 		},
 		{
 			"pos": [0, 5.125, 0],
@@ -4356,20 +4344,14 @@
 		{
 			"pos": [0, 0, 0],
 			"size": [4, 7, 4],
-			"textures": {
-				"up": "none"
-			},
 			"uv": {
 				"down": [8, 1],
+				"up": [4, 1],
 				"north": [0, 9],
 				"east": [4, 9],
 				"south": [8, 9],
 				"west": [12, 9]
 			}
-		},
-		{
-			"copy": "template_sea_pickle_opening",
-			"translate": [0, 7, 0]
 		},
 		{
 			"pos": [0, 6.125, 0],
@@ -4608,8 +4590,8 @@
 		},
 		{
 			"if": "#copied_via_copy_block",
-			"pos": [0.5, 0, 8],
-			"size": [15, 12, 0],
+			"pos": [1, 0, 8],
+			"size": [14, 12, 0],
 			"rot": [0, 45, 0],
 			"textures": {
 				"*": "west"
@@ -4617,8 +4599,8 @@
 		},
 		{
 			"if": "#copied_via_copy_block",
-			"pos": [0.5, 0, 8],
-			"size": [15, 12, 0],
+			"pos": [1, 0, 8],
+			"size": [14, 12, 0],
 			"rot": [0, -45, 0],
 			"textures": {
 				"*": "west"
@@ -4673,13 +4655,13 @@
 			"pos": [0, 0, 0],
 			"size": [16, 16, 16],
 			"textures": {
-				"down": "side",
-				"*": "none" // the other glass shell culls the rest of the beacon, so I had to  remove it except for at the bottom :(
-			}
+				"*": "side"
+			},
+			"fullbright": true
 		},
 		{
-			"pos": [2, 0, 2],
-			"size": [12, 3, 12],
+			"pos": [2, 0.01, 2], // move obsidian bit slightly up to avoid z-fighting
+			"size": [12, 2.99, 12],
 			"textures": {
 				"*": "down"
 			}
@@ -4696,35 +4678,18 @@
 		{
 			"pos": [5, 0, 5],
 			"size": [6, 6, 6],
-			"textures": {
-				"up": "none" // it culls the dirt inside :(
-			},
 			"uv": {
 				"down": [5, 10] // flower pots in-game use the top texture for the bottom but it looks better with the side texture
 			}
-		},
-		{
-			"pos": [5, 6, 5],
-			"size": [6, 0, 1]
-		},
-		{
-			"pos": [5, 6, 10],
-			"size": [6, 0, 1]
-		},
-		{
-			"pos": [5, 6, 6],
-			"size": [1, 0, 4]
-		},
-		{
-			"pos": [10, 6, 6],
-			"size": [1, 0, 4]
 		},
 		{
 			"pos": [5, 4, 5],
 			"size": [6, 0, 6],
 			"textures": {
 				"*": "textures/blocks/dirt"
-			}
+			},
+			"flip_textures_vertically": ["*"],
+			"tint": "#999999"
 		},
 		{
 			"if": "update_bit == 1",
@@ -5009,17 +4974,16 @@
 			"pos": [7.35, 0, 7.35],
 			"size": [1.3, 26.7, 1.3],
 			"textures": {
-				"*": "textures/entity/banner/banner_base"
+				"*": "textures/entity/banner/banner_base",
+				"up": "none"
 			},
 			"texture_size": [64, 64],
 			"uv": {
 				"side": [50, 2],
-				"up": [46, 0],
 				"down": [48, 0]
 			},
 			"uv_sizes": {
 				"side": [2, 42],
-				"up": [2, 2],
 				"down": [2, 2]
 			}
 		}
@@ -5040,8 +5004,8 @@
 	],
 	"template_shulker_box": [ // since this relies on the shulker model, the two halves are split
 		{
-			"pos": [0.01, 0, 0.01], // bottom part must be slightly inset to avoid z-fighting
-			"size": [15.98, 8, 15.98],
+			"pos": [0, 0, 0],
+			"size": [16, 8, 16],
 			"uv": {
 				"side": [0, 44],
 				"down": [32, 28]
@@ -5056,8 +5020,8 @@
 			"texture_size": [64, 64]
 		},
 		{
-			"pos": [0, 4, 0],
-			"size": [16, 12, 16],
+			"pos": [0.05, 4, 0.05], // top part must be slightly inset to avoid z-fighting
+			"size": [15.9, 12, 15.9],
 			"uv": {
 				"side": [0, 16],
 				"up": [16, 0]
@@ -5268,6 +5232,9 @@
 			"size": [9, 3, 12],
 			"rot": [15, 0, 0],
 			"pivot": [8, 3, 2],
+			"textures": {
+				"south": "none"
+			},
 			"box_uv": [176, 65],
 			"box_uv_size": [12, 4, 16]
 		}
@@ -5317,6 +5284,9 @@
 			"size": [1, 5, 4],
 			"pivot": [3, 6, 8],
 			"rot": [0, 0, 30],
+			"textures": {
+				"up": "none"
+			},
 			"box_uv": [39, 6]
 		},
 		{
@@ -5324,6 +5294,9 @@
 			"size": [1, 5, 4],
 			"pivot": [13, 6, 8],
 			"rot": [0, 0, -30],
+			"textures": {
+				"up": "none"
+			},
 			"box_uv": [51, 6]
 		}
 	],

@@ -155,7 +155,7 @@ export async function toImage(val) {
 
 export const sleep = async time => new Promise(resolve => setTimeout(resolve, time));
 
-export const { min, max, floor, ceil, sqrt, round, abs, PI: pi, exp, log: ln, sin, cos, tan } = Math;
+export const { min, max, floor, ceil, sqrt, round, abs, PI: pi, exp, log: ln, sin, cos, tan, hypot } = Math;
 export const clamp = (n, lowest, highest) => min(max(n, lowest), highest);
 export const lerp = (a, b, x) => a + (b - a) * x;
 export const nanToUndefined = x => Number.isNaN(x)? undefined : x;
@@ -193,12 +193,56 @@ export function addVec3(a, b) {
 	return [a[0] + b[0], a[1] + b[1], a[2] + b[2]];
 }
 /**
+ * @param {Vec3} a
+ * @param {Vec3} b
+ * @returns {Vec3}
+ */
+export function subVec3(a, b) {
+	return [a[0] - b[0], a[1] - b[1], a[2] - b[2]];
+}
+/**
  * @param {Vec3} vec
  * @param {number} factor
  * @returns {Vec3}
  */
 export function mulVec3(vec, factor) {
 	return [vec[0] * factor, vec[1] * factor, vec[2] * factor];
+}
+/**
+ * @param {Vec3} a
+ * @param {Vec3} b
+ * @returns {Vec3}
+ */
+export function crossProduct(a, b) {
+	return [a[1] * b[2] - a[2] * b[1], a[2] * b[0] - a[0] * b[2], a[0] * b[1] - a[1] * b[0]];
+}
+/**
+ * @param {Vec3} vec
+ * @returns {Vec3}
+ */
+export function normalizeVec3(vec) {
+	return mulVec3(vec, 1 / hypot(...vec))
+}
+/**
+ * @param {Vec3} vec
+ * @param {number} decimals
+ * @returns {Vec3}
+ */
+export function vec3ToFixed(vec, decimals) {
+	return [+vec[0].toFixed(decimals), +vec[1].toFixed(decimals), +vec[2].toFixed(decimals)];
+}
+/**
+ * @param {Mat4} mat
+ * @param {Vec3 | Vec4} vec
+ * @returns {Vec4}
+ */
+export function mulMat4([[a, b, c, d], [e, f, g, h], [i, j, k, l], [m, n, o, p]], [x, y, z, w = 1]) {
+	return [
+		a * x + b * y + c * z + d * w,
+		e * x + f * y + g * z + h * w,
+		i * x + j * y + k * z + l * w,
+		m * x + n * y + o * z + p * w
+	];
 }
 
 export function arrayMin(arr) {
@@ -819,21 +863,32 @@ export class JSONSet extends Set {
 		return this[Symbol.iterator]();
 	}
 }
+/**
+ * @template K
+ * @template V
+ * @extends {Map<string, V>}
+ */
 export class JSONMap extends Map { // very barebones
-	constructor() {
+	stringify = stringifyJsonBigIntSafe;
+	constructor(entries, stringifyFunc) {
 		super();
+		entries?.forEach(([key, value]) => this.set(key, value));
+		if(stringifyFunc) {
+			this.stringify = stringifyFunc;
+		}
 	}
 	get(key) {
-		return super.get(this.#stringify(key));
+		return super.get(this.stringify(key));
 	}
 	has(key) {
-		return super.has(this.#stringify(key));
+		return super.has(this.stringify(key));
 	}
+	/**
+	 * @param {K} key
+	 * @param {V} value
+	 */
 	set(key, value) {
-		return super.set(this.#stringify(key), value)
-	}
-	#stringify(value) {
-		return stringifyJsonBigIntSafe(value);
+		return super.set(this.stringify(key), value);
 	}
 }
 export class CachingFetcher extends AsyncFactory {
@@ -923,4 +978,4 @@ export function createCustomError(name) {
 }
 export const UserError = createCustomError("UserError");
 
-/** @import { Vec2, Vec3 } from "./HoloPrint.js" */
+/** @import { Mat4, Vec2, Vec3, Vec4 } from "./HoloPrint.js" */

@@ -2,7 +2,7 @@
 // READ: this also looks pretty comprehensive: https://github.com/MCBE-Development-Wiki/mcbe-dev-home/blob/main/docs/misc/enums/block_shape.md
 // https://github.com/bricktea/MCStructure/blob/main/docs/1.16.201/enums/B.md
 
-import { addVec3, AsyncFactory, awaitAllEntries, hexColorToClampedTriplet, jsonc, JSONSet, max, mulVec3, rotateDeg } from "./utils.js";
+import { addVec3, AsyncFactory, awaitAllEntries, crossProduct, hexColorToClampedTriplet, jsonc, JSONSet, max, mulVec3, normalizeVec3, rotateDeg, vec3ToFixed, subVec3, conditionallyGroup, mulMat4 } from "./utils.js";
 
 // https://wiki.bedrock.dev/visuals/material-creations.html#overlay-color-in-render-controllers
 // https://wiki.bedrock.dev/documentation/materials.html#entity-alphatest
@@ -102,6 +102,7 @@ export default class BlockGeoMaker extends AsyncFactory {
 		let rotation = this.#getBlockRotation(block, blockShape);
 		if(rotation) {
 			faces.forEach(face => {
+				face["normal"] = this.#applyEulerRotation(face["normal"], rotation, [0, 0, 0]);
 				face["vertices"].forEach(vertex => {
 					vertex["pos"] = this.#applyEulerRotation(vertex["pos"], rotation, [8, 8, 8]); // (8, 8, 8) is the block center and the pivot for all block-wide rotations
 				});
@@ -109,6 +110,14 @@ export default class BlockGeoMaker extends AsyncFactory {
 			centerOfMass = this.#applyEulerRotation(centerOfMass, rotation, [8, 8, 8]);
 		}
 		faces = this.#scaleFaces(faces, centerOfMass);
+		faces.forEach(face => {
+			if(face["fullbright"]) {
+				face["normal"] = [0, 1, 0];
+			} else {
+				face["normal"] = vec3ToFixed(face["normal"], 4);
+			}
+			delete face["fullbright"];
+		});
 		return faces;
 	}
 	/**
@@ -133,7 +142,7 @@ export default class BlockGeoMaker extends AsyncFactory {
 	 * Makes the poly mesh faces for a block.
 	 * @param {Block} block
 	 * @param {string} blockShape
-	 * @returns {{ faces?: Array<PolyMeshTemplateFace>, centerOfMass?: Vec3 }}
+	 * @returns {{ faces?: Array<PolyMeshTemplateFace & { fullbright?: boolean }>, centerOfMass?: Vec3 }}
 	 */
 	#makePolyMeshTemplateFaces(block, blockShape) {
 		let specialTexture;
@@ -160,12 +169,13 @@ export default class BlockGeoMaker extends AsyncFactory {
 				}
 				blockOverride["states"] = { ...blockOverride["states"], ...cube["block_states"] };
 				cube["block_override"] = blockOverride;
+				delete cube["block_states"];
 			}
 			if("if" in cube) {
 				if(!this.#checkBlockStateConditional(cube["block_override"] ?? block, cube["if"])) {
 					continue;
 				}
-				delete cube["if"]; // later on, when determining if a bone cube is mergeable, we only allow cubes with "pos" and "size" keys. I am lazy so it only checks if there are exactly 2 keys in the cube. hence, we need to delete the "if" key here.
+				delete cube["if"];
 			}
 			if("terrain_texture" in cube) {
 				cube["terrain_texture"] = this.#interpolateInBlockValues(cube["block_override"] ?? block, cube["terrain_texture"], cube);
@@ -199,7 +209,7 @@ export default class BlockGeoMaker extends AsyncFactory {
 						} else if(typeof copiedCube[field] == "object") {
 							copiedCube[field] = { ...cube[field], ...copiedCube[field] }; // fields on the copied cubes still take priority over the "parent" cube (the one that's copying it)
 						} else {
-							copiedCube[field] ??= cube[field];
+							copiedCube[field] ??= structuredClone(cube[field]);
 						}
 					});
 					if("rot" in cube) {
@@ -263,12 +273,14 @@ export default class BlockGeoMaker extends AsyncFactory {
 				}
 			}])));
 		});
-		let cubes = this.#mergeCubes(filteredCubes);
+		let cubes = this.#optimizeGeometry(filteredCubes);
+		cubes.sort((a, b) => a.w * a.h * a.d - b.w * b.h * b.d); // make larger cubes be rendered later. this helps for blocks like slime and honey where the inner cube has to be rendered before the outer cube
 		
 		let blockName = block["name"];
 		let variant = this.#getTextureVariant(block);
 		let variantWithoutEigenvariant;
 		
+		let allCubesAreFlat = true;
 		cubes.forEach(cube => {
 			let uv = this.#calculateUv(cube);
 			
@@ -305,9 +317,8 @@ export default class BlockGeoMaker extends AsyncFactory {
 				cubeVariant = variant; // default variant for this block
 			}
 			
-			/** @type {Array<PolyMeshTemplateFace>} */
+			/** @type {Array<PolyMeshTemplateFace & { fullbright: boolean }>} */
 			let faces = [];
-			
 			let textureSize = cube["texture_size"] ?? [16, 16];
 			// add generic keys to all faces, and convert texture references into indices
 			Object.entries(uv).forEach(([faceName, face]) => {
@@ -352,19 +363,30 @@ export default class BlockGeoMaker extends AsyncFactory {
 						textureRef["tint"] = hexColorToClampedTriplet(tint);
 					} else {
 						// this is from cauldrons; colour is a 32-bit ARGB colour
-						let colorCode = 4294967296 + Number(tint); // 4294967296 = 2 ** 32
+						let colorCode = 2 ** 32 + Number(tint);
 						textureRef["tint"] = [colorCode >> 16 & 0xFF, colorCode >> 8 & 0xFF, colorCode & 0xFF].map(x => x / 255);
 					}
 				}
 				
 				this.textureRefs.add(textureRef);
+				let vertices = this.#getVertices(cube, faceName);
+				let uvRot = cube["uv_rot"]?.[faceName] ?? (isSideFace? cube["uv_rot"]?.["side"] : undefined) ?? cube["uv_rot"]?.["*"];
+				if(uvRot) {
+					while(uvRot >= 90) {
+						[vertices[0]["corner"], vertices[1]["corner"], vertices[3]["corner"], vertices[2]["corner"]] = [vertices[2]["corner"], vertices[0]["corner"], vertices[1]["corner"], vertices[3]["corner"]];
+						uvRot -= 90;
+					}
+					while(uvRot <= -90) {
+						[vertices[2]["corner"], vertices[0]["corner"], vertices[1]["corner"], vertices[3]["corner"]] = [vertices[0]["corner"], vertices[1]["corner"], vertices[3]["corner"], vertices[2]["corner"]];
+						uvRot += 90;
+					}
+				}
 				let flipTextureHorizontally = cube["flip_textures_horizontally"]?.includes(faceName) ^ (isSideFace && cube["flip_textures_horizontally"]?.includes("side")) ^ cube["flip_textures_horizontally"]?.includes("*");
 				let flipTextureVertically = cube["flip_textures_vertically"]?.includes(faceName) ^ (isSideFace && cube["flip_textures_vertically"]?.includes("side")) ^ cube["flip_textures_vertically"]?.includes("*");
 				if("box_uv" in cube) { // box uv does some flipping automatically
 					flipTextureHorizontally ^= faceName != "north" && faceName != "south";
 					flipTextureVertically ^= faceName == "up";
 				}
-				let vertices = this.#getVertices(cube, faceName);
 				if((faceName == "down" || faceName == "up") ^ flipTextureHorizontally) { // in MC the down/up faces are rotated 180 degrees compared to how they are in geometry; this can be faked by flipping both axes.
 					[vertices[0]["corner"], vertices[1]["corner"]] = [vertices[1]["corner"], vertices[0]["corner"]];
 					[vertices[2]["corner"], vertices[3]["corner"]] = [vertices[3]["corner"], vertices[2]["corner"]];
@@ -384,16 +406,35 @@ export default class BlockGeoMaker extends AsyncFactory {
 					if("translate" in cube) {
 						vertex["pos"] = addVec3(vertex["pos"], cube["translate"]);
 					}
+					if("transform" in cube) {
+						let transformed = mulMat4(cube["transform"], vertex["pos"]);
+						let newPos = mulVec3([transformed[0], transformed[1], transformed[2]], 1 / transformed[3]);
+						vertex["pos"] = newPos;
+					}
 				}
 				faces.push({
-					"normal": this.#getSurfaceNormal(faceName),
+					"normal": this.#getSurfaceNormal(vertices),
 					"textureRefI": this.textureRefs.indexOf(textureRef),
-					"vertices": vertices
+					"vertices": vertices,
+					"fullbright": Boolean(cube["fullbright"])
 				});
 			});
+			if(faces.length == 1 && !("culled_faces" in cube)) {
+				if(faces[0]["normal"][1] < 0) {
+					faces[0]["normal"] = mulVec3(faces[0]["normal"], -1);
+				}
+			} else {
+				allCubesAreFlat = false;
+			}
 			
 			allFaces.push(...faces);
 		});
+		if(allCubesAreFlat) {
+			allFaces.forEach(face => {
+				face["fullbright"] = true; // blocks with only flat textures always appear at maximum brightness. source: me
+			});
+			console.debug(`Making ${blockName} full bright!`);
+		}
 		let centerOfMass = this.#calculateCenterOfMass(cubes);
 		return {
 			faces: allFaces,
@@ -455,31 +496,46 @@ export default class BlockGeoMaker extends AsyncFactory {
 		return [...Object.entries(block["states"] ?? {}), ...Object.entries(block["block_entity_data"] ?? {}).map(([key, value]) => [`entity.${key}`, value])];
 	}
 	/**
-	 * Merges cubes together greedily.
+	 * Optimises geometries by merging adjacent cubes and culling hidden faces.
 	 * @param {Array<object>} cubes
 	 * @returns {Array<object>}
 	 */
-	#mergeCubes(cubes) {
-		let unmergeableCubes = [];
-		let mergeableCubes = [];
-		cubes.forEach(cube => {
-			if(!cube["size"].some(x => x == 0) && Object.keys(cube).length == 2) { // 2 keys: pos and size
-				mergeableCubes.push(cube);
-			} else {
-				unmergeableCubes.push(cube);
+	#optimizeGeometry(cubes) {
+		let [unoptimizableCubes, optimizableCubes] = conditionallyGroup(cubes, cube => !("rot" in cube));
+		optimizableCubes.forEach(cube => {
+			if("translate" in cube) {
+				cube["pos"] = addVec3(cube["pos"], cube["translate"]);
 			}
 		});
+		let mergeableGroups = new Map(optimizableCubes.map(cube => [cube, this.#getMergingGroup(cube)]));
 		
 		let mergedCubes = [];
-		mergeableCubes.forEach(cube1 => { // this is the cube we're trying to add to mergedCubes
+		optimizableCubes.forEach(cube1 => { // this is the cube we're trying to add to mergedCubes
 			tryMerging: while(true) {
 				for(let [i, cube2] of mergedCubes.entries()) {
-					if(this.#tryMergeCubesOneWay(cube1, cube2)) {
+					let mergeable = mergeableGroups.get(cube1) == mergeableGroups.get(cube2);
+					if(this.#tryMergeCubesOneWayAndCullFaces(cube1, cube2, mergeable)) {
 						console.debug("Merged cube", cube2, "into", cube1);
+						Object.entries(cube1["culled_faces"] ?? {}).forEach(([faceName, preCullingValue]) => {
+							if(preCullingValue) {
+								cube1["textures"][faceName] = preCullingValue;
+							} else {
+								delete cube1["textures"][faceName];
+							}
+						});
+						delete cube1["culled_faces"];
 						mergedCubes.splice(i, 1);
 						continue tryMerging; // since boneCube1 has been mutated, this stops the current comparison of boneCube1 with the already merged cubes, and makes it start again.
-					} else if(this.#tryMergeCubesOneWay(cube2, cube1)) {
+					} else if(this.#tryMergeCubesOneWayAndCullFaces(cube2, cube1, mergeable)) {
 						console.debug("Merged cube", cube1, "into", cube2);
+						Object.entries(cube2["culled_faces"] ?? {}).forEach(([faceName, preCullingValue]) => {
+							if(preCullingValue) {
+								cube2["textures"][faceName] = preCullingValue;
+							} else {
+								delete cube2["textures"][faceName];
+							}
+						});
+						delete cube2["culled_faces"];
 						mergedCubes.splice(i, 1);
 						cube1 = cube2;
 						continue tryMerging; // boneCube2 has been mutated, so we removed it from mergedCubes and swap it out for boneCube1, then restart trying to merge it.
@@ -489,8 +545,108 @@ export default class BlockGeoMaker extends AsyncFactory {
 			}
 			mergedCubes.push(cube1);
 		});
+		mergedCubes.forEach(cube => {
+			if("translate" in cube) {
+				cube["pos"] = subVec3(cube["pos"], cube["translate"]);
+			}
+		});
 		
-		return [...unmergeableCubes, ...mergedCubes];
+		return [...unoptimizableCubes, ...mergedCubes];
+	}
+	/**
+	 * Returns a "merging group" for a cube. Cubes in the same merging group can be merged together. It doesn't affect face culling.
+	 * @param {object} cube
+	 * @returns {number | string}
+	 */
+	#getMergingGroup(cube) {
+		if(cube["disable_merging"] || "translate" in cube || "uv" in cube || "uv_sizes" in cube || "uv_rot" in cube || "box_uv" in cube) {
+			return NaN; // in JS, NaN == NaN is false, disabling these cubes from being merged at all
+		} else {
+			return JSON.stringify([cube["textures"], cube["texture_size"], cube["block_override"], cube["terrain_texture"], cube["variant"], cube["ignore_eigenvariant"], cube["tint"], cube["fullbright"], cube["flip_textures_horizontally"], cube["flip_textures_vertically"], cube["arrays"]]); // these are all the properties that could exist on a cube at this point - basically, two cubes have to be identical in all of these in order to be mergeable
+		} 
+	}
+	/**
+	 * Unpurely tries to merge the second cube into the first if it is positively adjacent, and culls hidden faces if they are touching.
+	 * @param {object} cube1
+	 * @param {object} cube2
+	 * @param {boolean} mergeable If the cubes can be merged
+	 * @returns {boolean} If the second cube was merged into the first.
+	 */
+	#tryMergeCubesOneWayAndCullFaces(cube1, cube2, mergeable) {
+		if(cube1.x + cube1.w == cube2.x) { // cube 2 is to the right of cube 1
+			if(mergeable && cube1.y == cube2.y && cube1.z == cube2.z && cube1.h == cube2.h && cube1.d == cube2.d) {
+				cube1.w += cube2.w; // grow cube 1...
+				return true;
+			}
+		} else if(cube1.y + cube1.h == cube2.y) { // cube 2 is above cube 1
+			if(mergeable && cube1.x == cube2.x && cube1.z == cube2.z && cube1.w == cube2.w && cube1.d == cube2.d) {
+				cube1.h += cube2.h;
+				return true;
+			}
+		} else if(cube1.z + cube1.d == cube2.z) { // cube 2 is behind cube 1
+			if(mergeable && cube1.x == cube2.x && cube1.y == cube2.y && cube1.w == cube2.w && cube1.h == cube2.h) {
+				cube1.d += cube2.d;
+				return true;
+			}
+		}
+		if(cube1.w == 0 || cube1.h == 0 || cube1.d == 0 || cube2.w == 0 || cube2.h == 0 || cube2.d == 0) {
+			return false; // don't cull flat cubes
+		}
+		if(cube1.x < cube2.x && cube1.x + cube1.w >= cube2.x && cube1.x + cube1.w <= cube2.x + cube2.w) {
+			if(cube1.y >= cube2.y && cube1.y + cube1.h <= cube2.y + cube2.h && cube1.z >= cube2.z && cube1.z + cube1.d <= cube2.z + cube2.d) { // right face of cube1 fits within left face of cube2
+				cube1["textures"] ??= {};
+				if(cube1["textures"]["west"] != "none") {
+					cube1["culled_faces"] ??= {};
+					cube1["culled_faces"]["west"] = cube1["textures"]["west"]; // keep track of faces which were culled. this is so if the cubes are merged, they reset to before the faces were culled; and so if all faces but one are culled, the proper shading can be applied
+				}
+				cube1["textures"]["west"] = "none";
+			}
+			if(cube2.y >= cube1.y && cube2.y + cube2.h <= cube1.y + cube1.h && cube2.z >= cube1.z && cube2.z + cube2.d <= cube1.z + cube1.d) { // left face of cube2 fits within right face of cube1
+				cube2["textures"] ??= {};
+				if(cube2["textures"]["east"] != "none") {
+					cube2["culled_faces"] ??= {};
+					cube2["culled_faces"]["east"] = cube2["textures"]["east"]; // keep track of faces which were culled. this is so if the cubes are merged, they reset to before the faces were culled; and so if all faces but one are culled, the proper shading can be applied
+				}
+				cube2["textures"]["east"] = "none";
+			}
+		}
+		if(cube1.y < cube2.y && cube1.y + cube1.h >= cube2.y && cube1.y + cube1.h <= cube2.y + cube2.h) {
+			if(cube1.x >= cube2.x && cube1.x + cube1.w <= cube2.x + cube2.w && cube1.z >= cube2.z && cube1.z + cube1.d <= cube2.z + cube2.d) { // top face of cube1 fits within bottom face of cube2
+				cube1["textures"] ??= {};
+				if(cube1["textures"]["up"] != "none") {
+					cube1["culled_faces"] ??= {};
+					cube1["culled_faces"]["up"] = cube1["textures"]["up"]; // keep track of faces which were culled. this is so if the cubes are merged, they reset to before the faces were culled; and so if all faces but one are culled, the proper shading can be applied
+				}
+				cube1["textures"]["up"] = "none";
+			}
+			if(cube2.x >= cube1.x && cube2.x + cube2.w <= cube1.x + cube1.w && cube2.z >= cube1.z && cube2.z + cube2.d <= cube1.z + cube1.d) { // bottom face of cube2 fits within top face of cube1
+				cube2["textures"] ??= {};
+				if(cube2["textures"]["down"] != "none") {
+					cube2["culled_faces"] ??= {};
+					cube2["culled_faces"]["down"] = cube2["textures"]["down"]; // keep track of faces which were culled. this is so if the cubes are merged, they reset to before the faces were culled; and so if all faces but one are culled, the proper shading can be applied
+				}
+				cube2["textures"]["down"] = "none";
+			}
+		}
+		if(cube1.z < cube2.z && cube1.z + cube1.d >= cube2.z && cube1.z + cube1.d <= cube2.z + cube2.d) {
+			if(cube1.x >= cube2.x && cube1.x + cube1.w <= cube2.x + cube2.w && cube1.y >= cube2.y && cube1.y + cube1.h <= cube2.y + cube2.h) { // back face of cube1 fits within front face of cube2
+				cube1["textures"] ??= {};
+				if(cube1["textures"]["south"] != "none") {
+					cube1["culled_faces"] ??= {};
+					cube1["culled_faces"]["south"] = cube1["textures"]["south"]; // keep track of faces which were culled. this is so if the cubes are merged, they reset to before the faces were culled; and so if all faces but one are culled, the proper shading can be applied
+				}
+				cube1["textures"]["south"] = "none";
+			}
+			if(cube2.x >= cube1.x && cube2.x + cube2.w <= cube1.x + cube1.w && cube2.y >= cube1.y && cube2.y + cube2.h <= cube1.y + cube1.h) { // front face of cube2 fits within back face of cube1
+				cube2["textures"] ??= {};
+				if(cube2["textures"]["north"] != "none") {
+					cube2["culled_faces"] ??= {};
+					cube2["culled_faces"]["north"] = cube2["textures"]["north"]; // keep track of faces which were culled. this is so if the cubes are merged, they reset to before the faces were culled; and so if all faces but one are culled, the proper shading can be applied
+				}
+				cube2["textures"]["north"] = "none";
+			}
+		}
+		return false;
 	}
 	/**
 	 * Gets the index of the variant to use in terrain_texture.json for a block.
@@ -660,19 +816,14 @@ export default class BlockGeoMaker extends AsyncFactory {
 	}
 	/**
 	 * Gets the surface normal for a specific face of a cube.
-	 * @param {"west" | "east" | "down" | "up" | "north" | "south"} faceName
+	 * @param {[PolyMeshTemplateVertex, PolyMeshTemplateVertex, PolyMeshTemplateVertex, PolyMeshTemplateVertex]} vertices
 	 * @returns {Vec3}
 	 */
-	#getSurfaceNormal(faceName) {
-		return [0, 1, 0]; // TODO: add lighting by enabling FANCY
-		// switch(faceName) {
-		// 	case "west": return [-1, 0, 0];
-		// 	case "east": return [1, 0, 0];
-		// 	case "down": return [0, 1, 0];
-		// 	case "up": return [0, -1, 0];
-		// 	case "north": return [0, 0, -1];
-		// 	case "south": return [0, 0, 1];
-		// }
+	#getSurfaceNormal(vertices) {
+		let dir1 = subVec3(vertices[1]["pos"], vertices[0]["pos"]);
+		let dir2 = subVec3(vertices[2]["pos"], vertices[0]["pos"]);
+		let normal = normalizeVec3(crossProduct(dir1, dir2));
+		return normal;
 	}
 	/**
 	 * Calculates the center of mass of some cubes, assuming mass = volume. If all cubes are flat it will take surface area for mass.
@@ -685,13 +836,21 @@ export default class BlockGeoMaker extends AsyncFactory {
 		cubes.forEach(cube => {
 			let mass = cube.w * cube.h * cube.d; // assume uniform mass density
 			totalMass += mass;
-			center = addVec3(center, mulVec3(addVec3(cube["pos"], mulVec3(cube["size"], 0.5)), mass));
+			let cubeCenter = addVec3(cube["pos"], mulVec3(cube["size"], 0.5));
+			if("rot" in cube) {
+				cubeCenter = this.#applyEulerRotation(cubeCenter, cube["rot"], cube["pivot"] ?? [8, 8, 8]);
+			}
+			center = addVec3(center, mulVec3(cubeCenter, mass));
 		});
 		if(totalMass == 0) { // all cubes must be flat
 			cubes.forEach(cube => {
 				let mass = max(cube.w, 1) * max(cube.h, 1) * max(cube.d, 1);
 				totalMass += mass;
-				center = addVec3(center, mulVec3(addVec3(cube["pos"], mulVec3(cube["size"], 0.5)), mass));
+				let cubeCenter = addVec3(cube["pos"], mulVec3(cube["size"], 0.5));
+				if("rot" in cube) {
+					cubeCenter = this.#applyEulerRotation(cubeCenter, cube["rot"], cube["pivot"] ?? [8, 8, 8]);
+				}
+				center = addVec3(center, mulVec3(cubeCenter, mass));
 			});
 		}
 		if(totalMass == 0) {
@@ -869,31 +1028,6 @@ export default class BlockGeoMaker extends AsyncFactory {
 		});
 		return wholeStringValue ?? substitutedExpression;
 	}
-	/**
-	 * Unpurely tries to merge the second cube into the first if the second is more positive than the first.
-	 * @param {object} cube1
-	 * @param {object} cube2
-	 * @returns {boolean} If the second cube was merged into the first.
-	 */
-	#tryMergeCubesOneWay(cube1, cube2) {
-		if(cube1.x + cube1.w == cube2.x) { // bone cube 2 is to the right of bone cube 1
-			if(cube1.y == cube2.y && cube1.z == cube2.z && cube1.h == cube2.h && cube1.d == cube2.d) {
-				cube1.w += cube2.w; // grow cube 1...
-				return true;
-			}
-		} else if(cube1.y + cube1.h == cube2.y) { // bone cube 2 is above bone cube 1
-			if(cube1.x == cube2.x && cube1.z == cube2.z && cube1.w == cube2.w && cube1.d == cube2.d) {
-				cube1.h += cube2.h;
-				return true;
-			}
-		} else if(cube1.z + cube1.d == cube2.z) { // bone cube 2 is behind bone cube 1
-			if(cube1.x == cube2.x && cube1.y == cube2.y && cube1.w == cube2.w && cube1.h == cube2.h) {
-				cube1.d += cube2.d;
-				return true;
-			}
-		}
-		return false;
-	}
 	
 	/**
 	 * Resolves UVs in template faces.
@@ -911,6 +1045,7 @@ export default class BlockGeoMaker extends AsyncFactory {
 			let vertices = [face["vertices"][0], face["vertices"][1], face["vertices"][3], face["vertices"][2]]; // go around in a square
 			return {
 				"normal": face["normal"],
+				"transparency": imageUv["transparency"],
 				"vertices": vertices.map(vertex => ({
 					"pos": vertex["pos"],
 					"uv": [(imageUv["uv"][0] + imageUv["uv_size"][0] * (vertex["corner"] & 1)) / textureAtlas.textureWidth, 1 - (imageUv["uv"][1] + imageUv["uv_size"][1] * (vertex["corner"] >> 1)) / textureAtlas.textureHeight]
@@ -932,8 +1067,8 @@ export default class BlockGeoMaker extends AsyncFactory {
 		let v1pos = v1["pos"];
 		let v2pos = v2["pos"];
 		let v3pos = v3["pos"];
-		let textureXDir = [v1pos[0] - v0pos[0], v1pos[1] - v0pos[1], v1pos[2] - v0pos[2]]; // v1pos - v0pos
-		let textureYDir = [v2pos[0] - v0pos[0], v2pos[1] - v0pos[1], v2pos[2] - v0pos[2]]; // v2pos - v0pos
+		let textureXDir = subVec3(v1pos, v0pos);
+		let textureYDir = subVec3(v2pos, v0pos);
 		let cropXRem = 1 - crop["w"] - crop["x"]; // remaining horizontal space on the other side of the cropped region
 		let cropYRem = 1 - crop["h"] - crop["y"];
 		v0["pos"] = addVec3(v0pos, [textureXDir[0] * crop["x"] + textureYDir[0] * crop["y"], textureXDir[1] * crop["x"] + textureYDir[1] * crop["y"], textureXDir[2] * crop["x"] + textureYDir[2] * crop["y"]]);

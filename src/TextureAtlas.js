@@ -21,7 +21,7 @@ export default class TextureAtlas extends AsyncFactory {
 	
 	/**
 	 * When makeAtlas() is called, this will contain UV coordinates and sizes for texture references passed as input, as well as cropping information.
-	 * @type {Array<{ uv: Vec2, uv_size: Vec2, crop?: Rectangle }>}
+	 * @type {Array<{ uv: Vec2, uv_size: Vec2, transparency: number, crop?: Rectangle }>}
 	 */
 	uvs;
 	
@@ -135,8 +135,6 @@ export default class TextureAtlas extends AsyncFactory {
 			// 	"uv": textureRef["uv"],
 			// 	"uv_size": textureRef["uv_size"]
 			// })
-			
-			// console.count("add terrain texture key"); // TODO: optimise by putting block names and sides into a set, which would reduce the number of terrain texture keys to resolve into texture paths.
 		});
 		
 		console.log("Texture image indices:", textureImageIndices);
@@ -374,7 +372,7 @@ export default class TextureAtlas extends AsyncFactory {
 	/**
 	 * Stitches together images with widths and heights, and puts the UV coordinates and sizes into the textureUvs property.
 	 * @param {Array<ImageFragment>} imageFragments
-	 * @returns {Promise<Array<{ uv: [number, number], uv_size: [number, number], crop?: Rectangle }>>}
+	 * @returns {Promise<Array<{ uv: [number, number], uv_size: [number, number], transparency: number, crop?: Rectangle }>>}
 	 */
 	async #stitchTextureAtlas(imageFragments) {
 		imageFragments.forEach((imageFragment, i) => {
@@ -434,12 +432,17 @@ export default class TextureAtlas extends AsyncFactory {
 			}
 			return imageUv;
 		});
+		let canImageData = can.getContext("2d").getImageData(0, 0, can.width, can.height);
+		let transparencies = this.#getImageFragmentTransparencies(canImageData, imageFragments);
+		transparencies.forEach((transparency, i) => {
+			imageUvs[i]["transparency"] = transparency;
+		});
 		
 		// ctx = can.getContext("2d");
 		// ctx.fillStyle = "#00F3";
 		// ctx.fillRect(0, 0, can.width, can.height);
 		if(this.config.TEXTURE_OUTLINE_WIDTH != 0) {
-			can = TextureAtlas.addTextureOutlines(can, imageFragments, this.config);
+			can = TextureAtlas.addTextureOutlines(can, imageFragments, this.config, canImageData);
 		}
 		
 		if(this.config.MULTIPLE_OPACITIES) {
@@ -489,11 +492,12 @@ export default class TextureAtlas extends AsyncFactory {
 	}
 	/** Add an outline around each texture.
 	 * @param {OffscreenCanvas} ogCan
-	 * @param {Array<{ x: number, y: number, w: number, h: number }>} imagePositions
+	 * @param {Array<Rectangle>} imagePositions
 	 * @param {HoloPrintConfig} config
+	 * @param {ImageData} [imageData]
 	 * @returns {OffscreenCanvas}
 	 */
-	static addTextureOutlines(ogCan, imagePositions, config) {
+	static addTextureOutlines(ogCan, imagePositions, config, imageData) {
 		let scale = max(1 / config.TEXTURE_OUTLINE_WIDTH, 1);
 		let can = new OffscreenCanvas(ogCan.width * scale, ogCan.height * scale);
 		
@@ -501,7 +505,7 @@ export default class TextureAtlas extends AsyncFactory {
 		ctx.imageSmoothingEnabled = false;
 		ctx.drawImage(ogCan, 0, 0, can.width, can.height);
 		
-		let imageData = ogCan.getContext("2d").getImageData(0, 0, ogCan.width, ogCan.height);
+		imageData ??= ogCan.getContext("2d").getImageData(0, 0, ogCan.width, ogCan.height);
 		
 		ctx.fillStyle = config.TEXTURE_OUTLINE_COLOR;
 		ctx.globalAlpha = config.TEXTURE_OUTLINE_OPACITY;
@@ -559,6 +563,24 @@ export default class TextureAtlas extends AsyncFactory {
 		});
 		
 		return can;
+	}
+	/**
+	 * Calculates the transparencies of each image fragment.
+	 * @param {ImageData} imageData
+	 * @param {Array<Rectangle>} imageFragments
+	 * @returns {Array<number>}
+	 */
+	#getImageFragmentTransparencies(imageData, imageFragments) {
+		return imageFragments.map(({ x: startX, y: startY, w, h }) => {
+			let totalTransparency = 0;
+			for(let x = startX; x < startX + w; x++) {
+				for(let y = startY; y < startY + h; y++) {
+					let i = (y * imageData.width + x) * 4;
+					totalTransparency += 255 - imageData.data[i + 3];
+				}
+			}
+			return totalTransparency / (w * h);
+		});
 	}
 	#setCanvasOpacity(can, alpha) {
 		let newCan = new OffscreenCanvas(can.width, can.height);

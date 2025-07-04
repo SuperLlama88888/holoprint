@@ -46,6 +46,20 @@
 						"minItems": 3,
 						"maxItems": 3
 					},
+					"transform": {
+						"description": "A full transformation matrix that will be applied after \"translate\".",
+						"type": "array",
+						"items": {
+							"type": "array",
+							"items": {
+								"type": "number"
+							},
+							"minItems": 4,
+							"maxItems": 4
+						},
+						"minItems": 4,
+						"maxItems": 4
+					},
 					"rot": {
 						"description": "The XYZ rotation of the cube (in degrees; applied in the order X-Y-Z) around its pivot.",
 						"type": "array",
@@ -102,6 +116,21 @@
 								},
 								"minItems": 2,
 								"maxItems": 2
+							}
+						},
+						"additionalProperties": false
+					},
+					"uv_rot": {
+						"description": "Rotates the UV for each face. Processed before `flip_textures_horizontally` and `flip_textures_vertically`",
+						"type": "object",
+						"propertyNames": {
+							"enum": ["west", "east", "down", "up", "north", "south", "side", "*"]
+						},
+						"patternProperties": {
+							".": {
+								"description": "The UV rotation for this face, in degrees.",
+								"type": "number",
+								"multipleOf": 90
 							}
 						},
 						"additionalProperties": false
@@ -203,6 +232,10 @@
 						"description": "A tinting colour in 6-digit hex or in a 32-bit ARGB number to apply to this cube (overrides TextureAtlas.#terrainTextureTints).",
 						"type": "string",
 						"pattern": "^(#[0-9a-fA-F]{6})|(\\$\\{.+\\})$"
+					},
+					"fullbright": {
+						"description": "Makes the cube appear at maximum brightness by setting the surface normal to be vertical.",
+						"type": "boolean"
 					},
 					"flip_textures_horizontally": {
 						"description": "An array of faces that will have their textures horizontally flipped.",

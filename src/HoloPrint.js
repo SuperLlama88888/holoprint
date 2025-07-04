@@ -161,6 +161,8 @@ export async function makePack(structureFiles, config = {}, resourcePackStack, p
 	let totalBlocksToValidateByStructure = [];
 	let totalBlocksToValidateByStructureByLayer = [];
 	let uniqueBlocksToValidate = new Set();
+	let maxHeight = max(...structureSizes.map(structureSize => structureSize[1]));
+	let layerIsEmpty = (new Array(maxHeight)).fill(true);
 	
 	let polyMeshMaker = new PolyMeshMaker(polyMeshTemplatePalette);
 	let materialList = await MaterialList.new(blockMetadata, itemMetadata);
@@ -193,7 +195,7 @@ export async function makePack(structureFiles, config = {}, resourcePackStack, p
 						
 						let blockCoordinateName = `b_${x}_${y}_${z}`;
 						let geoSpaceBlockPos = [-16 * x - 8, 16 * y, 16 * z - 8]; // I got these values from trial and error with blockbench (which makes the x negative I think. it's weird.)
-						polyMeshMaker.addPaletteEntry(paletteI, geoSpaceBlockPos);
+						polyMeshMaker.add(paletteI, geoSpaceBlockPos, layerI);
 						if(firstBoneForThisCoordinate) { // we only need 1 locator for each block position, even though there may be 2 bones in this position because of the 2nd layer
 							hologramGeo["minecraft:geometry"][2]["bones"][1]["locators"][blockCoordinateName] ??= geoSpaceBlockPos.map(x => x + 8); // 2nd geometry is for particle alignment
 						}
@@ -213,6 +215,7 @@ export async function makePack(structureFiles, config = {}, resourcePackStack, p
 						}
 						firstBoneForThisCoordinate = false;
 						totalBlockCount++;
+						layerIsEmpty[y] = false;
 					}
 				}
 			}
@@ -237,11 +240,12 @@ export async function makePack(structureFiles, config = {}, resourcePackStack, p
 	
 	makeLayerAnimations(config, structureSizes, entityDescription, hologramAnimations, hologramAnimationControllers);
 	if(config.SPAWN_ANIMATION_ENABLED) {
-		let maxHeight = max(...structureSizes.map(structureSize => structureSize[1]));
 		let spawnAnimationMaker = new SpawnAnimationMaker(config, [1, maxHeight, 1]);
 		for(let y = 0; y < maxHeight; y++) {
-			let layerName = `l_${y}`;
-			spawnAnimationMaker.addBone(layerName, [0, y, 0], [0, 16 * y, -16]);
+			if(!layerIsEmpty[y]) {
+				let layerName = `l_${y}`;
+				spawnAnimationMaker.addBone(layerName, [0, y, 0], [0, 16 * y, -16]);
+			}
 		}
 		hologramAnimations["animations"]["animation.armor_stand.hologram.spawn"] = spawnAnimationMaker.makeAnimation();
 	}
@@ -1804,6 +1808,7 @@ function stringifyWithFixedDecimals(value) {
 /**
  * @typedef {object} PolyMeshTemplateFaceWithUvs
  * @property {Vec3} normal
+ * @property {number} transparency Average transparency per texture pixel. 255 = fully transparent, 0 = fully opaque
  * @property {[PolyMeshTemplateVertexWithUv, PolyMeshTemplateVertexWithUv, PolyMeshTemplateVertexWithUv, PolyMeshTemplateVertexWithUv]} vertices
  */
 /**
@@ -1948,6 +1953,12 @@ function stringifyWithFixedDecimals(value) {
  */
 /**
  * @typedef {[number, number, number]} Vec3 3D vector.
+ */
+/**
+ * @typedef {[number, number, number, number]} Vec4 4D vector.
+ */
+/**
+ * @typedef {[Vec4, Vec4, Vec4, Vec4]} Mat4 4x4 matrix.
  */
 /**
  * @typedef {Int32Array & { length: 3 }} I32Vec3
