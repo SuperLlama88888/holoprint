@@ -468,7 +468,9 @@ export default class TextureAtlas extends AsyncFactory {
 	 */
 	#findMostExtremePixels(image, startX = 0, startY = 0, imageW = image.width, imageH = image.height) {
 		let can = new OffscreenCanvas(imageW, imageH);
-		let ctx = can.getContext("2d");
+		let ctx = can.getContext("2d", {
+			willReadFrequently: true
+		});
 		ctx.drawImage(image, startX, startY, imageW, imageH, 0, 0, imageW, imageH);
 		let imageData = ctx.getImageData(0, 0, imageW, imageH).data;
 		

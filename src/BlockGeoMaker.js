@@ -1048,7 +1048,7 @@ export default class BlockGeoMaker extends AsyncFactory {
 				"transparency": imageUv["transparency"],
 				"vertices": vertices.map(vertex => ({
 					"pos": vertex["pos"],
-					"uv": [(imageUv["uv"][0] + imageUv["uv_size"][0] * (vertex["corner"] & 1)) / textureAtlas.textureWidth, 1 - (imageUv["uv"][1] + imageUv["uv_size"][1] * (vertex["corner"] >> 1)) / textureAtlas.textureHeight]
+					"uv": [+((imageUv["uv"][0] + imageUv["uv_size"][0] * (vertex["corner"] & 1)) / textureAtlas.textureWidth).toFixed(4), +(1 - (imageUv["uv"][1] + imageUv["uv_size"][1] * (vertex["corner"] >> 1)) / textureAtlas.textureHeight).toFixed(4)]
 				}))
 			};
 		});

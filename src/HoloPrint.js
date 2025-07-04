@@ -402,7 +402,7 @@ export async function makePack(structureFiles, config = {}, resourcePackStack, p
 	if(config.PLAYER_CONTROLS_ENABLED) {
 		packFiles.push(["render_controllers/player.render_controllers.json", JSON.stringify(playerRenderControllers)]);
 	}
-	packFiles.push(["models/entity/armor_stand.hologram.geo.json", stringifyWithFixedDecimals(hologramGeo)]);
+	packFiles.push(["models/entity/armor_stand.hologram.geo.json", JSON.stringify(hologramGeo)]);
 	packFiles.push(["materials/entity.material", JSON.stringify(hologramMaterial)]);
 	packFiles.push(["animation_controllers/armor_stand.hologram.animation_controllers.json", JSON.stringify(hologramAnimationControllers)]);
 	packFiles.push(["particles/bounding_box_outline.json", JSON.stringify(boundingBoxOutlineParticle)]);
@@ -1697,24 +1697,6 @@ function functionToMolang(func, vars = {}) {
 	}
 	let variabledCode = substituteInVariables(conditionedCode, vars);
 	return variabledCode;
-}
-/**
- * JSON.stringify(), but shortens numbers to at most 4 decimal places to avoid JS floating-point errors making stringified numbers long.
- * @param {any} value
- * @returns {string}
- */
-function stringifyWithFixedDecimals(value) {
-	const NUMBER_OF_DECIMALS = 4;
-	return JSON.stringify(value, (key, x) => {
-		if(typeof x == "number") {
-			// let oldNumber = x;
-			x = Number(x.toFixed(NUMBER_OF_DECIMALS));
-			// if(abs(x - oldNumber) > 10 ** (-NUMBER_OF_DECIMALS - 1)) {
-			// 	console.debug(`Turned long number ${oldNumber} into ${x} when stringifying JSON`);
-			// }
-		}
-		return x;
-	});
 }
 
 /** @import { ZipWriterAddDataOptions } from "@zip.js/zip.js" */
