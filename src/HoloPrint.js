@@ -1955,5 +1955,11 @@ function stringifyWithFixedDecimals(value) {
  * @typedef {[number, number, number]} Vec3 3D vector.
  */
 /**
+ * @typedef {[number, number, number, number]} Vec4 4D vector.
+ */
+/**
+ * @typedef {[Vec4, Vec4, Vec4, Vec4]} Mat4 4x4 matrix.
+ */
+/**
  * @typedef {Int32Array & { length: 3 }} I32Vec3
  */

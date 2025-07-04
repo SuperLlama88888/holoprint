@@ -2,7 +2,7 @@
 // READ: this also looks pretty comprehensive: https://github.com/MCBE-Development-Wiki/mcbe-dev-home/blob/main/docs/misc/enums/block_shape.md
 // https://github.com/bricktea/MCStructure/blob/main/docs/1.16.201/enums/B.md
 
-import { addVec3, AsyncFactory, awaitAllEntries, crossProduct, hexColorToClampedTriplet, jsonc, JSONSet, max, mulVec3, normalizeVec3, rotateDeg, vec3ToFixed, subVec3, conditionallyGroup } from "./utils.js";
+import { addVec3, AsyncFactory, awaitAllEntries, crossProduct, hexColorToClampedTriplet, jsonc, JSONSet, max, mulVec3, normalizeVec3, rotateDeg, vec3ToFixed, subVec3, conditionallyGroup, mulMat4 } from "./utils.js";
 
 // https://wiki.bedrock.dev/visuals/material-creations.html#overlay-color-in-render-controllers
 // https://wiki.bedrock.dev/documentation/materials.html#entity-alphatest
@@ -405,6 +405,11 @@ export default class BlockGeoMaker extends AsyncFactory {
 					});
 					if("translate" in cube) {
 						vertex["pos"] = addVec3(vertex["pos"], cube["translate"]);
+					}
+					if("transform" in cube) {
+						let transformed = mulMat4(cube["transform"], vertex["pos"]);
+						let newPos = mulVec3([transformed[0], transformed[1], transformed[2]], 1 / transformed[3]);
+						vertex["pos"] = newPos;
 					}
 				}
 				faces.push({

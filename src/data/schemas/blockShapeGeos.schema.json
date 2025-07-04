@@ -46,6 +46,20 @@
 						"minItems": 3,
 						"maxItems": 3
 					},
+					"transform": {
+						"description": "A full transformation matrix that will be applied after \"translate\".",
+						"type": "array",
+						"items": {
+							"type": "array",
+							"items": {
+								"type": "number"
+							},
+							"minItems": 4,
+							"maxItems": 4
+						},
+						"minItems": 4,
+						"maxItems": 4
+					},
 					"rot": {
 						"description": "The XYZ rotation of the cube (in degrees; applied in the order X-Y-Z) around its pivot.",
 						"type": "array",

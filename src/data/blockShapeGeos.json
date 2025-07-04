@@ -135,27 +135,30 @@
 			"size": [16, 15, 16]
 		}
 	],
-	"torch": [
+	"template_torch": [
 		{
-			"if": "torch_facing_direction == top",
 			"pos": [7, 0, 7],
 			"size": [2, 10, 2],
 			"uv": {
 				"up": [7, 6],
 				"down": [7, 14]
 			}
+		}
+	],
+	"torch": [
+		{
+			"if": "torch_facing_direction == top",
+			"copy": "template_torch"
 		},
 		{
 			"if": "torch_facing_direction != top", // the rest of the rotations are handled in blockStateDefinitions.json
-			"pos": [-1, 3.5, 7],
-			"size": [2, 10, 2],
-			"uv": {
-				"up": [7, 6],
-				"down": [7, 14],
-				"side": [7, 6]
-			},
-			"rot": [0, 0, 22.5],
-			"pivot": [0, 3.5, 8]
+			"copy": "template_torch",
+			"transform": [
+				[1, 0.4, 0, -8],
+				[0, 1, 0, 3.4],
+				[0, 0, 1, 0],
+				[0, 0, 0, 1]
+			]
 		}
 	],
 	"template_redstone_torch": [
@@ -195,9 +198,12 @@
 		{
 			"if": "torch_facing_direction != top", // the rest of the rotations are handled in blockStateDefinitions.json
 			"copy": "template_redstone_torch",
-			"translate": [-8, 3.5, 0],
-			"rot": [0, 0, 22.5],
-			"pivot": [8, 0, 8]
+			"transform": [
+				[1, 0.4, 0, -8],
+				[0, 1, 0, 3.4],
+				[0, 0, 1, 0],
+				[0, 0, 0, 1]
+			]
 		}
 	],
 	"fence": [ // fences don't have block states, we'll have to read blocks next to each other :((

@@ -231,6 +231,19 @@ export function normalizeVec3(vec) {
 export function vec3ToFixed(vec, decimals) {
 	return [+vec[0].toFixed(decimals), +vec[1].toFixed(decimals), +vec[2].toFixed(decimals)];
 }
+/**
+ * @param {Mat4} mat
+ * @param {Vec3 | Vec4} vec
+ * @returns {Vec4}
+ */
+export function mulMat4([[a, b, c, d], [e, f, g, h], [i, j, k, l], [m, n, o, p]], [x, y, z, w = 1]) {
+	return [
+		a * x + b * y + c * z + d * w,
+		e * x + f * y + g * z + h * w,
+		i * x + j * y + k * z + l * w,
+		m * x + n * y + o * z + p * w
+	];
+}
 
 export function arrayMin(arr) {
 	let min = Infinity;
@@ -965,4 +978,4 @@ export function createCustomError(name) {
 }
 export const UserError = createCustomError("UserError");
 
-/** @import { Vec2, Vec3 } from "./HoloPrint.js" */
+/** @import { Mat4, Vec2, Vec3, Vec4 } from "./HoloPrint.js" */
