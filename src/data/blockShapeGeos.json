@@ -107,7 +107,8 @@
 			"pos": [7, 7, 0],
 			"size": [2, 4, 1],
 			"textures": {
-				"*": "#tex"
+				"*": "#tex",
+				"south": "none"
 			},
 			"texture_size": [64, 64],
 			"uv": {
@@ -2173,7 +2174,9 @@
 			"size": [16, 1, 6],
 			"rot": [0, 90, 0],
 			"textures": {
-				"*": "side"
+				"*": "side",
+				"north": "none",
+				"south": "none"
 			},
 			"uv": {
 				"*": [0, 14],
@@ -2187,7 +2190,9 @@
 			"size": [16, 1, 6],
 			"rot": [0, 90, 0],
 			"textures": {
-				"*": "down"
+				"*": "down",
+				"north": "none",
+				"south": "none"
 			},
 			"uv": {
 				"*": [0, 14],
@@ -2757,7 +2762,10 @@
 		{
 			"if": "#copied_via_copy_block",
 			"pos": [6, 0, 6],
-			"size": [4, 12, 4]
+			"size": [4, 12, 4],
+			"textures": {
+				"down": "none"
+			}
 		}
 	],
 	"double_plant": [
@@ -3260,31 +3268,31 @@
 	"cauldron": [
 		{ // walls
 			"pos": [0, 3, 0],
-			"size": [2, 13, 16],
+			"size": [16, 13, 2],
 			"textures": {
 				"side": "north",
 				"down": "south"
 			}
 		},
 		{
-			"pos": [14, 3, 0],
-			"size": [2, 13, 16],
+			"pos": [0, 3, 14],
+			"size": [16, 13, 2],
 			"textures": {
 				"side": "north",
 				"down": "south"
 			}
 		},
 		{
-			"pos": [2, 3, 0],
-			"size": [12, 13, 2],
+			"pos": [0, 3, 2],
+			"size": [2, 13, 12],
 			"textures": {
 				"side": "north",
 				"down": "south"
 			}
 		},
 		{
-			"pos": [2, 3, 14],
-			"size": [12, 13, 2],
+			"pos": [14, 3, 2],
+			"size": [2, 13, 12],
 			"textures": {
 				"side": "north",
 				"down": "south"
@@ -3334,7 +3342,7 @@
 		},
 		{
 			"pos": [0, 0, 12],
-			"size": [2, 3, 4],
+			"size": [2, 3, 2],
 			"textures": {
 				"side": "north"
 			}
@@ -4250,22 +4258,13 @@
 		{
 			"pos": [0, 0, 0],
 			"size": [4, 4, 4],
-			"textures": {
-				"up": "none"
-			},
 			"uv": {
 				"down": [8, 1],
+				"up": [4, 1],
 				"north": [0, 12],
 				"east": [4, 12],
 				"south": [8, 12],
 				"west": [12, 12]
-			}
-		},
-		{
-			"pos": [0, 4, 0],
-			"size": [4, 0, 4],
-			"uv": {
-				"*": [4, 1]
 			}
 		},
 		{
@@ -4285,22 +4284,13 @@
 		{
 			"pos": [0, 0, 0],
 			"size": [4, 5, 4],
-			"textures": {
-				"up": "none"
-			},
 			"uv": {
 				"down": [8, 1],
+				"up": [4, 1],
 				"north": [0, 11],
 				"east": [4, 11],
 				"south": [8, 11],
 				"west": [12, 11]
-			}
-		},
-		{
-			"pos": [0, 5, 0],
-			"size": [4, 0, 4],
-			"uv": {
-				"*": [4, 1]
 			}
 		},
 		{
@@ -4320,22 +4310,13 @@
 		{
 			"pos": [0, 0, 0],
 			"size": [4, 6, 4],
-			"textures": {
-				"up": "none"
-			},
 			"uv": {
 				"down": [8, 1],
+				"up": [4, 1],
 				"north": [0, 10],
 				"east": [4, 10],
 				"south": [8, 10],
 				"west": [12, 10]
-			}
-		},
-		{
-			"pos": [0, 6, 0],
-			"size": [4, 0, 4],
-			"uv": {
-				"*": [4, 1]
 			}
 		},
 		{
@@ -4355,22 +4336,13 @@
 		{
 			"pos": [0, 0, 0],
 			"size": [4, 7, 4],
-			"textures": {
-				"up": "none"
-			},
 			"uv": {
 				"down": [8, 1],
+				"up": [4, 1],
 				"north": [0, 9],
 				"east": [4, 9],
 				"south": [8, 9],
 				"west": [12, 9]
-			}
-		},
-		{
-			"pos": [0, 7, 0],
-			"size": [4, 0, 4],
-			"uv": {
-				"*": [4, 1]
 			}
 		},
 		{
@@ -4681,7 +4653,7 @@
 		},
 		{
 			"pos": [2, 0.01, 2], // move obsidian bit slightly up to avoid z-fighting
-			"size": [12, 3, 12],
+			"size": [12, 2.99, 12],
 			"textures": {
 				"*": "down"
 			}
@@ -4994,17 +4966,16 @@
 			"pos": [7.35, 0, 7.35],
 			"size": [1.3, 26.7, 1.3],
 			"textures": {
-				"*": "textures/entity/banner/banner_base"
+				"*": "textures/entity/banner/banner_base",
+				"up": "none"
 			},
 			"texture_size": [64, 64],
 			"uv": {
 				"side": [50, 2],
-				"up": [46, 0],
 				"down": [48, 0]
 			},
 			"uv_sizes": {
 				"side": [2, 42],
-				"up": [2, 2],
 				"down": [2, 2]
 			}
 		}
@@ -5253,6 +5224,9 @@
 			"size": [9, 3, 12],
 			"rot": [15, 0, 0],
 			"pivot": [8, 3, 2],
+			"textures": {
+				"south": "none"
+			},
 			"box_uv": [176, 65],
 			"box_uv_size": [12, 4, 16]
 		}
@@ -5302,6 +5276,9 @@
 			"size": [1, 5, 4],
 			"pivot": [3, 6, 8],
 			"rot": [0, 0, 30],
+			"textures": {
+				"up": "none"
+			},
 			"box_uv": [39, 6]
 		},
 		{
@@ -5309,6 +5286,9 @@
 			"size": [1, 5, 4],
 			"pivot": [13, 6, 8],
 			"rot": [0, 0, -30],
+			"textures": {
+				"up": "none"
+			},
 			"box_uv": [51, 6]
 		}
 	],
