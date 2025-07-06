@@ -1819,8 +1819,8 @@ function functionToMolang(func, vars = {}) {
  * @property {Vec2} uv_size
  */
 /**
- * @typedef {object} ImageFragment An image fragment containing an image, UV position, and UV size.
- * @property {HTMLImageElement} image
+ * @typedef {object} ImageFragment An image fragment containing image data, UV position, and UV size.
+ * @property {ImageData} imageData
  * @property {number} w Width
  * @property {number} h Height
  * @property {number} sourceX

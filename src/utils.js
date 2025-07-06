@@ -181,6 +181,14 @@ export function rotateDeg(p, deg) {
  * @param {Vec2} b
  * @returns {Vec2}
  */
+export function addVec2(a, b) {
+	return [a[0] + b[0], a[1] + b[1]];
+}
+/**
+ * @param {Vec2} a
+ * @param {Vec2} b
+ * @returns {Vec2}
+ */
 export function subVec2(a, b) {
 	return [a[0] - b[0], a[1] - b[1]];
 }
