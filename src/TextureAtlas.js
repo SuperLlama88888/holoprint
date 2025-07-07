@@ -1,9 +1,9 @@
-import { addVec2, AsyncFactory, awaitAllEntries, ceil, floor, hexColorToClampedTriplet, jsonc, JSONSet, max, range, stringToImageData, subVec2, toImage, toImageData } from "./utils.js";
+import { addVec2, ceil, floor, hexColorToClampedTriplet, JSONSet, max, range, stringToImageData, subVec2, toImage, toImageData } from "./utils.js";
 import TGALoader from "tga-js"; // We could use dynamic import as this isn't used all the time but it's so small it won't matter
 import potpack from "potpack";
 import ResourcePackStack from "./ResourcePackStack.js";
 
-export default class TextureAtlas extends AsyncFactory {
+export default class TextureAtlas {
 	#blocksDotJsonPatches;
 	#blocksToUseCarriedTextures;
 	#transparentBlocks;
@@ -40,20 +40,14 @@ export default class TextureAtlas extends AsyncFactory {
 	 * Creates a texture atlas for loading images from texture references and stitching them together.
 	 * @param {HoloPrintConfig} config
 	 * @param {ResourcePackStack} resourcePackStack
+	 * @param {object} blocksDotJson
+	 * @param {object} terrainTexture
+	 * @param {object} flipbookTextures
+	 * @param {import("./data/textureAtlasMappings.json")} textureAtlasMappings
 	 */
-	constructor(config, resourcePackStack) {
-		super();
+	constructor(config, resourcePackStack, blocksDotJson, terrainTexture, flipbookTextures, textureAtlasMappings) {
 		this.config = config;
 		this.resourcePackStack = resourcePackStack;
-	}
-	async init() {
-		let { blocksDotJson, terrainTexture, flipbookTextures, textureAtlasMappings } = await awaitAllEntries({
-			blocksDotJson: this.resourcePackStack.fetchResource("blocks.json").then(res => jsonc(res)),
-			terrainTexture: this.resourcePackStack.fetchResource("textures/terrain_texture.json").then(res => jsonc(res)),
-			flipbookTextures: this.resourcePackStack.fetchResource("textures/flipbook_textures.json").then(res => jsonc(res)),
-			/** @type {Promise<import("./data/textureAtlasMappings.json")>} */
-			textureAtlasMappings: fetch("data/textureAtlasMappings.json").then(res => jsonc(res))
-		})
 		this.blocksDotJson = blocksDotJson;
 		this.terrainTexture = terrainTexture;
 		

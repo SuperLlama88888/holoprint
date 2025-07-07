@@ -371,6 +371,10 @@ export function createStringEnum(keys) {
 	})));
 }
 
+/**
+ * @param {string} hexColor
+ * @returns {Vec3}
+ */
 export function hexColorToClampedTriplet(hexColor) {
 	let [, r, g, b] = hexColor.match(/^#([0-9a-f]{2})([0-9a-f]{2})([0-9a-f]{2})/i);
 	return [r, g, b].map(x => parseInt(x, 16) / 255);
