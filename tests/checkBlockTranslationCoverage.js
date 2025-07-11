@@ -3,13 +3,16 @@ import { testOnSourceCode } from "./headlessBrowserTestRunner.js";
 testOnSourceCode(async page => {
 	await page.evaluate(async () => {
 		const ResourcePackStack = (await import("../ResourcePackStack.js")).default;
+		const VanillaDataFetcher = (await import("../ResourcePackStack.js")).VanillaDataFetcher;
 		const MaterialList = (await import("../MaterialList.js")).default;
 		const HoloPrint = await import("../HoloPrint.js");
+		const jsonc = (await import("../utils.js")).jsonc;
 		
 		let rps = await ResourcePackStack.new();
-		let [blockMetadata, itemMetadata, translationFile] = await Promise.all([
-			rps.fetchData("metadata/vanilladata_modules/mojang-blocks.json").then(res => res.json()),
-			rps.fetchData("metadata/vanilladata_modules/mojang-items.json").then(res => res.json()),
+		let [blockMetadata, itemMetadata, materialListMappings, translationFile] = await Promise.all([
+			VanillaDataFetcher.fetch("metadata/vanilladata_modules/mojang-blocks.json").then(res => res.json()),
+			VanillaDataFetcher.fetch("metadata/vanilladata_modules/mojang-items.json").then(res => res.json()),
+			fetch("../data/materialListMappings.json").then(res => jsonc(res)),
 			rps.fetchResource("texts/en_US.lang").then(res => res.text())
 		]);
 		let blockNames = [];
@@ -24,7 +27,7 @@ testOnSourceCode(async page => {
 			blockNames.push(blockName);
 		});
 		
-		let materialList = await MaterialList.new(blockMetadata, itemMetadata, translationFile);
+		let materialList = await new MaterialList(blockMetadata, itemMetadata, materialListMappings, translationFile);
 		blockNames.forEach(blockName => materialList.add(blockName));
 		console.log(JSON.stringify(materialList.export()));
 	});
