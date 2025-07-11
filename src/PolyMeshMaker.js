@@ -1,7 +1,5 @@
 import { addVec3, JSONMap, min, Vec2Set, Vec3Set, vec3ToFixed } from "./utils.js";
 
-// InternalError is only in Firefox. This function will be run possibly hundreds of thousands of times per pack so it's imperative that this is fast!
-const stringifyVec2 = "InternalError" in window? vec => vec[0] + "," + vec[1] : vec => `${vec[0]},${vec[1]}`;
 const stringifyVec3 = "InternalError" in window? vec => vec[0] + "," + vec[1] + "," + vec[2] : vec => `${vec[0]},${vec[1]},${vec[2]}`;
 
 export default class PolyMeshMaker {

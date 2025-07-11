@@ -709,10 +709,7 @@ export async function clearCacheStorage(cacheStorage) {
  * @returns {Promise<{[K in keyof T]: Awaited<T[K]>}>}
  */
 export async function awaitAllEntries(object) {
-	await Promise.all(Object.entries(object).map(async ([key, promise]) => {
-		object[key] = await promise;
-	}));
-	return object;
+	return Object.fromEntries(await Promise.all(Object.entries(object).map(async ([key, promise]) => [key, await promise])));
 }
 
 /**
@@ -864,10 +861,6 @@ export class Vec3Set {
 		return this.values.length - 1;
 	}
 }
-/**
- * @template T
- * @extends {Set<T>}
- */
 export class JSONSet extends Set {
 	stringify = stringifyJsonBigIntSafe;
 	/** @type {Map<string, number>} */

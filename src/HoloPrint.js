@@ -56,7 +56,7 @@ const HOLOGRAM_LAYER_MODES = createNumericEnum(["SINGLE", "ALL_BELOW"]);
  * @param {(previews: Array<PreviewRenderer>) => void} [previewLoadedCallback] A function that will be called once the preview has finished loading
  * @returns {Promise<File>} Resource pack (`*.mcpack`)
  */
-export async function makePack(structureFiles, config = {}, resourcePackStack, previewCont, previewLoadedCallback) {
+export async function makePack(structureFiles, config, resourcePackStack, previewCont, previewLoadedCallback) {
 	console.info(`Running HoloPrint ${VERSION}`);
 	if(!resourcePackStack) {
 		console.debug("Waiting for resource pack stack initialisation...");
@@ -65,7 +65,7 @@ export async function makePack(structureFiles, config = {}, resourcePackStack, p
 	}
 	let startTime = performance.now();
 	
-	config = addDefaultConfig(config);
+	config = addDefaultConfig(config ?? {});
 	if(!Array.isArray(structureFiles)) {
 		structureFiles = [structureFiles];
 	}
@@ -1218,9 +1218,9 @@ async function translateControlItems(config, blockMetadata, itemMetadata, materi
 		let translatedControlItems = {};
 		/** @type {Record<String, Set<String>>} */
 		let controlItemTranslationKeys = {};
+		controlsMaterialList.setLanguage(resourceLangFiles[language]);
 		Object.entries(config.CONTROLS).forEach(([control, itemCriteria]) => {
 			controlsMaterialList.clear();
-			controlsMaterialList.setLanguage(resourceLangFiles[language]);
 			itemCriteria["names"].forEach(itemName => controlsMaterialList.addItem(itemName));
 			
 			let itemInfo = controlsMaterialList.export();
