@@ -189,8 +189,6 @@ export default class PreviewRenderer extends AsyncFactory {
 		
 		this.#addLighting();
 		await this.#initBackground();
-		this.#loop();
-		this.#loadingMessage.replaceWith(this.#can);
 		
 		if(this.options.showFps) {
 			this.cont.appendChild(this.#stats.dom);
@@ -208,8 +206,8 @@ export default class PreviewRenderer extends AsyncFactory {
 				}
 			}), "preview.options.shadowsEnabled");
 			shadowOption = this.#guiLocName(this.#optionsGui.add(this.options, "directionalLightShadowMapResolution", 1, 5, 1).onChange(() => this.#updateDirectionalLightShadowMapSize()), "preview.options.shadowQuality");
-			this.#guiLocName(this.#optionsGui.add(this.options, "directionalLightAngle", 0, 360, 1), "preview.options.lightAngle");
-			this.#guiLocName(this.#optionsGui.add(this.options, "directionalLightHeight", 0.1, 2, 0.01), "preview.options.lightHeight");
+			this.#guiLocName(this.#optionsGui.add(this.options, "directionalLightAngle", 0, 360, 1).onChange(() => this.#setDirectionalLightPos()), "preview.options.lightAngle");
+			this.#guiLocName(this.#optionsGui.add(this.options, "directionalLightHeight", 0.1, 2, 0.01).onChange(() => this.#setDirectionalLightPos()), "preview.options.lightHeight");
 			this.#guiLocName(this.#optionsGui.add(this.options, "showSkybox").onChange(() => this.#initBackground()), "preview.options.showSkybox");
 			this.#guiLocName(this.#optionsGui.add(this.options, "highResolution").onChange(() => this.#setSize()), "preview.options.highRes");
 			this.#guiLocName(this.#optionsGui.add(this, "downloadScreenshot"), "preview.options.takeScreenshot");
@@ -263,6 +261,9 @@ export default class PreviewRenderer extends AsyncFactory {
 			this.#scene.add(instancedMesh);
 			this.#shouldRenderNextFrame = true;
 		}
+		
+		this.#loop();
+		this.#loadingMessage.replaceWith(this.#can);
 	}
 	/** Downloads a screenshot of the preview. */
 	downloadScreenshot() {
@@ -286,7 +287,6 @@ export default class PreviewRenderer extends AsyncFactory {
 	#render() {
 		this.#stats?.begin();
 		
-		this.#setDirectionalLightPos();
 		this.#updatePointLights();
 		// console.log(this.#renderer.capabilities.maxVertexUniforms, this.#renderer.capabilities.maxFragmentUniforms);
 		this.#renderer.render(this.#scene, this.#camera);
@@ -314,6 +314,7 @@ export default class PreviewRenderer extends AsyncFactory {
 		let lightSin = sinDeg(this.options.directionalLightAngle);
 		let lightCos = cosDeg(this.options.directionalLightAngle);
 		this.#directionalLight.position.set(this.#center.x + this.#maxDimPixels * lightSin, this.#center.y + this.#maxDimPixels * this.options.directionalLightHeight, this.#center.z + this.#maxDimPixels * lightCos);
+		this.#directionalLight.shadow.needsUpdate = true;
 	}
 	/** Initialises and positions the camera and orbit controls. */
 	#setupCameraAndControls() {
@@ -355,6 +356,8 @@ export default class PreviewRenderer extends AsyncFactory {
 		this.#directionalLight.shadow.normalBias = 0.1;
 		this.#scene.add(this.#directionalLight);
 		this.#scene.add(this.#directionalLight.target);
+		this.#directionalLight.shadow.autoUpdate = false;
+		this.#setDirectionalLightPos();
 		this.#updateDirectionalLightShadowMapSize();
 		this.#debugHelpers.push(new THREE.CameraHelper(this.#directionalLight.shadow.camera));
 		
@@ -410,6 +413,7 @@ export default class PreviewRenderer extends AsyncFactory {
 		let shadowMapSize = (this.#maxDim < 24? 1024 : this.#maxDim < 45? 2048 : 4096) * optionsFactor;
 		this.#directionalLight.shadow.mapSize.set(shadowMapSize, shadowMapSize)
 		this.#directionalLight.shadow.map?.setSize(shadowMapSize, shadowMapSize);
+		this.#directionalLight.shadow.needsUpdate = true;
 	}
 	#initPointLights() {
 		let palettePointLights = this.blockPalette.map(block => PreviewRenderer.#POINT_LIGHTS[block["name"]] ?? Object.entries(PreviewRenderer.#POINT_LIGHTS).find(([stringifiedBlock]) => this.#checkBlockNameAndStates(stringifiedBlock, block))?.[1]);
