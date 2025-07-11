@@ -29,10 +29,10 @@ export default class BlockGeoMaker {
 	
 	/**
 	 * @param {HoloPrintConfig} config
-	 * @param {import("./data/blockShapes.json")} blockShapes
-	 * @param {import("./data/blockShapeGeos.json")} blockShapeGeos
-	 * @param {import("./data/blockStateDefinitions.json")} blockStateDefs
-	 * @param {import("./data/blockEigenvariants.json")} eigenvariants
+	 * @param {Data.BlockShapes} blockShapes
+	 * @param {Data.BlockShapeGeos} blockShapeGeos
+	 * @param {Data.BlockStateDefinitions} blockStateDefs
+	 * @param {Data.BlockEigenvariants} eigenvariants
 	 */
 	constructor(config, blockShapes, blockShapeGeos, blockStateDefs, eigenvariants) {
 		this.config = config;
@@ -1078,3 +1078,4 @@ export default class BlockGeoMaker {
 
 /** @import { Vec3, Block, HoloPrintConfig, PolyMeshTemplateFaceWithUvs, PolyMeshTemplateFace, Rectangle, PolyMeshTemplateVertex } from "./HoloPrint.js"  */
 /** @import TextureAtlas from "./TextureAtlas.js" */
+/** @import * as Data from "./data/schemas" */

@@ -26,7 +26,7 @@ export default class MaterialList {
 	 * Creates a material list manager to count a list of items.
 	 * @param {object} blockMetadata `Mojang/bedrock-samples/metadata/vanilladata_modules/mojang-blocks.json`
 	 * @param {object} itemMetadata `Mojang/bedrock-samples/metadata/vanilladata_modules/mojang-items.json`
-	 * @param {import("./data/materialListMappings.json")} materialListMappings
+	 * @param {Data.MaterialListMappings} materialListMappings
 	 * @param {string} [translations] The text contents of a `.lang` file
 	 */
 	constructor(blockMetadata, itemMetadata, materialListMappings, translations) {
@@ -256,3 +256,4 @@ export default class MaterialList {
 }
 
 /** @import { MaterialListEntry, Block } from "./HoloPrint.js" */
+/** @import * as Data from "./data/schemas" */

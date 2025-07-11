@@ -42,7 +42,7 @@ export default class TextureAtlas {
 	 * @param {object} blocksDotJson
 	 * @param {object} terrainTexture
 	 * @param {object} flipbookTextures
-	 * @param {import("./data/textureAtlasMappings.json")} textureAtlasMappings
+	 * @param {Data.TextureAtlasMappings} textureAtlasMappings
 	 */
 	constructor(config, resourcePackStack, blocksDotJson, terrainTexture, flipbookTextures, textureAtlasMappings) {
 		this.config = config;
@@ -594,3 +594,4 @@ export default class TextureAtlas {
 }
 
 /** @import { TextureReference, TextureFragment, ImageFragment, HoloPrintConfig, Vec3, Vec2, Rectangle } from "./HoloPrint.js" */
+/** @import * as Data from "./data/schemas" */

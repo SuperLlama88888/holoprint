@@ -1200,7 +1200,7 @@ function addMaterialListUI(finalisedMaterialList, hudScreenUI, blockMetadata) {
  * @param {HoloPrintConfig} config
  * @param {Record<string, any>} blockMetadata
  * @param {Record<string, any>} itemMetadata
- * @param {object} materialListMappings
+ * @param {Data.MaterialListMappings} materialListMappings
  * @param {Array<string>} languagesDotJson
  * @param {Record<string, string>} resourceLangFiles
  * @param {Record<string, Array<string>>} itemTags
@@ -1314,7 +1314,7 @@ async function makeLangFiles(config, languagesDotJson, packName, materialList, e
 /**
  * Retextures the control items. Modifies `itemTexture` and `terrainTexture`.
  * @param {HoloPrintConfig} config
- * @param {Record<string, string>} itemIcons `data/itemIcons.json`
+ * @param {Data.ItemIcons} itemIcons
  * @param {Record<string, Array<string>>} itemTags
  * @param {object} resourceItemTexture `RP/textures/item_texture.json`
  * @param {object} blocksDotJson
@@ -1710,6 +1710,7 @@ function functionToMolang(func, vars = {}) {
 	return variabledCode;
 }
 
+/** @import * as Data from "./data/schemas" */
 /** @import { ZipWriterAddDataOptions } from "@zip.js/zip.js" */
 /**
  * @typedef {object} HoloPrintConfig An object for storing HoloPrint config options.
