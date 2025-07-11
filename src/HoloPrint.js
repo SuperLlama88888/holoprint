@@ -735,7 +735,7 @@ async function loadStuff(stuff, resourcePackStack) {
 	Object.assign(filePromises, stuff.otherFiles ?? {});
 	let dataPromises = {};
 	Object.entries(stuff.data ?? {}).forEach(([name, path]) => {
-		dataPromises[name] = path && getResponseContents(resourcePackStack.fetchData(path), path);
+		dataPromises[name] = path && getResponseContents(VanillaDataFetcher.fetch(path), path);
 	});
 	return await awaitAllEntries({
 		files: awaitAllEntries(filePromises),

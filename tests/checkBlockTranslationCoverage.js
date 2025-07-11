@@ -27,7 +27,7 @@ testOnSourceCode(async page => {
 			blockNames.push(blockName);
 		});
 		
-		let materialList = await new MaterialList(blockMetadata, itemMetadata, materialListMappings, translationFile);
+		let materialList = new MaterialList(blockMetadata, itemMetadata, materialListMappings, translationFile);
 		blockNames.forEach(blockName => materialList.add(blockName));
 		console.log(JSON.stringify(materialList.export()));
 	});
