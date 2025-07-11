@@ -7,7 +7,6 @@ export default class TextureAtlas {
 	#blocksDotJsonPatches;
 	#blocksToUseCarriedTextures;
 	#transparentBlocks;
-	#terrainTexturePatches;
 	#terrainTextureTints;
 	
 	blocksDotJson;
@@ -54,7 +53,6 @@ export default class TextureAtlas {
 		this.#blocksDotJsonPatches = textureAtlasMappings["blocks_dot_json_patches"];
 		this.#blocksToUseCarriedTextures = textureAtlasMappings["blocks_to_use_carried_textures"];
 		this.#transparentBlocks = textureAtlasMappings["transparent_blocks"];
-		this.#terrainTexturePatches = textureAtlasMappings["terrain_texture_patches"];
 		this.#terrainTextureTints = textureAtlasMappings["terrain_texture_tints"];
 		
 		textureAtlasMappings["missing_flipbook_textures"].forEach(terrainTextureKey => {
@@ -230,12 +228,6 @@ export default class TextureAtlas {
 	 * @returns {{ texturePath: string, tint?: string }}
 	 */
 	#getTexturePathAndTint(terrainTextureKey, variant) {
-		if(terrainTextureKey in this.#terrainTexturePatches) {
-			// These are the hard-coded terrain texture patches if we want to make a terrain texture key lead to a texture path instead of what it would regularly lead to
-			let texturePath = this.#terrainTexturePatches[terrainTextureKey];
-			console.debug(`Terrain texture key ${terrainTextureKey} remapped to texture path ${texturePath}`);
-			return texturePath;
-		}
 		let texturePath = this.terrainTexture["texture_data"][terrainTextureKey]?.["textures"];
 		if(!texturePath) {
 			console.warn(`No terrain_texture.json entry for key ${terrainTextureKey}`);
