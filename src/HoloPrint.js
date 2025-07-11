@@ -8,7 +8,7 @@ import PreviewRenderer from "./PreviewRenderer.js";
 
 import * as entityScripts from "./entityScripts.molang.js";
 import { addPaddingToImage, awaitAllEntries, CachingFetcher, concatenateFiles, createNumericEnum, desparseArray, floor, getFileExtension, hexColorToClampedTriplet, jsonc, JSONMap, JSONSet, lcm, loadTranslationLanguage, max, min, onEvent, overlaySquareImages, pi, removeFalsies, removeFileExtension, resizeImageToBlob, round, setImageOpacity, sha256, toBlob, toImage, translate, UserError } from "./utils.js";
-import ResourcePackStack from "./ResourcePackStack.js";
+import ResourcePackStack, { VanillaDataFetcher } from "./ResourcePackStack.js";
 import BlockUpdater from "./BlockUpdater.js";
 import SpawnAnimationMaker from "./SpawnAnimationMaker.js";
 import PolyMeshMaker from "./PolyMeshMaker.js";
@@ -98,10 +98,19 @@ export async function makePack(structureFiles, config = {}, resourcePackStack, p
 		},
 		resources: {
 			entityFile: "entity/armor_stand.entity.json",
+			blocksDotJson: "blocks.json",
+			vanillaTerrainTexture: "textures/terrain_texture.json",
+			flipbookTextures: "textures/flipbook_textures.json",
 			defaultPlayerRenderControllers: config.PLAYER_CONTROLS_ENABLED? "render_controllers/player.render_controllers.json" : undefined,
 			resourceItemTexture: config.RETEXTURE_CONTROL_ITEMS? "textures/item_texture.json" : undefined
 		},
 		otherFiles: {
+			textureAtlasMappings: fetch("data/textureAtlasMappings.json").then(res => jsonc(res)),
+			blockShapes: fetch("data/blockShapes.json").then(res => jsonc(res)),
+			blockShapeGeos: fetch("data/blockShapeGeos.json").then(res => jsonc(res)),
+			blockStateDefs: fetch("data/blockStateDefinitions.json").then(res => jsonc(res)),
+			eigenvariants: fetch("data/blockEigenvariants.json").then(res => jsonc(res)),
+			materialListMappings: fetch("data/materialListMappings.json").then(res => jsonc(res)),
 			packIcon: config.PACK_ICON_BLOB ?? makePackIcon(concatenateFiles(structureFiles)),
 			itemIcons: config.RETEXTURE_CONTROL_ITEMS? fetch("data/itemIcons.json").then(res => jsonc(res)) : undefined
 		},
@@ -110,7 +119,7 @@ export async function makePack(structureFiles, config = {}, resourcePackStack, p
 			itemMetadata: "metadata/vanilladata_modules/mojang-items.json"
 		}
 	}, resourcePackStack);
-	let { manifest, packIcon, entityFile, hologramRenderControllers, defaultPlayerRenderControllers, hologramGeo, hologramMaterial, hologramAnimationControllers, hologramAnimations, boundingBoxOutlineParticle, blockValidationParticle, savingBackupParticle, singleWhitePixelTexture, exclamationMarkTexture, saveIconTexture, itemTexture, hudScreenUI, customEmojiFont, languagesDotJson, resourceItemTexture, terrainTexture, itemIcons } = loadedStuff.files;
+	let { manifest, packIcon, entityFile, hologramRenderControllers, defaultPlayerRenderControllers, hologramGeo, hologramMaterial, hologramAnimationControllers, hologramAnimations, boundingBoxOutlineParticle, blockValidationParticle, savingBackupParticle, singleWhitePixelTexture, exclamationMarkTexture, saveIconTexture, itemTexture, hudScreenUI, customEmojiFont, languagesDotJson, resourceItemTexture, terrainTexture, itemIcons, blocksDotJson, vanillaTerrainTexture, flipbookTextures, textureAtlasMappings, blockShapes, blockShapeGeos, blockStateDefs, eigenvariants, materialListMappings } = loadedStuff.files;
 	let { blockMetadata, itemMetadata } = loadedStuff.data;
 	let resourceLangFiles = (await loadStuff({
 		resources: Object.fromEntries(languagesDotJson.map(language => [language, `texts/${language}.lang`])) // load the language file resources for each language
@@ -128,14 +137,14 @@ export async function makePack(structureFiles, config = {}, resourcePackStack, p
 	window.blockPalette = blockPalette;
 	window.blockIndices = allStructureIndicesByLayer;
 	
-	let blockGeoMaker = await BlockGeoMaker.new(config);
+	let blockGeoMaker = new BlockGeoMaker(config, blockShapes, blockShapeGeos, blockStateDefs, eigenvariants);
 	// makePolyMeshTemplates() is an impure function and adds texture references to the textureRefs set property.
 	let unresolvedPolyMeshTemplatePalette = blockGeoMaker.makePolyMeshTemplates(blockPalette);
 	console.info("Finished making block geometry templates!");
 	console.log("Block geo maker:", blockGeoMaker);
 	console.log("Poly mesh template palette:", structuredClone(unresolvedPolyMeshTemplatePalette));
 	
-	let textureAtlas = await TextureAtlas.new(config, resourcePackStack);
+	let textureAtlas = new TextureAtlas(config, resourcePackStack, blocksDotJson, vanillaTerrainTexture, flipbookTextures, textureAtlasMappings);
 	let textureRefs = Array.from(blockGeoMaker.textureRefs);
 	await textureAtlas.makeAtlas(textureRefs); // each texture reference will get added to the textureUvs array property
 	let textureBlobs = textureAtlas.imageBlobs;
@@ -165,7 +174,7 @@ export async function makePack(structureFiles, config = {}, resourcePackStack, p
 	let layerIsEmpty = (new Array(maxHeight)).fill(true);
 	
 	let polyMeshMaker = new PolyMeshMaker(polyMeshTemplatePalette);
-	let materialList = await MaterialList.new(blockMetadata, itemMetadata);
+	let materialList = new MaterialList(blockMetadata, itemMetadata, materialListMappings);
 	allStructureIndicesByLayer.forEach((structureIndicesByLayer, structureI) => {
 		let structureSize = structureSizes[structureI];
 		let geoShortName = `hologram_${structureI}`;
@@ -374,14 +383,14 @@ export async function makePack(structureFiles, config = {}, resourcePackStack, p
 	let pmmpBedrockDataFetcher = config.RENAME_CONTROL_ITEMS || config.RETEXTURE_CONTROL_ITEMS? await createPmmpBedrockDataFetcher() : undefined;
 	let itemTags = config.RENAME_CONTROL_ITEMS || config.RETEXTURE_CONTROL_ITEMS? await pmmpBedrockDataFetcher.fetch("item_tags.json").then(res => res.json()) : undefined;
 	let controlsHaveBeenCustomised = JSON.stringify(config.CONTROLS) != JSON.stringify(DEFAULT_PLAYER_CONTROLS);
-	let { inGameControls, controlItemTranslations } = controlsHaveBeenCustomised || config.RENAME_CONTROL_ITEMS? await translateControlItems(config, blockMetadata, itemMetadata, languagesDotJson, resourceLangFiles, itemTags) : {};
+	let { inGameControls, controlItemTranslations } = controlsHaveBeenCustomised || config.RENAME_CONTROL_ITEMS? await translateControlItems(config, blockMetadata, itemMetadata, materialListMappings, languagesDotJson, resourceLangFiles, itemTags) : {};
 	
 	let langFiles = await makeLangFiles(config, languagesDotJson, packName, materialList, exportedMaterialLists, controlsHaveBeenCustomised, inGameControls, controlItemTranslations);
 	
 	let controlItemTextures = [];
 	let hasModifiedTerrainTexture = false;
 	if(config.RETEXTURE_CONTROL_ITEMS) {
-		({ controlItemTextures, hasModifiedTerrainTexture } = await retextureControlItems(config, itemIcons, itemTags, resourceItemTexture, textureAtlas, pmmpBedrockDataFetcher, resourcePackStack, itemTexture, terrainTexture));
+		({ controlItemTextures, hasModifiedTerrainTexture } = await retextureControlItems(config, itemIcons, itemTags, resourceItemTexture, blocksDotJson, vanillaTerrainTexture, pmmpBedrockDataFetcher, resourcePackStack, itemTexture, terrainTexture));
 	}
 	
 	console.info("Finished making all pack files!");
@@ -402,7 +411,7 @@ export async function makePack(structureFiles, config = {}, resourcePackStack, p
 	if(config.PLAYER_CONTROLS_ENABLED) {
 		packFiles.push(["render_controllers/player.render_controllers.json", JSON.stringify(playerRenderControllers)]);
 	}
-	packFiles.push(["models/entity/armor_stand.hologram.geo.json", stringifyWithFixedDecimals(hologramGeo)]);
+	packFiles.push(["models/entity/armor_stand.hologram.geo.json", JSON.stringify(hologramGeo)]);
 	packFiles.push(["materials/entity.material", JSON.stringify(hologramMaterial)]);
 	packFiles.push(["animation_controllers/armor_stand.hologram.animation_controllers.json", JSON.stringify(hologramAnimationControllers)]);
 	packFiles.push(["particles/bounding_box_outline.json", JSON.stringify(boundingBoxOutlineParticle)]);
@@ -726,7 +735,7 @@ async function loadStuff(stuff, resourcePackStack) {
 	Object.assign(filePromises, stuff.otherFiles ?? {});
 	let dataPromises = {};
 	Object.entries(stuff.data ?? {}).forEach(([name, path]) => {
-		dataPromises[name] = path && getResponseContents(resourcePackStack.fetchData(path), path);
+		dataPromises[name] = path && getResponseContents(VanillaDataFetcher.fetch(path), path);
 	});
 	return await awaitAllEntries({
 		files: awaitAllEntries(filePromises),
@@ -1191,14 +1200,15 @@ function addMaterialListUI(finalisedMaterialList, hudScreenUI, blockMetadata) {
  * @param {HoloPrintConfig} config
  * @param {Record<string, any>} blockMetadata
  * @param {Record<string, any>} itemMetadata
+ * @param {Data.MaterialListMappings} materialListMappings
  * @param {Array<string>} languagesDotJson
  * @param {Record<string, string>} resourceLangFiles
  * @param {Record<string, Array<string>>} itemTags
  * @returns {Promise<{ inGameControls: Record<string, string>, controlItemTranslations: Record<string, string> }>}
  */
-async function translateControlItems(config, blockMetadata, itemMetadata, languagesDotJson, resourceLangFiles, itemTags) {
+async function translateControlItems(config, blockMetadata, itemMetadata, materialListMappings, languagesDotJson, resourceLangFiles, itemTags) {
 	// make a fake material list for the in-game control items (just to translate them lol)
-	let controlsMaterialList = await MaterialList.new(blockMetadata, itemMetadata);
+	let controlsMaterialList = new MaterialList(blockMetadata, itemMetadata, materialListMappings);
 	let inGameControls = {};
 	let controlItemTranslations = {};
 	await Promise.all(languagesDotJson.map(language => loadTranslationLanguage(language)));
@@ -1304,17 +1314,18 @@ async function makeLangFiles(config, languagesDotJson, packName, materialList, e
 /**
  * Retextures the control items. Modifies `itemTexture` and `terrainTexture`.
  * @param {HoloPrintConfig} config
- * @param {Record<string, string>} itemIcons `data/itemIcons.json`
+ * @param {Data.ItemIcons} itemIcons
  * @param {Record<string, Array<string>>} itemTags
  * @param {object} resourceItemTexture `RP/textures/item_texture.json`
- * @param {TextureAtlas} textureAtlas
+ * @param {object} blocksDotJson
+ * @param {object} vanillaTerrainTexture
  * @param {CachingFetcher} pmmpBedrockDataFetcher
  * @param {ResourcePackStack} resourcePackStack
  * @param {object} itemTexture
  * @param {object} terrainTexture
  * @returns {Promise<{ controlItemTextures: Array<[string, Blob]>, hasModifiedTerrainTexture: boolean }>}
  */
-async function retextureControlItems(config, itemIcons, itemTags, resourceItemTexture, textureAtlas, pmmpBedrockDataFetcher, resourcePackStack, itemTexture, terrainTexture) {
+async function retextureControlItems(config, itemIcons, itemTags, resourceItemTexture, blocksDotJson, vanillaTerrainTexture, pmmpBedrockDataFetcher, resourcePackStack, itemTexture, terrainTexture) {
 	let controlItemTextures = [];
 	let hasModifiedTerrainTexture = false;
 	let legacyItemMappings;
@@ -1352,12 +1363,12 @@ async function retextureControlItems(config, itemIcons, itemTags, resourceItemTe
 						variant = 0;
 					}
 				}
-			} else if(itemName in textureAtlas.blocksDotJson) {
-				if(typeof textureAtlas.blocksDotJson[itemName]["carried_textures"] == "string" && textureAtlas.terrainTexture["texture_data"][textureAtlas.blocksDotJson[itemName]["carried_textures"]]["textures"].startsWith?.("textures/items/")) {
+			} else if(itemName in blocksDotJson) {
+				if(typeof blocksDotJson[itemName]["carried_textures"] == "string" && vanillaTerrainTexture["texture_data"][blocksDotJson[itemName]["carried_textures"]]["textures"].startsWith?.("textures/items/")) {
 					hasModifiedTerrainTexture = true;
 					usingTerrainAtlas = true;
-					originalTexturePath = textureAtlas.terrainTexture["texture_data"][textureAtlas.blocksDotJson[itemName]["carried_textures"]]["textures"];
-					itemName = textureAtlas.blocksDotJson[itemName]["carried_textures"];
+					originalTexturePath = vanillaTerrainTexture["texture_data"][blocksDotJson[itemName]["carried_textures"]]["textures"];
+					itemName = blocksDotJson[itemName]["carried_textures"];
 				} else {
 					console.warn(`Cannot retexture control item "${itemName}" because it is a block, and retexturing block items is currently unsupported.`);
 					return;
@@ -1698,25 +1709,8 @@ function functionToMolang(func, vars = {}) {
 	let variabledCode = substituteInVariables(conditionedCode, vars);
 	return variabledCode;
 }
-/**
- * JSON.stringify(), but shortens numbers to at most 4 decimal places to avoid JS floating-point errors making stringified numbers long.
- * @param {any} value
- * @returns {string}
- */
-function stringifyWithFixedDecimals(value) {
-	const NUMBER_OF_DECIMALS = 4;
-	return JSON.stringify(value, (key, x) => {
-		if(typeof x == "number") {
-			// let oldNumber = x;
-			x = Number(x.toFixed(NUMBER_OF_DECIMALS));
-			// if(abs(x - oldNumber) > 10 ** (-NUMBER_OF_DECIMALS - 1)) {
-			// 	console.debug(`Turned long number ${oldNumber} into ${x} when stringifying JSON`);
-			// }
-		}
-		return x;
-	});
-}
 
+/** @import * as Data from "./data/schemas" */
 /** @import { ZipWriterAddDataOptions } from "@zip.js/zip.js" */
 /**
  * @typedef {object} HoloPrintConfig An object for storing HoloPrint config options.
@@ -1837,8 +1831,8 @@ function stringifyWithFixedDecimals(value) {
  * @property {Vec2} uv_size
  */
 /**
- * @typedef {object} ImageFragment An image fragment containing an image, UV position, and UV size.
- * @property {HTMLImageElement} image
+ * @typedef {object} ImageFragment An image fragment containing image data, UV position, and UV size.
+ * @property {ImageData} imageData
  * @property {number} w Width
  * @property {number} h Height
  * @property {number} sourceX

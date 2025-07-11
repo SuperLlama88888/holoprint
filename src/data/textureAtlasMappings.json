@@ -26,9 +26,6 @@
 		"slime": 0.8,
 		"respawn_anchor": 2 // the nether portal in the top of respawn anchors is slightly transparent in the texture for some reason; this just makes it fully opaque
 	},
-	"terrain_texture_patches": {
-		"grass_carried": "textures/blocks/grass_side_carried"
-	},
 	"terrain_texture_tints": {
 		"colors": {
 			"foliage": "#79C05A",

@@ -2,12 +2,12 @@
 // READ: this also looks pretty comprehensive: https://github.com/MCBE-Development-Wiki/mcbe-dev-home/blob/main/docs/misc/enums/block_shape.md
 // https://github.com/bricktea/MCStructure/blob/main/docs/1.16.201/enums/B.md
 
-import { addVec3, AsyncFactory, awaitAllEntries, crossProduct, hexColorToClampedTriplet, jsonc, JSONSet, max, mulVec3, normalizeVec3, rotateDeg, vec3ToFixed, subVec3, conditionallyGroup, mulMat4 } from "./utils.js";
+import { addVec3, crossProduct, hexColorToClampedTriplet, JSONSet, max, mulVec3, normalizeVec3, rotateDeg, vec3ToFixed, subVec3, conditionallyGroup, mulMat4 } from "./utils.js";
 
 // https://wiki.bedrock.dev/visuals/material-creations.html#overlay-color-in-render-controllers
 // https://wiki.bedrock.dev/documentation/materials.html#entity-alphatest
 
-export default class BlockGeoMaker extends AsyncFactory {
+export default class BlockGeoMaker {
 	config;
 	textureRefs = new JSONSet();
 	
@@ -27,18 +27,16 @@ export default class BlockGeoMaker extends AsyncFactory {
 	
 	#cachedBlockShapes = new Map();
 	
-	/** @param {HoloPrintConfig} config */
-	constructor(config) {
-		super();
+	/**
+	 * @param {HoloPrintConfig} config
+	 * @param {Data.BlockShapes} blockShapes
+	 * @param {Data.BlockShapeGeos} blockShapeGeos
+	 * @param {Data.BlockStateDefinitions} blockStateDefs
+	 * @param {Data.BlockEigenvariants} eigenvariants
+	 */
+	constructor(config, blockShapes, blockShapeGeos, blockStateDefs, eigenvariants) {
 		this.config = config;
-	}
-	async init() {
-		let { blockShapes, blockShapeGeos, blockStateDefs, eigenvariants } = await awaitAllEntries({
-			blockShapes: fetch("data/blockShapes.json").then(res => jsonc(res)),
-			blockShapeGeos: fetch("data/blockShapeGeos.json").then(res => jsonc(res)),
-			blockStateDefs: fetch("data/blockStateDefinitions.json").then(res => jsonc(res)),
-			eigenvariants: fetch("data/blockEigenvariants.json").then(res => jsonc(res)),
-		});
+		
 		this.#individualBlockShapes = blockShapes["individual_blocks"];
 		this.#blockShapePatterns = Object.entries(blockShapes["patterns"]).map(([rule, blockShape]) => [new RegExp(rule), blockShape]); // store regular expressions from the start to avoid recompiling them every time
 		this.#blockShapeGeos = blockShapeGeos;
@@ -1048,7 +1046,7 @@ export default class BlockGeoMaker extends AsyncFactory {
 				"transparency": imageUv["transparency"],
 				"vertices": vertices.map(vertex => ({
 					"pos": vertex["pos"],
-					"uv": [(imageUv["uv"][0] + imageUv["uv_size"][0] * (vertex["corner"] & 1)) / textureAtlas.textureWidth, 1 - (imageUv["uv"][1] + imageUv["uv_size"][1] * (vertex["corner"] >> 1)) / textureAtlas.textureHeight]
+					"uv": [+((imageUv["uv"][0] + imageUv["uv_size"][0] * (vertex["corner"] & 1)) / textureAtlas.textureWidth).toFixed(4), +(1 - (imageUv["uv"][1] + imageUv["uv_size"][1] * (vertex["corner"] >> 1)) / textureAtlas.textureHeight).toFixed(4)]
 				}))
 			};
 		});
@@ -1080,3 +1078,4 @@ export default class BlockGeoMaker extends AsyncFactory {
 
 /** @import { Vec3, Block, HoloPrintConfig, PolyMeshTemplateFaceWithUvs, PolyMeshTemplateFace, Rectangle, PolyMeshTemplateVertex } from "./HoloPrint.js"  */
 /** @import TextureAtlas from "./TextureAtlas.js" */
+/** @import * as Data from "./data/schemas" */
