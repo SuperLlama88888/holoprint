@@ -561,7 +561,7 @@ async function makePack(structureFiles, localResourcePacks) {
 		INITIAL_OFFSET: [+formData.get("initialOffsetX"), +formData.get("initialOffsetY"), +formData.get("initialOffsetZ")],
 		BACKUP_SLOT_COUNT: +formData.get("backupSlotCount"),
 		PACK_NAME: formData.get("packName").toString() || undefined,
-		PACK_ICON_BLOB: packIconEntry instanceof File? packIconEntry : undefined,
+		PACK_ICON_BLOB: packIconEntry instanceof File && packIconEntry.size? packIconEntry : undefined,
 		AUTHORS: authors,
 		DESCRIPTION: formData.get("description").toString() || undefined,
 		COMPRESSION_LEVEL: +formData.get("compressionLevel")
