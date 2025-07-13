@@ -192,7 +192,6 @@ export default class BlockGeoMaker {
 				copiedCubes.forEach(copiedCube => {
 					if("translate" in cube) {
 						copiedCube["translate"] = addVec3(copiedCube["translate"] ?? [0, 0, 0], cube["translate"]);
-						copiedCube["translate"] = (copiedCube["translate"] ?? [0, 0, 0]).map((x, i) => x + cube["translate"][i]);
 					}
 					fieldsToCopy.forEach(field => { // copy all fields from this cube onto the new ones
 						if(field == "flip_textures_horizontally" || field == "flip_textures_vertically") { // these ones are arrays but are supposed to represent sets, so we take the XOR/symmetric difference (ik there's a native method but it's very new)
