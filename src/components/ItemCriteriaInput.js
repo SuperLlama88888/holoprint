@@ -203,6 +203,8 @@ export default class ItemCriteriaInput extends HTMLElement {
 			orSpan.innerText = " or ";
 			this.#criteriaInputsCont.appendChild(orSpan);
 		}
+		/** @type {HTMLInputElement} */
+		// @ts-ignore
 		let newInput = htmlCodeToElement(`<input type="text" required pattern="^\\s*(\\w+:)?\\w+\\s*$" spellcheck="false" autocapitalize="off" ${attributesByType[type]}/>`);
 		newInput[onEvent]("keydown", this.#inputKeyDownEvent);
 		if(initialValue != undefined) {

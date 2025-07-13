@@ -143,6 +143,7 @@ export default class PreviewRenderer extends AsyncFactory {
 		}
 		if(this.options.showOptions) {
 			/** @type {LilGui} */
+			// @ts-ignore
 			let guiEl = document.createElement("lil-gui");
 			this.cont.appendChild(guiEl);
 			this.#optionsGui = guiEl.gui;
@@ -248,7 +249,7 @@ export default class PreviewRenderer extends AsyncFactory {
 			if(!polyMeshTemplate.length) { // a template is an array of faces. no faces = nothing to be rendered for this block
 				continue;
 			}
-			let geo = this.#polyMeshTemplateToBufferGeo(i);
+			let geo = this.#polyMeshTemplateToBufferGeo(+i);
 			let positions = this.#blockPositions[i].map(([x, y, z]) => [-16 * x - 16, 16 * y, -16 * z - 16]);
 			let isTranslucent = this.#isPolyMeshTemplateTranslucent(polyMeshTemplate);
 			let material = isTranslucent? transparentMat : regularMat;
@@ -306,7 +307,7 @@ export default class PreviewRenderer extends AsyncFactory {
 	}
 	/** Sets the canvas size, scaling up if the high resolution option is enabled. */
 	#setSize() {
-		let size = this.#canvasSize * (this.options.highResolution + 1);
+		let size = this.#canvasSize * (this.options.highResolution? 2 : 1);
 		this.#renderer.setSize(size, size, false);
 	}
 	/** Sets the directional light position. */
@@ -566,7 +567,9 @@ export default class PreviewRenderer extends AsyncFactory {
 			let uvCoords = face["vertices"].map(v => v["uv"]);
 			let xs = uvCoords.map(([x]) => round(x * this.#imageBlobData.width));
 			let ys = uvCoords.map(([, y]) => round((1 - y) * this.#imageBlobData.height));
+			/** @type {Vec2} */
 			let minUvCoords = [min(...xs), min(...ys)];
+			/** @type {Vec2} */
 			let maxUvCoords = [max(...xs), max(...ys)];
 			let unscaledUvSize = subVec2(maxUvCoords, minUvCoords);
 			let uv = [minUvCoords[0], minUvCoords[1]];
@@ -607,7 +610,7 @@ export default class PreviewRenderer extends AsyncFactory {
 	}
 }
 
-/** @import { I32Vec3, Vec3, Block, PreviewPointLight, PolyMeshTemplateFaceWithUvs} from "./HoloPrint.js" */
+/** @import { Vec2, I32Vec3, Vec3, Block, PreviewPointLight, PolyMeshTemplateFaceWithUvs} from "./HoloPrint.js" */
 /** @import TextureAtlas from "./TextureAtlas.js" */
 /** @import LilGui from "./components/LilGui.js" */
 /** @import { Controller } from "lil-gui" */

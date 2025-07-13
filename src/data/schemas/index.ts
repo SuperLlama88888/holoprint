@@ -61,7 +61,7 @@ export interface BlockShapeGeos {
 		disable_merging?: boolean;
 	}[];
 }
-type CardinalDirection = "west" | "east" | "down" | "up" | "north" | "south";
+export type CardinalDirection = "west" | "east" | "down" | "up" | "north" | "south";
 type Face = CardinalDirection | "side" | "*";
 type TextureFace = `${"" | "carried."}${CardinalDirection | "side"}` | "carried" | "#tex" | "none" | `textures/${string}`;
 
@@ -145,7 +145,7 @@ export interface MaterialListMappings {
 	/** Remappings for serialization_ids that go to the wrong things in .lang files. */
 	serialization_id_patches: {
 		/** Serialization ID. */
-		[serializationId: `${"tile" | "item"}.${string}`]: string;
+		[serializationId: `${"tile" | "item"}.${string}`]: `${"tile" | "item"}.${string}`;
 		/** Regular expressions to match serialization IDs. */
 		[regExp: `/${string}/`]: string
 	};

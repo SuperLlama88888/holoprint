@@ -32,6 +32,7 @@ let oldPackInput;
 let structureFilesList;
 let packNameInput;
 let completedPacksCont;
+/** @type {SimpleLogger} */
 let logger;
 let languageSelector;
 let defaultResourcePackStackPromise;
@@ -73,7 +74,7 @@ document[onEvent]("DOMContentLoaded", () => {
 	packNameInput[onEvent]("input", () => {
 		packNameInput.setCustomValidity("");
 	});
-	structureFilesInput[onEvent]("input", () => {
+	structureFilesInput[onEventAndNow]("input", () => {
 		if(!structureFilesInput.files.length) {
 			return;
 		}
@@ -192,6 +193,7 @@ document[onEvent]("DOMContentLoaded", () => {
 	customElements.define("simple-logger", SimpleLogger);
 	customElements.define("lil-gui", LilGui);
 	if(!ACTUAL_CONSOLE_LOG) {
+		// @ts-ignore
 		logger = selectEl("#log");
 		logger.patchConsoleMethods();
 	}
@@ -220,6 +222,8 @@ document[onEvent]("DOMContentLoaded", () => {
 		generatePackForm.elements.namedItem("opacity").parentElement.classList.toggle("hidden", opacityModeSelect.value == "multiple");
 	});
 	
+	/** @type {HTMLTextAreaElement} */
+	// @ts-ignore
 	let descriptionTextArea = generatePackForm.elements.namedItem("description");
 	let descriptionLinksCont = selectEl("#descriptionLinksCont");
 	descriptionTextArea[onEventAndNow]("input", () => {
@@ -239,6 +243,8 @@ document[onEvent]("DOMContentLoaded", () => {
 		let label = document.createElement("label");
 		let playerControlTranslationKey = HoloPrint.PLAYER_CONTROL_NAMES[control];
 		label.innerHTML = `<span data-translate="${playerControlTranslationKey}">...</span>:`;
+		/** @type {ItemCriteriaInput} */
+		// @ts-ignore
 		let input = document.createElement("item-criteria-input");
 		input.setAttribute("name", `control.${control}`);
 		if(itemCriteria["names"].length > 0) {
@@ -261,7 +267,10 @@ document[onEvent]("DOMContentLoaded", () => {
 	selectEls(".resetButton").forEach(el => {
 		el[onEvent]("click", () => {
 			let fieldset = el.parentElement;
-			let [elementsBeingReset, elementsToSave] = conditionallyGroup(Array.from(generatePackForm.elements), el => el.localName != "fieldset" && el.localName != "button" && (!fieldset.contains(el) || !el.hasAttribute("name")));
+			/** @type {Array<HTMLInputElement>} */
+			// @ts-ignore
+			let allEls = Array.from(generatePackForm.elements);
+			let [elementsBeingReset, elementsToSave] = conditionallyGroup(allEls, el => el.localName != "fieldset" && el.localName != "button" && (!fieldset.contains(el) || !el.hasAttribute("name")));
 			let oldValues = elementsToSave.map(el => {
 				switch(el.type) {
 					case "file": {
@@ -296,7 +305,7 @@ document[onEvent]("DOMContentLoaded", () => {
 	
 	languageSelector = selectEl("#languageSelector");
 	fetch("translations/languages.json").then(res => jsonc(res)).then(languagesAndNames => {
-		languagesAndNames = Object.fromEntries(Object.entries(languagesAndNames).sort((a, b) => a[1] > b[1])); // sort alphabeticallly
+		languagesAndNames = Object.fromEntries(Object.entries(languagesAndNames).sort((a, b) => +(a[1] > b[1]))); // sort alphabeticallly
 		let availableLanguages = Object.keys(languagesAndNames);
 		if(availableLanguages.length == 1) {
 			selectEl("#languageSelectorCont").remove();
@@ -321,6 +330,7 @@ document[onEvent]("DOMContentLoaded", () => {
 				return;
 			}
 			let allAddedChildren = mutations.flatMap(mutation => Array.from(mutation.addedNodes)).filter(node => node instanceof Element);
+			// @ts-ignore
 			let shouldRetranslate = allAddedChildren.some(node => Array.from(node.attributes).some(attr => attr.name.startsWith("data-translate") || attr.name.startsWith("data-translation-sub-")) || getAllChildren(node).some(el => Array.from(el.attributes).some(attr => attr.name.startsWith("data-translate") || attr.name.startsWith("data-translation-sub-")))) || mutations.find(mutation => mutation.type == "attributes" && (mutation.attributeName.startsWith("data-translate") || mutation.attributeName.startsWith("data-translation-sub-")) && mutation.target.getAttribute(mutation.attributeName) != mutation.oldValue); // retranslate when an element with a translate dataset attribute or a child with a translate dataset attribute is added, or when a translate dataset attribute is changed
 			if(shouldRetranslate) {
 				retranslating = true;
@@ -383,13 +393,13 @@ async function updateTexturePreview() {
 		h: can.height
 	}], HoloPrint.addDefaultConfig({
 		TEXTURE_OUTLINE_COLOR: generatePackForm.elements.namedItem("textureOutlineColor").value,
-		TEXTURE_OUTLINE_OPACITY: generatePackForm.elements.namedItem("textureOutlineOpacity").value / 100,
+		TEXTURE_OUTLINE_OPACITY: +generatePackForm.elements.namedItem("textureOutlineOpacity").value / 100,
 		TEXTURE_OUTLINE_WIDTH: textureOutlineWidth
 	})) : can;
 	let tintlessImage = await outlinedCan.convertToBlob().then(blob => toImage(blob));
 	let outlinedCanCtx = outlinedCan.getContext("2d");
 	outlinedCanCtx.fillStyle = generatePackForm.elements.namedItem("tintColor").value;
-	outlinedCanCtx.globalAlpha = generatePackForm.elements.namedItem("tintOpacity").value / 100;
+	outlinedCanCtx.globalAlpha = +generatePackForm.elements.namedItem("tintOpacity").value / 100;
 	outlinedCanCtx.fillRect(0, 0, outlinedCan.width, outlinedCan.height);
 	let tintedImage = await outlinedCan.convertToBlob().then(blob => toImage(blob));
 	texturePreviewImageCont.textContent = "";
@@ -446,7 +456,7 @@ async function translatePage(language, generateTranslations = false) {
 		});
 	}));
 	if(generateTranslations) {
-		translations = Object.fromEntries(Object.entries(translations).sort((a, b) => a[0] > b[0]));
+		translations = Object.fromEntries(Object.entries(translations).sort((a, b) => +(a[0] > b[0])));
 		downloadFile(new File([JSON.stringify(translations, null, "\t")], `${language}.json`));
 	}
 }
@@ -461,7 +471,7 @@ function performTranslationSubstitutions(el, translation) {
 		if(name.startsWith(prefix)) {
 			let subName = name.slice(prefix.length).toUpperCase().replaceAll("-", "_");
 			translation = translation.replaceAll(`{${subName}}`, value);
-			if(parseInt(value) == value) {
+			if(typeof value == "number" && parseInt(value) == value) {
 				translation = value > 1? translation.replace(/\[|\]/g, "") : translation.replaceAll(/\[.+\]/g, "");
 			}
 		}
@@ -526,32 +536,34 @@ async function makePack(structureFiles, localResourcePacks) {
 		console.debug("User agent:", navigator.userAgent);
 	}
 	
-	let formData = new FormData(generatePackForm);
-	let authors = removeFalsies(formData.get("author").split(",").map(x => x.trim()));
+	let formData = new FormData(generatePackForm);formData.get("author");
+	let authors = removeFalsies(formData.get("author").toString().split(",").map(x => x.trim()));
+	let packIconEntry = formData.get("packIcon");
 	/** @type {HoloPrintConfig} */
 	let config = {
-		IGNORED_BLOCKS: removeFalsies(formData.get("ignoredBlocks").split(/\W/)),
-		SCALE: formData.get("scale") / 100,
-		OPACITY: formData.get("opacity") / 100,
+		IGNORED_BLOCKS: removeFalsies(formData.get("ignoredBlocks").toString().split(/\W/)),
+		SCALE: +formData.get("scale") / 100,
+		OPACITY: +formData.get("opacity") / 100,
 		MULTIPLE_OPACITIES: formData.get("opacityMode") == "multiple",
-		TINT_COLOR: formData.get("tintColor"),
-		TINT_OPACITY: formData.get("tintOpacity") / 100,
+		TINT_COLOR: formData.get("tintColor").toString(),
+		TINT_OPACITY: +formData.get("tintOpacity") / 100,
 		MINI_SCALE: +formData.get("miniSize"),
 		TEXTURE_OUTLINE_WIDTH: +formData.get("textureOutlineWidth"),
-		TEXTURE_OUTLINE_COLOR: formData.get("textureOutlineColor"),
-		TEXTURE_OUTLINE_OPACITY: formData.get("textureOutlineOpacity") / 100,
+		TEXTURE_OUTLINE_COLOR: formData.get("textureOutlineColor").toString(),
+		TEXTURE_OUTLINE_OPACITY: +formData.get("textureOutlineOpacity") / 100,
 		SPAWN_ANIMATION_ENABLED: !!formData.get("spawnAnimationEnabled"),
 		PLAYER_CONTROLS_ENABLED: !!formData.get("playerControlsEnabled"),
 		MATERIAL_LIST_ENABLED: !!formData.get("materialListEnabled"),
 		RETEXTURE_CONTROL_ITEMS: !!formData.get("retextureControlItems"),
 		RENAME_CONTROL_ITEMS: !!formData.get("renameControlItems"),
+		// @ts-ignore
 		CONTROLS: Object.fromEntries(Array.from(formData).filter(([key]) => key.startsWith("control.")).map(([key, value]) => [key.replace(/^control./, ""), JSON.parse(value)])),
 		INITIAL_OFFSET: [+formData.get("initialOffsetX"), +formData.get("initialOffsetY"), +formData.get("initialOffsetZ")],
 		BACKUP_SLOT_COUNT: +formData.get("backupSlotCount"),
-		PACK_NAME: formData.get("packName") || undefined,
-		PACK_ICON_BLOB: formData.get("packIcon").size? formData.get("packIcon") : undefined,
+		PACK_NAME: formData.get("packName").toString() || undefined,
+		PACK_ICON_BLOB: packIconEntry instanceof File? packIconEntry : undefined,
 		AUTHORS: authors,
-		DESCRIPTION: formData.get("description") || undefined,
+		DESCRIPTION: formData.get("description").toString() || undefined,
 		COMPRESSION_LEVEL: +formData.get("compressionLevel")
 	};
 	
@@ -608,6 +620,7 @@ async function makePack(structureFiles, localResourcePacks) {
 		if(generationFailedError) {
 			let bugReportAnchor = document.createElement("a");
 			bugReportAnchor.classList.add("buttonlike", "packInfoButton", "reportIssue");
+			// @ts-ignore
 			bugReportAnchor.href = `https://github.com/SuperLlama88888/holoprint/issues/new?template=1-pack-creation-error.yml&title=Pack creation error: ${encodeURIComponent(generationFailedError.toString().replaceAll("\n", " "))}&version=${HoloPrint.VERSION}&logs=${encodeURIComponent(JSON.stringify(selectEl("simple-logger").allLogs))}`;
 			bugReportAnchor.target = "_blank";
 			bugReportAnchor.dataset.translate = "pack_generation_failed.report_github_issue";

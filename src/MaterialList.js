@@ -157,7 +157,7 @@ export default class MaterialList {
 				partitionedCount: this.#partitionCount(count),
 				auxId
 			};
-		}).sort((a, b) => b.count - a.count || a.translatedName > b.translatedName);
+		}).sort((a, b) => b.count - a.count || +(a.translatedName > b.translatedName));
 	}
 	/**
 	 * Sets the language of the material list for exporting.
@@ -205,7 +205,9 @@ export default class MaterialList {
 	 * @returns {string}
 	 */
 	#serializationIdToTranslationKey(serializationId) {
+		// @ts-ignore
 		if(this.#individualSerializationIdPatches.has(serializationId)) {
+			// @ts-ignore
 			serializationId = this.#individualSerializationIdPatches.get(serializationId);
 		} else {
 			let matchingPatternAndReplacement = this.#serializationIdPatternPatches.find(([pattern]) => pattern.test(serializationId));
@@ -231,7 +233,7 @@ export default class MaterialList {
 	 */
 	#partitionCount(count) {
 		if(count < 64) {
-			return String(count);
+			return count.toString();
 		} else {
 			let parts = [[floor(count / 1728), "\uE200"], [floor(count / 64) % 27, "s"], [count % 64, ""]].filter(([n]) => n).map(x => x.join(""));
 			return `${count} = ${parts.join(" + ")}`; // a custom shulker box emoji (taken from OreUI files) is defined in font/glyph_E2.png

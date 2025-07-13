@@ -165,22 +165,22 @@ export default class SimpleLogger extends HTMLElement {
 	}
 	
 	patchConsoleMethods() {
-		[console._warn, console._error, console._info, console._debug] = [console.warn, console.error, console.info, console.debug];
+		let [_warn, _error, _info, _debug] = [console.warn, console.error, console.info, console.debug];
 		console.warn = (...args) => {
 			this.warn(args.join(" "));
-			return console._warn.apply(console, [getStackTrace()[1].match(/\/([^\/]+\.[^\.]+:\d+:\d+)/)[1] + "\n", ...args]);
+			return _warn.apply(console, [getStackTrace()[1].match(/\/([^\/]+\.[^\.]+:\d+:\d+)/)[1] + "\n", ...args]);
 		};
 		console.error = (...args) => {
 			this.error(args.join(" "));
-			return console._error.apply(console, [getStackTrace()[1].match(/\/([^\/]+\.[^\.]+:\d+:\d+)/)[1] + "\n", ...args]);
+			return _error.apply(console, [getStackTrace()[1].match(/\/([^\/]+\.[^\.]+:\d+:\d+)/)[1] + "\n", ...args]);
 		};
 		console.info = (...args) => {
 			this.info(args.join(" "));
-			return console._info.apply(console, [getStackTrace()[1].match(/\/([^\/]+\.[^\.]+:\d+:\d+)/)[1] + "\n", ...args]);
+			return _info.apply(console, [getStackTrace()[1].match(/\/([^\/]+\.[^\.]+:\d+:\d+)/)[1] + "\n", ...args]);
 		};
 		console.debug = (...args) => {
 			this.debug(args.join(" "));
-			return console._debug.apply(console, [getStackTrace()[1].match(/\/([^\/]+\.[^\.]+:\d+:\d+)/)[1] + "\n", ...args]);
+			return _debug.apply(console, [getStackTrace()[1].match(/\/([^\/]+\.[^\.]+:\d+:\d+)/)[1] + "\n", ...args]);
 		};
 	}
 }

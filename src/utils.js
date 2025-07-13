@@ -77,7 +77,7 @@ export function getAllChildren(node) {
 	return allChildren;
 }
 
-export const onEvent = symbolPatch(EventTarget.prototype, EventTarget.prototype.addEventListener)
+export const onEvent = symbolPatch(EventTarget.prototype, EventTarget.prototype.addEventListener);
 export const onEvents = symbolPatch(EventTarget.prototype, function onEvents(types, listener, options = false) {
 	types.forEach(type => {
 		this.addEventListener(type, listener, options);
@@ -155,6 +155,8 @@ export async function toImage(val) {
 
 export const sleep = async time => new Promise(resolve => setTimeout(resolve, time));
 
+/** @template T @param {T} x @returns {T} */
+export const doNothing = x => x;
 export const { min, max, floor, ceil, sqrt, round, abs, PI: pi, exp, log: ln, sin, cos, tan, hypot } = Math;
 export const clamp = (n, lowest, highest) => min(max(n, lowest), highest);
 export const lerp = (a, b, x) => a + (b - a) * x;
@@ -305,6 +307,7 @@ export function makeNullsEmpty(arr) {
  * @returns {[Array<T>, Array<T>]}
  */
 export function conditionallyGroup(arr, conditionFunc) {
+	/** @type {[Array<T>, Array<T>]} */
 	let res = [[], []];
 	arr.forEach(el => {
 		res[+conditionFunc(el)].push(el);
@@ -319,6 +322,7 @@ export function conditionallyGroup(arr, conditionFunc) {
  * @returns {Record<string, Array<T>>}
  */
 export function groupBy(items, groupFunc) { // native Object.groupBy is only 89.47% on caniuse...
+	/** @type {Record<string, Array<T>>} */
 	let res = {};
 	items.forEach(item => {
 		let group = groupFunc(item);
@@ -377,7 +381,9 @@ export function createStringEnum(keys) {
  */
 export function hexColorToClampedTriplet(hexColor) {
 	let [, r, g, b] = hexColor.match(/^#([0-9a-f]{2})([0-9a-f]{2})([0-9a-f]{2})/i);
-	return [r, g, b].map(x => parseInt(x, 16) / 255);
+	/** @type {[string, string, string]} */
+	let rgb = [r, g, b];
+	return rgb.map(x => parseInt(x, 16) / 255);
 }
 export function addOrdinalSuffix(num) {
 	return num + (num % 10 == 1 && num % 100 != 11? "st" : num % 10 == 2 && num % 100 != 12? "nd" : num % 10 == 3 && num % 100 != 13? "rd" : "th");
@@ -704,7 +710,8 @@ export async function clearCacheStorage(cacheStorage) {
 
 /**
  * Promise.all() but for objects
- * @template T
+ * @template {string[]} Keys
+ * @template {Record<Keys[number], Promise<any>>} T
  * @param {T} object
  * @returns {Promise<{[K in keyof T]: Awaited<T[K]>}>}
  */
@@ -806,7 +813,7 @@ export class AsyncFactory {
 }
 
 function stringifyJsonBigIntSafe(value) {
-	return JSON.stringify(value, (_, x) => typeof x == "bigint"? (JSON.rawJSON ?? String)(x) : x); // JSON.rawJSON offers the perfect solution but is very modern, so stringifying them is the next best option
+	return JSON.stringify(value, (_, x) => typeof x == "bigint"? (JSON.rawJSON ?? doNothing)(x.toString()) : x); // JSON.rawJSON offers the perfect solution but is very modern, so stringifying them is the next best option
 }
 function parseJsonBigIntSafe(value) { // this function is unused but I'm keeping it here because it works well with the function above
 	return JSON.parse(value, (_, x, context) => context && Number.isInteger(x) && !Number.isSafeInteger(x)? BigInt(context.source) : x);
@@ -896,20 +903,12 @@ export class JSONSet extends Set {
 	[Symbol.iterator]() {
 		return this.#actualValues.values();
 	}
-	entries() {
-		let iter = this[Symbol.iterator]();
-		return {
-			next: () => {
-				let { value, done } = iter.next();
-				return {
-					value: done? undefined : [value, value],
-					done
-				};
-			},
-			[Symbol.iterator]() {
-				return this;
-			}
-		};
+	*entries() {
+		for(let value of this.#actualValues) {
+			/** @type {[any, any]} */
+			let tuple = [value, value];
+			yield tuple;
+		}
 	}
 	keys() {
 		return this[Symbol.iterator]();
@@ -921,7 +920,7 @@ export class JSONSet extends Set {
 /**
  * @template K
  * @template V
- * @extends {Map<string, V>}
+ * @extends {Map<any, V>}
  */
 export class JSONMap extends Map { // very barebones
 	stringify = stringifyJsonBigIntSafe;
@@ -1020,8 +1019,9 @@ export class CachingFetcher extends AsyncFactory {
 }
 /**
  * Creates a custom error class with a given name.
- * @param {string} name
- * @returns {typeof Error}
+ * @template {string} T
+ * @param {T} name
+ * @returns {new (message?: string) => Error & { name: T }}
  */
 export function createCustomError(name) {
 	return class extends Error { // can't have a base class that has this.name = new.target.name because esbuild will rename them... :(

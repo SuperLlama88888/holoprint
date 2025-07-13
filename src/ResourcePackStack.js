@@ -93,7 +93,7 @@ export default class ResourcePackStack extends AsyncFactory {
 
 export class VanillaDataFetcher extends CachingFetcher {
 	static #VANILLA_RESOURCES_LINK = "https://cdn.jsdelivr.net/gh/Mojang/bedrock-samples"; // No / at the end
-	/** @type {VanillaDataFetcher} */
+	/** @type {Promise<VanillaDataFetcher>} */
 	static #instance;
 	
 	/**

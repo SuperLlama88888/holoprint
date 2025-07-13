@@ -85,7 +85,7 @@ export async function makePack(structureFiles, config, resourcePackStack, previe
 	}
 	
 	/** @type {[PathToData<"textureAtlasMappings", Data.TextureAtlasMappings>, PathToData<"blockShapes", Data.BlockShapes>, PathToData<"blockShapeGeos", Data.BlockShapeGeos>, PathToData<"blockStateDefinitions", Data.BlockStateDefinitions>, PathToData<"blockEigenvariants", Data.BlockEigenvariants>, PathToData<"materialListMappings", Data.MaterialListMappings>, PathToData<"itemIcons", Data.ItemIcons>]} */
-	// @ts-ignore
+	// @ts-expect-error
 	let dataFileNames = ["textureAtlasMappings", "blockShapes", "blockShapeGeos", "blockStateDefinitions", "blockEigenvariants", "materialListMappings"];
 	if(config.RETEXTURE_CONTROL_ITEMS) {
 		// @ts-ignore
@@ -127,21 +127,19 @@ export async function makePack(structureFiles, config, resourcePackStack, previe
 	}
 	
 	let dataPromise = loadDataFiles(dataFileNames);
-	let resourceLangFilesPromise, packTemplateLangFilesPromise, translationLanguagesLoadingPromise;
 	let { languagesDotJson, bedrockMetadata } = await awaitAllEntries({
-		languagesDotJson: packTemplatePromise.languagesDotJson.then(languages => {
-			resourceLangFilesPromise = loadResources(Object.fromEntries(languages.map(language => [language, `texts/${language}.lang`])), resourcePackStack);
-			packTemplateLangFilesPromise = loadPackTemplate(Object.fromEntries(languages.map(language => [language, `texts/${language}.lang`]))).all;
-			if(controlsHaveBeenCustomised || config.RENAME_CONTROL_ITEMS) {
-				translationLanguagesLoadingPromise = Promise.all(languages.map(language => loadTranslationLanguage(language)));
-			}
-			return languages;
-		}),
+		languagesDotJson: packTemplatePromise.languagesDotJson,
 		bedrockMetadata: loadBedrockMetadataFiles({
 			blocks: "vanilladata_modules/mojang-blocks.json",
 			items: "vanilladata_modules/mojang-items.json"
 		})
 	});
+	let resourceLangFilesPromise = loadResources(Object.fromEntries(languagesDotJson.map(language => [language, `texts/${language}.lang`])), resourcePackStack);
+	let packTemplateLangFilesPromise = loadPackTemplate(Object.fromEntries(languagesDotJson.map(language => [language, `texts/${language}.lang`]))).all;
+	let translationLanguagesLoadingPromise;
+	if(controlsHaveBeenCustomised || config.RENAME_CONTROL_ITEMS) {
+		translationLanguagesLoadingPromise = Promise.all(languagesDotJson.map(language => loadTranslationLanguage(language)));
+	}
 	let controlItemTextures = [];
 	let hasModifiedTerrainTexture = false;
 	let retexturingControlItemsPromise;
@@ -161,7 +159,9 @@ export async function makePack(structureFiles, config, resourcePackStack, previe
 	}
 	console.log("combined palette: ", blockPalette);
 	console.log("remapped indices: ", allStructureIndicesByLayer);
+	// @ts-expect-error
 	window.blockPalette = blockPalette;
+	// @ts-expect-error
 	window.blockIndices = allStructureIndicesByLayer;
 	
 	let data = await dataPromise.all;
@@ -234,6 +234,7 @@ export async function makePack(structureFiles, config, resourcePackStack, previe
 						}
 						
 						let blockCoordinateName = `b_${x}_${y}_${z}`;
+						/** @type {Vec3} */
 						let geoSpaceBlockPos = [-16 * x - 8, 16 * y, 16 * z - 8]; // I got these values from trial and error with blockbench (which makes the x negative I think. it's weird.)
 						polyMeshMaker.add(paletteI, geoSpaceBlockPos, layerI);
 						if(firstBoneForThisCoordinate) { // we only need 1 locator for each block position, even though there may be 2 bones in this position because of the 2nd layer
@@ -434,8 +435,8 @@ export async function makePack(structureFiles, config, resourcePackStack, previe
 	}
 	packFiles.push(["manifest.json", JSON.stringify(manifest)]);
 	packFiles.push(["pack_icon.png", packIcon]);
-	packFiles.push(["entity/armor_stand.entity.json", JSON.stringify(entityFile).replaceAll("HOLOGRAM_INITIAL_ACTIVATION", true)]);
-	packFiles.push(["subpacks/punch_to_activate/entity/armor_stand.entity.json", JSON.stringify(entityFile).replaceAll("HOLOGRAM_INITIAL_ACTIVATION", false)]);
+	packFiles.push(["entity/armor_stand.entity.json", JSON.stringify(entityFile).replaceAll("HOLOGRAM_INITIAL_ACTIVATION", "true")]);
+	packFiles.push(["subpacks/punch_to_activate/entity/armor_stand.entity.json", JSON.stringify(entityFile).replaceAll("HOLOGRAM_INITIAL_ACTIVATION", "false")]);
 	packFiles.push(["render_controllers/armor_stand.hologram.render_controllers.json", JSON.stringify(hologramRenderControllers)]);
 	if(config.PLAYER_CONTROLS_ENABLED) {
 		packFiles.push(["render_controllers/player.render_controllers.json", JSON.stringify(playerRenderControllers)]);
@@ -494,7 +495,7 @@ export async function makePack(structureFiles, config, resourcePackStack, previe
 	}));
 	let zippedPack = await zipWriter.close();
 	
-	console.info(`Finished creating pack in ${(performance.now() - startTime).toFixed(0) / 1000}s!`);
+	console.info(`Finished creating pack in ${+(performance.now() - startTime).toFixed(0) / 1000}s!`);
 	
 	if(previewCont) {
 		let showPreview = async () => {
@@ -518,7 +519,7 @@ export async function makePack(structureFiles, config, resourcePackStack, previe
 			let message = document.createElement("div");
 			message.classList.add("previewMessage", "clickToView");
 			let p = document.createElement("p");
-			p.dataset.translationSubTotalBlockCount = totalBlockCount;
+			p.dataset.translationSubTotalBlockCount = totalBlockCount.toString();
 			if(structureFiles.length == 1) {
 				p.dataset.translate = "preview.click_to_view";
 			} else {
@@ -641,8 +642,8 @@ export function addDefaultConfig(config) {
 			RETEXTURE_CONTROL_ITEMS: true,
 			CONTROL_ITEM_TEXTURE_SCALE: 1,
 			RENAME_CONTROL_ITEMS: true,
-			WRONG_BLOCK_OVERLAY_COLOR: [1, 0, 0, 0.3],
-			INITIAL_OFFSET: [0, 0, 0],
+			WRONG_BLOCK_OVERLAY_COLOR: /** @type {Vec4} */ ([1, 0, 0, 0.3]),
+			INITIAL_OFFSET: /** @type {Vec3} */ ([0, 0, 0]),
 			BACKUP_SLOT_COUNT: 10,
 			PACK_NAME: undefined,
 			PACK_ICON_BLOB: undefined,
@@ -743,6 +744,7 @@ async function readStructureNBTWithOptions(structureFile, arrayBuffer, options =
 		let errorMessage = getInvalidMcstructureErrorMessage(structureFile, nbt);
 		throw new UserError(errorMessage);
 	}
+	// @ts-ignore
 	return nbt;
 }
 /**
@@ -752,23 +754,33 @@ async function readStructureNBTWithOptions(structureFile, arrayBuffer, options =
 /**
  * @template {Record<string, string>} T
  * @param {{ [K in keyof T]: T[K] }} packTemplateFiles
- * @returns {{ [K in keyof T]: Promise<GetFileType<T[K]>>} & { all: Promise<{ [K in keyof T]: GetFileType<T[K]> }> }}
  */
 function loadPackTemplate(packTemplateFiles) {
-	let res = Object.fromEntries(Object.entries(packTemplateFiles).filter(([, path]) => path).map(([name, path]) => [name, getResponseContents(fetch(`packTemplate/${path}`), path)]));
-	res.all = awaitAllEntries(res);
-	return res;
+	return multiload(packTemplateFiles, path => fetch(`packTemplate/${path}`));
 }
 /**
  * @template {Record<string, string>} T
  * @param {{ [K in keyof T]: T[K] }} resourceFiles
  * @param {ResourcePackStack} resourcePackStack
- * @returns {{ [K in keyof T]: Promise<GetFileType<T[K]>>} & { all: Promise<{ [K in keyof T]: GetFileType<T[K]> }> }}
  */
 function loadResources(resourceFiles, resourcePackStack) {
-	let res = Object.fromEntries(Object.entries(resourceFiles).filter(([, path]) => path).map(([name, path]) => [name, getResponseContents(resourcePackStack.fetchResource(path), path)]));
-	res.all = awaitAllEntries(res);
-	return res;
+	return multiload(resourceFiles, path => resourcePackStack.fetchResource(path));
+}
+
+/**
+ * @template {Record<string, string>} T
+ * @param {{ [K in keyof T]: T[K] }} fileNamesAndPaths
+ * @param {(filePath: string) => Promise<Response>} fetchFunc
+ * @returns {{ [K in keyof T]: Promise<GetFileType<T[K]>>} & { all: Promise<{ [K in keyof T]: GetFileType<T[K]> }> }}
+ */
+function multiload(fileNamesAndPaths, fetchFunc) {
+	let entries = Object.entries(fileNamesAndPaths).filter(([, path]) => path);
+	let contents = Object.fromEntries(entries.map(([name, path]) => [name, getResponseContents(fetchFunc(path), path)]));
+	// @ts-ignore
+	return {
+		...contents,
+		all: awaitAllEntries(contents)
+	};
 }
 /**
  * @template N
@@ -812,10 +824,11 @@ async function getResponseContents(resPromise, filePath) {
 	switch(fileExtension) {
 		case "json":
 		case "material": return await jsonc(res);
+		// @ts-ignore
 		case "lang": return await res.text();
+		// @ts-ignore
 		case "png": return await toImage(res);
 	}
-	return await res.blob();
 }
 /**
  * Removes ignored blocks from the block palette, updates old blocks, and adds block entities as separate entries.
@@ -1242,7 +1255,9 @@ function addMaterialListUI(finalisedMaterialList, hudScreenUI, blockMetadata) {
 function translateControlItems(config, blockMetadata, itemMetadata, materialListMappings, resourceLangFiles, itemTags) {
 	// make a fake material list for the in-game control items (just to translate them lol)
 	let controlsMaterialList = new MaterialList(blockMetadata, itemMetadata, materialListMappings);
+	/** @type {Record<string, string>} */
 	let inGameControls = {};
+	/** @type {Record<string, string>} */
 	let controlItemTranslations = {};
 	Object.entries(resourceLangFiles).forEach(([language, resourceLangFile]) => {
 		inGameControls[language] = "";
@@ -1303,7 +1318,7 @@ function makeLangFiles(config, packTemplateLangFiles, packName, materialList, ex
 		langFile = langFile.replaceAll("\r\n", "\n"); // I hate windows sometimes (actually quite often now because of windows 11)
 		langFile = langFile.replaceAll("{PACK_NAME}", packName);
 		langFile = langFile.replaceAll("{PACK_GENERATION_TIME}", packGenerationTime);
-		langFile = langFile.replaceAll("{TOTAL_MATERIAL_COUNT}", totalMaterialCount);
+		langFile = langFile.replaceAll("{TOTAL_MATERIAL_COUNT}", totalMaterialCount.toString());
 		langFile = langFile.replaceAll("{MATERIAL_LIST}", exportedMaterialLists[language].map(({ translatedName, count }) => `${count} ${translatedName}`).join(", "));
 		
 		// now substitute in the extra bits into the main description if needed
@@ -1539,7 +1554,7 @@ async function makePackIcon(structureFile) {
 					continue;
 				}
 			}
-			if(bit == x >= ICON_RESOLUTION / 2) {
+			if(bit == +(x >= ICON_RESOLUTION / 2)) {
 				drawArc(x, y, 0, pi / 2);
 				drawArc(x + 1, y + 1, pi, pi * 3 / 2);
 			} else {
@@ -1765,7 +1780,7 @@ function functionToMolang(func, vars = {}) {
  * @property {boolean} RETEXTURE_CONTROL_ITEMS
  * @property {number} CONTROL_ITEM_TEXTURE_SCALE How much to scale control item overlay textures. When compositing textures, MCBE scales all textures to the maximum, so the size of the overlay control texture has to be the LCM of itself and in-game items. Hence, if in-game items have a higher resolution than expected, they will probably be scaled wrong. The solution is to scale the overlay textures even more, which can be adjusted with this.
  * @property {boolean} RENAME_CONTROL_ITEMS
- * @property {Array<number>} WRONG_BLOCK_OVERLAY_COLOR Clamped colour quartet
+ * @property {Vec4} WRONG_BLOCK_OVERLAY_COLOR Clamped colour quartet
  * @property {Vec3} INITIAL_OFFSET
  * @property {number} BACKUP_SLOT_COUNT
  * @property {string | undefined} PACK_NAME The name of the completed pack; will default to the structure file names
@@ -1808,6 +1823,9 @@ function functionToMolang(func, vars = {}) {
  * @property {string} name The block's ID
  * @property {Record<string, number | string>} [states] Block states
  * @property {object} [block_entity_data] Block entity data
+ */
+/**
+ * @typedef {Record<Data.CardinalDirection, { uv: Vec2, uv_size: Vec2 }>} CubeUv
  */
 /**
  * @typedef {object} PolyMesh A `poly_mesh` object as in geometry files.
@@ -1869,6 +1887,13 @@ function functionToMolang(func, vars = {}) {
  * @property {number} h Height
  * @property {number} sourceX
  * @property {number} sourceY
+ * @property {Rectangle} [crop]
+ */
+/**
+ * @typedef {object} ImageUv
+ * @property {Vec2} uv
+ * @property {Vec2} uv_size
+ * @property {number} transparency
  * @property {Rectangle} [crop]
  */
 /**

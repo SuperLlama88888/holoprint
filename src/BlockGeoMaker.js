@@ -2,7 +2,7 @@
 // READ: this also looks pretty comprehensive: https://github.com/MCBE-Development-Wiki/mcbe-dev-home/blob/main/docs/misc/enums/block_shape.md
 // https://github.com/bricktea/MCStructure/blob/main/docs/1.16.201/enums/B.md
 
-import { addVec3, crossProduct, hexColorToClampedTriplet, JSONSet, max, mulVec3, normalizeVec3, rotateDeg, vec3ToFixed, subVec3, conditionallyGroup, mulMat4 } from "./utils.js";
+import { addVec3, crossProduct, hexColorToClampedTriplet, JSONSet, max, mulVec3, normalizeVec3, rotateDeg, vec3ToFixed, subVec3, conditionallyGroup, mulMat4, addVec2 } from "./utils.js";
 
 // https://wiki.bedrock.dev/visuals/material-creations.html#overlay-color-in-render-controllers
 // https://wiki.bedrock.dev/documentation/materials.html#entity-alphatest
@@ -191,6 +191,7 @@ export default class BlockGeoMaker {
 				let fieldsToCopy = Object.keys(cube).filter(field => !["copy", "rot", "pivot", "translate"].includes(field));
 				copiedCubes.forEach(copiedCube => {
 					if("translate" in cube) {
+						copiedCube["translate"] = addVec3(copiedCube["translate"] ?? [0, 0, 0], cube["translate"]);
 						copiedCube["translate"] = (copiedCube["translate"] ?? [0, 0, 0]).map((x, i) => x + cube["translate"][i]);
 					}
 					fieldsToCopy.forEach(field => { // copy all fields from this cube onto the new ones
@@ -382,14 +383,14 @@ export default class BlockGeoMaker {
 				let flipTextureHorizontally = cube["flip_textures_horizontally"]?.includes(faceName) ^ (isSideFace && cube["flip_textures_horizontally"]?.includes("side")) ^ cube["flip_textures_horizontally"]?.includes("*");
 				let flipTextureVertically = cube["flip_textures_vertically"]?.includes(faceName) ^ (isSideFace && cube["flip_textures_vertically"]?.includes("side")) ^ cube["flip_textures_vertically"]?.includes("*");
 				if("box_uv" in cube) { // box uv does some flipping automatically
-					flipTextureHorizontally ^= faceName != "north" && faceName != "south";
-					flipTextureVertically ^= faceName == "up";
+					flipTextureHorizontally ^= +(faceName != "north" && faceName != "south");
+					flipTextureVertically ^= +(faceName == "up");
 				}
-				if((faceName == "down" || faceName == "up") ^ flipTextureHorizontally) { // in MC the down/up faces are rotated 180 degrees compared to how they are in geometry; this can be faked by flipping both axes.
+				if(+(faceName == "down" || faceName == "up") ^ flipTextureHorizontally) { // in MC the down/up faces are rotated 180 degrees compared to how they are in geometry; this can be faked by flipping both axes.
 					[vertices[0]["corner"], vertices[1]["corner"]] = [vertices[1]["corner"], vertices[0]["corner"]];
 					[vertices[2]["corner"], vertices[3]["corner"]] = [vertices[3]["corner"], vertices[2]["corner"]];
 				}
-				if((faceName == "down" || faceName == "up") ^ flipTextureVertically) {
+				if(+(faceName == "down" || faceName == "up") ^ flipTextureVertically) {
 					[vertices[0]["corner"], vertices[2]["corner"]] = [vertices[2]["corner"], vertices[0]["corner"]];
 					[vertices[1]["corner"], vertices[3]["corner"]] = [vertices[3]["corner"], vertices[1]["corner"]];
 				}
@@ -720,11 +721,12 @@ export default class BlockGeoMaker {
 	/**
 	 * Calculates the UV for a cube.
 	 * @param {object} cube
-	 * @returns {object}
+	 * @returns {CubeUv}
 	 */
 	#calculateUv(cube) {
 		if("box_uv" in cube) { // this is where a singular uv coordinate is specified, and the rest is calculated as below. used primarily in entity models.
 			let boxUvSize = cube["box_uv_size"] ?? cube["size"];
+			/** @type {CubeUv} */
 			let uv = {
 				"up": {
 					"uv": [boxUvSize[2], 0],
@@ -752,7 +754,7 @@ export default class BlockGeoMaker {
 				}
 			};
 			Object.values(uv).forEach(face => {
-				face["uv"] = face["uv"].map((x, i) => x + cube["box_uv"][i]);
+				face["uv"] = addVec2(face["uv"], cube["box_uv"]);
 			});
 			return uv;
 		} else {
@@ -794,7 +796,7 @@ export default class BlockGeoMaker {
 	/**
 	 * Gets the default vertices for a cube and a specific face side.
 	 * @param {object} cube
-	 * @param {"west" | "east" | "down" | "up" | "north" | "south"} faceName
+	 * @param {Data.CardinalDirection} faceName
 	 * @returns {[PolyMeshTemplateVertex, PolyMeshTemplateVertex, PolyMeshTemplateVertex, PolyMeshTemplateVertex]}
 	 */
 	#getVertices(cube, faceName) {
@@ -806,11 +808,18 @@ export default class BlockGeoMaker {
 			"up": [[0, 1, 1], [1, 1, 1], [0, 1, 0], [1, 1, 0]],
 			"north": [[0, 1, 0], [1, 1, 0], [0, 0, 0], [1, 0, 0]],
 			"south": [[1, 1, 1], [0, 1, 1], [1, 0, 1], [0, 0, 1]]
-		}
-		return cubeFaces[faceName].map(([a, b, c], i) => ({
-			"pos": [pos[0] + size[0] * a, pos[1] + size[1] * b, pos[2] + size[2] * c],
-			"corner": i
-		}));
+		};
+		/** @type {[Vec3, Vec3, Vec3, Vec3]} */
+		// @ts-ignore
+		let faces = cubeFaces[faceName];
+		return faces.map(([a, b, c], i) => {
+			/** @type {Vec3} */
+			let vertexPos = [pos[0] + size[0] * a, pos[1] + size[1] * b, pos[2] + size[2] * c];
+			return {
+				"pos": vertexPos,
+				"corner": i
+			};
+		});
 	}
 	/**
 	 * Gets the surface normal for a specific face of a cube.
@@ -829,6 +838,7 @@ export default class BlockGeoMaker {
 	 * @returns {Vec3}
 	 */
 	#calculateCenterOfMass(cubes) {
+		/** @type {Vec3} */
 		let center = [0, 0, 0];
 		let totalMass = 0;
 		cubes.forEach(cube => {
@@ -1040,14 +1050,19 @@ export default class BlockGeoMaker {
 			if("crop" in imageUv) {
 				this.#applyFaceCropping(face, imageUv["crop"]);
 			}
+			/** @type {[PolyMeshTemplateVertex, PolyMeshTemplateVertex, PolyMeshTemplateVertex, PolyMeshTemplateVertex]} */
 			let vertices = [face["vertices"][0], face["vertices"][1], face["vertices"][3], face["vertices"][2]]; // go around in a square
 			return {
 				"normal": face["normal"],
 				"transparency": imageUv["transparency"],
-				"vertices": vertices.map(vertex => ({
-					"pos": vertex["pos"],
-					"uv": [+((imageUv["uv"][0] + imageUv["uv_size"][0] * (vertex["corner"] & 1)) / textureAtlas.textureWidth).toFixed(4), +(1 - (imageUv["uv"][1] + imageUv["uv_size"][1] * (vertex["corner"] >> 1)) / textureAtlas.textureHeight).toFixed(4)]
-				}))
+				"vertices": vertices.map(vertex => {
+					/** @type {Vec2} */
+					let uv = [+((imageUv["uv"][0] + imageUv["uv_size"][0] * (vertex["corner"] & 1)) / textureAtlas.textureWidth).toFixed(4), +(1 - (imageUv["uv"][1] + imageUv["uv_size"][1] * (vertex["corner"] >> 1)) / textureAtlas.textureHeight).toFixed(4)];
+					return {
+						"pos": vertex["pos"],
+						"uv": uv
+					};
+				})
 			};
 		});
 	}
@@ -1076,6 +1091,6 @@ export default class BlockGeoMaker {
 	}
 }
 
-/** @import { Vec3, Block, HoloPrintConfig, PolyMeshTemplateFaceWithUvs, PolyMeshTemplateFace, Rectangle, PolyMeshTemplateVertex } from "./HoloPrint.js"  */
+/** @import { Vec2, Vec3, Block, HoloPrintConfig, PolyMeshTemplateFaceWithUvs, PolyMeshTemplateFace, Rectangle, PolyMeshTemplateVertex, CubeUv } from "./HoloPrint.js"  */
 /** @import TextureAtlas from "./TextureAtlas.js" */
 /** @import * as Data from "./data/schemas" */

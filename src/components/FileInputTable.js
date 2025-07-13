@@ -216,10 +216,12 @@ export default class FileInputTable extends HTMLElement {
 			}
 			let row = e.target.closest("tr");
 			if(e.target.classList.contains("moveUpButton")) {
+				// @ts-ignore
 				this.#animateRow(row.previousElementSibling, FileInputTable.#ANIMATION_MOVEMENTS.MOVE_DOWN, false);
 				row.previousElementSibling.before(row);
 				this.#animateRow(row, FileInputTable.#ANIMATION_MOVEMENTS.MOVE_UP);
 			} else if(e.target.classList.contains("moveDownButton")) {
+				// @ts-ignore
 				this.#animateRow(row.nextElementSibling, FileInputTable.#ANIMATION_MOVEMENTS.MOVE_UP, false);
 				row.nextElementSibling.after(row);
 				this.#animateRow(row, FileInputTable.#ANIMATION_MOVEMENTS.MOVE_DOWN);
@@ -326,7 +328,7 @@ export default class FileInputTable extends HTMLElement {
 		if(this.fileInput.files.length) {
 			let countText = this.getAttribute("file-count-text") ?? "{COUNT} file[s] selected";
 			let pluralizedCountText = this.fileInput.files.length > 1? countText.replaceAll(/\[|\]/g, "") : countText.replaceAll(/\[.+\]/g, "");
-			this.#fileCountHeading.textContent = pluralizedCountText.replace("{COUNT}", this.fileInput.files.length);
+			this.#fileCountHeading.textContent = pluralizedCountText.replace("{COUNT}", this.fileInput.files.length.toString());
 		} else {
 			this.#fileCountHeading.textContent = this.getAttribute("empty-text") ?? "No files are selected";
 		}
@@ -368,6 +370,7 @@ export default class FileInputTable extends HTMLElement {
 	 * @param {boolean} [highlight]
 	 */
 	#animateRow(row, movement, highlight = true) {
+		/** @type {Keyframe} */
 		let startingFrame = {};
 		if(movement) {
 			let rowHeight = row.getBoundingClientRect().height;

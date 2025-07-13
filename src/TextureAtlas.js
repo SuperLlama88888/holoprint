@@ -20,7 +20,7 @@ export default class TextureAtlas {
 	
 	/**
 	 * When makeAtlas() is called, this will contain UV coordinates and sizes for texture references passed as input, as well as cropping information.
-	 * @type {Array<{ uv: Vec2, uv_size: Vec2, transparency: number, crop?: Rectangle }>}
+	 * @type {Array<ImageUv>}
 	 */
 	uvs;
 	
@@ -346,7 +346,7 @@ export default class TextureAtlas {
 	/**
 	 * Stitches together images with widths and heights, and puts the UV coordinates and sizes into the textureUvs property.
 	 * @param {Array<ImageFragment>} imageFragments
-	 * @returns {Promise<Array<{ uv: [number, number], uv_size: [number, number], transparency: number, crop?: Rectangle }>>}
+	 * @returns {Promise<Array<ImageUv>>}
 	 */
 	async #stitchTextureAtlas(imageFragments) {
 		imageFragments.forEach((imageFragment, i) => {
@@ -379,6 +379,9 @@ export default class TextureAtlas {
 			imageFragments = imageFragments2;
 		}
 		imageFragments.sort((a, b) => a["i"] - b["i"]);
+		/** @type {Array<ImageFragment & Rectangle & { actualSize: Vec2, offset: Vec2 }>} */
+		// @ts-ignore
+		let packedImageFragments = imageFragments;
 		this.textureWidth = packing.w;
 		this.textureHeight = packing.h;
 		this.textureFillEfficiency = packing.fill;
@@ -390,15 +393,19 @@ export default class TextureAtlas {
 		let ctx = can.getContext("2d");
 		
 		console.log("Packed image fragments:", imageFragments);
-		let imageUvs = imageFragments.map(imageFragment => {
+		let imageUvs = packedImageFragments.map(imageFragment => {
+			/** @type {Vec2} */
 			let sourcePos = [imageFragment.sourceX, imageFragment.sourceY];
+			/** @type {Vec2} */
 			let destPos = [imageFragment.x, imageFragment.y];
+			/** @type {Vec2} */
 			let textureSize = [imageFragment.w, imageFragment.h];
 			// console.table({sourcePos,textureSize,destPos})
 			ctx.putImageData(imageFragment.imageData, ...subVec2(destPos, sourcePos), ...sourcePos, ...textureSize); // when drawing image data, the source position and size crop it but don't move it back to the original destination position, meaning it must be offset.
 			let imageUv = {
 				"uv": addVec2(destPos, imageFragment["offset"]),
-				"uv_size": imageFragment["actualSize"]
+				"uv_size": imageFragment["actualSize"],
+				"transparency": NaN
 			};
 			if("crop" in imageFragment) {
 				imageUv["crop"] = imageFragment["crop"];
@@ -406,7 +413,7 @@ export default class TextureAtlas {
 			return imageUv;
 		});
 		let canImageData = can.getContext("2d").getImageData(0, 0, can.width, can.height);
-		let transparencies = this.#getImageFragmentTransparencies(canImageData, imageFragments);
+		let transparencies = this.#getImageFragmentTransparencies(canImageData, packedImageFragments);
 		transparencies.forEach((transparency, i) => {
 			imageUvs[i]["transparency"] = transparency;
 		});
@@ -415,12 +422,12 @@ export default class TextureAtlas {
 		// ctx.fillStyle = "#00F3";
 		// ctx.fillRect(0, 0, can.width, can.height);
 		if(this.config.TEXTURE_OUTLINE_WIDTH != 0) {
-			can = TextureAtlas.addTextureOutlines(can, imageFragments, this.config, canImageData);
+			can = TextureAtlas.addTextureOutlines(can, packedImageFragments, this.config, canImageData);
 		}
 		
 		if(this.config.MULTIPLE_OPACITIES) {
 			let opacities = range(4, 10).map(x => x / 10); // lowest is 40% opacity. note that we do division after to avoid floating-point errors.
-			this.imageBlobs = await Promise.all(opacities.map(async opacity => [`hologram_opacity_${opacity}`, await this.#setCanvasOpacity(can, opacity).convertToBlob()]));
+			this.imageBlobs = await Promise.all(opacities.map(async opacity => [`hologram_opacity_${opacity}`, await this.#setCanvasOpacity(can, opacity).convertToBlob()], 42)); // the custom definitions for .map() in globalPatches.d.ts mess it up because it's uses promises. I've tried to exclude promises from them but it doesn't work. however, adding a second parameter makes it fall back to the native definition. (it's supposed to change the this value, but arrow functions don't have their own this value.)
 		} else {
 			can = this.#setCanvasOpacity(can, this.config.OPACITY);
 			this.imageBlobs = [["hologram", await can.convertToBlob()]];
@@ -478,6 +485,7 @@ export default class TextureAtlas {
 		const TEXTURE_OUTLINE_ALPHA_DIFFERENCE_MODE = "threshold";
 		/** If using difference mode, will draw outline between pixels with at least this much alpha difference; if using threshold mode, will draw outline on pixels next to pixels with an alpha less than or equal to this @type {Number} */
 		const TEXTURE_OUTLINE_ALPHA_THRESHOLD = 0;
+		// @ts-expect-error
 		const compareAlpha = (currentPixel, otherPixel) => TEXTURE_OUTLINE_ALPHA_DIFFERENCE_MODE == "difference"? currentPixel - otherPixel >= TEXTURE_OUTLINE_ALPHA_THRESHOLD : otherPixel <= TEXTURE_OUTLINE_ALPHA_THRESHOLD;
 		
 		imagePositions.forEach(({ x: startX, y: startY, w, h }) => {
@@ -593,5 +601,5 @@ export default class TextureAtlas {
 	}
 }
 
-/** @import { TextureReference, TextureFragment, ImageFragment, HoloPrintConfig, Vec3, Vec2, Rectangle } from "./HoloPrint.js" */
+/** @import { TextureReference, TextureFragment, ImageFragment, HoloPrintConfig, Vec3, Vec2, Rectangle, ImageUv } from "./HoloPrint.js" */
 /** @import * as Data from "./data/schemas" */
