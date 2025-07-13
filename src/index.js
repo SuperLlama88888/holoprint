@@ -536,7 +536,7 @@ async function makePack(structureFiles, localResourcePacks) {
 		console.debug("User agent:", navigator.userAgent);
 	}
 	
-	let formData = new FormData(generatePackForm);formData.get("author");
+	let formData = new FormData(generatePackForm);
 	let authors = removeFalsies(formData.get("author").toString().split(",").map(x => x.trim()));
 	let packIconEntry = formData.get("packIcon");
 	/** @type {HoloPrintConfig} */
