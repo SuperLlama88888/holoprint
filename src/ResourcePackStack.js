@@ -21,8 +21,6 @@ export default class ResourcePackStack extends AsyncFactory {
 	hasResourcePacks;
 	/** @type {Array<LocalResourcePack>} */
 	localResourcePacks;
-	 /** @type {VanillaDataFetcher} */
-	#vanillaDataFetcher;
 	#cache;
 	
 	/**
@@ -41,21 +39,12 @@ export default class ResourcePackStack extends AsyncFactory {
 	async init() {
 		this.hash = toHexadecimalString(await sha256text([this.vanillaDataVersion, ...this.localResourcePacks.map(lrp => lrp.hash)].join("\n")));
 		this.cacheName = `ResourcePackStack_${this.hash}`;
-		this.#vanillaDataFetcher = await VanillaDataFetcher.new(this.vanillaDataVersion);
 		if(this.enableCache) {
 			console.log("Using cache:", this.cacheName, [this.vanillaDataVersion, ...this.localResourcePacks.map(lrp => lrp.hash)])
 			this.#cache = await caches.open(this.cacheName);
 		}
 	}
 	
-	/**
-	 * Fetches data from the root directory of Mojang/bedrock-samples.
-	 * @param {string} filePath 
-	 * @returns {Promise<Response>}
-	 */
-	async fetchData(filePath) {
-		return this.#vanillaDataFetcher.fetch(filePath);
-	}
 	/**
 	 * Fetches a resource pack file.
 	 * @param {string} resourcePath
@@ -71,7 +60,7 @@ export default class ResourcePackStack extends AsyncFactory {
 		}
 		if(!res) {
 			if(ResourcePackStack.#JSON_FILES_TO_MERGE.includes(resourcePath)) {
-				let vanillaRes = await this.fetchData(filePath);
+				let vanillaRes = await VanillaDataFetcher.fetch(filePath);
 				let vanillaJson = await jsonc(vanillaRes.clone()); // clone it so it can be read later if need be (responses can only be read once)
 				let resourcePackFiles = this.localResourcePacks.map(resourcePack => resourcePack.getFile(resourcePath));
 				let resourcePackJsons = await Promise.all(removeFalsies(resourcePackFiles).map(file => jsonc(file)));
@@ -92,7 +81,7 @@ export default class ResourcePackStack extends AsyncFactory {
 						break;
 					}
 				}
-				res ??= await this.fetchData(filePath);
+				res ??= await VanillaDataFetcher.fetch(filePath);
 			}
 			if(this.enableCache) {
 				await this.#cache.put(cacheLink, res.clone());
@@ -104,6 +93,8 @@ export default class ResourcePackStack extends AsyncFactory {
 
 export class VanillaDataFetcher extends CachingFetcher {
 	static #VANILLA_RESOURCES_LINK = "https://cdn.jsdelivr.net/gh/Mojang/bedrock-samples"; // No / at the end
+	/** @type {Promise<VanillaDataFetcher>} */
+	static #instance;
 	
 	/**
 	 * Creates a vanilla data fetcher to fetch data from the Mojang/bedrock-samples repository.
@@ -112,5 +103,9 @@ export class VanillaDataFetcher extends CachingFetcher {
 	constructor(version = defaultVanillaDataVersion) {
 		super(`VanillaDataFetcher_${version}`, `${VanillaDataFetcher.#VANILLA_RESOURCES_LINK}@${version}/`);
 		this.version = version;
+	}
+	static async fetch(url) {
+		this.#instance ??= VanillaDataFetcher.new();
+		return (await this.#instance).fetch(url);
 	}
 }

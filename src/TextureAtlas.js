@@ -1,13 +1,12 @@
-import { AsyncFactory, awaitAllEntries, ceil, floor, hexColorToClampedTriplet, jsonc, JSONSet, max, range, stringToImageData, toImage, toImageData } from "./utils.js";
+import { addVec2, ceil, floor, hexColorToClampedTriplet, JSONSet, max, range, stringToImageData, subVec2, toImage, toImageData } from "./utils.js";
 import TGALoader from "tga-js"; // We could use dynamic import as this isn't used all the time but it's so small it won't matter
 import potpack from "potpack";
 import ResourcePackStack from "./ResourcePackStack.js";
 
-export default class TextureAtlas extends AsyncFactory {
+export default class TextureAtlas {
 	#blocksDotJsonPatches;
 	#blocksToUseCarriedTextures;
 	#transparentBlocks;
-	#terrainTexturePatches;
 	#terrainTextureTints;
 	
 	blocksDotJson;
@@ -21,7 +20,7 @@ export default class TextureAtlas extends AsyncFactory {
 	
 	/**
 	 * When makeAtlas() is called, this will contain UV coordinates and sizes for texture references passed as input, as well as cropping information.
-	 * @type {Array<{ uv: Vec2, uv_size: Vec2, transparency: number, crop?: Rectangle }>}
+	 * @type {Array<ImageUv>}
 	 */
 	uvs;
 	
@@ -40,27 +39,20 @@ export default class TextureAtlas extends AsyncFactory {
 	 * Creates a texture atlas for loading images from texture references and stitching them together.
 	 * @param {HoloPrintConfig} config
 	 * @param {ResourcePackStack} resourcePackStack
+	 * @param {object} blocksDotJson
+	 * @param {object} terrainTexture
+	 * @param {object} flipbookTextures
+	 * @param {Data.TextureAtlasMappings} textureAtlasMappings
 	 */
-	constructor(config, resourcePackStack) {
-		super();
+	constructor(config, resourcePackStack, blocksDotJson, terrainTexture, flipbookTextures, textureAtlasMappings) {
 		this.config = config;
 		this.resourcePackStack = resourcePackStack;
-	}
-	async init() {
-		let { blocksDotJson, terrainTexture, flipbookTextures, textureAtlasMappings } = await awaitAllEntries({
-			blocksDotJson: this.resourcePackStack.fetchResource("blocks.json").then(res => jsonc(res)),
-			terrainTexture: this.resourcePackStack.fetchResource("textures/terrain_texture.json").then(res => jsonc(res)),
-			flipbookTextures: this.resourcePackStack.fetchResource("textures/flipbook_textures.json").then(res => jsonc(res)),
-			/** @type {Promise<import("./data/textureAtlasMappings.json")>} */
-			textureAtlasMappings: fetch("data/textureAtlasMappings.json").then(res => jsonc(res))
-		})
 		this.blocksDotJson = blocksDotJson;
 		this.terrainTexture = terrainTexture;
 		
 		this.#blocksDotJsonPatches = textureAtlasMappings["blocks_dot_json_patches"];
 		this.#blocksToUseCarriedTextures = textureAtlasMappings["blocks_to_use_carried_textures"];
 		this.#transparentBlocks = textureAtlasMappings["transparent_blocks"];
-		this.#terrainTexturePatches = textureAtlasMappings["terrain_texture_patches"];
 		this.#terrainTextureTints = textureAtlasMappings["terrain_texture_tints"];
 		
 		textureAtlasMappings["missing_flipbook_textures"].forEach(terrainTextureKey => {
@@ -236,12 +228,6 @@ export default class TextureAtlas extends AsyncFactory {
 	 * @returns {{ texturePath: string, tint?: string }}
 	 */
 	#getTexturePathAndTint(terrainTextureKey, variant) {
-		if(terrainTextureKey in this.#terrainTexturePatches) {
-			// These are the hard-coded terrain texture patches if we want to make a terrain texture key lead to a texture path instead of what it would regularly lead to
-			let texturePath = this.#terrainTexturePatches[terrainTextureKey];
-			console.debug(`Terrain texture key ${terrainTextureKey} remapped to texture path ${texturePath}`);
-			return texturePath;
-		}
 		let texturePath = this.terrainTexture["texture_data"][terrainTextureKey]?.["textures"];
 		if(!texturePath) {
 			console.warn(`No terrain_texture.json entry for key ${terrainTextureKey}`);
@@ -320,12 +306,6 @@ export default class TextureAtlas extends AsyncFactory {
 				imageData = this.#setImageDataOpacity(imageData, opacity);
 			}
 			let { width: imageW, height: imageH } = imageData;
-			let image = await toImage(imageData).catch(e => {
-				console.error(`Failed to decode image data from ${texturePath}: ${e}`);
-				sourceUv = [0, 0];
-				uvSize = [1, 1];
-				return toImage(stringToImageData(`Failed to decode ${texturePath}`)); // hopefully it's an issue with the image loading not the decoding
-			});
 			
 			if(this.#flipbookTexturesAndSizes.has(texturePath)) {
 				let size = this.#flipbookTexturesAndSizes.get(texturePath);
@@ -339,7 +319,7 @@ export default class TextureAtlas extends AsyncFactory {
 			let crop = null;
 			if(Number.isInteger(sourceX) && Number.isInteger(sourceY) && Number.isInteger(w) && Number.isInteger(h)) { // textures with non-integral dimensions are wacky so I'm just going to say they can't be cropped... there aren't many blocks like this fortunately
 				let old = { sourceX, sourceY, w, h };
-				let extremePixels = this.#findMostExtremePixels(image, sourceX, sourceY, w, h);
+				let extremePixels = this.#findMostExtremePixels(imageData, sourceX, sourceY, w, h);
 				sourceX = extremePixels["minX"];
 				w = extremePixels["maxX"] - extremePixels["minX"] + 1;
 				sourceY = extremePixels["minY"];
@@ -356,13 +336,7 @@ export default class TextureAtlas extends AsyncFactory {
 					crop = null;
 				}
 			}
-			let imageFragment = {
-				"image": image,
-				"sourceX": sourceX,
-				"sourceY": sourceY,
-				"w": w,
-				"h": h
-			};
+			let imageFragment = { imageData, sourceX, sourceY, w, h };
 			if(crop) {
 				imageFragment["crop"] = crop;
 			}
@@ -372,7 +346,7 @@ export default class TextureAtlas extends AsyncFactory {
 	/**
 	 * Stitches together images with widths and heights, and puts the UV coordinates and sizes into the textureUvs property.
 	 * @param {Array<ImageFragment>} imageFragments
-	 * @returns {Promise<Array<{ uv: [number, number], uv_size: [number, number], transparency: number, crop?: Rectangle }>>}
+	 * @returns {Promise<Array<ImageUv>>}
 	 */
 	async #stitchTextureAtlas(imageFragments) {
 		imageFragments.forEach((imageFragment, i) => {
@@ -405,6 +379,9 @@ export default class TextureAtlas extends AsyncFactory {
 			imageFragments = imageFragments2;
 		}
 		imageFragments.sort((a, b) => a["i"] - b["i"]);
+		/** @type {Array<ImageFragment & Rectangle & { actualSize: Vec2, offset: Vec2 }>} */
+		// @ts-ignore
+		let packedImageFragments = imageFragments;
 		this.textureWidth = packing.w;
 		this.textureHeight = packing.h;
 		this.textureFillEfficiency = packing.fill;
@@ -416,16 +393,19 @@ export default class TextureAtlas extends AsyncFactory {
 		let ctx = can.getContext("2d");
 		
 		console.log("Packed image fragments:", imageFragments);
-		let imageUvs = imageFragments.map(imageFragment => {
+		let imageUvs = packedImageFragments.map(imageFragment => {
+			/** @type {Vec2} */
 			let sourcePos = [imageFragment.sourceX, imageFragment.sourceY];
+			/** @type {Vec2} */
 			let destPos = [imageFragment.x, imageFragment.y];
+			/** @type {Vec2} */
 			let textureSize = [imageFragment.w, imageFragment.h];
-			// document.body.appendChild(imageFragment.image);
 			// console.table({sourcePos,textureSize,destPos})
-			ctx.drawImage(imageFragment.image, ...sourcePos, ...textureSize, ...destPos, ...textureSize); // take the entire source image and draw it onto the canvas at the specified uv with its dimensions.
+			ctx.putImageData(imageFragment.imageData, ...subVec2(destPos, sourcePos), ...sourcePos, ...textureSize); // when drawing image data, the source position and size crop it but don't move it back to the original destination position, meaning it must be offset.
 			let imageUv = {
-				"uv": destPos.map((x, i) => x + imageFragment["offset"][i]),
-				"uv_size": imageFragment["actualSize"]
+				"uv": addVec2(destPos, imageFragment["offset"]),
+				"uv_size": imageFragment["actualSize"],
+				"transparency": NaN
 			};
 			if("crop" in imageFragment) {
 				imageUv["crop"] = imageFragment["crop"];
@@ -433,7 +413,7 @@ export default class TextureAtlas extends AsyncFactory {
 			return imageUv;
 		});
 		let canImageData = can.getContext("2d").getImageData(0, 0, can.width, can.height);
-		let transparencies = this.#getImageFragmentTransparencies(canImageData, imageFragments);
+		let transparencies = this.#getImageFragmentTransparencies(canImageData, packedImageFragments);
 		transparencies.forEach((transparency, i) => {
 			imageUvs[i]["transparency"] = transparency;
 		});
@@ -442,12 +422,12 @@ export default class TextureAtlas extends AsyncFactory {
 		// ctx.fillStyle = "#00F3";
 		// ctx.fillRect(0, 0, can.width, can.height);
 		if(this.config.TEXTURE_OUTLINE_WIDTH != 0) {
-			can = TextureAtlas.addTextureOutlines(can, imageFragments, this.config, canImageData);
+			can = TextureAtlas.addTextureOutlines(can, packedImageFragments, this.config, canImageData);
 		}
 		
 		if(this.config.MULTIPLE_OPACITIES) {
 			let opacities = range(4, 10).map(x => x / 10); // lowest is 40% opacity. note that we do division after to avoid floating-point errors.
-			this.imageBlobs = await Promise.all(opacities.map(async opacity => [`hologram_opacity_${opacity}`, await this.#setCanvasOpacity(can, opacity).convertToBlob()]));
+			this.imageBlobs = await Promise.all(opacities.map(async opacity => [`hologram_opacity_${opacity}`, await this.#setCanvasOpacity(can, opacity).convertToBlob()], 42)); // the custom definitions for .map() in globalPatches.d.ts mess it up because it's uses promises. I've tried to exclude promises from them but it doesn't work. however, adding a second parameter makes it fall back to the native definition. (it's supposed to change the this value, but arrow functions don't have their own this value.)
 		} else {
 			can = this.#setCanvasOpacity(can, this.config.OPACITY);
 			this.imageBlobs = [["hologram", await can.convertToBlob()]];
@@ -458,25 +438,20 @@ export default class TextureAtlas extends AsyncFactory {
 		return imageUvs;
 	}
 	/**
-	 * Finds the coordinates of the most extreme outer pixels of an image
-	 * @param {HTMLImageElement} image
+	 * Finds the coordinates of the most extreme outer pixels of an image.
+	 * @param {ImageData} imageData
 	 * @param {number} [startX] The x-position to start looking at
 	 * @param {number} [startY] The y-position to start looking at
 	 * @param {number} [imageW] The width of the portion of the image to look at
 	 * @param {number} [imageH] The height of the portion of the image to look at
 	 * @returns {{ minX: number, minY: number, maxX: number, maxY: number }}
 	 */
-	#findMostExtremePixels(image, startX = 0, startY = 0, imageW = image.width, imageH = image.height) {
-		let can = new OffscreenCanvas(imageW, imageH);
-		let ctx = can.getContext("2d");
-		ctx.drawImage(image, startX, startY, imageW, imageH, 0, 0, imageW, imageH);
-		let imageData = ctx.getImageData(0, 0, imageW, imageH).data;
-		
-		let minX = imageW, minY = imageH, maxX = 0, maxY = 0;
-		for(let y = 0; y < imageH; y++) {
-			for(let x = 0; x < imageW; x++) {
-				let i = (y * imageW + x) * 4;
-				if(imageData[i + 3] > 0) {
+	#findMostExtremePixels(imageData, startX = 0, startY = 0, imageW = imageData.width, imageH = imageData.height) {
+		let minX = imageData.width, minY = imageData.height, maxX = 0, maxY = 0;
+		for(let y = startY; y < startY + imageH; y++) {
+			for(let x = startX; x < startX + imageW; x++) {
+				let i = (y * imageData.width + x) * 4;
+				if(imageData.data[i + 3] > 0) {
 					if(x < minX) minX = x;
 					if(x > maxX) maxX = x;
 					if(y < minY) minY = y;
@@ -484,10 +459,6 @@ export default class TextureAtlas extends AsyncFactory {
 				}
 			}
 		}
-		minX += startX;
-		minY += startY;
-		maxX += startX;
-		maxY += startY;
 		return { minX, minY, maxX, maxY };
 	}
 	/** Add an outline around each texture.
@@ -514,6 +485,7 @@ export default class TextureAtlas extends AsyncFactory {
 		const TEXTURE_OUTLINE_ALPHA_DIFFERENCE_MODE = "threshold";
 		/** If using difference mode, will draw outline between pixels with at least this much alpha difference; if using threshold mode, will draw outline on pixels next to pixels with an alpha less than or equal to this @type {Number} */
 		const TEXTURE_OUTLINE_ALPHA_THRESHOLD = 0;
+		// @ts-expect-error
 		const compareAlpha = (currentPixel, otherPixel) => TEXTURE_OUTLINE_ALPHA_DIFFERENCE_MODE == "difference"? currentPixel - otherPixel >= TEXTURE_OUTLINE_ALPHA_THRESHOLD : otherPixel <= TEXTURE_OUTLINE_ALPHA_THRESHOLD;
 		
 		imagePositions.forEach(({ x: startX, y: startY, w, h }) => {
@@ -584,7 +556,9 @@ export default class TextureAtlas extends AsyncFactory {
 	}
 	#setCanvasOpacity(can, alpha) {
 		let newCan = new OffscreenCanvas(can.width, can.height);
-		let ctx = newCan.getContext("2d");
+		let ctx = newCan.getContext("2d", {
+			willReadFrequently: true
+		});
 		ctx.globalAlpha = alpha;
 		ctx.drawImage(can, 0, 0);
 		return newCan;
@@ -627,4 +601,5 @@ export default class TextureAtlas extends AsyncFactory {
 	}
 }
 
-/** @import { TextureReference, TextureFragment, ImageFragment, HoloPrintConfig, Vec3, Vec2, Rectangle } from "./HoloPrint.js" */
+/** @import { TextureReference, TextureFragment, ImageFragment, HoloPrintConfig, Vec3, Vec2, Rectangle, ImageUv } from "./HoloPrint.js" */
+/** @import * as Data from "./data/schemas" */

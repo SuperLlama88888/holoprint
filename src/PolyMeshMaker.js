@@ -1,7 +1,5 @@
-import { addVec3, JSONMap, JSONSet, min } from "./utils.js";
+import { addVec3, JSONMap, min, Vec2Set, Vec3Set, vec3ToFixed } from "./utils.js";
 
-// InternalError is only in Firefox. This function will be run possibly hundreds of thousands of times per pack so it's imperative that this is fast!
-const stringifyVec2 = "InternalError" in window? vec => vec[0] + "," + vec[1] : vec => `${vec[0]},${vec[1]}`;
 const stringifyVec3 = "InternalError" in window? vec => vec[0] + "," + vec[1] + "," + vec[2] : vec => `${vec[0]},${vec[1]},${vec[2]}`;
 
 export default class PolyMeshMaker {
@@ -32,9 +30,9 @@ export default class PolyMeshMaker {
 	}
 	/** @returns {PolyMesh} */
 	export() {
-		let positions = new JSONSet([], stringifyVec3);
-		let normals = new JSONSet([], stringifyVec3);
-		let uvs = new JSONSet([], stringifyVec2);
+		let positions = new Vec3Set();
+		let normals = new Vec3Set();
+		let uvs = new Vec2Set();
 		
 		let usedPaletteEntries = Object.entries(this.#blocks).filter(([, val]) => val.length);
 		usedPaletteEntries.sort(([, a], [, b]) => b.length - a.length); // makes more common blocks have smaller indices
@@ -44,13 +42,14 @@ export default class PolyMeshMaker {
 			let faces = this.templatePalette[+paletteI];
 			for(let faceI = 0; faceI < faces.length; faceI++) {
 				let face = faces[faceI];
-				let normalIndex = normals.addI(face["normal"]);
-				let uvIndices = face["vertices"].map(vertex => uvs.addI(vertex["uv"]));
+				let normalIndex = normals.add(face["normal"]);
+				let uvIndices = face["vertices"].map(vertex => uvs.add(vertex["uv"]));
 				let polys = [];
 				blockPositions.forEach(([blockPos, layer]) => {
 					let facePolys = [];
 					for(let vertexI = 0; vertexI < 4; vertexI++) {
-						let positionIndex = positions.addI(addVec3(blockPos, face["vertices"][vertexI]["pos"]));
+						let pos = vec3ToFixed(addVec3(blockPos, face["vertices"][vertexI]["pos"]), 4);
+						let positionIndex = positions.add(pos);
 						facePolys.push([positionIndex, normalIndex, uvIndices[vertexI]]);
 					}
 					polys.push(facePolys);
@@ -71,7 +70,7 @@ export default class PolyMeshMaker {
 		let polys = [].concat(...polysAndTransparencies.map(a => a["polys"])); // this is faster than .flat: https://stackoverflow.com/questions/61411776/is-js-native-array-flat-slow-for-depth-1
 		facesToBeReordered.forEach(([primaryLayerFaces, secondaryLayerFaces]) => {
 			let earliestSecondaryLayerFaceI = min(...secondaryLayerFaces.map(face => polys.indexOf(face)));
-			primaryLayerFaces.forEach(face => {
+			primaryLayerFaces?.forEach(face => {
 				let primaryLayerFaceI = polys.indexOf(face);
 				if(primaryLayerFaceI > earliestSecondaryLayerFaceI) {
 					polys.splice(primaryLayerFaceI, 1);
@@ -82,9 +81,9 @@ export default class PolyMeshMaker {
 		});
 		return {
 			"normalized_uvs": true, // UV coords are really messed up if this is false, I haven't found a way to get it working.
-			"positions": Array.from(positions),
-			"normals": Array.from(normals),
-			"uvs": Array.from(uvs),
+			"positions": positions.values,
+			"normals": normals.values,
+			"uvs": uvs.values,
 			"polys": polys
 		};
 	}

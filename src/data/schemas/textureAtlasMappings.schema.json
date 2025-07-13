@@ -40,18 +40,6 @@
 			},
 			"additionalProperties": false
 		},
-		"terrain_texture_patches": {
-			"description": "Terrain texture keys that should lead to a specified texture path, instead of what's in terrain_texture.json.",
-			"type": "object",
-			"patternProperties": {
-				"^\\w+$": {
-					"description": "Block name and texture path.",
-					"type": "string",
-					"pattern": "^textures/.*[^/]$"
-				}
-			},
-			"additionalProperties": false
-		},
 		"terrain_texture_tints": {
 			"description": "Terrain texture keys that should have their textures tinted.",
 			"type": "object",
@@ -110,7 +98,7 @@
 			}
 		}
 	},
-	"required": ["blocks_dot_json_patches", "blocks_to_use_carried_textures", "transparent_blocks", "terrain_texture_patches", "terrain_texture_tints", "missing_flipbook_textures"],
+	"required": ["blocks_dot_json_patches", "blocks_to_use_carried_textures", "transparent_blocks", "terrain_texture_tints", "missing_flipbook_textures"],
 	"additionalProperties": false,
 	
 	"definitions": {

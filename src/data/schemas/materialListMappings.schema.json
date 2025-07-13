@@ -138,6 +138,6 @@
 			"additionalProperties": false
 		}
 	},
-	"required": ["ignored_blocks", "block_to_item_mappings", "item_count_multipliers", "serialization_id_patches", "blocks_missing_serialization_ids", "translation_patches"],
+	"required": ["ignored_blocks", "block_to_item_mappings", "item_count_multipliers", "special_block_entity_properties", "serialization_id_patches", "blocks_missing_serialization_ids", "translation_patches"],
 	"additionalProperties": false
 }

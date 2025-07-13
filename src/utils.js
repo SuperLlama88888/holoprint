@@ -77,7 +77,7 @@ export function getAllChildren(node) {
 	return allChildren;
 }
 
-export const onEvent = symbolPatch(EventTarget.prototype, EventTarget.prototype.addEventListener)
+export const onEvent = symbolPatch(EventTarget.prototype, EventTarget.prototype.addEventListener);
 export const onEvents = symbolPatch(EventTarget.prototype, function onEvents(types, listener, options = false) {
 	types.forEach(type => {
 		this.addEventListener(type, listener, options);
@@ -155,6 +155,8 @@ export async function toImage(val) {
 
 export const sleep = async time => new Promise(resolve => setTimeout(resolve, time));
 
+/** @template T @param {T} x @returns {T} */
+export const doNothing = x => x;
 export const { min, max, floor, ceil, sqrt, round, abs, PI: pi, exp, log: ln, sin, cos, tan, hypot } = Math;
 export const clamp = (n, lowest, highest) => min(max(n, lowest), highest);
 export const lerp = (a, b, x) => a + (b - a) * x;
@@ -175,6 +177,14 @@ export function rotate([x, y], angle) {
 }
 export function rotateDeg(p, deg) {
 	return rotate(p, deg * pi / 180);
+}
+/**
+ * @param {Vec2} a
+ * @param {Vec2} b
+ * @returns {Vec2}
+ */
+export function addVec2(a, b) {
+	return [a[0] + b[0], a[1] + b[1]];
 }
 /**
  * @param {Vec2} a
@@ -229,7 +239,8 @@ export function normalizeVec3(vec) {
  * @returns {Vec3}
  */
 export function vec3ToFixed(vec, decimals) {
-	return [+vec[0].toFixed(decimals), +vec[1].toFixed(decimals), +vec[2].toFixed(decimals)];
+	let power = 10 ** decimals;
+	return [round(vec[0] * power) / power, round(vec[1] * power) / power, round(vec[2] * power) / power];
 }
 /**
  * @param {Mat4} mat
@@ -296,6 +307,7 @@ export function makeNullsEmpty(arr) {
  * @returns {[Array<T>, Array<T>]}
  */
 export function conditionallyGroup(arr, conditionFunc) {
+	/** @type {[Array<T>, Array<T>]} */
 	let res = [[], []];
 	arr.forEach(el => {
 		res[+conditionFunc(el)].push(el);
@@ -310,6 +322,7 @@ export function conditionallyGroup(arr, conditionFunc) {
  * @returns {Record<string, Array<T>>}
  */
 export function groupBy(items, groupFunc) { // native Object.groupBy is only 89.47% on caniuse...
+	/** @type {Record<string, Array<T>>} */
 	let res = {};
 	items.forEach(item => {
 		let group = groupFunc(item);
@@ -362,9 +375,15 @@ export function createStringEnum(keys) {
 	})));
 }
 
+/**
+ * @param {string} hexColor
+ * @returns {Vec3}
+ */
 export function hexColorToClampedTriplet(hexColor) {
 	let [, r, g, b] = hexColor.match(/^#([0-9a-f]{2})([0-9a-f]{2})([0-9a-f]{2})/i);
-	return [r, g, b].map(x => parseInt(x, 16) / 255);
+	/** @type {[string, string, string]} */
+	let rgb = [r, g, b];
+	return rgb.map(x => parseInt(x, 16) / 255);
 }
 export function addOrdinalSuffix(num) {
 	return num + (num % 10 == 1 && num % 100 != 11? "st" : num % 10 == 2 && num % 100 != 12? "nd" : num % 10 == 3 && num % 100 != 13? "rd" : "th");
@@ -494,7 +513,9 @@ export function htmlCodeToElement(htmlCode) {
 }
 export function stringToImageData(text, textCol = "black", backgroundCol = "white", font = "12px monospace") {
 	let can = new OffscreenCanvas(0, 20);
-	let ctx = can.getContext("2d");
+	let ctx = can.getContext("2d", {
+		willReadFrequently: true
+	});
 	ctx.font = font;
 	can.width = ctx.measureText(text).width;
 	ctx.fillStyle = backgroundCol;
@@ -512,7 +533,9 @@ export function stringToImageData(text, textCol = "black", backgroundCol = "whit
 export async function toImageData(val) {
 	let image = val instanceof HTMLImageElement? val : await toImage(val);
 	let can = new OffscreenCanvas(image.width, image.height);
-	let ctx = can.getContext("2d");
+	let ctx = can.getContext("2d", {
+		willReadFrequently: true
+	});
 	ctx.drawImage(image, 0, 0);
 	return ctx.getImageData(0, 0, can.width, can.height);
 }
@@ -523,7 +546,9 @@ export async function toImageData(val) {
  */
 export async function toBlob(val) {
 	let can = new OffscreenCanvas(val.width, val.height);
-	let ctx = can.getContext("2d");
+	let ctx = can.getContext("2d", {
+		willReadFrequently: true
+	});
 	if(val instanceof HTMLImageElement) {
 		ctx.drawImage(val, 0, 0);
 	} else if(val instanceof ImageData) {
@@ -570,7 +595,9 @@ export async function addTintToImage(image, col) {
 export async function addPaddingToImage(image, padding) {
 	let { left = 0, right = 0, top = 0, bottom = 0 } = padding;
 	let can = new OffscreenCanvas(image.width + left + right, image.height + top + bottom);
-	let ctx = can.getContext("2d");
+	let ctx = can.getContext("2d", {
+		willReadFrequently: true
+	});
 	ctx.drawImage(image, left, top);
 	let blob = await can.convertToBlob();
 	return await toImage(blob);
@@ -583,7 +610,9 @@ export async function addPaddingToImage(image, padding) {
 export async function overlaySquareImages(...images) {
 	let outputSize = images.map(image => image.width).reduce((a, b) => lcm(a, b));
 	let can = new OffscreenCanvas(outputSize, outputSize);
-	let ctx = can.getContext("2d");
+	let ctx = can.getContext("2d", {
+		willReadFrequently: true
+	});
 	ctx.imageSmoothingEnabled = false;
 	images.forEach(image => {
 		ctx.drawImage(image, 0, 0, outputSize, outputSize);
@@ -599,7 +628,9 @@ export async function overlaySquareImages(...images) {
  */
 export async function resizeImageToBlob(image, width, height = width) {
 	let can = new OffscreenCanvas(width, height);
-	let ctx = can.getContext("2d");
+	let ctx = can.getContext("2d", {
+		willReadFrequently: true
+	});
 	ctx.imageSmoothingEnabled = false;
 	ctx.drawImage(image, 0, 0, width, height);
 	return await can.convertToBlob();
@@ -679,15 +710,13 @@ export async function clearCacheStorage(cacheStorage) {
 
 /**
  * Promise.all() but for objects
- * @template T
+ * @template {string[]} Keys
+ * @template {Record<Keys[number], Promise<any>>} T
  * @param {T} object
  * @returns {Promise<{[K in keyof T]: Awaited<T[K]>}>}
  */
 export async function awaitAllEntries(object) {
-	await Promise.all(Object.entries(object).map(async ([key, promise]) => {
-		object[key] = await promise;
-	}));
-	return object;
+	return Object.fromEntries(await Promise.all(Object.entries(object).map(async ([key, promise]) => [key, await promise])));
 }
 
 /**
@@ -784,46 +813,79 @@ export class AsyncFactory {
 }
 
 function stringifyJsonBigIntSafe(value) {
-	return JSON.stringify(value, (_, x) => typeof x == "bigint"? (JSON.rawJSON ?? String)(x) : x); // JSON.rawJSON offers the perfect solution but is very modern, so stringifying them is the next best option
+	return JSON.stringify(value, (_, x) => typeof x == "bigint"? (JSON.rawJSON ?? doNothing)(x.toString()) : x); // JSON.rawJSON offers the perfect solution but is very modern, so stringifying them is the next best option
 }
 function parseJsonBigIntSafe(value) { // this function is unused but I'm keeping it here because it works well with the function above
 	return JSON.parse(value, (_, x, context) => context && Number.isInteger(x) && !Number.isSafeInteger(x)? BigInt(context.source) : x);
 }
-/**
- * @template T
- * @extends {Set<T>}
- */
+
+export class Vec2Set {
+	/** @type {Array<Vec2>} */
+	values = [];
+	#val0s = new Map();
+	/**
+	 * @param {Vec2} value
+	 * @returns {number}
+	 */
+	add(value) {
+		let val1s = this.#val0s.get(value[0]);
+		if(!val1s) {
+			val1s = new Map();
+			this.#val0s.set(value[0], val1s);
+		}
+		if(val1s.has(value[1])) {
+			return val1s.get(value[1]);
+		}
+		val1s.set(value[1], this.values.length);
+		this.values.push(value);
+		return this.values.length - 1;
+	}
+}
+export class Vec3Set {
+	/** @type {Array<Vec3>} */
+	values = [];
+	#val0s = new Map();
+	/**
+	 * @param {Vec3} value
+	 * @returns {number}
+	 */
+	add(value) {
+		let val1s = this.#val0s.get(value[0]);
+		if(!val1s) {
+			val1s = new Map();
+			this.#val0s.set(value[0], val1s);
+		}
+		let val2s = val1s.get(value[1]);
+		if(!val2s) {
+			val2s = new Map();
+			val1s.set(value[1], val2s);
+		}
+		if(val2s.has(value[2])) {
+			return val2s.get(value[2]);
+		}
+		val2s.set(value[2], this.values.length);
+		this.values.push(value);
+		return this.values.length - 1;
+	}
+}
 export class JSONSet extends Set {
 	stringify = stringifyJsonBigIntSafe;
 	/** @type {Map<string, number>} */
 	#indices = new Map();
-	#actualValues = new Map();
-	constructor(values, stringifyFunc) {
+	#actualValues = [];
+	constructor(values) {
 		super();
 		values?.forEach(value => this.add(value));
-		if(stringifyFunc) {
-			this.stringify = stringifyFunc;
-		}
 	}
 	/** Not part of regular sets! Constant time indexing. */
 	indexOf(value) {
 		return this.#indices.get(this.stringify(value));
 	}
-	addI(value) {
-		let stringifiedValue = this.stringify(value);
-		super.add(stringifiedValue);
-		if(!this.#actualValues.has(stringifiedValue)) {
-			this.#actualValues.set(stringifiedValue, structuredClone(value));
-			this.#indices.set(stringifiedValue, this.size - 1);
-			return this.size - 1;
-		}
-		return this.#indices.get(stringifiedValue);
-	}
 	add(value) {
 		let stringifiedValue = this.stringify(value);
-		if(!this.#actualValues.has(stringifiedValue)) {
-			this.#actualValues.set(stringifiedValue, structuredClone(value));
+		if(!this.#indices.has(stringifiedValue)) {
 			this.#indices.set(stringifiedValue, this.size);
+			this.#actualValues.push(structuredClone(value));
 		}
 		return super.add(stringifiedValue);
 	}
@@ -835,26 +897,18 @@ export class JSONSet extends Set {
 	}
 	clear() {
 		this.#indices.clear();
-		this.#actualValues.clear();
+		this.#actualValues = [];
 		return super.clear();
 	}
 	[Symbol.iterator]() {
 		return this.#actualValues.values();
 	}
-	entries() {
-		let iter = this[Symbol.iterator]();
-		return {
-			next: () => {
-				let { value, done } = iter.next();
-				return {
-					value: done? undefined : [value, value],
-					done
-				};
-			},
-			[Symbol.iterator]() {
-				return this;
-			}
-		};
+	*entries() {
+		for(let value of this.#actualValues) {
+			/** @type {[any, any]} */
+			let tuple = [value, value];
+			yield tuple;
+		}
 	}
 	keys() {
 		return this[Symbol.iterator]();
@@ -866,7 +920,7 @@ export class JSONSet extends Set {
 /**
  * @template K
  * @template V
- * @extends {Map<string, V>}
+ * @extends {Map<any, V>}
  */
 export class JSONMap extends Map { // very barebones
 	stringify = stringifyJsonBigIntSafe;
@@ -965,8 +1019,9 @@ export class CachingFetcher extends AsyncFactory {
 }
 /**
  * Creates a custom error class with a given name.
- * @param {string} name
- * @returns {typeof Error}
+ * @template {string} T
+ * @param {T} name
+ * @returns {new (message?: string) => Error & { name: T }}
  */
 export function createCustomError(name) {
 	return class extends Error { // can't have a base class that has this.name = new.target.name because esbuild will rename them... :(

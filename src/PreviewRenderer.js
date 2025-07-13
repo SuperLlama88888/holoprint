@@ -143,6 +143,7 @@ export default class PreviewRenderer extends AsyncFactory {
 		}
 		if(this.options.showOptions) {
 			/** @type {LilGui} */
+			// @ts-ignore
 			let guiEl = document.createElement("lil-gui");
 			this.cont.appendChild(guiEl);
 			this.#optionsGui = guiEl.gui;
@@ -189,8 +190,6 @@ export default class PreviewRenderer extends AsyncFactory {
 		
 		this.#addLighting();
 		await this.#initBackground();
-		this.#loop();
-		this.#loadingMessage.replaceWith(this.#can);
 		
 		if(this.options.showFps) {
 			this.cont.appendChild(this.#stats.dom);
@@ -208,8 +207,8 @@ export default class PreviewRenderer extends AsyncFactory {
 				}
 			}), "preview.options.shadowsEnabled");
 			shadowOption = this.#guiLocName(this.#optionsGui.add(this.options, "directionalLightShadowMapResolution", 1, 5, 1).onChange(() => this.#updateDirectionalLightShadowMapSize()), "preview.options.shadowQuality");
-			this.#guiLocName(this.#optionsGui.add(this.options, "directionalLightAngle", 0, 360, 1), "preview.options.lightAngle");
-			this.#guiLocName(this.#optionsGui.add(this.options, "directionalLightHeight", 0.1, 2, 0.01), "preview.options.lightHeight");
+			this.#guiLocName(this.#optionsGui.add(this.options, "directionalLightAngle", 0, 360, 1).onChange(() => this.#setDirectionalLightPos()), "preview.options.lightAngle");
+			this.#guiLocName(this.#optionsGui.add(this.options, "directionalLightHeight", 0.1, 2, 0.01).onChange(() => this.#setDirectionalLightPos()), "preview.options.lightHeight");
 			this.#guiLocName(this.#optionsGui.add(this.options, "showSkybox").onChange(() => this.#initBackground()), "preview.options.showSkybox");
 			this.#guiLocName(this.#optionsGui.add(this.options, "highResolution").onChange(() => this.#setSize()), "preview.options.highRes");
 			this.#guiLocName(this.#optionsGui.add(this, "downloadScreenshot"), "preview.options.takeScreenshot");
@@ -250,7 +249,7 @@ export default class PreviewRenderer extends AsyncFactory {
 			if(!polyMeshTemplate.length) { // a template is an array of faces. no faces = nothing to be rendered for this block
 				continue;
 			}
-			let geo = this.#polyMeshTemplateToBufferGeo(i);
+			let geo = this.#polyMeshTemplateToBufferGeo(+i);
 			let positions = this.#blockPositions[i].map(([x, y, z]) => [-16 * x - 16, 16 * y, -16 * z - 16]);
 			let isTranslucent = this.#isPolyMeshTemplateTranslucent(polyMeshTemplate);
 			let material = isTranslucent? transparentMat : regularMat;
@@ -263,6 +262,9 @@ export default class PreviewRenderer extends AsyncFactory {
 			this.#scene.add(instancedMesh);
 			this.#shouldRenderNextFrame = true;
 		}
+		
+		this.#loop();
+		this.#loadingMessage.replaceWith(this.#can);
 	}
 	/** Downloads a screenshot of the preview. */
 	downloadScreenshot() {
@@ -286,7 +288,6 @@ export default class PreviewRenderer extends AsyncFactory {
 	#render() {
 		this.#stats?.begin();
 		
-		this.#setDirectionalLightPos();
 		this.#updatePointLights();
 		// console.log(this.#renderer.capabilities.maxVertexUniforms, this.#renderer.capabilities.maxFragmentUniforms);
 		this.#renderer.render(this.#scene, this.#camera);
@@ -306,7 +307,7 @@ export default class PreviewRenderer extends AsyncFactory {
 	}
 	/** Sets the canvas size, scaling up if the high resolution option is enabled. */
 	#setSize() {
-		let size = this.#canvasSize * (this.options.highResolution + 1);
+		let size = this.#canvasSize * (this.options.highResolution? 2 : 1);
 		this.#renderer.setSize(size, size, false);
 	}
 	/** Sets the directional light position. */
@@ -314,6 +315,7 @@ export default class PreviewRenderer extends AsyncFactory {
 		let lightSin = sinDeg(this.options.directionalLightAngle);
 		let lightCos = cosDeg(this.options.directionalLightAngle);
 		this.#directionalLight.position.set(this.#center.x + this.#maxDimPixels * lightSin, this.#center.y + this.#maxDimPixels * this.options.directionalLightHeight, this.#center.z + this.#maxDimPixels * lightCos);
+		this.#directionalLight.shadow.needsUpdate = true;
 	}
 	/** Initialises and positions the camera and orbit controls. */
 	#setupCameraAndControls() {
@@ -355,6 +357,8 @@ export default class PreviewRenderer extends AsyncFactory {
 		this.#directionalLight.shadow.normalBias = 0.1;
 		this.#scene.add(this.#directionalLight);
 		this.#scene.add(this.#directionalLight.target);
+		this.#directionalLight.shadow.autoUpdate = false;
+		this.#setDirectionalLightPos();
 		this.#updateDirectionalLightShadowMapSize();
 		this.#debugHelpers.push(new THREE.CameraHelper(this.#directionalLight.shadow.camera));
 		
@@ -410,6 +414,7 @@ export default class PreviewRenderer extends AsyncFactory {
 		let shadowMapSize = (this.#maxDim < 24? 1024 : this.#maxDim < 45? 2048 : 4096) * optionsFactor;
 		this.#directionalLight.shadow.mapSize.set(shadowMapSize, shadowMapSize)
 		this.#directionalLight.shadow.map?.setSize(shadowMapSize, shadowMapSize);
+		this.#directionalLight.shadow.needsUpdate = true;
 	}
 	#initPointLights() {
 		let palettePointLights = this.blockPalette.map(block => PreviewRenderer.#POINT_LIGHTS[block["name"]] ?? Object.entries(PreviewRenderer.#POINT_LIGHTS).find(([stringifiedBlock]) => this.#checkBlockNameAndStates(stringifiedBlock, block))?.[1]);
@@ -562,7 +567,9 @@ export default class PreviewRenderer extends AsyncFactory {
 			let uvCoords = face["vertices"].map(v => v["uv"]);
 			let xs = uvCoords.map(([x]) => round(x * this.#imageBlobData.width));
 			let ys = uvCoords.map(([, y]) => round((1 - y) * this.#imageBlobData.height));
+			/** @type {Vec2} */
 			let minUvCoords = [min(...xs), min(...ys)];
+			/** @type {Vec2} */
 			let maxUvCoords = [max(...xs), max(...ys)];
 			let unscaledUvSize = subVec2(maxUvCoords, minUvCoords);
 			let uv = [minUvCoords[0], minUvCoords[1]];
@@ -603,7 +610,7 @@ export default class PreviewRenderer extends AsyncFactory {
 	}
 }
 
-/** @import { I32Vec3, Vec3, Block, PreviewPointLight, PolyMeshTemplateFaceWithUvs} from "./HoloPrint.js" */
+/** @import { Vec2, I32Vec3, Vec3, Block, PreviewPointLight, PolyMeshTemplateFaceWithUvs} from "./HoloPrint.js" */
 /** @import TextureAtlas from "./TextureAtlas.js" */
 /** @import LilGui from "./components/LilGui.js" */
 /** @import { Controller } from "lil-gui" */

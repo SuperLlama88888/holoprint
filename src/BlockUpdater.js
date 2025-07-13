@@ -43,7 +43,7 @@ export default class BlockUpdater extends AsyncFactory {
 		}
 		let schemasToApply = [];
 		Object.entries(this.#schemaIndex).forEach(([version, schemaSkeletons]) => {
-			if(block["version"] > version || schemaSkeletons.length == 1 && block["version"] == version) {
+			if(block["version"] > +version || schemaSkeletons.length == 1 && block["version"] == +version) {
 				return;
 			}
 			schemasToApply.push(...schemaSkeletons.map(schemaSkeleton => schemaSkeleton.filename));
@@ -239,7 +239,7 @@ export default class BlockUpdater extends AsyncFactory {
 	 * @returns {Array<number>}
 	 */
 	static parseBlockVersion(blockVersion) {
-		return blockVersion.toString(16).padStart(8, 0).match(/.{2}/g).map(x => parseInt(x, 16));
+		return blockVersion.toString(16).padStart(8, "0").match(/.{2}/g).map(x => parseInt(x, 16));
 	}
 }
 

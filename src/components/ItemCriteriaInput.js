@@ -2,9 +2,8 @@ import { html, htmlCodeToElement, onEvent, onEventAndNow, selectEl, selectEls } 
 import * as HoloPrint from "../HoloPrint.js";
 import { VanillaDataFetcher } from "../ResourcePackStack.js";
 
-let itemsDatalistPromise = VanillaDataFetcher.new().then(async fetcher => {
-	let mojangItems = await fetcher.fetch("metadata/vanilladata_modules/mojang-items.json").then(res => res.json());
-	let itemNames = mojangItems["data_items"].map(item => item["name"].replace(/^minecraft:/, ""))
+let itemsDatalistPromise = VanillaDataFetcher.fetch("metadata/vanilladata_modules/mojang-items.json").then(res => res.json()).then(mojangItems => {
+	let itemNames = mojangItems["data_items"].map(item => item["name"].replace(/^minecraft:/, ""));
 	let datalist = document.createElement("datalist");
 	datalist.id = "itemNamesDatalist";
 	datalist.append(...itemNames.map(itemName => new Option(itemName)));
@@ -204,6 +203,8 @@ export default class ItemCriteriaInput extends HTMLElement {
 			orSpan.innerText = " or ";
 			this.#criteriaInputsCont.appendChild(orSpan);
 		}
+		/** @type {HTMLInputElement} */
+		// @ts-ignore
 		let newInput = htmlCodeToElement(`<input type="text" required pattern="^\\s*(\\w+:)?\\w+\\s*$" spellcheck="false" autocapitalize="off" ${attributesByType[type]}/>`);
 		newInput[onEvent]("keydown", this.#inputKeyDownEvent);
 		if(initialValue != undefined) {

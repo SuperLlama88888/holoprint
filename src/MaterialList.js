@@ -1,6 +1,6 @@
-import { AsyncFactory, floor, jsonc, nanToUndefined, removeFalsies } from "./utils.js";
+import { floor, nanToUndefined, removeFalsies } from "./utils.js";
 
-export default class MaterialList extends AsyncFactory {
+export default class MaterialList {
 	/** @type {Map<String, Number>} */
 	materials = new Map();
 	totalMaterialCount = 0;
@@ -26,19 +26,12 @@ export default class MaterialList extends AsyncFactory {
 	 * Creates a material list manager to count a list of items.
 	 * @param {object} blockMetadata `Mojang/bedrock-samples/metadata/vanilladata_modules/mojang-blocks.json`
 	 * @param {object} itemMetadata `Mojang/bedrock-samples/metadata/vanilladata_modules/mojang-items.json`
+	 * @param {Data.MaterialListMappings} materialListMappings
 	 * @param {string} [translations] The text contents of a `.lang` file
 	 */
-	constructor(blockMetadata, itemMetadata, translations) {
-		super();
-		
+	constructor(blockMetadata, itemMetadata, materialListMappings, translations) {
 		this.#blockMetadata = new Map(blockMetadata["data_items"].map(block => [block["name"], block]));
 		this.#itemMetadata = new Map(itemMetadata["data_items"].map(item => [item["name"], item]));
-		if(translations) {
-			this.setLanguage(translations);
-		}
-	}
-	async init() {
-		let materialListMappings = await fetch("data/materialListMappings.json").then(res => jsonc(res));
 		this.#ignoredBlocks = materialListMappings["ignored_blocks"];
 		let blockToItemMappings = Object.entries(materialListMappings["block_to_item_mappings"]);
 		this.#individualBlockToItemMappings = new Map(blockToItemMappings.filter(([blockName]) => !blockName.startsWith("/") && !blockName.endsWith("/")));
@@ -65,6 +58,10 @@ export default class MaterialList extends AsyncFactory {
 		this.#serializationIdPatternPatches = serializationIdPatches.filter(([pattern]) => pattern.startsWith("/") && pattern.endsWith("/")).map(([pattern, serializationId]) => [new RegExp(pattern.slice(1, -1)), serializationId]);
 		this.#blocksMissingSerializationIds = materialListMappings["blocks_missing_serialization_ids"];
 		this.#translationPatches = materialListMappings["translation_patches"];
+		
+		if(translations) {
+			this.setLanguage(translations);
+		}
 	}
 	/**
 	 * Adds a block to the material list.
@@ -160,7 +157,7 @@ export default class MaterialList extends AsyncFactory {
 				partitionedCount: this.#partitionCount(count),
 				auxId
 			};
-		}).sort((a, b) => b.count - a.count || a.translatedName > b.translatedName);
+		}).sort((a, b) => b.count - a.count || +(a.translatedName > b.translatedName));
 	}
 	/**
 	 * Sets the language of the material list for exporting.
@@ -208,7 +205,9 @@ export default class MaterialList extends AsyncFactory {
 	 * @returns {string}
 	 */
 	#serializationIdToTranslationKey(serializationId) {
+		// @ts-ignore
 		if(this.#individualSerializationIdPatches.has(serializationId)) {
+			// @ts-ignore
 			serializationId = this.#individualSerializationIdPatches.get(serializationId);
 		} else {
 			let matchingPatternAndReplacement = this.#serializationIdPatternPatches.find(([pattern]) => pattern.test(serializationId));
@@ -234,7 +233,7 @@ export default class MaterialList extends AsyncFactory {
 	 */
 	#partitionCount(count) {
 		if(count < 64) {
-			return String(count);
+			return count.toString();
 		} else {
 			let parts = [[floor(count / 1728), "\uE200"], [floor(count / 64) % 27, "s"], [count % 64, ""]].filter(([n]) => n).map(x => x.join(""));
 			return `${count} = ${parts.join(" + ")}`; // a custom shulker box emoji (taken from OreUI files) is defined in font/glyph_E2.png
@@ -259,3 +258,4 @@ export default class MaterialList extends AsyncFactory {
 }
 
 /** @import { MaterialListEntry, Block } from "./HoloPrint.js" */
+/** @import * as Data from "./data/schemas" */

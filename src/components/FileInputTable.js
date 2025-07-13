@@ -184,7 +184,7 @@ export default class FileInputTable extends HTMLElement {
 				}
 			</style>
 			<div id="main">
-				<p id="fileCountHeadingWrapper"><span id="fileCountHeading"></span><button id="removeAllFilesButton"><span data-text-attribute="remove-all-text">Remove all</span> <span class="material-symbols">delete_sweep</span></button></p>
+				<p id="fileCountHeadingWrapper"><span id="fileCountHeading"></span><button id="removeAllFilesButton"><span data-text-attribute="remove-all-text">Remove all</span> <span translate="no" class="material-symbols">delete_sweep</span></button></p>
 				<table></table>
 			</div>
 		`;
@@ -216,10 +216,12 @@ export default class FileInputTable extends HTMLElement {
 			}
 			let row = e.target.closest("tr");
 			if(e.target.classList.contains("moveUpButton")) {
+				// @ts-ignore
 				this.#animateRow(row.previousElementSibling, FileInputTable.#ANIMATION_MOVEMENTS.MOVE_DOWN, false);
 				row.previousElementSibling.before(row);
 				this.#animateRow(row, FileInputTable.#ANIMATION_MOVEMENTS.MOVE_UP);
 			} else if(e.target.classList.contains("moveDownButton")) {
+				// @ts-ignore
 				this.#animateRow(row.nextElementSibling, FileInputTable.#ANIMATION_MOVEMENTS.MOVE_UP, false);
 				row.nextElementSibling.after(row);
 				this.#animateRow(row, FileInputTable.#ANIMATION_MOVEMENTS.MOVE_DOWN);
@@ -326,7 +328,7 @@ export default class FileInputTable extends HTMLElement {
 		if(this.fileInput.files.length) {
 			let countText = this.getAttribute("file-count-text") ?? "{COUNT} file[s] selected";
 			let pluralizedCountText = this.fileInput.files.length > 1? countText.replaceAll(/\[|\]/g, "") : countText.replaceAll(/\[.+\]/g, "");
-			this.#fileCountHeading.textContent = pluralizedCountText.replace("{COUNT}", this.fileInput.files.length);
+			this.#fileCountHeading.textContent = pluralizedCountText.replace("{COUNT}", this.fileInput.files.length.toString());
 		} else {
 			this.#fileCountHeading.textContent = this.getAttribute("empty-text") ?? "No files are selected";
 		}
@@ -345,7 +347,7 @@ export default class FileInputTable extends HTMLElement {
 	#addGenericRowButtons(row) {
 		row.insertAdjacentHTML("beforeend", html`
 			<td>
-				<div>
+				<div translate="no">
 					<button class="moveUpButton material-symbols">arrow_upward</button>
 					<button class="moveDownButton material-symbols">arrow_downward</button>
 					<button class="deleteButton material-symbols">delete</button>
@@ -368,6 +370,7 @@ export default class FileInputTable extends HTMLElement {
 	 * @param {boolean} [highlight]
 	 */
 	#animateRow(row, movement, highlight = true) {
+		/** @type {Keyframe} */
 		let startingFrame = {};
 		if(movement) {
 			let rowHeight = row.getBoundingClientRect().height;
