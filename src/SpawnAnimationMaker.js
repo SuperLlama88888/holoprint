@@ -3,7 +3,7 @@ import { exp, max } from "./utils.js";
 export default class SpawnAnimationMaker {
 	config;
 	structureSize;
-	/** @type {Array<SpawnAnimationBone>} */
+	/** @type {SpawnAnimationBone[]} */
 	#animatedBones = [];
 	#totalAnimationLength = 0;
 	#randomness;
@@ -58,8 +58,8 @@ export default class SpawnAnimationMaker {
 	}
 	/**
 	 * Sorts and condenses a ranking into a proper order. Returns each original rank's value in the new order.
-	 * @param {Array<number>} ranking E.g. [1, 5, 3, 5, 2, 8]
-	 * @returns {Array<number>} E.g. [0, 3, 2, 3, 1, 4]
+	 * @param {number[]} ranking E.g. [1, 5, 3, 5, 2, 8]
+	 * @returns {number[]} E.g. [0, 3, 2, 3, 1, 4]
 	 */
 	#orderDelayRanking(ranking) {
 		let offset = 0;
@@ -112,7 +112,7 @@ export default class SpawnAnimationMaker {
 	/**
 	 * Creates an animation from keyframes.
 	 * @param {(keyframe: number) => any} animFunc The function to be animated with keyframes
-	 * @param {Array<number>} keyframes
+	 * @param {number[]} keyframes
 	 * @param {number} delay
 	 * @returns {Record<string, number>}
 	 */

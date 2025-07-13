@@ -267,7 +267,7 @@ document[onEvent]("DOMContentLoaded", () => {
 	selectEls(".resetButton").forEach(el => {
 		el[onEvent]("click", () => {
 			let fieldset = el.parentElement;
-			/** @type {Array<HTMLInputElement>} */
+			/** @type {HTMLInputElement[]} */
 			// @ts-ignore
 			let allEls = Array.from(generatePackForm.elements);
 			let [elementsBeingReset, elementsToSave] = conditionallyGroup(allEls, el => el.localName != "fieldset" && el.localName != "button" && (!fieldset.contains(el) || !el.hasAttribute("name")));
@@ -362,7 +362,7 @@ window[onEvent]("load", () => { // shadow DOMs aren't populated in the DOMConten
 
 /**
  * Handles files that are dropped on the webpage or opened with the PWA.
- * @param {Array<File>} files
+ * @param {File[]} files
  */
 async function handleInputFiles(files) {
 	let {
@@ -524,8 +524,8 @@ function validateFileInputFileTypes(fileInput) {
 }
 
 /**
- * @param {Array<File>} structureFiles
- * @param {Array<LocalResourcePack>} localResourcePacks
+ * @param {File[]} structureFiles
+ * @param {LocalResourcePack[]} localResourcePacks
  * @returns {Promise<void>}
  */
 async function makePack(structureFiles, localResourcePacks) {

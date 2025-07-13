@@ -5,7 +5,7 @@ import stripJsonComments from "strip-json-comments";
 /**
  * Patches a method onto an object, returning a symbol that can be used to access that method.
  * @overload
- * @param {object | Array<object>} objects An object or multiple objects onto which the method patch will be applied
+ * @param {object | object[]} objects An object or multiple objects onto which the method patch will be applied
  * @param {Function} primaryMethod The method that will be patched onto the object(s)
  * @returns {symbol}
 */
@@ -13,7 +13,7 @@ import stripJsonComments from "strip-json-comments";
  * Patches a method onto an object, and making a function turn into a symbol during property access, with which the patched method can be accessed. 
  * @template {Function} F
  * @overload
- * @param {object | Array<object>} objects An object or multiple objects onto which the method patch will be applied
+ * @param {object | object[]} objects An object or multiple objects onto which the method patch will be applied
  * @param {Function} primaryMethod The method that will be patched onto the object(s)
  * @param {F} secondaryMethod The function that will have a patch applied to turn into a symbol during property access
  * @returns {F & symbol}
@@ -62,7 +62,7 @@ export function closestDescendentOrSelf(el, selector) {
 /**
  * Gets all children of a node, including those in shadow roots. (Doesn't work with nested shadow roots.)
  * @param {Element | DocumentFragment} node
- * @returns {Array<HTMLElement>}
+ * @returns {HTMLElement[]}
  */
 export function getAllChildren(node) {
 	let children = Array.from(node[selectEls]("*"));
@@ -278,8 +278,8 @@ export function random(arr) {
 /**
  * Removes empty slots from a potentially sparse array.
  * @template T
- * @param {Array<T>} arr
- * @returns {Array<T>}
+ * @param {T[]} arr
+ * @returns {T[]}
  */
 export function desparseArray(arr) {
 	return arr.filter(() => true);
@@ -287,8 +287,8 @@ export function desparseArray(arr) {
 /**
  * Makes nulls empty slots in an array.
  * @template T
- * @param {Array<T>} arr
- * @returns {Array<T>}
+ * @param {T[]} arr
+ * @returns {T[]}
  */
 export function makeNullsEmpty(arr) {
 	let res = new Array(arr.length);
@@ -302,12 +302,12 @@ export function makeNullsEmpty(arr) {
 /**
  * Groups an array into two arrays based on a condition function.
  * @template T
- * @param {Array<T>} arr
+ * @param {T[]} arr
  * @param {(item: T) => boolean} conditionFunc
- * @returns {[Array<T>, Array<T>]}
+ * @returns {[T[], T[]]}
  */
 export function conditionallyGroup(arr, conditionFunc) {
-	/** @type {[Array<T>, Array<T>]} */
+	/** @type {[T[], T[]]} */
 	let res = [[], []];
 	arr.forEach(el => {
 		res[+conditionFunc(el)].push(el);
@@ -317,12 +317,12 @@ export function conditionallyGroup(arr, conditionFunc) {
 /**
  * Separates array items based on the result of a grouping function.
  * @template T
- * @param {Array<T>} items
+ * @param {T[]} items
  * @param {(item: T) => string} groupFunc
- * @returns {Record<string, Array<T>>}
+ * @returns {Record<string, T[]>}
  */
 export function groupBy(items, groupFunc) { // native Object.groupBy is only 89.47% on caniuse...
-	/** @type {Record<string, Array<T>>} */
+	/** @type {Record<string, T[]>} */
 	let res = {};
 	items.forEach(item => {
 		let group = groupFunc(item);
@@ -333,8 +333,8 @@ export function groupBy(items, groupFunc) { // native Object.groupBy is only 89.
 };
 /**
  * Groups files by their file extensions.
- * @param {Array<File>} files
- * @returns {Record<string, Array<File> | undefined>}
+ * @param {File[]} files
+ * @returns {Record<string, File[] | undefined>}
  */
 export function groupByFileExtension(files) {
 	return groupBy(files, file => getFileExtension(file));
@@ -351,7 +351,7 @@ export function createNumericEnum(keys) {
 /**
  * Creates an enumeration using Symbols.
  * @template {string} T
- * @param {Array<T>} keys
+ * @param {T[]} keys
  * @returns {Readonly<Record<T, symbol>>}
  */
 export function createSymbolicEnum(keys) {
@@ -360,7 +360,7 @@ export function createSymbolicEnum(keys) {
 /**
  * Crates a pseudo-enumeration using strings.
  * @template {string} T
- * @param {Array<T>} keys
+ * @param {T[]} keys
  * @returns {Readonly<Record<T, string>>}
  */
 export function createStringEnum(keys) {
@@ -429,7 +429,7 @@ export function removeFileExtension(filename) {
 }
 /**
  * Joins an array of strings with "or", localised.
- * @param {Array<string>} arr
+ * @param {string[]} arr
  * @param {string} [language]
  * @returns {string}
  */
@@ -443,7 +443,7 @@ export function joinOr(arr, language = "en") {
 /**
  * Sets a file input's files and dispatches input an dchange events.
  * @param {HTMLInputElement} fileInput
- * @param {FileList | Array<File>} files
+ * @param {FileList | File[]} files
  */
 export function setFileInputFiles(fileInput, files) {
 	if(!files.length) {
@@ -458,7 +458,7 @@ export function setFileInputFiles(fileInput, files) {
 /**
  * Adds files to a file input.
  * @param {HTMLInputElement} fileInput
- * @param {Array<File>} files
+ * @param {File[]} files
  */
 export function addFilesToFileInput(fileInput, files) {
 	if(!files.length) {
@@ -468,7 +468,7 @@ export function addFilesToFileInput(fileInput, files) {
 }
 /**
  * Turns an array of files into a FileList.
- * @param {Array<File>} files
+ * @param {File[]} files
  * @returns {FileList}
  */
 export function fileArrayToFileList(files) {
@@ -689,8 +689,8 @@ export function toHexadecimalString(arr) {
 /**
  * Removes "falsy" elements from an array.
  * @template T
- * @param {Array<T>} arr
- * @returns {Array<T>}
+ * @param {T[]} arr
+ * @returns {T[]}
  */
 export function removeFalsies(arr) {
 	return arr.filter(el => el);
@@ -767,7 +767,7 @@ export function downloadFile(file, filename = file.name) {
 /**
  * Gets the inheritance chain of a class.
  * @param {Function} c
- * @returns {Array<Function>}
+ * @returns {Function[]}
  */
 export function getClassInheritance(c) {
 	let classes = [];
@@ -820,7 +820,7 @@ function parseJsonBigIntSafe(value) { // this function is unused but I'm keeping
 }
 
 export class Vec2Set {
-	/** @type {Array<Vec2>} */
+	/** @type {Vec2[]} */
 	values = [];
 	#val0s = new Map();
 	/**
@@ -842,7 +842,7 @@ export class Vec2Set {
 	}
 }
 export class Vec3Set {
-	/** @type {Array<Vec3>} */
+	/** @type {Vec3[]} */
 	values = [];
 	#val0s = new Map();
 	/**

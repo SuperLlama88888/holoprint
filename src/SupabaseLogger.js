@@ -16,7 +16,7 @@ export default class SupabaseLogger extends AsyncFactory {
 	}
 	/**
 	 * Records the creation of a pack from structure files in a Supabase server, based on file hashes.
-	 * @param {Array<File>} structureFiles
+	 * @param {File[]} structureFiles
 	 */
 	async recordPackCreation(structureFiles) {
 		console.info("Hashing structure files...");

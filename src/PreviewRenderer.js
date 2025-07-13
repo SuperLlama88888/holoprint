@@ -63,13 +63,13 @@ export default class PreviewRenderer extends AsyncFactory {
 	#maxDim;
 	#maxDimPixels;
 	#lastFrameTime = performance.now();
-	/** @type {Array<Array<Vec3>>} */
+	/** @type {Vec3[][]} */
 	#blockPositions = [];
 	/** @type {THREE.DirectionalLight} */
 	#directionalLight;
-	/** @type {Array<PreviewPointLight>} */
+	/** @type {PreviewPointLight[]} */
 	#pointLights = [];
-	/** @type {Array<THREE.PointLight>} */
+	/** @type {THREE.PointLight[]} */
 	#pointLightsInScene = [];
 	/** @type {WeakMap<THREE.PointLight, THREE.PointLightHelper>} */
 	#pointLightHelpers = new WeakMap();
@@ -86,7 +86,7 @@ export default class PreviewRenderer extends AsyncFactory {
 	#shouldRenderNextFrame = true;
 	#stats;
 	#optionsGui;
-	/** @type {Array<THREE.Object3D>} */
+	/** @type {THREE.Object3D[]} */
 	#debugHelpers = [];
 	/**
 	 * Create a preview renderer for a completed geometry file.
@@ -94,8 +94,8 @@ export default class PreviewRenderer extends AsyncFactory {
 	 * @param {string} packName
 	 * @param {TextureAtlas} textureAtlas
 	 * @param {I32Vec3} structureSize
-	 * @param {Array<Block>} blockPalette
-	 * @param {Array<Array<PolyMeshTemplateFaceWithUvs>>} polyMeshTemplatePalette
+	 * @param {Block[]} blockPalette
+	 * @param {PolyMeshTemplateFaceWithUvs[][]} polyMeshTemplatePalette
 	 * @param {[Int32Array, Int32Array]} blockIndices
 	 * @param {Partial<typeof this.options>} [options]
 	 */
@@ -494,7 +494,7 @@ export default class PreviewRenderer extends AsyncFactory {
 	}
 	/**
 	 * Finds all the point lights in the camera's view.
-	 * @returns {Array<PreviewPointLight>}
+	 * @returns {PreviewPointLight[]}
 	 */
 	#getPointLightsInView() {
 		let cameraFrustum = new THREE.Frustum();
@@ -559,7 +559,7 @@ export default class PreviewRenderer extends AsyncFactory {
 	}
 	/**
 	 * Checks whether a poly mesh template has translucent textures.
-	 * @param {Array<PolyMeshTemplateFaceWithUvs>} polyMeshTemplate
+	 * @param {PolyMeshTemplateFaceWithUvs[]} polyMeshTemplate
 	 * @returns {boolean}
 	 */
 	#isPolyMeshTemplateTranslucent(polyMeshTemplate) {
@@ -593,7 +593,7 @@ export default class PreviewRenderer extends AsyncFactory {
 	/**
 	 * Creates an instanced mesh from a group.
 	 * @param {THREE.BufferGeometry} bufferGeo
-	 * @param {Array<Vec3>} positions
+	 * @param {Vec3[]} positions
 	 * @param {THREE.Material} material
 	 * @returns {THREE.InstancedMesh}
 	 */

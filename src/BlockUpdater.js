@@ -9,7 +9,7 @@ export default class BlockUpdater extends AsyncFactory {
 	static #UPGRADE_SCHEMA_VERSION = "5.1.0+bedrock-1.21.60"; // specifically, the tag name
 	
 	#fetcher;
-	/** @type {Record<String, Array<BlockUpdateSchemaSkeleton>>} */
+	/** @type {Record<String, BlockUpdateSchemaSkeleton[]>} */
 	#schemaIndex = {};
 	/** @type {Map<String, BlockUpdateSchema>} */
 	#schemas = new Map();
@@ -236,7 +236,7 @@ export default class BlockUpdater extends AsyncFactory {
 	/**
 	 * Expands the block version number found in structure NBT into an array.
 	 * @param {number} blockVersion Block version number as found in structure NBT
-	 * @returns {Array<number>}
+	 * @returns {number[]}
 	 */
 	static parseBlockVersion(blockVersion) {
 		return blockVersion.toString(16).padStart(8, "0").match(/.{2}/g).map(x => parseInt(x, 16));

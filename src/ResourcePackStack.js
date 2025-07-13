@@ -19,13 +19,13 @@ export default class ResourcePackStack extends AsyncFactory {
 	cacheName;
 	/** Whether or not there are any resource packs attached (apart from vanilla ofc) @type {Boolean} */
 	hasResourcePacks;
-	/** @type {Array<LocalResourcePack>} */
+	/** @type {LocalResourcePack[]} */
 	localResourcePacks;
 	#cache;
 	
 	/**
 	 * Creates a resource pack stack to get resources.
-	 * @param {Array<LocalResourcePack>} [localResourcePacks] Local resource packs to apply. Front of the list is on top (i.e. applied first.)
+	 * @param {LocalResourcePack[]} [localResourcePacks] Local resource packs to apply. Front of the list is on top (i.e. applied first.)
 	 * @param {boolean} [enableCache] Whether or not to cache files
 	 * @param {string} [vanillaDataVersion] The Minecraft version to get vanilla data from
 	 */

@@ -75,8 +75,8 @@ export default class BlockGeoMaker {
 	}
 	/**
 	 * Makes poly mesh templates from a block palette.
-	 * @param {Array<Block>} blockPalette
-	 * @returns {Array<Array<PolyMeshTemplateFace>>}
+	 * @param {Block[]} blockPalette
+	 * @returns {PolyMeshTemplateFace[][]}
 	 */
 	makePolyMeshTemplates(blockPalette) {
 		return blockPalette.map(block => this.#makePolyMeshTemplate(block));
@@ -84,7 +84,7 @@ export default class BlockGeoMaker {
 	/**
 	 * Makes a poly mesh template (i.e. an array of poly mesh template faces) from a block. Texture UVs are unresolved, and are indices for the textureRefs property.
 	 * @param {Block} block
-	 * @returns {Array<PolyMeshTemplateFace>}
+	 * @returns {PolyMeshTemplateFace[]}
 	 */
 	#makePolyMeshTemplate(block) {
 		let blockName = block["name"];
@@ -140,7 +140,7 @@ export default class BlockGeoMaker {
 	 * Makes the poly mesh faces for a block.
 	 * @param {Block} block
 	 * @param {string} blockShape
-	 * @returns {{ faces?: Array<PolyMeshTemplateFace & { fullbright?: boolean }>, centerOfMass?: Vec3 }}
+	 * @returns {{ faces?: (PolyMeshTemplateFace & { fullbright?: boolean })[], centerOfMass?: Vec3 }}
 	 */
 	#makePolyMeshTemplateFaces(block, blockShape) {
 		let specialTexture;
@@ -315,7 +315,7 @@ export default class BlockGeoMaker {
 				cubeVariant = variant; // default variant for this block
 			}
 			
-			/** @type {Array<PolyMeshTemplateFace & { fullbright: boolean }>} */
+			/** @type {(PolyMeshTemplateFace & { fullbright: boolean })[]} */
 			let faces = [];
 			let textureSize = cube["texture_size"] ?? [16, 16];
 			// add generic keys to all faces, and convert texture references into indices
@@ -488,15 +488,15 @@ export default class BlockGeoMaker {
 	/**
 	 * Returns the entries of a block's states and block entity data (prefixed by `entity.`; only first-level properties are supported).
 	 * @param {Block} block
-	 * @returns {Array<[string, any]>}
+	 * @returns {[string, any][]}
 	 */
 	#getBlockStatesAndEntityDataEntries(block) {
 		return [...Object.entries(block["states"] ?? {}), ...Object.entries(block["block_entity_data"] ?? {}).map(([key, value]) => [`entity.${key}`, value])];
 	}
 	/**
 	 * Optimises geometries by merging adjacent cubes and culling hidden faces.
-	 * @param {Array<object>} cubes
-	 * @returns {Array<object>}
+	 * @param {object[]} cubes
+	 * @returns {object[]}
 	 */
 	#optimizeGeometry(cubes) {
 		let [unoptimizableCubes, optimizableCubes] = conditionallyGroup(cubes, cube => !("rot" in cube));
@@ -833,7 +833,7 @@ export default class BlockGeoMaker {
 	}
 	/**
 	 * Calculates the center of mass of some cubes, assuming mass = volume. If all cubes are flat it will take surface area for mass.
-	 * @param {Array<object>} cubes
+	 * @param {object[]} cubes
 	 * @returns {Vec3}
 	 */
 	#calculateCenterOfMass(cubes) {
@@ -869,9 +869,9 @@ export default class BlockGeoMaker {
 	}
 	/**
 	 * Scales poly mesh templates faces towards a center of mass.
-	 * @param {Array<PolyMeshTemplateFace>} faces
+	 * @param {PolyMeshTemplateFace[]} faces
 	 * @param {Vec3} centerOfMass
-	 * @returns {Array<PolyMeshTemplateFace>}
+	 * @returns {PolyMeshTemplateFace[]}
 	 */
 	#scaleFaces(faces, centerOfMass) {
 		return faces.map(face => {
@@ -1038,9 +1038,9 @@ export default class BlockGeoMaker {
 	
 	/**
 	 * Resolves UVs in template faces.
-	 * @param {Array<PolyMeshTemplateFace>} faces
+	 * @param {PolyMeshTemplateFace[]} faces
 	 * @param {TextureAtlas} textureAtlas
-	 * @returns {Array<PolyMeshTemplateFaceWithUvs>}
+	 * @returns {PolyMeshTemplateFaceWithUvs[]}
 	 */
 	static resolveTemplateFaceUvs(faces, textureAtlas) {
 		return faces.map(face => {

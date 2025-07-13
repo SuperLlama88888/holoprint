@@ -12,12 +12,12 @@ export default class MaterialList {
 	// I wish I could use import...with to import these from materialListMappings.json, which would have worked with esbuild, but it doesn't let me load JSONC... sad...
 	#ignoredBlocks;
 	#individualBlockToItemMappings;
-	/** @type {Array<[RegExp, string]>} */
+	/** @type {[RegExp, string][]} */
 	#blockToItemPatternMappings;
 	#itemCountMultipliers;
 	#specialBlockEntityProperties;
 	#individualSerializationIdPatches;
-	/** @type {Array<[RegExp, string]>} */
+	/** @type {[RegExp, string][]} */
 	#serializationIdPatternPatches;
 	#blocksMissingSerializationIds;
 	#translationPatches;
@@ -112,7 +112,7 @@ export default class MaterialList {
 	}
 	/**
 	 * Exports the material list for proper usage.
-	 * @returns {Array<MaterialListEntry>}
+	 * @returns {MaterialListEntry[]}
 	 */
 	export() {
 		if(this.#translations == undefined) {

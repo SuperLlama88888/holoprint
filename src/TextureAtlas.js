@@ -20,13 +20,13 @@ export default class TextureAtlas {
 	
 	/**
 	 * When makeAtlas() is called, this will contain UV coordinates and sizes for texture references passed as input, as well as cropping information.
-	 * @type {Array<ImageUv>}
+	 * @type {ImageUv[]}
 	 */
 	uvs;
 	
 	/**
 	 * Contains the actual texture atlas images: [textureName, imageBlob]
-	 * @type {Array<[string, Blob]>}
+	 * @type {[string, Blob][]}
 	 */
 	imageBlobs;
 	textureWidth;
@@ -65,7 +65,7 @@ export default class TextureAtlas {
 	}
 	/**
 	 * Makes a texture atlas from texture references and changes the textureUvs property to reflect UV coordinates and sizes for each reference.
-	 * @param {Array<TextureReference>} textureRefs
+	 * @param {TextureReference[]} textureRefs
 	 */
 	async makeAtlas(textureRefs) {
 		console.log("Texture references:", textureRefs);
@@ -261,7 +261,7 @@ export default class TextureAtlas {
 	/**
 	 * Loads images from a set of tinted texture paths.
 	 * @param {Set<TextureFragment>} textureFragments
-	 * @returns {Promise<Array<ImageFragment>>}
+	 * @returns {Promise<ImageFragment[]>}
 	 */
 	async #loadImages(textureFragments) {
 		let tgaLoader = new TGALoader();
@@ -345,8 +345,8 @@ export default class TextureAtlas {
 	}
 	/**
 	 * Stitches together images with widths and heights, and puts the UV coordinates and sizes into the textureUvs property.
-	 * @param {Array<ImageFragment>} imageFragments
-	 * @returns {Promise<Array<ImageUv>>}
+	 * @param {ImageFragment[]} imageFragments
+	 * @returns {Promise<ImageUv[]>}
 	 */
 	async #stitchTextureAtlas(imageFragments) {
 		imageFragments.forEach((imageFragment, i) => {
@@ -379,7 +379,7 @@ export default class TextureAtlas {
 			imageFragments = imageFragments2;
 		}
 		imageFragments.sort((a, b) => a["i"] - b["i"]);
-		/** @type {Array<ImageFragment & Rectangle & { actualSize: Vec2, offset: Vec2 }>} */
+		/** @type {(ImageFragment & Rectangle & { actualSize: Vec2, offset: Vec2 })[]} */
 		// @ts-ignore
 		let packedImageFragments = imageFragments;
 		this.textureWidth = packing.w;
@@ -463,7 +463,7 @@ export default class TextureAtlas {
 	}
 	/** Add an outline around each texture.
 	 * @param {OffscreenCanvas} ogCan
-	 * @param {Array<Rectangle>} imagePositions
+	 * @param {Rectangle[]} imagePositions
 	 * @param {HoloPrintConfig} config
 	 * @param {ImageData} [imageData]
 	 * @returns {OffscreenCanvas}
@@ -539,8 +539,8 @@ export default class TextureAtlas {
 	/**
 	 * Calculates the transparencies of each image fragment.
 	 * @param {ImageData} imageData
-	 * @param {Array<Rectangle>} imageFragments
-	 * @returns {Array<number>}
+	 * @param {Rectangle[]} imageFragments
+	 * @returns {number[]}
 	 */
 	#getImageFragmentTransparencies(imageData, imageFragments) {
 		return imageFragments.map(({ x: startX, y: startY, w, h }) => {

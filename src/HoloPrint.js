@@ -49,11 +49,11 @@ const HOLOGRAM_LAYER_MODES = createNumericEnum(["SINGLE", "ALL_BELOW"]);
 
 /**
  * Makes a HoloPrint resource pack from a structure file.
- * @param {File | Array<File>} structureFiles Either a singular structure file (`*.mcstructure`), or an array of structure files
+ * @param {File | File[]} structureFiles Either a singular structure file (`*.mcstructure`), or an array of structure files
  * @param {HoloPrintConfig} [config]
  * @param {ResourcePackStack} [resourcePackStack]
  * @param {HTMLElement} [previewCont]
- * @param {(previews: Array<PreviewRenderer>) => void} [previewLoadedCallback] A function that will be called once the preview has finished loading
+ * @param {(previews: PreviewRenderer[]) => void} [previewLoadedCallback] A function that will be called once the preview has finished loading
  * @returns {Promise<File>} Resource pack (`*.mcpack`)
  */
 export async function makePack(structureFiles, config, resourcePackStack, previewCont, previewLoadedCallback) {
@@ -541,7 +541,7 @@ export async function makePack(structureFiles, config, resourcePackStack, previe
 /**
  * Retrieves the structure files from a completed HoloPrint resource pack.
  * @param {File} resourcePack HoloPrint resource pack (`*.mcpack)
- * @returns {Promise<Array<File>>}
+ * @returns {Promise<File[]>}
  */
 export async function extractStructureFilesFromPack(resourcePack) {
 	let packFileReader = new BlobReader(resourcePack);
@@ -573,7 +573,7 @@ export async function updatePack(resourcePack, config, resourcePackStack, previe
 }
 /**
  * Returns the default pack name that would be used if no pack name is specified.
- * @param {Array<File>} structureFiles
+ * @param {File[]} structureFiles
  * @returns {string}
  */
 export function getDefaultPackName(structureFiles) {
@@ -589,7 +589,7 @@ export function getDefaultPackName(structureFiles) {
 /**
  * Finds all labels and links in a description section that will be put in the settings links section.
  * @param {string} description
- * @returns {Array<[string, string]>}
+ * @returns {[string, string][]}
  */
 export function findLinksInDescription(description) {
 	let links = [];
@@ -602,8 +602,8 @@ export function findLinksInDescription(description) {
 }
 /**
  * Creates an ItemCriteria from arrays of names and tags.
- * @param {string | Array<string>} names
- * @param {string | Array<string>} [tags]
+ * @param {string | string[]} names
+ * @param {string | string[]} [tags]
  * @returns {ItemCriteria}
  */
 export function createItemCriteria(names, tags = []) { // IDK why I haven't made this a class
@@ -833,8 +833,8 @@ async function getResponseContents(resPromise, filePath) {
 /**
  * Removes ignored blocks from the block palette, updates old blocks, and adds block entities as separate entries.
  * @param {MCStructure["structure"]} structure The de-NBT-ed structure file
- * @param {Array<string>} ignoredBlocks
- * @returns {Promise<{ palette: Array<Block>, indices: [Int32Array, Int32Array] }>}
+ * @param {string[]} ignoredBlocks
+ * @returns {Promise<{ palette: Block[], indices: [Int32Array, Int32Array] }>}
  */
 async function tweakBlockPalette(structure, ignoredBlocks) {
 	let palette = structuredClone(structure["palette"]["default"]["block_palette"]);
@@ -912,8 +912,8 @@ async function tweakBlockPalette(structure, ignoredBlocks) {
 }
 /**
  * Combines multiple block palettes into one, and updates indices for each.
- * @param {Array<{palette: Array<Block>, indices: [Int32Array, Int32Array]}>} palettesAndIndices
- * @returns {{palette: Array<Block>, indices: Array<[Int32Array, Int32Array]>}}
+ * @param {{palette: Block[], indices: [Int32Array, Int32Array]}[]} palettesAndIndices
+ * @returns {{palette: Block[], indices: [Int32Array, Int32Array][]}}
  */
 function mergeMultiplePalettesAndIndices(palettesAndIndices) {
 	if(palettesAndIndices.length == 1) {
@@ -940,7 +940,7 @@ function mergeMultiplePalettesAndIndices(palettesAndIndices) {
 /**
  * Makes the layer animations and animation controllers. Mutates the original arguments.
  * @param {HoloPrintConfig} config
- * @param {Array<I32Vec3>} structureSizes
+ * @param {I32Vec3[]} structureSizes
  * @param {object} entityDescription
  * @param {object} hologramAnimations
  * @param {object} hologramAnimationControllers
@@ -1089,7 +1089,7 @@ function addBoundingBoxParticles(hologramAnimationControllers, structureI, struc
  * Adds block validation particles for a single structure to the hologram animation controllers in-place.
  * @param {Record<string, any>} hologramAnimationControllers
  * @param {number} structureI
- * @param {Array<Record<string, any>>} blocksToValidate
+ * @param {Record<string, any>[]} blocksToValidate
  * @param {I32Vec3} structureSize
  */
 function addBlockValidationParticles(hologramAnimationControllers, structureI, blocksToValidate, structureSize) {
@@ -1219,7 +1219,7 @@ function patchRenderControllers(renderControllers, patches) {
 }
 /**
  * Adds the material list to the `hud_screen.json` UI file.
- * @param {Array<MaterialListEntry>} finalisedMaterialList
+ * @param {MaterialListEntry[]} finalisedMaterialList
  * @param {object} hudScreenUI
  * @param {object} blockMetadata
  */
@@ -1249,7 +1249,7 @@ function addMaterialListUI(finalisedMaterialList, hudScreenUI, blockMetadata) {
  * @param {Record<string, any>} itemMetadata
  * @param {Data.MaterialListMappings} materialListMappings
  * @param {Record<string, string>} resourceLangFiles
- * @param {Record<string, Array<string>>} itemTags
+ * @param {Record<string, string[]>} itemTags
  * @returns {{ inGameControls: Record<string, string>, controlItemTranslations: Record<string, string> }}
  */
 function translateControlItems(config, blockMetadata, itemMetadata, materialListMappings, resourceLangFiles, itemTags) {
@@ -1298,11 +1298,11 @@ function translateControlItems(config, blockMetadata, itemMetadata, materialList
  * @param {Record<string, string>} packTemplateLangFiles
  * @param {string} packName
  * @param {MaterialList} materialList
- * @param {Record<string, Array<MaterialListEntry>>} exportedMaterialLists
+ * @param {Record<string, MaterialListEntry[]>} exportedMaterialLists
  * @param {boolean} controlsHaveBeenCustomised
  * @param {Record<string, string>} inGameControls
  * @param {Record<string, string>} controlItemTranslations
- * @returns {Array<[string, string]>}
+ * @returns {[string, string][]}
  */
 function makeLangFiles(config, packTemplateLangFiles, packName, materialList, exportedMaterialLists, controlsHaveBeenCustomised, inGameControls, controlItemTranslations) {
 	const disabledFeatureTranslations = { // these look at the .lang RP files
@@ -1362,7 +1362,7 @@ function makeLangFiles(config, packTemplateLangFiles, packName, materialList, ex
  * Retextures the control items. Modifies `itemTexture` and `terrainTexture`.
  * @param {HoloPrintConfig} config
  * @param {Data.ItemIcons} itemIcons
- * @param {Record<string, Array<string>>} itemTags
+ * @param {Record<string, string[]>} itemTags
  * @param {object} resourceItemTexture `RP/textures/item_texture.json`
  * @param {object} blocksDotJson
  * @param {object} vanillaTerrainTexture
@@ -1370,7 +1370,7 @@ function makeLangFiles(config, packTemplateLangFiles, packName, materialList, ex
  * @param {ResourcePackStack} resourcePackStack
  * @param {object} itemTexture
  * @param {object} terrainTexture
- * @returns {Promise<{ controlItemTextures: Array<[string, Blob]>, hasModifiedTerrainTexture: boolean }>}
+ * @returns {Promise<{ controlItemTextures: [string, Blob][], hasModifiedTerrainTexture: boolean }>}
  */
 async function retextureControlItems(config, itemIcons, itemTags, resourceItemTexture, blocksDotJson, vanillaTerrainTexture, pmmpBedrockDataFetcher, resourcePackStack, itemTexture, terrainTexture) {
 	let controlItemTextures = [];
@@ -1581,8 +1581,8 @@ async function makePackIcon(structureFile) {
 /**
  * Expands item criteria into an array of item names by expanding all item tags.
  * @param {ItemCriteria} itemCriteria
- * @param {Record<string, Array<string>>} itemTags
- * @returns {Array<string>}
+ * @param {Record<string, string[]>} itemTags
+ * @returns {string[]}
  */
 function expandItemCriteria(itemCriteria, itemTags) {
 	let minecraftTags = itemCriteria["tags"].filter(tag => !tag.includes(":")); // we can't find which items are used in custom tags
@@ -1621,7 +1621,7 @@ function arrayEntriesToMolang(entries, indexVar) {
 }
 /**
  * Creates a Molang expression that mimics 2D array access.
- * @param {Array<Array>} array
+ * @param {Array[]} array
  * @param {string} indexVar1
  * @param {string} indexVar2
  * @returns {string}
@@ -1761,8 +1761,8 @@ function functionToMolang(func, vars = {}) {
 /** @import { ZipWriterAddDataOptions } from "@zip.js/zip.js" */
 /**
  * @typedef {object} HoloPrintConfig An object for storing HoloPrint config options.
- * @property {Array<string>} IGNORED_BLOCKS
- * @property {Array<string>} IGNORED_MATERIAL_LIST_BLOCKS
+ * @property {string[]} IGNORED_BLOCKS
+ * @property {string[]} IGNORED_MATERIAL_LIST_BLOCKS
  * @property {number} SCALE
  * @property {number} OPACITY
  * @property {boolean} MULTIPLE_OPACITIES Whether to generate multiple opacity images and allow in-game switching, or have a constant opacity
@@ -1785,7 +1785,7 @@ function functionToMolang(func, vars = {}) {
  * @property {number} BACKUP_SLOT_COUNT
  * @property {string | undefined} PACK_NAME The name of the completed pack; will default to the structure file names
  * @property {Blob} PACK_ICON_BLOB Blob for `pack_icon.png`
- * @property {Array<string>} AUTHORS
+ * @property {string[]} AUTHORS
  * @property {string | undefined} DESCRIPTION
  * @property {number} COMPRESSION_LEVEL
  * @property {number} PREVIEW_BLOCK_LIMIT The maximum number of blocks a structure can have for rendering a preview
@@ -1809,8 +1809,8 @@ function functionToMolang(func, vars = {}) {
  */
 /**
  * @typedef {object} ItemCriteria Stores item names and tags for checking items. Leaving everything empty will check for nothing being held.
- * @property {Array<string>} names Item names the matching item could have. The `minecraft:` namespace will be used if no namespace is specified.
- * @property {Array<string>} tags Item tags the matching item could have. The `minecraft:` namespace will be used if no namespace is specified.
+ * @property {string[]} names Item names the matching item could have. The `minecraft:` namespace will be used if no namespace is specified.
+ * @property {string[]} tags Item tags the matching item could have. The `minecraft:` namespace will be used if no namespace is specified.
  */
 /**
  * @typedef {object} NBTBlock A block as stored in NBT.
@@ -1830,10 +1830,10 @@ function functionToMolang(func, vars = {}) {
 /**
  * @typedef {object} PolyMesh A `poly_mesh` object as in geometry files.
  * @property {boolean} [normalized_uvs]
- * @property {Array<Vec3>} normals
- * @property {Array<Vec2>} uvs
- * @property {Array<Vec3>} positions
- * @property {Array<PolyMeshFace>} polys
+ * @property {Vec3[]} normals
+ * @property {Vec2[]} uvs
+ * @property {Vec3[]} positions
+ * @property {PolyMeshFace[]} polys
  */
 /**
  * @typedef {[Vec3, Vec3, Vec3, Vec3]} PolyMeshFace A square face.
@@ -1928,10 +1928,10 @@ function functionToMolang(func, vars = {}) {
  * @property {I32Vec3} size Size of the structure in blocks.
  * @property {object} structure
  * @property {[Int32Array, Int32Array]} structure.block_indices Block indices for the structure.
- * @property {Array<EntityNBTCompound>} structure.entities List of entities stored as NBT.
+ * @property {EntityNBTCompound[]} structure.entities List of entities stored as NBT.
  * @property {object} structure.palette
  * @property {object} structure.palette.default
- * @property {Array<NBTBlock>} structure.palette.default.block_palette List of ordered block entries that the indices refer to.
+ * @property {NBTBlock[]} structure.palette.default.block_palette List of ordered block entries that the indices refer to.
  * @property {Record<number, BlockPositionData>} [structure.palette.default.block_position_data] Additional data for individual blocks in the structure.
  * @property {I32Vec3} structure_world_origin The original world position where the structure was saved.
  */
@@ -1941,7 +1941,7 @@ function functionToMolang(func, vars = {}) {
 /**
  * @typedef {object} BlockPositionData Additional data for individual blocks.
  * @property {EntityNBTCompound} [block_entity_data] Block entity data.
- * @property {Array<TickQueueData>} [tick_queue_data] Scheduled tick information for blocks that need updates.
+ * @property {TickQueueData[]} [tick_queue_data] Scheduled tick information for blocks that need updates.
  */
 /**
  * @typedef {object} TickQueueData Represents a scheduled pending tick update. Used in observers.
@@ -1967,7 +1967,7 @@ function functionToMolang(func, vars = {}) {
  * @property {string} [newName] - An optional new name for the block.
  * @property {BlockUpdateSchemaFlattenRule} [newFlattenedName] - An optional flattened property rule providing a new name.
  * @property {Record<string, TypedBlockStateProperty> | null} newState - The new property values after the remapping.
- * @property {Array<string>} [copiedState] - Optional list of property names to copy from the old state.
+ * @property {string[]} [copiedState] - Optional list of property names to copy from the old state.
  */
 /**
  * @typedef {object} BlockUpdateSchemaSkeleton
@@ -1986,11 +1986,11 @@ function functionToMolang(func, vars = {}) {
  * @property {Record<string, string>} [renamedIds] - Mapping of renamed IDs.
  * @property {Record<string, Record<string, TypedBlockStateProperty>>} [addedProperties] - Mapping of added properties.
  * @property {Record<string, Record<string, string>>} [renamedProperties] - Mapping of renamed properties.
- * @property {Record<string, Array<string>>} [removedProperties] - Mapping of removed properties.
+ * @property {Record<string, string[]>} [removedProperties] - Mapping of removed properties.
  * @property {Record<string, Record<string, string>>} [remappedPropertyValues] - Mapping of remapped property values.
- * @property {Record<string, Array<{ old: TypedBlockStateProperty, new: TypedBlockStateProperty }>>} [remappedPropertyValuesIndex] - Index of remapped property values.
+ * @property {Record<string, { old: TypedBlockStateProperty, new: TypedBlockStateProperty }[]>} [remappedPropertyValuesIndex] - Index of remapped property values.
  * @property {Record<string, BlockUpdateSchemaFlattenRule>} [flattenedProperties] - Mapping of flattened properties.
- * @property {Record<string, Array<BlockUpdateSchemaRemappedState>>} [remappedStates] - Mapping of remapped states.
+ * @property {Record<string, BlockUpdateSchemaRemappedState[]>} [remappedStates] - Mapping of remapped states.
  */
 /**
  * @typedef {object} Rectangle
