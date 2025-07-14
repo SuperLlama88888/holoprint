@@ -7,10 +7,10 @@ import browserslist from "browserslist";
 import { transform, browserslistToTargets } from "lightningcss";
 import minifyJSON from "jsonminify";
 
-const browserParamName = "--browser=";
+const versionParamName = "--version=";
 const exportHoloPrintLibFlagName = "--export-holoprint-lib";
 
-const buildVersion = process.argv.find(arg => arg.startsWith(browserParamName))?.slice(browserParamName.length) ?? "testing";
+const buildVersion = process.argv.find(arg => arg.startsWith(versionParamName))?.slice(versionParamName.length) ?? "testing";
 const exportHoloPrintLib = process.argv.includes(exportHoloPrintLibFlagName);
 
 if(fs.existsSync("dist")) {

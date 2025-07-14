@@ -17,7 +17,7 @@ jobs:
           cd pipeline
           npm ci
           cd ..
-          node pipeline/build.js --browser=${{ github.ref_name }} && rm -r tests
+          node pipeline/build.js --version=${{ github.ref_name }} && rm -r tests
       - name: Upload files as artifact
         uses: actions/upload-pages-artifact@v3.0.1
         with:
