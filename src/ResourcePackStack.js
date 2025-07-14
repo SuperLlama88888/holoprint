@@ -17,7 +17,7 @@ export default class ResourcePackStack extends AsyncFactory {
 	vanillaDataVersion;
 	hash;
 	cacheName;
-	/** Whether or not there are any resource packs attached (apart from vanilla ofc) @type {Boolean} */
+	/** Whether or not there are any resource packs attached (apart from vanilla ofc) @type {boolean} */
 	hasResourcePacks;
 	/** @type {LocalResourcePack[]} */
 	localResourcePacks;

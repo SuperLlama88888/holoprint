@@ -1,5 +1,5 @@
 import { extractStructureFilesFromMcworld } from "mcbe-leveldb-reader";
-import { selectEl, downloadFile, sleep, selectEls, loadTranslationLanguage, translate, getStackTrace, random, UserError, joinOr, conditionallyGroup, groupByFileExtension, addFilesToFileInput, setFileInputFiles, dispatchInputEvents, getAllChildren, jsonc, toImage, removeFalsies, clearCacheStorage, onEvent, onEventAndNow } from "./utils.js";
+import { selectEl, downloadFile, sleep, selectEls, loadTranslationLanguage, translate, getStackTrace, random, UserError, joinOr, conditionallyGroup, groupByFileExtension, addFilesToFileInput, setFileInputFiles, dispatchInputEvents, getAllChildren, jsonc, toImage, removeFalsies, clearCacheStorage, onEvent, onEventAndNow, cast } from "./utils.js";
 import * as HoloPrint from "./HoloPrint.js";
 import SupabaseLogger from "./SupabaseLogger.js";
 
@@ -47,26 +47,26 @@ document[onEvent]("DOMContentLoaded", () => {
 	
 	selectEls(`input[type="file"][accept]:not([multiple])`).forEach(input => {
 		input[onEventAndNow]("input", e => {
-			if(!validateFileInputFileTypes(input)) {
+			if(!validateFileInputFileTypes(cast(input, HTMLInputElement))) {
 				e?.stopImmediatePropagation();
 			}
 		});
 	});
 	
-	generatePackForm = selectEl("#generatePackForm");
+	generatePackForm = cast(selectEl("#generatePackForm"), HTMLFormElement);
 	dropFileNotice = selectEl("#dropFileNotice");
-	structureFilesInput = selectEl("#structureFilesInput");
+	structureFilesInput = cast(selectEl("#structureFilesInput"), HTMLInputElement);
 	let notStructureFileError = selectEl("#notStructureFileError");
-	worldFileInput = selectEl("#worldFileInput");
+	worldFileInput = cast(selectEl("#worldFileInput"), HTMLInputElement);
 	let worldExtractionMessage = selectEl("#worldExtractionMessage");
-	let worldExtractionSuccess = selectEl("#worldExtractionSuccess");
+	let worldExtractionSuccess = cast(selectEl("#worldExtractionSuccess"), HTMLSpanElement);
 	let worldExtractionError = selectEl("#worldExtractionError");
-	let worldExtractionWorldError = selectEl("#worldExtractionWorldError");
-	oldPackInput = selectEl("#oldPackInput");
+	let worldExtractionWorldError = cast(selectEl("#worldExtractionWorldError"), HTMLSpanElement);
+	oldPackInput = cast(selectEl("#oldPackInput"), HTMLInputElement);
 	let oldPackExtractionMessage = selectEl("#oldPackExtractionMessage");
 	let oldPackExtractionSuccess = selectEl("#oldPackExtractionSuccess");
 	let oldPackExtractionError = selectEl("#oldPackExtractionError");
-	structureFilesList = selectEl("#structureFilesList");
+	structureFilesList = cast(selectEl("#structureFilesList"), HTMLInputElement);
 	packNameInput = generatePackForm.elements.namedItem("packName");
 	packNameInput[onEvent]("invalid", () => {
 		packNameInput.setCustomValidity(translateCurrentLanguage("metadata.pack_name.error"));
@@ -99,7 +99,7 @@ document[onEvent]("DOMContentLoaded", () => {
 		if(!worldFile) {
 			return;
 		}
-		selectEl("#extractFromWorldTab").checked = true;
+		cast(selectEl("#extractFromWorldTab"), HTMLInputElement).checked = true;
 		worldExtractionMessage.classList.remove("hidden");
 		worldExtractionMessage.scrollIntoView({
 			block: "center"
@@ -117,7 +117,7 @@ document[onEvent]("DOMContentLoaded", () => {
 		worldExtractionMessage.classList.add("hidden");
 		if(structureFiles.size) {
 			addFilesToFileInput(structureFilesList, Array.from(structureFiles.values()));
-			worldExtractionSuccess.dataset.translationSubCount = structureFiles.size;
+			worldExtractionSuccess.dataset.translationSubCount = structureFiles.size.toString();
 			worldExtractionSuccess.classList.remove("hidden");
 		} else {
 			worldExtractionError.classList.remove("hidden");
@@ -133,7 +133,7 @@ document[onEvent]("DOMContentLoaded", () => {
 		if(!oldPack) {
 			return;
 		}
-		selectEl("#updatePackTab").checked = true;
+		cast(selectEl("#updatePackTab"), HTMLInputElement).checked = true;
 		oldPackExtractionMessage.classList.remove("hidden");
 		oldPackExtractionMessage.scrollIntoView({
 			block: "center"
@@ -193,8 +193,7 @@ document[onEvent]("DOMContentLoaded", () => {
 	customElements.define("simple-logger", SimpleLogger);
 	customElements.define("lil-gui", LilGui);
 	if(!ACTUAL_CONSOLE_LOG) {
-		// @ts-ignore
-		logger = selectEl("#log");
+		logger = cast(selectEl("#log"), SimpleLogger);
 		logger.patchConsoleMethods();
 	}
 	
@@ -203,11 +202,11 @@ document[onEvent]("DOMContentLoaded", () => {
 		
 		let formData = new FormData(generatePackForm);
 		let resourcePacks = [];
-		let localResourcePackFiles = generatePackForm.elements.namedItem("localResourcePack").files;
+		let localResourcePackFiles = cast(generatePackForm.elements.namedItem("localResourcePack"), HTMLInputElement).files;
 		if(localResourcePackFiles.length) {
 			resourcePacks.push(await LocalResourcePack.new(localResourcePackFiles));
 		}
-		makePack(formData.getAll("structureFiles"), resourcePacks);
+		makePack(cast(formData.getAll("structureFiles"), [File]), resourcePacks);
 	});
 	generatePackForm[onEvent]("input", e => {
 		if(e.target.closest("fieldset")?.classList?.contains("textureSettings") && e.target.hasAttribute("name")) {
@@ -217,14 +216,12 @@ document[onEvent]("DOMContentLoaded", () => {
 	updateTexturePreview();
 	generatePackFormSubmitButton = generatePackForm.elements.namedItem("submit");
 	
-	let opacityModeSelect = generatePackForm.elements.namedItem("opacityMode");
+	let opacityModeSelect = cast(generatePackForm.elements.namedItem("opacityMode"), HTMLSelectElement);
 	opacityModeSelect[onEventAndNow]("change", () => {
-		generatePackForm.elements.namedItem("opacity").parentElement.classList.toggle("hidden", opacityModeSelect.value == "multiple");
+		cast(generatePackForm.elements.namedItem("opacity"), Element).parentElement.classList.toggle("hidden", opacityModeSelect.value == "multiple");
 	});
 	
-	/** @type {HTMLTextAreaElement} */
-	// @ts-ignore
-	let descriptionTextArea = generatePackForm.elements.namedItem("description");
+	let descriptionTextArea = cast(generatePackForm.elements.namedItem("description"), HTMLTextAreaElement);
 	let descriptionLinksCont = selectEl("#descriptionLinksCont");
 	descriptionTextArea[onEventAndNow]("input", () => {
 		let links = HoloPrint.findLinksInDescription(descriptionTextArea.value);
@@ -243,9 +240,7 @@ document[onEvent]("DOMContentLoaded", () => {
 		let label = document.createElement("label");
 		let playerControlTranslationKey = HoloPrint.PLAYER_CONTROL_NAMES[control];
 		label.innerHTML = `<span data-translate="${playerControlTranslationKey}">...</span>:`;
-		/** @type {ItemCriteriaInput} */
-		// @ts-ignore
-		let input = document.createElement("item-criteria-input");
+		let input = cast(document.createElement("item-criteria-input"), ItemCriteriaInput);
 		input.setAttribute("name", `control.${control}`);
 		if(itemCriteria["names"].length > 0) {
 			input.setAttribute("value-items", itemCriteria["names"].join(","));
@@ -258,7 +253,7 @@ document[onEvent]("DOMContentLoaded", () => {
 		input.setAttribute("default", input.value); // has to be called after being added to the DOM
 	});
 	
-	let clearResourcePackCacheButton = selectEl("#clearResourcePackCacheButton");
+	let clearResourcePackCacheButton = cast(selectEl("#clearResourcePackCacheButton"), HTMLButtonElement);
 	clearResourcePackCacheButton[onEvent]("click", async () => {
 		clearCacheStorage(caches);
 		temporarilyChangeText(clearResourcePackCacheButton, clearResourcePackCacheButton.dataset.resetTranslation);
@@ -267,29 +262,33 @@ document[onEvent]("DOMContentLoaded", () => {
 	selectEls(".resetButton").forEach(el => {
 		el[onEvent]("click", () => {
 			let fieldset = el.parentElement;
-			/** @type {HTMLInputElement[]} */
-			// @ts-ignore
-			let allEls = Array.from(generatePackForm.elements);
+			let allEls = cast(Array.from(generatePackForm.elements), [HTMLInputElement]);
 			let [elementsBeingReset, elementsToSave] = conditionallyGroup(allEls, el => el.localName != "fieldset" && el.localName != "button" && (!fieldset.contains(el) || !el.hasAttribute("name")));
+			let oldFiles = elementsToSave.map(el => {
+				if(el.type == "file") {
+					let dataTransfer = new DataTransfer(); // Simply copying el.files wouldn't work since that's a FormData object, and resetting the form will reset the files in there as well. To work around this, we just copy all files to a DataTransfer, which is the only other thing that uses FormData. (Using structuredClone() is laggy on Chrome.)
+					Array.from(el.files).forEach(file => dataTransfer.items.add(file));
+					return dataTransfer.files;
+				}
+			});
+			let oldChecks = elementsToSave.map(el => {
+				if(el.type == "checkbox") {
+					return el.checked;
+				}
+			});
 			let oldValues = elementsToSave.map(el => {
-				switch(el.type) {
-					case "file": {
-						let dataTransfer = new DataTransfer(); // Simply copying el.files wouldn't work since that's a FormData object, and resetting the form will reset the files in there as well. To work around this, we just copy all files to a DataTransfer, which is the only other thing that uses FormData. (Using structuredClone() is laggy on Chrome.)
-						Array.from(el.files).forEach(file => dataTransfer.items.add(file));
-						return dataTransfer.files;
-					}
-					case "checkbox": return el.checked;
-					default: return el.value;
+				if(el.type != "file" && el.type != "checkbox") {
+					return el.value;
 				}
 			});
 			generatePackForm.reset(); // this resets the entire form, which is why the old values must be saved
 			elementsToSave.forEach((el, i) => {
 				switch(el.type) {
 					case "file": {
-						el.files = oldValues[i];
+						el.files = oldFiles[i];
 					} break;
 					case "checkbox": {
-						el.checked = oldValues[i];
+						el.checked = oldChecks[i];
 					} break;
 					default: {
 						el.value = oldValues[i];
@@ -299,7 +298,7 @@ document[onEvent]("DOMContentLoaded", () => {
 			elementsBeingReset.forEach(el => {
 				dispatchInputEvents(el);
 			});
-			temporarilyChangeText(el, el.dataset.resetTranslation);
+			temporarilyChangeText(el, cast(el, HTMLButtonElement).dataset.resetTranslation);
 		});
 	});
 	
@@ -385,21 +384,21 @@ async function updateTexturePreview() {
 	let can = new OffscreenCanvas(texturePreviewImage.width, texturePreviewImage.height);
 	let ctx = can.getContext("2d");
 	ctx.drawImage(texturePreviewImage, 0, 0);
-	let textureOutlineWidth = +generatePackForm.elements.namedItem("textureOutlineWidth").value;
+	let textureOutlineWidth = +cast(generatePackForm.elements.namedItem("textureOutlineWidth"), HTMLInputElement).value;
 	let outlinedCan = textureOutlineWidth > 0? TextureAtlas.addTextureOutlines(can, [{
 		x: 0,
 		y: 0,
 		w: can.width,
 		h: can.height
 	}], HoloPrint.addDefaultConfig({
-		TEXTURE_OUTLINE_COLOR: generatePackForm.elements.namedItem("textureOutlineColor").value,
-		TEXTURE_OUTLINE_OPACITY: +generatePackForm.elements.namedItem("textureOutlineOpacity").value / 100,
+		TEXTURE_OUTLINE_COLOR: cast(generatePackForm.elements.namedItem("textureOutlineColor"), HTMLInputElement).value,
+		TEXTURE_OUTLINE_OPACITY: +cast(generatePackForm.elements.namedItem("textureOutlineOpacity"), HTMLInputElement).value / 100,
 		TEXTURE_OUTLINE_WIDTH: textureOutlineWidth
 	})) : can;
 	let tintlessImage = await outlinedCan.convertToBlob().then(blob => toImage(blob));
 	let outlinedCanCtx = outlinedCan.getContext("2d");
-	outlinedCanCtx.fillStyle = generatePackForm.elements.namedItem("tintColor").value;
-	outlinedCanCtx.globalAlpha = +generatePackForm.elements.namedItem("tintOpacity").value / 100;
+	outlinedCanCtx.fillStyle = cast(generatePackForm.elements.namedItem("tintColor"), HTMLInputElement).value;
+	outlinedCanCtx.globalAlpha = +cast(generatePackForm.elements.namedItem("tintOpacity"), HTMLInputElement).value / 100;
 	outlinedCanCtx.fillRect(0, 0, outlinedCan.width, outlinedCan.height);
 	let tintedImage = await outlinedCan.convertToBlob().then(blob => toImage(blob));
 	texturePreviewImageCont.textContent = "";
@@ -620,8 +619,7 @@ async function makePack(structureFiles, localResourcePacks) {
 		if(generationFailedError) {
 			let bugReportAnchor = document.createElement("a");
 			bugReportAnchor.classList.add("buttonlike", "packInfoButton", "reportIssue");
-			// @ts-ignore
-			bugReportAnchor.href = `https://github.com/SuperLlama88888/holoprint/issues/new?template=1-pack-creation-error.yml&title=Pack creation error: ${encodeURIComponent(generationFailedError.toString().replaceAll("\n", " "))}&version=${HoloPrint.VERSION}&logs=${encodeURIComponent(JSON.stringify(selectEl("simple-logger").allLogs))}`;
+			bugReportAnchor.href = `https://github.com/SuperLlama88888/holoprint/issues/new?template=1-pack-creation-error.yml&title=Pack creation error: ${encodeURIComponent(generationFailedError.toString().replaceAll("\n", " "))}&version=${HoloPrint.VERSION}&logs=${encodeURIComponent(JSON.stringify(logger.allLogs))}`;
 			bugReportAnchor.target = "_blank";
 			bugReportAnchor.dataset.translate = "pack_generation_failed.report_github_issue";
 			infoButton.parentNode.replaceChild(bugReportAnchor, infoButton);

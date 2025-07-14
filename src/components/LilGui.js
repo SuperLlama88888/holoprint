@@ -1,5 +1,5 @@
 import { GUI } from "lil-gui";
-import { html, htmlCodeToElement, selectEls } from "../utils.js";
+import { cast, html, htmlCodeToElement, selectEls } from "../utils.js";
 
 export default class LilGui extends HTMLElement {
 	/** @type {HTMLStyleElement} */
@@ -20,8 +20,7 @@ export default class LilGui extends HTMLElement {
 			container: this.shadowRoot
 		});
 		if(!LilGui.#lilGuiStylesheet) {
-			// @ts-ignore
-			LilGui.#lilGuiStylesheet = Array.from(selectEls("head > style")).find(el => !previousStyles.has(el));
+			LilGui.#lilGuiStylesheet = cast(Array.from(selectEls("head > style")).find(el => !previousStyles.has(el)), HTMLStyleElement);
 			LilGui.#lilGuiStylesheet.remove();
 		}
 		this.shadowRoot.appendChild(LilGui.#lilGuiStylesheet.cloneNode(true));

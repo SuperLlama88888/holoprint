@@ -1262,7 +1262,7 @@ function translateControlItems(config, blockMetadata, itemMetadata, materialList
 		inGameControls[language] = "";
 		let translatedControlNames = {};
 		let translatedControlItems = {};
-		/** @type {Record<String, Set<String>>} */
+		/** @type {Record<string, Set<string>>} */
 		let controlItemTranslationKeys = {};
 		controlsMaterialList.setLanguage(resourceLangFile);
 		Object.entries(config.CONTROLS).forEach(([control, itemCriteria]) => {

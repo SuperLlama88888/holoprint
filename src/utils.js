@@ -159,6 +159,8 @@ export const sleep = async time => new Promise(resolve => setTimeout(resolve, ti
 export const doNothing = x => x;
 /** @template {any[]} T @param {[...T]} x @returns {T} */
 export const tuple = x => x;
+/** @template T @param {T} type @returns {T extends any[]? T[number]["prototype"][] : T["prototype"]} */
+export const cast = (x, type) => x;
 export const { min, max, floor, ceil, sqrt, round, abs, PI: pi, exp, log: ln, sin, cos, tan, hypot } = Math;
 export const clamp = (n, lowest, highest) => min(max(n, lowest), highest);
 export const lerp = (a, b, x) => a + (b - a) * x;
@@ -779,7 +781,7 @@ export function getClassInheritance(c) {
 /**
  * Gets the full name of a class and all other classes it is inherited from.
  * @param {Function} c
- * @returns {String}
+ * @returns {string}
  */
 export function getClassFullName(c) {
 	return getClassInheritance(c).map(f => f.name).join(":");

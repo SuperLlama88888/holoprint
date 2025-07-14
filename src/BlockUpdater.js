@@ -9,9 +9,9 @@ export default class BlockUpdater extends AsyncFactory {
 	static #UPGRADE_SCHEMA_VERSION = "5.1.0+bedrock-1.21.60"; // specifically, the tag name
 	
 	#fetcher;
-	/** @type {Record<String, BlockUpdateSchemaSkeleton[]>} */
+	/** @type {Record<string, BlockUpdateSchemaSkeleton[]>} */
 	#schemaIndex = {};
-	/** @type {Map<String, BlockUpdateSchema>} */
+	/** @type {Map<string, BlockUpdateSchema>} */
 	#schemas = new Map();
 	
 	async init() {

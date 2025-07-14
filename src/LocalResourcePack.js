@@ -1,7 +1,7 @@
 import { AsyncFactory, dirname, sha256, sha256text, toHexadecimalString } from "./utils.js";
 
 export default class LocalResourcePack extends AsyncFactory {
-	/** @type {String} A unique hash for this local resource pack. */
+	/** @type {string} A unique hash for this local resource pack. */
 	hash;
 	files;
 	aggressiveHashing;

@@ -1,7 +1,7 @@
 import { floor, nanToUndefined, removeFalsies } from "./utils.js";
 
 export default class MaterialList {
-	/** @type {Map<String, Number>} */
+	/** @type {Map<string, number>} */
 	materials = new Map();
 	totalMaterialCount = 0;
 	

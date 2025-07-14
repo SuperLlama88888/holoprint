@@ -480,7 +480,7 @@ export default class TextureAtlas {
 		
 		/** difference: will compare alpha channel difference; threshold: will only look at the second pixel @type {("threshold" | "difference")} */
 		const TEXTURE_OUTLINE_ALPHA_DIFFERENCE_MODE = "threshold";
-		/** If using difference mode, will draw outline between pixels with at least this much alpha difference; if using threshold mode, will draw outline on pixels next to pixels with an alpha less than or equal to this @type {Number} */
+		/** If using difference mode, will draw outline between pixels with at least this much alpha difference; if using threshold mode, will draw outline on pixels next to pixels with an alpha less than or equal to this @type {number} */
 		const TEXTURE_OUTLINE_ALPHA_THRESHOLD = 0;
 		// @ts-expect-error
 		const compareAlpha = (currentPixel, otherPixel) => TEXTURE_OUTLINE_ALPHA_DIFFERENCE_MODE == "difference"? currentPixel - otherPixel >= TEXTURE_OUTLINE_ALPHA_THRESHOLD : otherPixel <= TEXTURE_OUTLINE_ALPHA_THRESHOLD;

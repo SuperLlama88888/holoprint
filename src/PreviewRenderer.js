@@ -1,5 +1,6 @@
-import { abs, AsyncFactory, cosDeg, distanceSquared, downloadFile, JSONSet, max, min, pi, round, sinDeg, subVec2, tanDeg, toImageData, tuple } from "./utils.js";
+import { abs, AsyncFactory, cast, cosDeg, distanceSquared, downloadFile, JSONSet, max, min, pi, round, sinDeg, subVec2, tanDeg, toImageData, tuple } from "./utils.js";
 import PolyMeshMaker from "./PolyMeshMaker.js";
+import LilGui from "./components/LilGui.js";
 
 import Stats from "stats.js"; // library not a file
 
@@ -142,9 +143,7 @@ export default class PreviewRenderer extends AsyncFactory {
 			});
 		}
 		if(this.options.showOptions) {
-			/** @type {LilGui} */
-			// @ts-ignore
-			let guiEl = document.createElement("lil-gui");
+			let guiEl = cast(document.createElement("lil-gui"), LilGui);
 			this.cont.appendChild(guiEl);
 			this.#optionsGui = guiEl.gui;
 			this.#optionsGui.$title.dataset.translate = "preview.options";
@@ -608,9 +607,8 @@ export default class PreviewRenderer extends AsyncFactory {
 	}
 }
 
-/** @import { Vec2, I32Vec3, Vec3, Block, PreviewPointLight, PolyMeshTemplateFaceWithUvs} from "./HoloPrint.js" */
+/** @import { I32Vec3, Vec3, Block, PreviewPointLight, PolyMeshTemplateFaceWithUvs} from "./HoloPrint.js" */
 /** @import TextureAtlas from "./TextureAtlas.js" */
-/** @import LilGui from "./components/LilGui.js" */
 /** @import { Controller } from "lil-gui" */
 /** @import * as THREE from "three" */
 /** @import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js" */

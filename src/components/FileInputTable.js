@@ -1,4 +1,4 @@
-import { clamp, createSymbolicEnum, html, isTouchInElementVerticalBounds, max, min, onEvent, onEvents, removeFileExtension, selectEl, selectEls, sleep } from "../utils.js";
+import { cast, clamp, createSymbolicEnum, html, isTouchInElementVerticalBounds, max, min, onEvent, onEvents, removeFileExtension, selectEl, selectEls, sleep } from "../utils.js";
 
 export default class FileInputTable extends HTMLElement {
 	static observedAttributes = ["file-count-text", "empty-text", "remove-all-text", "hide-file-extensions"];
@@ -14,7 +14,7 @@ export default class FileInputTable extends HTMLElement {
 	#fileCountHeading;
 	/** @type {HTMLTableRowElement | null} */
 	#rowBeingDragged;
-	/** @type {Number} */
+	/** @type {number} */
 	#touchDragVerticalOffset;
 	/** @type {WeakMap<HTMLTableRowElement, File>} */
 	#filesByRow;
@@ -216,13 +216,11 @@ export default class FileInputTable extends HTMLElement {
 			}
 			let row = e.target.closest("tr");
 			if(e.target.classList.contains("moveUpButton")) {
-				// @ts-ignore
-				this.#animateRow(row.previousElementSibling, FileInputTable.#ANIMATION_MOVEMENTS.MOVE_DOWN, false);
+				this.#animateRow(cast(row.previousElementSibling, HTMLTableRowElement), FileInputTable.#ANIMATION_MOVEMENTS.MOVE_DOWN, false);
 				row.previousElementSibling.before(row);
 				this.#animateRow(row, FileInputTable.#ANIMATION_MOVEMENTS.MOVE_UP);
 			} else if(e.target.classList.contains("moveDownButton")) {
-				// @ts-ignore
-				this.#animateRow(row.nextElementSibling, FileInputTable.#ANIMATION_MOVEMENTS.MOVE_UP, false);
+				this.#animateRow(cast(row.nextElementSibling, HTMLTableRowElement), FileInputTable.#ANIMATION_MOVEMENTS.MOVE_UP, false);
 				row.nextElementSibling.after(row);
 				this.#animateRow(row, FileInputTable.#ANIMATION_MOVEMENTS.MOVE_DOWN);
 			} else if(e.target.classList.contains("deleteButton")) {

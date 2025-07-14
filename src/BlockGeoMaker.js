@@ -1079,6 +1079,6 @@ export default class BlockGeoMaker {
 	}
 }
 
-/** @import { Vec2, Vec3, Block, HoloPrintConfig, PolyMeshTemplateFaceWithUvs, PolyMeshTemplateFace, Rectangle, PolyMeshTemplateVertex, CubeUv } from "./HoloPrint.js"  */
+/** @import { Vec3, Block, HoloPrintConfig, PolyMeshTemplateFaceWithUvs, PolyMeshTemplateFace, Rectangle, PolyMeshTemplateVertex, CubeUv } from "./HoloPrint.js"  */
 /** @import TextureAtlas from "./TextureAtlas.js" */
 /** @import * as Data from "./data/schemas" */

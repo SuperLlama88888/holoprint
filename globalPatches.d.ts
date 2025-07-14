@@ -27,6 +27,9 @@ declare global {
 		// For my prototype symbol patches.
 		[k: symbol]: any;
 	}
+	interface Window {
+		launchQueue: any;
+	}
 }
 declare module "https://esm.sh/three@0.177.0/examples/jsm/controls/OrbitControls.js" {
 	interface OrbitControls {
