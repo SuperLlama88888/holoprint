@@ -157,6 +157,8 @@ export const sleep = async time => new Promise(resolve => setTimeout(resolve, ti
 
 /** @template T @param {T} x @returns {T} */
 export const doNothing = x => x;
+/** @template {any[]} T @param {[...T]} x @returns {T} */
+export const tuple = x => x;
 export const { min, max, floor, ceil, sqrt, round, abs, PI: pi, exp, log: ln, sin, cos, tan, hypot } = Math;
 export const clamp = (n, lowest, highest) => min(max(n, lowest), highest);
 export const lerp = (a, b, x) => a + (b - a) * x;
@@ -307,8 +309,7 @@ export function makeNullsEmpty(arr) {
  * @returns {[T[], T[]]}
  */
 export function conditionallyGroup(arr, conditionFunc) {
-	/** @type {[T[], T[]]} */
-	let res = [[], []];
+	let res = tuple([[], []]);
 	arr.forEach(el => {
 		res[+conditionFunc(el)].push(el);
 	});
@@ -381,9 +382,7 @@ export function createStringEnum(keys) {
  */
 export function hexColorToClampedTriplet(hexColor) {
 	let [, r, g, b] = hexColor.match(/^#([0-9a-f]{2})([0-9a-f]{2})([0-9a-f]{2})/i);
-	/** @type {[string, string, string]} */
-	let rgb = [r, g, b];
-	return rgb.map(x => parseInt(x, 16) / 255);
+	return tuple([r, g, b]).map(x => parseInt(x, 16) / 255);
 }
 export function addOrdinalSuffix(num) {
 	return num + (num % 10 == 1 && num % 100 != 11? "st" : num % 10 == 2 && num % 100 != 12? "nd" : num % 10 == 3 && num % 100 != 13? "rd" : "th");
@@ -905,9 +904,7 @@ export class JSONSet extends Set {
 	}
 	*entries() {
 		for(let value of this.#actualValues) {
-			/** @type {[any, any]} */
-			let tuple = [value, value];
-			yield tuple;
+			yield tuple([value, value]);
 		}
 	}
 	keys() {

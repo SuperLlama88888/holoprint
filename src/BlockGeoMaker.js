@@ -2,7 +2,7 @@
 // READ: this also looks pretty comprehensive: https://github.com/MCBE-Development-Wiki/mcbe-dev-home/blob/main/docs/misc/enums/block_shape.md
 // https://github.com/bricktea/MCStructure/blob/main/docs/1.16.201/enums/B.md
 
-import { addVec3, crossProduct, hexColorToClampedTriplet, JSONSet, max, mulVec3, normalizeVec3, rotateDeg, vec3ToFixed, subVec3, conditionallyGroup, mulMat4, addVec2 } from "./utils.js";
+import { addVec3, crossProduct, hexColorToClampedTriplet, JSONSet, max, mulVec3, normalizeVec3, rotateDeg, vec3ToFixed, subVec3, conditionallyGroup, mulMat4, addVec2, tuple } from "./utils.js";
 
 // https://wiki.bedrock.dev/visuals/material-creations.html#overlay-color-in-render-controllers
 // https://wiki.bedrock.dev/documentation/materials.html#entity-alphatest
@@ -801,21 +801,16 @@ export default class BlockGeoMaker {
 	#getVertices(cube, faceName) {
 		let { pos, size } = cube;
 		const cubeFaces = {
-			"west": [[1, 1, 0], [1, 1, 1], [1, 0, 0], [1, 0, 1]],
-			"east": [[0, 1, 1], [0, 1, 0], [0, 0, 1], [0, 0, 0]],
-			"down": [[0, 0, 0], [1, 0, 0], [0, 0, 1], [1, 0, 1]],
-			"up": [[0, 1, 1], [1, 1, 1], [0, 1, 0], [1, 1, 0]],
-			"north": [[0, 1, 0], [1, 1, 0], [0, 0, 0], [1, 0, 0]],
-			"south": [[1, 1, 1], [0, 1, 1], [1, 0, 1], [0, 0, 1]]
+			"west": tuple([[1, 1, 0], [1, 1, 1], [1, 0, 0], [1, 0, 1]]),
+			"east": tuple([[0, 1, 1], [0, 1, 0], [0, 0, 1], [0, 0, 0]]),
+			"down": tuple([[0, 0, 0], [1, 0, 0], [0, 0, 1], [1, 0, 1]]),
+			"up": tuple([[0, 1, 1], [1, 1, 1], [0, 1, 0], [1, 1, 0]]),
+			"north": tuple([[0, 1, 0], [1, 1, 0], [0, 0, 0], [1, 0, 0]]),
+			"south": tuple([[1, 1, 1], [0, 1, 1], [1, 0, 1], [0, 0, 1]])
 		};
-		/** @type {[Vec3, Vec3, Vec3, Vec3]} */
-		// @ts-ignore
-		let faces = cubeFaces[faceName];
-		return faces.map(([a, b, c], i) => {
-			/** @type {Vec3} */
-			let vertexPos = [pos[0] + size[0] * a, pos[1] + size[1] * b, pos[2] + size[2] * c];
+		return cubeFaces[faceName].map(([a, b, c], i) => {
 			return {
-				"pos": vertexPos,
+				"pos": tuple([pos[0] + size[0] * a, pos[1] + size[1] * b, pos[2] + size[2] * c]),
 				"corner": i
 			};
 		});
@@ -837,8 +832,7 @@ export default class BlockGeoMaker {
 	 * @returns {Vec3}
 	 */
 	#calculateCenterOfMass(cubes) {
-		/** @type {Vec3} */
-		let center = [0, 0, 0];
+		let center = tuple([0, 0, 0]);
 		let totalMass = 0;
 		cubes.forEach(cube => {
 			let mass = cube.w * cube.h * cube.d; // assume uniform mass density
@@ -1049,19 +1043,14 @@ export default class BlockGeoMaker {
 			if("crop" in imageUv) {
 				this.#applyFaceCropping(face, imageUv["crop"]);
 			}
-			/** @type {[PolyMeshTemplateVertex, PolyMeshTemplateVertex, PolyMeshTemplateVertex, PolyMeshTemplateVertex]} */
-			let vertices = [face["vertices"][0], face["vertices"][1], face["vertices"][3], face["vertices"][2]]; // go around in a square
+			let vertices = tuple([face["vertices"][0], face["vertices"][1], face["vertices"][3], face["vertices"][2]]); // go around in a square
 			return {
 				"normal": face["normal"],
 				"transparency": imageUv["transparency"],
-				"vertices": vertices.map(vertex => {
-					/** @type {Vec2} */
-					let uv = [+((imageUv["uv"][0] + imageUv["uv_size"][0] * (vertex["corner"] & 1)) / textureAtlas.textureWidth).toFixed(4), +(1 - (imageUv["uv"][1] + imageUv["uv_size"][1] * (vertex["corner"] >> 1)) / textureAtlas.textureHeight).toFixed(4)];
-					return {
-						"pos": vertex["pos"],
-						"uv": uv
-					};
-				})
+				"vertices": vertices.map(vertex => ({
+					"pos": vertex["pos"],
+					"uv": tuple([+((imageUv["uv"][0] + imageUv["uv_size"][0] * (vertex["corner"] & 1)) / textureAtlas.textureWidth).toFixed(4), +(1 - (imageUv["uv"][1] + imageUv["uv_size"][1] * (vertex["corner"] >> 1)) / textureAtlas.textureHeight).toFixed(4)])
+				}))
 			};
 		});
 	}

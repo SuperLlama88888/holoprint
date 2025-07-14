@@ -1,4 +1,4 @@
-import { abs, AsyncFactory, cosDeg, distanceSquared, downloadFile, JSONSet, max, min, pi, round, sinDeg, subVec2, tanDeg, toImageData } from "./utils.js";
+import { abs, AsyncFactory, cosDeg, distanceSquared, downloadFile, JSONSet, max, min, pi, round, sinDeg, subVec2, tanDeg, toImageData, tuple } from "./utils.js";
 import PolyMeshMaker from "./PolyMeshMaker.js";
 
 import Stats from "stats.js"; // library not a file
@@ -567,10 +567,8 @@ export default class PreviewRenderer extends AsyncFactory {
 			let uvCoords = face["vertices"].map(v => v["uv"]);
 			let xs = uvCoords.map(([x]) => round(x * this.#imageBlobData.width));
 			let ys = uvCoords.map(([, y]) => round((1 - y) * this.#imageBlobData.height));
-			/** @type {Vec2} */
-			let minUvCoords = [min(...xs), min(...ys)];
-			/** @type {Vec2} */
-			let maxUvCoords = [max(...xs), max(...ys)];
+			let minUvCoords = tuple([min(...xs), min(...ys)]);
+			let maxUvCoords = tuple([max(...xs), max(...ys)]);
 			let unscaledUvSize = subVec2(maxUvCoords, minUvCoords);
 			let uv = [minUvCoords[0], minUvCoords[1]];
 			let uvSize = [unscaledUvSize[0], unscaledUvSize[1]];

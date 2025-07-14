@@ -7,7 +7,7 @@ import MaterialList from "./MaterialList.js";
 import PreviewRenderer from "./PreviewRenderer.js";
 
 import * as entityScripts from "./entityScripts.molang.js";
-import { addPaddingToImage, awaitAllEntries, CachingFetcher, concatenateFiles, createNumericEnum, desparseArray, floor, getFileExtension, hexColorToClampedTriplet, jsonc, JSONMap, JSONSet, lcm, loadTranslationLanguage, max, min, onEvent, overlaySquareImages, pi, removeFalsies, removeFileExtension, resizeImageToBlob, round, setImageOpacity, sha256, toBlob, toImage, translate, UserError } from "./utils.js";
+import { addPaddingToImage, awaitAllEntries, CachingFetcher, concatenateFiles, createNumericEnum, desparseArray, floor, getFileExtension, hexColorToClampedTriplet, jsonc, JSONMap, JSONSet, lcm, loadTranslationLanguage, max, min, onEvent, overlaySquareImages, pi, removeFalsies, removeFileExtension, resizeImageToBlob, round, setImageOpacity, sha256, toBlob, toImage, translate, tuple, UserError } from "./utils.js";
 import ResourcePackStack, { VanillaDataFetcher } from "./ResourcePackStack.js";
 import BlockUpdater from "./BlockUpdater.js";
 import SpawnAnimationMaker from "./SpawnAnimationMaker.js";
@@ -234,8 +234,7 @@ export async function makePack(structureFiles, config, resourcePackStack, previe
 						}
 						
 						let blockCoordinateName = `b_${x}_${y}_${z}`;
-						/** @type {Vec3} */
-						let geoSpaceBlockPos = [-16 * x - 8, 16 * y, 16 * z - 8]; // I got these values from trial and error with blockbench (which makes the x negative I think. it's weird.)
+						let geoSpaceBlockPos = tuple([-16 * x - 8, 16 * y, 16 * z - 8]); // I got these values from trial and error with blockbench (which makes the x negative I think. it's weird.)
 						polyMeshMaker.add(paletteI, geoSpaceBlockPos, layerI);
 						if(firstBoneForThisCoordinate) { // we only need 1 locator for each block position, even though there may be 2 bones in this position because of the 2nd layer
 							hologramGeo["minecraft:geometry"][2]["bones"][1]["locators"][blockCoordinateName] ??= geoSpaceBlockPos.map(x => x + 8); // 2nd geometry is for particle alignment
@@ -642,8 +641,8 @@ export function addDefaultConfig(config) {
 			RETEXTURE_CONTROL_ITEMS: true,
 			CONTROL_ITEM_TEXTURE_SCALE: 1,
 			RENAME_CONTROL_ITEMS: true,
-			WRONG_BLOCK_OVERLAY_COLOR: /** @type {Vec4} */ ([1, 0, 0, 0.3]),
-			INITIAL_OFFSET: /** @type {Vec3} */ ([0, 0, 0]),
+			WRONG_BLOCK_OVERLAY_COLOR: tuple([1, 0, 0, 0.3]),
+			INITIAL_OFFSET: tuple([0, 0, 0]),
 			BACKUP_SLOT_COUNT: 10,
 			PACK_NAME: undefined,
 			PACK_ICON_BLOB: undefined,
@@ -1603,7 +1602,7 @@ function itemCriteriaToMolang(itemCriteria, slot = "slot.weapon.mainhand") {
 }
 /**
  * Creates a Molang expression that mimics array access. Defaults to the last element if nothing is found.
- * @param {Array} array A continuous array
+ * @param {any[]} array A continuous array
  * @param {string} indexVar
  * @returns {string}
  */
@@ -1621,7 +1620,7 @@ function arrayEntriesToMolang(entries, indexVar) {
 }
 /**
  * Creates a Molang expression that mimics 2D array access.
- * @param {Array[]} array
+ * @param {any[][]} array
  * @param {string} indexVar1
  * @param {string} indexVar2
  * @returns {string}
