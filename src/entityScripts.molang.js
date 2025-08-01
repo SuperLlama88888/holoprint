@@ -1,4 +1,4 @@
-let { $, v, q, t, structureSize, singleLayerMode, structureCount, HOLOGRAM_INITIAL_ACTIVATION, initialOffset, defaultTextureIndex, textureBlobsCount, totalBlocksToValidate, totalBlocksToValidateByLayer, backupSlotCount, toggleRendering, changeOpacity, toggleTint, toggleValidating, changeLayer, decreaseLayer, changeLayerMode, disablePlayerControls, backupHologram, changeStructure, moveHologram, rotateHologram, initVariables, renderingControls, broadcastActions, structureWMolang, structureHMolang, structureDMolang } = {}; // prevent linting errors
+let { $, v, q, t, structureSize, singleLayerMode, structureCount, HOLOGRAM_INITIAL_ACTIVATION, initialOffset, defaultTextureIndex, textureBlobsCount, totalBlocksToValidate, totalBlocksToValidateByLayer, backupSlotCount, toggleRendering, changeOpacity, toggleTint, toggleValidating, changeLayer, decreaseLayer, changeLayerMode, disablePlayerControls, backupHologram, changeStructure, moveHologram, rotateHologram, initVariables, renderingControls, broadcastActions, structureSizesMolang, coordinateLockEnabled, coordinateLockCoordsMolang } = {}; // prevent linting errors
 
 export const ACTIONS = createNumericEnum(["NEXT_STRUCTURE", "PREVIOUS_STRUCTURE", "INCREASE_LAYER", "DECREASE_LAYER", "TOGGLE_RENDERING", "INCREASE_OPACITY", "DECREASE_OPACITY", "TOGGLE_TINT", "TOGGLE_VALIDATING", "CHANGE_LAYER_MODE", "ROTATE_HOLOGRAM_CLOCKWISE", "ROTATE_HOLOGRAM_ANTICLOCKWISE", "BACKUP_HOLOGRAM", "MOVE_HOLOGRAM"]);
 
@@ -45,7 +45,6 @@ export function armorStandPreAnimation() {
 	if(q.time_stamp - v.spawn_time < 5) {
 		v.last_pose = v.armor_stand.pose_index; // armour stands take a tick or two at the start to set their pose correctly
 	}
-	v.armor_stand_dir = Math.floor(q.body_y_rotation / 90) + 2; // [south, west, north, east] (since it goes from -180 to 180)
 	
 	t.should_set_wrong_blocks = false;
 	if(q.time_stamp - v.spawn_time < 200 && !v.player_has_interacted) { // if it's less than 10 seconds after being spawned and the player hasn't interacted yet...
@@ -193,7 +192,14 @@ export function armorStandPreAnimation() {
 		}
 	}
 	
-	v.hologram_dir = Math.mod(v.armor_stand_dir + v.hologram.rotation, 4);
+	if($[coordinateLockEnabled]) {
+		v.hologram.offset_x = -($[coordinateLockCoordsMolang[0]]) + q.position(0) - 0.5; // x in coordinates is opposite to x in geometry
+		v.hologram.offset_y = ($[coordinateLockCoordsMolang[1]]) - Math.floor(q.position(1));
+		v.hologram.offset_z = ($[coordinateLockCoordsMolang[2]]) - q.position(2) + 0.5;
+		v.hologram.rotation = 2 - Math.floor(q.body_y_rotation / 90);
+	} else {
+		v.hologram_dir = Math.mod(Math.floor(q.body_y_rotation / 90) + 2 + v.hologram.rotation, 4); // q.body_y_rotation goes from -180 to 180, hence the + 2
+	}
 	if(t.check_layer_validity) {
 		if(v.hologram.layer < -1) {
 			v.hologram.layer = v.hologram.structure_h - (v.hologram.layer_mode == $[singleLayerMode]? 1 : 2);
@@ -216,9 +222,9 @@ export function armorStandPreAnimation() {
 		if(v.hologram.structure_index >= v.hologram.structure_count) {
 			v.hologram.structure_index = 0;
 		}
-		v.hologram.structure_w = $[structureWMolang];
-		v.hologram.structure_h = $[structureHMolang];
-		v.hologram.structure_d = $[structureDMolang];
+		v.hologram.structure_w = $[structureSizesMolang[0]];
+		v.hologram.structure_h = $[structureSizesMolang[1]];
+		v.hologram.structure_d = $[structureSizesMolang[2]];
 		v.hologram.layer = -1;
 		v.hologram.validating = false;
 		v.hologram.show_wrong_block_overlay = false;

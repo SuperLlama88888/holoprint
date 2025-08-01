@@ -147,19 +147,19 @@
 								<fieldset class="expandable textureSettings">
 									<legend><label><span data-translate="settings.textures">Textures</span><input type="checkbox"/></label></legend>
 									<div>
-										<div>
-											<label><span data-translate="settings.textures.tint.color">Overlay tint:</span> <input type="color" value="#579EFA" name="tintColor"/></label>
-											<label><span data-translate="settings.textures.tint.opacity">Overlay tint opacity:</span> <input type="number" min="1" max="100" value="20" name="tintOpacity"/>%</label>
-											<label><span data-translate="settings.textures.outline.width">Texture outline width:</span> <select name="textureOutlineWidth">
+										<table>
+											<tr><td><label data-translate="settings.textures.outline.width">Texture outline width:</label></td><td><select name="textureOutlineWidth">
 												<option value="0" data-translate="settings.textures.outline.width.no_outline">None</option>
 												<option value="0.125">0.125px</option>
 												<option value="0.25" selected>0.25px</option>
 												<option value="0.5">0.5px</option>
 												<option value="1">1px</option>
-											</select></label>
-											<label><span data-translate="settings.textures.outline.color">Texture outline color:</span> <input type="color" value="#0000FF" name="textureOutlineColor"/></label>
-											<label><span data-translate="settings.textures.outline.opacity">Texture outline opacity:</span> <input type="number" min="10" max="100" value="65" name="textureOutlineOpacity"/>%</label>
-										</div>
+											</select></td></tr>
+											<tr><td><label data-translate="settings.textures.outline.color">Texture outline color:</label></td><td><input type="color" value="#0000FF" name="textureOutlineColor"/></td></tr>
+											<tr><td><label data-translate="settings.textures.outline.opacity">Texture outline opacity:</label></td><td><input type="number" min="10" max="100" value="65" name="textureOutlineOpacity"/>%</td></tr>
+											<tr><td><label data-translate="settings.textures.tint.color">Overlay tint:</label></td><td><input type="color" value="#579EFA" name="tintColor"/></td></tr>
+											<tr><td><label data-translate="settings.textures.tint.opacity">Overlay tint opacity:</label></td><td><input type="number" min="1" max="100" value="20" name="tintOpacity">%</td></tr>
+										</table>
 										<div id="texturePreviewCont">
 											<span data-translate="settings.textures.tint.toggleable_in_game">Tint can be turned on/off in-game</span>
 											<div id="texturePreviewImageCont">
@@ -190,12 +190,34 @@
 									<option value="0.03125" data-translate="settings.mini_size.tiny">Tiny</option>
 									<option value="0" data-translate="settings.mini_size.hidden">Hidden</option>
 								</select></label>
-								<label><span data-translate="settings.ignored_blocks">Ignored blocks:</span> <input type="text" name="ignoredBlocks" placeholder="block_1 block_2 etc." data-translate-placeholder="settings.ignored_blocks.placeholder"/></label>
 								<details>
 									<summary data-translate="settings.advanced">Advanced</summary>
-									<label><span data-translate="settings.initial_offset">Initial offset:</span> <input type="number" min="-999" max="999" step="1" value="0" placeholder="0" name="initialOffsetX"/> / <input type="number" min="-999" max="999" step="1" value="0" placeholder="0" name="initialOffsetY"/> / <input type="number" min="-999" max="999" step="1" value="0" placeholder="0" name="initialOffsetZ"/></label>
-									<label><span data-translate="settings.backup_slot_count">Backup slot count:</span> <input type="number" min="0" max="30" step="1" value="10" name="backupSlotCount"/></label>
+									<label><span data-translate="settings.coordinate_lock">Coordinate lock:</span> <input type="checkbox" name="coordinateLockEnabled" autocomplete="off"/></label>
+									<div id="coordinateLockCoordsCont" class="hidden">
+										<hr/>
+										<div id="coordinateLockStructureCoords"></div>
+										<button type="button" data-translate="settings.coordinate_lock.get_global_coords">Get global coordinates</button>
+										<input type="radio" name="axis" class="buttonlike" value="X" checked/>
+										<input type="radio" name="axis" class="buttonlike" value="Y"/>
+										<input type="radio" name="axis" class="buttonlike" value="Z"/>
+										<br/>
+										<button type="button" translate="no">-1000</button>
+										<button type="button" translate="no">-100</button>
+										<button type="button" translate="no">-10</button>
+										<button type="button" translate="no">-1</button>
+										<button type="button" translate="no">+1</button>
+										<button type="button" translate="no">+10</button>
+										<button type="button" translate="no">+100</button>
+										<button type="button" translate="no">+1000</button>
+										<hr/>
+									</div>
+									<label><span data-translate="settings.initial_offset">Initial offset:</span> <vec-3-input name="initialOffset">
+										<input type="number" min="-999" max="999" step="1" value="0" placeholder="0" slot="x"/>
+										<input type="number" min="-999" max="999" step="1" value="0" placeholder="0" slot="y"/>
+										<input type="number" min="-999" max="999" step="1" value="0" placeholder="0" slot="z"/>
+									</vec-3-input></label>
 									<label><span data-translate="settings.control_item_texture_scale">Control item texture scale:</span> <input type="number" min="1" max="64" step="1" value="1" name="controlItemTextureScale"/></label>
+									<label><span data-translate="settings.ignored_blocks">Ignored blocks:</span> <input type="text" name="ignoredBlocks" placeholder="block_1 block_2 etc." data-translate-placeholder="settings.ignored_blocks.placeholder"/></label>
 									<label><span data-translate="settings.opacity_mode">Opacity mode:</span> <select name="opacityMode">
 										<option value="multiple" selected data-translate="settings.opacity_mode.in_game_controls">In-game controls</option>
 										<option value="single" data-translate="settings.opacity_mode.fixed_opacity">Single option</option>

@@ -1,5 +1,5 @@
 import { extractStructureFilesFromMcworld } from "mcbe-leveldb-reader";
-import { selectEl, downloadFile, sleep, selectEls, loadTranslationLanguage, translate, getStackTrace, random, UserError, joinOr, conditionallyGroup, groupByFileExtension, addFilesToFileInput, setFileInputFiles, dispatchInputEvents, getAllChildren, jsonc, toImage, removeFalsies, clearCacheStorage, onEvent, onEventAndNow, cast } from "./utils.js";
+import { selectEl, downloadFile, sleep, selectEls, loadTranslationLanguage, translate, getStackTrace, random, UserError, joinOr, conditionallyGroup, groupByFileExtension, addFilesToFileInput, setFileInputFiles, dispatchInputEvents, getAllChildren, jsonc, toImage, removeFalsies, clearCacheStorage, onEvent, onEventAndNow, cast, clearFileInput, html, removeFileExtension } from "./utils.js";
 import * as HoloPrint from "./HoloPrint.js";
 import SupabaseLogger from "./SupabaseLogger.js";
 
@@ -8,6 +8,7 @@ import LocalResourcePack from "./LocalResourcePack.js";
 import TextureAtlas from "./TextureAtlas.js";
 import ItemCriteriaInput from "./components/ItemCriteriaInput.js";
 import FileInputTable from "./components/FileInputTable.js";
+import Vec3Input from "./components/Vec3Input.js";
 import SimpleLogger from "./components/SimpleLogger.js";
 import LilGui from "./components/LilGui.js";
 
@@ -31,6 +32,10 @@ let oldPackInput;
 /** @type {HTMLInputElement} */
 let structureFilesList;
 let packNameInput;
+/** @type {Element} */
+let coordinateLockStructureCoordsCont;
+/** @type {WeakMap<File, Vec3>} */
+let coordinateLockStructureCoords = new WeakMap();
 let completedPacksCont;
 /** @type {SimpleLogger} */
 let logger;
@@ -84,6 +89,17 @@ document[onEvent]("DOMContentLoaded", () => {
 			notStructureFileError.classList.add("hidden");
 			structureFilesInput.setCustomValidity("");
 		} else {
+			if(files.length == 1) { // the other input methods can't handle multiple files
+				if(files[0].name.endsWith(".mcworld") || files[0].name.endsWith(".zip")) {
+					clearFileInput(structureFilesInput);
+					setFileInputFiles(worldFileInput, files);
+					return;
+				} else if(files[0].name.endsWith(".mcpack")) {
+					clearFileInput(structureFilesInput);
+					setFileInputFiles(oldPackInput, files);
+					return;
+				}
+			}
 			notStructureFileError.classList.remove("hidden");
 			structureFilesInput.setCustomValidity(notStructureFileError.textContent);
 		}
@@ -107,6 +123,7 @@ document[onEvent]("DOMContentLoaded", () => {
 		let structureFiles;
 		try {
 			structureFiles = await extractStructureFilesFromMcworld(worldFile);
+			structureFiles.forEach(file => file[FileInputTable.SHOW_DOWNLOAD_BUTTON] = true);
 		} catch(e) {
 			worldExtractionMessage.classList.add("hidden");
 			worldExtractionWorldError.dataset.translationSubError = e;
@@ -139,6 +156,7 @@ document[onEvent]("DOMContentLoaded", () => {
 			block: "center"
 		});
 		let extractedStructureFiles = await HoloPrint.extractStructureFilesFromPack(oldPack);
+		extractedStructureFiles.forEach(file => file[FileInputTable.SHOW_DOWNLOAD_BUTTON] = true);
 		oldPackExtractionMessage.classList.add("hidden");
 		if(extractedStructureFiles.length) {
 			addFilesToFileInput(structureFilesList, extractedStructureFiles);
@@ -190,6 +208,7 @@ document[onEvent]("DOMContentLoaded", () => {
 		}
 	});
 	customElements.define("file-input-table", FileInputTable);
+	customElements.define("vec-3-input", Vec3Input);
 	customElements.define("simple-logger", SimpleLogger);
 	customElements.define("lil-gui", LilGui);
 	if(!ACTUAL_CONSOLE_LOG) {
@@ -215,6 +234,51 @@ document[onEvent]("DOMContentLoaded", () => {
 	});
 	updateTexturePreview();
 	generatePackFormSubmitButton = generatePackForm.elements.namedItem("submit");
+	
+	let coordinateLockToggle = cast(generatePackForm.elements.namedItem("coordinateLockEnabled"), HTMLInputElement);
+	let coordinateLockCoordsCont = selectEl("#coordinateLockCoordsCont");
+	coordinateLockToggle[onEvent]("input", async () => {
+		cast(generatePackForm.elements.namedItem("initialOffset"), Element).parentElement.classList.toggle("hidden", coordinateLockToggle.checked);
+		coordinateLockCoordsCont.classList.toggle("hidden", !coordinateLockToggle.checked);
+	});
+	Array.from(coordinateLockCoordsCont[selectEls]("button")).forEach((button, i) => {
+		button[onEvent]("click", async () => {
+			if(i == 0) { // get global coordinates button
+				let structureFiles = Array.from(structureFilesList.files);
+				let mcstructures = await Promise.all(structureFiles.map(HoloPrint.readStructureNBT));
+				let worldOrigins = mcstructures.map(mcstructure => mcstructure["structure_world_origin"]);
+				let inputs = coordinateLockCoordsCont[selectEls]("vec-3-input");
+				worldOrigins.forEach((worldOrigin, i) => {
+					inputs[i].xyz = worldOrigin;
+				});
+			} else {
+				let axis = cast(generatePackForm.elements.namedItem("axis"), RadioNodeList).value.toLowerCase();
+				coordinateLockCoordsCont[selectEls]("vec-3-input").forEach(vec3input => {
+					vec3input[axis] = vec3input[axis] + parseInt(button.innerText);
+				});
+			}
+		});
+	});
+	coordinateLockStructureCoordsCont = selectEl("#coordinateLockStructureCoords");
+	structureFilesList[onEventAndNow]("input", () => {
+		coordinateLockStructureCoordsCont.innerHTML = Array.from(structureFilesList.files).map(file => {
+			let pos = coordinateLockStructureCoords.get(file) ?? [0, 0, 0];
+			return html`
+				<label>${removeFileExtension(file.name)}: <vec-3-input>
+					<input type="number" min="-10000000" max="10000000" step="1" value="${pos[0]}" placeholder="0" slot="x"/>
+					<input type="number" min="-10000000" max="10000000" step="1" value="${pos[1]}" placeholder="0" slot="y"/>
+					<input type="number" min="-10000000" max="10000000" step="1" value="${pos[2]}" placeholder="0" slot="z"/>
+				</vec-3-input></label>
+			`;
+		}).join("");
+		Array.from(coordinateLockStructureCoordsCont[selectEls]("vec-3-input")).forEach((input, i) => {
+			input[onEvent]("input", () => {
+				let file = structureFilesList.files[i];
+				if(!file) return;
+				coordinateLockStructureCoords.set(file, input.xyz);
+			});
+		});
+	});
 	
 	let opacityModeSelect = cast(generatePackForm.elements.namedItem("opacityMode"), HTMLSelectElement);
 	opacityModeSelect[onEventAndNow]("change", () => {
@@ -554,10 +618,13 @@ async function makePack(structureFiles, localResourcePacks) {
 		PLAYER_CONTROLS_ENABLED: !!formData.get("playerControlsEnabled"),
 		MATERIAL_LIST_ENABLED: !!formData.get("materialListEnabled"),
 		RETEXTURE_CONTROL_ITEMS: !!formData.get("retextureControlItems"),
+		CONTROL_ITEM_TEXTURE_SCALE: +formData.get("controlItemTextureScale"),
 		RENAME_CONTROL_ITEMS: !!formData.get("renameControlItems"),
 		// @ts-ignore
 		CONTROLS: Object.fromEntries(Array.from(formData).filter(([key]) => key.startsWith("control.")).map(([key, value]) => [key.replace(/^control./, ""), JSON.parse(value)])),
-		INITIAL_OFFSET: [+formData.get("initialOffsetX"), +formData.get("initialOffsetY"), +formData.get("initialOffsetZ")],
+		// @ts-expect-error
+		INITIAL_OFFSET: formData.get("initialOffset").toString().split(",").map(x => +x),
+		COORDINATE_LOCK: formData.get("coordinateLockEnabled")? Array.from(coordinateLockStructureCoordsCont[selectEls]("vec-3-input")).map(input => input.xyz) : undefined,
 		BACKUP_SLOT_COUNT: +formData.get("backupSlotCount"),
 		PACK_NAME: formData.get("packName").toString() || undefined,
 		PACK_ICON_BLOB: packIconEntry instanceof File && packIconEntry.size? packIconEntry : undefined,
@@ -632,4 +699,4 @@ async function makePack(structureFiles, localResourcePacks) {
 	generatePackFormSubmitButton.disabled = false;
 }
 
-/** @import { HoloPrintConfig } from "./HoloPrint.js" */
+/** @import { HoloPrintConfig, Vec3 } from "./HoloPrint.js" */

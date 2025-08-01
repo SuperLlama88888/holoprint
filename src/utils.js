@@ -343,6 +343,44 @@ export function groupByFileExtension(files) {
 	return groupBy(files, file => getFileExtension(file));
 }
 /**
+ * Object.entries for **all** entries, including inherited ones.
+ * @template {string} K
+ * @template V
+ * @param {Record<K, V>} object
+ * @returns {[K, V][]}
+ */
+export function allEntries(object) {
+	let entries = [];
+	for(let key in object) {
+		entries.push(tuple([key, object[key]]));
+	}
+	return entries;
+}
+/**
+ * Flattens inherited properties to be direct properties of an object.
+ * @template {string} K
+ * @template V
+ * @param {Record<K, V>} object
+ * @returns {{ [Key in K]: V }}
+ */
+export function flattenObject(object) {
+	return Object.fromEntries(allEntries(object));
+}
+/**
+ * Applies Array.prototype.reduce on each property from all objects.
+ * @template  V
+ * @template {Record<string, V>} T
+ * @param {T[]} objects
+ * @param {(previousValue: V, currentValue: V, currentIndex: number, array: V[]) => V} reducer
+ * @returns {T}
+ */
+export function reduceProperties(objects, reducer) {
+	let keys = Object.keys(objects[0]);
+	let entries = keys.map(key => [key, objects.map(o => o[key]).reduce(reducer)]);
+	// @ts-expect-error
+	return Object.fromEntries(entries);
+}
+/**
  * Create a pseudo-enumeration using numbers.
  * @template {string[]} T
  * @param {[...T]} keys - An array of string literals to use as keys.
@@ -488,13 +526,16 @@ export function clearFileInput(fileInput) {
 /**
  * Dispatches the input and change events on an <input>.
  * @param {HTMLInputElement} input
+ * @param {any} [detail]
  */
-export function dispatchInputEvents(input) {
-	input.dispatchEvent(new Event("input", {
-		bubbles: true
+export function dispatchInputEvents(input, detail) {
+	input.dispatchEvent(new CustomEvent("input", {
+		bubbles: true,
+		detail
 	}));
-	input.dispatchEvent(new Event("change", {
-		bubbles: true
+	input.dispatchEvent(new CustomEvent("change", {
+		bubbles: true,
+		detail
 	}));
 }
 /**
@@ -756,6 +797,10 @@ export function distanceSquared(a, b) {
 	return (a[0] - b[0]) * (a[0] - b[0]) + (a[1] - b[1]) * (a[1] - b[1]) + (a[2] - b[2]) * (a[2] - b[2]);
 }
 
+/**
+ * @param {File} file
+ * @param {String} [filename]
+ */
 export function downloadFile(file, filename = file.name) {
 	let a = document.createElement("a");
 	let objectURL = URL.createObjectURL(file);
@@ -765,6 +810,23 @@ export function downloadFile(file, filename = file.name) {
 	URL.revokeObjectURL(objectURL);
 }
 
+/**
+ * @template {WeakKey} P
+ * @template R
+ * @param {(x: P) => R} func
+ * @returns {(x: P) => R}
+ */
+export function cacheUnaryFunc(func) {
+	let cache = new WeakMap();
+	return x => {
+		if(cache.has(x)) {
+			return cache.get(x);
+		}
+		let res = func(x);
+		cache.set(x, res);
+		return res;
+	};
+}
 /**
  * Gets the inheritance chain of a class.
  * @param {Function} c
