@@ -405,8 +405,9 @@ export function playerThirdPerson() {
  * Create a pseudo-enumeration using numbers.
  * @template {string[]} T
  * @param {[...T]} keys - An array of string literals to use as keys.
- * @returns {Record<T[number], number>}
+ * @returns {Readonly<{ [K in keyof T as (K extends `${number}`? T[K] : never)]: K extends `${infer N extends number}`? N : never }>}
  */
 function createNumericEnum(keys) {
+	// @ts-expect-error
 	return Object.freeze(Object.fromEntries(keys.map((key, i) => [key, i])));
 }

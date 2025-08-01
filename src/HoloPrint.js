@@ -259,7 +259,7 @@ export async function makePack(structureFiles, config, resourcePackStack, previe
 			let layerBone = {
 				"name": layerName,
 				"parent": "hologram_offset_wrapper",
-				"pivot": [8, 0, -8],
+				"pivot": [8, y * 16, -8],
 				"poly_mesh": polyMeshMaker.export()
 			};
 			geo["bones"].push(layerBone);
@@ -1682,7 +1682,8 @@ function functionToMolang(func, vars = {}) {
 	let mathedCode = expandedElseIfCode.replaceAll(`"`, `'`).replaceAll(/([\w\.]+)(\+|-){2};/g, "$1=$1$21;").replaceAll(/([\w\.]+)--;/g, "$1=$1-1;").replaceAll(/([\w\.\$\[\]]+)(\+|-|\*|\/|\?\?)=([^;]+);/g, "$1=$1$2$3;");
 	
 	// Yay more fun regular expressions, this time to work with variable substitution ($[...])
-	let substituteInVariables = (code, vars) => code.replaceAll(/\$\[(\w+)(?:\[(\d+)\]|\.(\w+))?(?:(\+|-|\*|\/)(\d+))?\]/g, (match, varName, index, key, operator, operand) => {
+	/** @param {string} code */
+	let substituteInVariables = (code, vars) => code.replaceAll(/\$\[(\w+)(?:\[(\d+)\]|\.(\w+))?(?:(\+|-|\*|\/)(\d+))?\]/g, (_, varName, index, key, operator, operand) => {
 		if(varName in vars) {
 			let value = vars[varName];
 			index ??= key;
@@ -1740,7 +1741,7 @@ function functionToMolang(func, vars = {}) {
 			}
 			let forBlockContent = mathedCode.slice(forBlockStartI + 1, forBlockEndI - 1);
 			let expandedForCode = "";
-			for(let forI = +initialValue; forI < upperBound; forI++) {
+			for(let forI = +initialValue; forI < +upperBound; forI++) {
 				expandedForCode += substituteInVariables(forBlockContent, {
 					...vars,
 					...{

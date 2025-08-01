@@ -40,7 +40,7 @@ export default class SimpleLogger extends HTMLElement {
 					height: 20px;
 					background: #556;
 				}
-				.logHeader * {
+				.logHeader span {
 					margin-left: 30px;
 				}
 				#downloadLogsButton {

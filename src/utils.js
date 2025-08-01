@@ -38,14 +38,10 @@ function symbolPatch(objects, primaryMethod, secondaryMethod) {
 
 export const selectEl = symbolPatch([Element.prototype, DocumentFragment.prototype], function selectEl(query) {
 	return this.querySelector(query);
-}, function(/** @type {string} */ query) {
-	return document.querySelector(query);
-});
+}, document.querySelector.bind(document));
 export const selectEls = symbolPatch([Element.prototype, DocumentFragment.prototype], function selectEls(query) {
 	return this.querySelectorAll(query);
-}, function(/** @type {string} */ query) {
-	return document.querySelectorAll(query);
-});
+}, document.querySelectorAll.bind(document));
 /**
  * Finds the closest descendent of an element or itself that matches a given selector.
  * @param {Element} el
@@ -77,12 +73,18 @@ export function getAllChildren(node) {
 	return allChildren;
 }
 
+/** @type {unique symbol} */
+// @ts-expect-error
 export const onEvent = symbolPatch(EventTarget.prototype, EventTarget.prototype.addEventListener);
+/** @type {unique symbol} */
+// @ts-expect-error
 export const onEvents = symbolPatch(EventTarget.prototype, function onEvents(types, listener, options = false) {
 	types.forEach(type => {
 		this.addEventListener(type, listener, options);
 	});
 });
+/** @type {unique symbol} */
+// @ts-expect-error
 export const onEventAndNow = symbolPatch(EventTarget.prototype, function onEventAndNow(type, listener, options) {
 	listener();
 	this.addEventListener(type, listener, options);
@@ -333,7 +335,7 @@ export function groupBy(items, groupFunc) { // native Object.groupBy is only 89.
 		res[group].push(item);
 	});
 	return res;
-};
+}
 /**
  * Groups files by their file extensions.
  * @param {File[]} files
@@ -384,9 +386,10 @@ export function reduceProperties(objects, reducer) {
  * Create a pseudo-enumeration using numbers.
  * @template {string[]} T
  * @param {[...T]} keys - An array of string literals to use as keys.
- * @returns {Record<T[number], number>}
+ * @returns {Readonly<{ [K in keyof T as (K extends `${number}`? T[K] : never)]: K extends `${infer N extends number}`? N : never }>}
  */
 export function createNumericEnum(keys) {
+	// @ts-expect-error
 	return Object.freeze(Object.fromEntries(keys.map((key, i) => [key, i])));
 }
 /**

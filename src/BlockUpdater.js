@@ -4,7 +4,7 @@ import { AsyncFactory, CachingFetcher } from "./utils.js";
 
 /** Updates older blocks to the latest MCBE version. */
 export default class BlockUpdater extends AsyncFactory {
-	static LATEST_VERSION = 18168865; // 1.21.60.33 (1.21.61)
+	static LATEST_VERSION = 18168865; // 01 15 3C 21 = 1.21.60.33 (1.21.61)
 	static #UPGRADE_SCHEMA_URL = "https://cdn.jsdelivr.net/gh/SuperLlama88888/BedrockBlockUpgradeSchema";
 	static #UPGRADE_SCHEMA_VERSION = "5.1.0+bedrock-1.21.60"; // specifically, the tag name
 	

@@ -454,6 +454,9 @@ img:not(#languageSelectorButton), canvas {
 	& > .previewMessage, & > canvas, & ~ hr {
 		width: min(80vmin, 100%);
 	}
+	& > canvas {
+		user-select: none;
+	}
 	& > .previewMessage, & > canvas {
 		aspect-ratio: 1;
 		box-sizing: border-box;
@@ -551,10 +554,13 @@ img:not(#languageSelectorButton), canvas {
 fieldset.textureSettings > div {
 	display: flex;
 	flex-wrap: wrap;
-	gap: 15px 0;	
-}
-fieldset.textureSettings > div > div {
-	flex: 1 1 auto;
+	gap: 15px 0;
+	> div {
+		flex: 1 1 auto;
+	}
+	td {
+		padding: 0 5px;
+	}
 }
 #texturePreviewCont {
 	text-align: center;

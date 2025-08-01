@@ -20,14 +20,13 @@ export default class FileInputTable extends HTMLElement {
 	/** @type {number} */
 	#touchDragVerticalOffset;
 	/** @type {WeakMap<HTMLTableRowElement, File>} */
-	#filesByRow;
+	#filesByRow = new WeakMap();
 	
 	constructor() {
 		super();
 		this.attachShadow({
 			mode: "open"
 		});
-		this.#filesByRow = new WeakMap();
 	}
 	connectedCallback() {
 		if(this.childElementCount != 1 || !(this.children[0] instanceof HTMLInputElement) || this.children[0].type != "file") {
@@ -233,6 +232,9 @@ export default class FileInputTable extends HTMLElement {
 			this.#updateFileInput();
 		});
 		this.#table[onEvents](["dragstart", "touchstart"], e => {
+			if(!(e.target instanceof Element)) {
+				return;
+			}
 			if(e.target.classList.contains("dragMoveCell") && getComputedStyle(e.target).opacity != "0") {
 				let row = e.target.closest("tr");
 				if(row.classList.contains("beingDeleted")) {
@@ -241,7 +243,7 @@ export default class FileInputTable extends HTMLElement {
 				}
 				this.#rowBeingDragged = row;
 				this.#rowBeingDragged.classList.add("beingDragged");
-				if(e.type == "dragstart") {
+				if(e instanceof DragEvent) {
 					e.dataTransfer.effectAllowed = "move";
 					e.dataTransfer.dropEffect = "move";
 					e.dataTransfer.setDragImage(this.#rowBeingDragged.cells[0], 0, 0);
@@ -256,9 +258,12 @@ export default class FileInputTable extends HTMLElement {
 			if(!this.#rowBeingDragged) {
 				return;
 			}
+			if(!(e.target instanceof Element)) {
+				return;
+			}
 			e.preventDefault();
 			let targetRow;
-			if(e.type == "dragover") {
+			if(e instanceof DragEvent) {
 				targetRow = e.target.closest("tr");
 			} else {
 				let touch = e.changedTouches[0];
@@ -285,7 +290,7 @@ export default class FileInputTable extends HTMLElement {
 				this.#touchDragVerticalOffset += deltaY;
 				this.#updateFileInput();
 			}
-			if(e.type == "touchmove") {
+			if(e instanceof TouchEvent) {
 				let currentOffset = parseFloat(this.#rowBeingDragged.style.top) || 0;
 				let tableBounds = this.#table.getBoundingClientRect();
 				let rowBounds = this.#rowBeingDragged.getBoundingClientRect();
@@ -361,9 +366,7 @@ export default class FileInputTable extends HTMLElement {
 	}
 	#updateFileInput() {
 		let files = Array.from(this.#table.rows).filter(row => !row.classList.contains("beingDeleted")).map(row => this.#filesByRow.get(row));
-		let dt = new DataTransfer();
-		files.forEach(file => dt.items.add(file));
-		this.fileInput.files = dt.files;
+		this.fileInput.files = fileArrayToFileList(files);
 		dispatchInputEvents(this.fileInput, {
 			[FileInputTable.#IGNORE_EVENT]: true
 		});

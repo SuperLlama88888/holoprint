@@ -25,8 +25,8 @@ export default class ItemCriteriaInput extends HTMLElement {
 	
 	internals;
 	
-	#connected;
-	#tasksPendingConnection;
+	#connected = false;
+	#tasksPendingConnection = [];
 	#translateCurrentLanguage;
 	/** @type {HTMLLabelElement} */
 	#criteriaInputsCont;
@@ -41,9 +41,6 @@ export default class ItemCriteriaInput extends HTMLElement {
 			mode: "open"
 		});
 		this.internals = this.attachInternals();
-		
-		this.#connected = false;
-		this.#tasksPendingConnection = [];
 	}
 	connectedCallback() {
 		if(this.#connected) {

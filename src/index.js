@@ -228,7 +228,8 @@ document[onEvent]("DOMContentLoaded", () => {
 		makePack(cast(formData.getAll("structureFiles"), [File]), resourcePacks);
 	});
 	generatePackForm[onEvent]("input", e => {
-		if(e.target.closest("fieldset")?.classList?.contains("textureSettings") && e.target.hasAttribute("name")) {
+		let target = cast(e.target, HTMLElement);
+		if(target.closest("fieldset")?.classList?.contains("textureSettings") && target.hasAttribute("name")) {
 			updateTexturePreview();
 		}
 	});
@@ -534,8 +535,8 @@ function performTranslationSubstitutions(el, translation) {
 		if(name.startsWith(prefix)) {
 			let subName = name.slice(prefix.length).toUpperCase().replaceAll("-", "_");
 			translation = translation.replaceAll(`{${subName}}`, value);
-			if(typeof value == "number" && parseInt(value) == value) {
-				translation = value > 1? translation.replace(/\[|\]/g, "") : translation.replaceAll(/\[.+\]/g, "");
+			if(parseInt(value) == +value) {
+				translation = +value > 1? translation.replace(/\[|\]/g, "") : translation.replaceAll(/\[.+\]/g, "");
 			}
 		}
 	});
