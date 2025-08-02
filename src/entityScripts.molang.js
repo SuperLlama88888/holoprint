@@ -30,8 +30,7 @@ export function armorStandInitialization() {
 	v.hologram.last_held_item = ""; // this will be kept in the backup
 	v.last_pose = 0;
 	v.last_hurt_direction = q.hurt_direction;
-	// v.player_action_counter = t.player_action_counter ?? 0;
-	v.player_action_counter = 0;
+	v.player_action_counter = t.player_action_counter ?? 0;
 	v.hologram_dir = 0;
 	
 	v.spawn_time = q.time_stamp;
@@ -72,7 +71,7 @@ export function armorStandPreAnimation() {
 			v.hologram_activated = true;
 			v.hologram.rendering = true;
 		} else {
-			return 0; // must have a return value
+			return;
 		}
 	}
 	
@@ -276,7 +275,7 @@ export function armorStandPreAnimation() {
 		}
 		if(v.hologram_backup_index == -1) { // none are empty, so overwrite the earliest backup
 			if(t.earliest_backup_index == -1) { // will only happen when the backup slot count is 0
-				return 0;
+				return;
 			}
 			v.hologram_backup_index = t.earliest_backup_index;
 		}
