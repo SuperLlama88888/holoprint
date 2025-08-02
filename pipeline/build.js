@@ -95,7 +95,7 @@ function findProcessingFunction(filename) {
  */
 function processHTML(code, filename) {
 	code = code.replaceAll(/<script type="(importmap|application\/ld\+json)">([^]+?)<\/script>/g, (_, scriptType, json) => `<script type="${scriptType}">${processJSON(json).code}</script>`);
-	const inlineCustomElements = [["vec-3-input", "acronym"]]; // acronym is a deprecated inline element. the minifier doesn't recognise that custom elements are inline, hence a substitution is performed right before and after the minification.
+	const inlineCustomElements = [["vec-3-input", "acronym"], ["slot", "big"]]; // acronym/big are deprecated inline elements. the minifier doesn't recognise that custom elements are inline, hence a substitution is performed right before and after the minification.
 	inlineCustomElements.forEach(([elementName, replacement]) => {;
 		code = code.replaceAll(`<${elementName}`, `<${replacement}`);
 		code = code.replaceAll(`</${elementName}>`, `</${replacement}>`)
