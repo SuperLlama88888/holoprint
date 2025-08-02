@@ -4,7 +4,7 @@ export const ACTIONS = createNumericEnum(["NEXT_STRUCTURE", "PREVIOUS_STRUCTURE"
 
 export function armorStandInitialization() {
 	v.hologram_activated = HOLOGRAM_INITIAL_ACTIVATION; // true/false are substituted in here for the different subpacks
-	v.hologram.offset_x = $[initialOffset[0]];
+	v.hologram.offset_x = -$[initialOffset[0]];
 	v.hologram.offset_y = $[initialOffset[1]];
 	v.hologram.offset_z = $[initialOffset[2]];
 	v.hologram.rotation = 0;
