@@ -174,7 +174,7 @@ export default class ItemCriteriaInput extends HTMLElement {
 			this.internals.setValidity({});
 		}
 	}
-	#handleAttributeChange(attrName, oldValue, newValue) {
+	#handleAttributeChange(attrName, _, newValue) {
 		let inputValue = JSON.parse(this.value);
 		newValue = newValue.split(",");
 		switch(attrName) {

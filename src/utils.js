@@ -161,8 +161,8 @@ export const sleep = async time => new Promise(resolve => setTimeout(resolve, ti
 export const doNothing = x => x;
 /** @template {any[]} T @param {[...T]} x @returns {T} */
 export const tuple = x => x;
-/** @template T @param {T} type @returns {T extends any[]? T[number]["prototype"][] : T["prototype"]} */
-export const cast = (x, type) => x;
+/** @template T @param {T} _type @returns {T extends any[]? T[number]["prototype"][] : T["prototype"]} */
+export const cast = (x, _type) => x;
 export const { min, max, floor, ceil, sqrt, round, abs, PI: pi, exp, log: ln, sin, cos, tan, hypot } = Math;
 export const clamp = (n, lowest, highest) => min(max(n, lowest), highest);
 export const lerp = (a, b, x) => a + (b - a) * x;
@@ -271,11 +271,11 @@ export function arrayMin(arr) {
 }
 export function range(a, b, c) {
 	if(b == undefined && c == undefined) {
-		return (new Array(a + 1)).fill().map((x, i) => i);
+		return (new Array(a + 1)).fill().map((_, i) => i);
 	} else if(c == undefined) {
-		return (new Array(b - a + 1)).fill().map((x, i) => i + a);
+		return (new Array(b - a + 1)).fill().map((_, i) => i + a);
 	} else {
-		return (new Array((b - a) / c + 1)).fill().map((x, i) => i * c + a);
+		return (new Array((b - a) / c + 1)).fill().map((_, i) => i * c + a);
 	}
 }
 export function random(arr) {
@@ -895,6 +895,7 @@ export class AsyncFactory {
 function stringifyJsonBigIntSafe(value) {
 	return JSON.stringify(value, (_, x) => typeof x == "bigint"? (JSON.rawJSON ?? doNothing)(x.toString()) : x); // JSON.rawJSON offers the perfect solution but is very modern, so stringifying them is the next best option
 }
+// @ts-expect-error
 function parseJsonBigIntSafe(value) { // this function is unused but I'm keeping it here because it works well with the function above
 	return JSON.parse(value, (_, x, context) => context && Number.isInteger(x) && !Number.isSafeInteger(x)? BigInt(context.source) : x);
 }
