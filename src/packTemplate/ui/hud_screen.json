@@ -119,6 +119,62 @@
 								}
 							]
 						}
+					},
+					{
+						"decrease_layer_button": {
+							"type": "button",
+							"size": ["100%", "100%"],
+							"pressed_control": "pressed",
+							"button_mappings": [
+								{
+									"from_button_id": "button.arrow_down",
+									"to_button_id": "button.dummy",
+									"mapping_type": "global"
+								}
+							],
+							"controls": [
+								{
+									"pressed": {
+										"type": "panel",
+										"controls": [
+											{
+												"move_down_trigger@armor_stand_holding_item": {
+													"$item_id_aux": 65536 // stone
+												}
+											}
+										]
+									}
+								}
+							]
+						}
+					},
+					{
+						"increase_layer_button": {
+							"type": "button",
+							"size": ["100%", "100%"],
+							"pressed_control": "pressed",
+							"button_mappings": [
+								{
+									"from_button_id": "button.arrow_up",
+									"to_button_id": "button.dummy",
+									"mapping_type": "global"
+								}
+							],
+							"controls": [
+								{
+									"pressed": {
+										"type": "panel",
+										"controls": [
+											{
+												"move_up_trigger@armor_stand_holding_item": {
+													"$item_id_aux": 131072 // grass block
+												}
+											}
+										]
+									}
+								}
+							]
+						}
 					}
 				]
 			}
@@ -282,6 +338,14 @@
 				}
 			}
 		]
+	},
+	"armor_stand_holding_item": {
+		"type": "custom",
+		"renderer": "equipment_preview_renderer", // used in smithing tables to render armour stands
+		"size": [0, 0],
+		"property_bag": {
+			"#item_id_aux": "$item_id_aux" // set the armour stand's (offhand) item
+		}
 	},
 	"hud_screen": {
 		"button_mappings": [ // this is the same as the original, except the inventory_left and inventory_right mappings are left out, so they can be conditionally applied depending on visibility of the material list.

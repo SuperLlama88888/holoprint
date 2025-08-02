@@ -31,6 +31,10 @@ export function armorStandInitialization() {
 	v.last_pose = 0;
 	v.last_hurt_direction = q.hurt_direction;
 	v.player_action_counter = t.player_action_counter ?? 0;
+	v.ui_action_counter = t.ui_action_counter ?? 0;
+	v.last_ui_action_time = q.time_stamp;
+	v.was_ui_action_last_frame = false;
+	v.ui_action_hold_start_time = -1;
 	v.hologram_dir = 0;
 	
 	v.spawn_time = q.time_stamp;
@@ -41,6 +45,22 @@ export function armorStandInitialization() {
 	v.skip_spawn_animation = false;
 }
 export function armorStandPreAnimation() {
+	if(q.is_in_ui) {
+		if(q.is_item_name_any("slot.weapon.offhand", "minecraft:stone")) { // if the armour stand is holding stone/grass and in the ui, it must be from our custom ui code. I doubt any other addons would interfere here...
+			t.ui_action = $[ACTIONS.DECREASE_LAYER];
+		} else if(q.is_item_name_any("slot.weapon.offhand", "minecraft:grass_block")) {
+			t.ui_action = $[ACTIONS.INCREASE_LAYER];
+		} else {
+			return;
+		}
+		if((t.ui_action_counter ?? -1) != -1) {
+			v.ui_action_counter = t.ui_action_counter;
+		}
+		v.ui_action_counter++;
+		t.ui_action_counter = v.ui_action_counter;
+		return;
+	}
+	
 	if(q.time_stamp - v.spawn_time < 5) {
 		v.last_pose = v.armor_stand.pose_index; // armour stands take a tick or two at the start to set their pose correctly
 	}
@@ -125,6 +145,28 @@ export function armorStandPreAnimation() {
 		if(!$[disablePlayerControls]) {
 			t.action = t.player_action;
 		}
+	}
+	t.ui_action_counter ??= 0;
+	if(t.ui_action_counter != v.ui_action_counter && t.ui_action_counter > 0) {
+		v.ui_action_counter = t.ui_action_counter;
+		if(!$[disablePlayerControls]) {
+			t.process_action = false;
+			t.delta_time = q.time_stamp - v.last_ui_action_time; // unfortunately q.time_stamp doesn't work in armour stands rendered in the ui, so we need to do the timing logic here
+			if(!v.was_ui_action_last_frame && t.delta_time >= 1) { // you can press it repeatedly up to 20 times a second
+				t.process_action = true;
+				v.ui_action_hold_start_time = q.time_stamp;
+			}
+			if(v.was_ui_action_last_frame && q.time_stamp - v.ui_action_hold_start_time >= 8 && t.delta_time >= 2.5) { // if you've been holding a key down for 0.4s, it will repeat the action 8 times a second. kinda like how keyboards work when you hold down a key.
+				t.process_action = true;
+			}
+			if(t.process_action) {
+				t.action = t.ui_action;
+				v.last_ui_action_time = q.time_stamp;
+			}
+		}
+		v.was_ui_action_last_frame = true;
+	} else {
+		v.was_ui_action_last_frame = false;
 	}
 	if(t.action != -1) {
 		v.player_has_interacted = true;
