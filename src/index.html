@@ -148,17 +148,32 @@
 									<legend><label><span data-translate="settings.textures">Textures</span><input type="checkbox"/></label></legend>
 									<div>
 										<table>
-											<tr><td><label data-translate="settings.textures.outline.width">Texture outline width:</label></td><td><select name="textureOutlineWidth">
-												<option value="0" data-translate="settings.textures.outline.width.no_outline">None</option>
-												<option value="0.125">0.125px</option>
-												<option value="0.25" selected>0.25px</option>
-												<option value="0.5">0.5px</option>
-												<option value="1">1px</option>
-											</select></td></tr>
-											<tr><td><label data-translate="settings.textures.outline.color">Texture outline color:</label></td><td><input type="color" value="#0000FF" name="textureOutlineColor"/></td></tr>
-											<tr><td><label data-translate="settings.textures.outline.opacity">Texture outline opacity:</label></td><td><input type="number" min="10" max="100" value="65" name="textureOutlineOpacity"/>%</td></tr>
-											<tr><td><label data-translate="settings.textures.tint.color">Overlay tint:</label></td><td><input type="color" value="#579EFA" name="tintColor"/></td></tr>
-											<tr><td><label data-translate="settings.textures.tint.opacity">Overlay tint opacity:</label></td><td><input type="number" min="1" max="100" value="20" name="tintOpacity">%</td></tr>
+											<tr>
+												<td><label data-translate="settings.textures.outline.width">Texture outline width:</label></td>
+												<td><select name="textureOutlineWidth">
+													<option value="0" data-translate="settings.textures.outline.width.no_outline">None</option>
+													<option value="0.125">0.125px</option>
+													<option value="0.25" selected>0.25px</option>
+													<option value="0.5">0.5px</option>
+													<option value="1">1px</option>
+												</select></td>
+											</tr>
+											<tr>
+												<td><label data-translate="settings.textures.outline.color">Texture outline color:</label></td>
+												<td><input type="color" value="#0000FF" name="textureOutlineColor"/></td>
+											</tr>
+											<tr>
+												<td><label data-translate="settings.textures.outline.opacity">Texture outline opacity:</label></td>
+												<td><input type="number" min="10" max="100" value="65" name="textureOutlineOpacity"/>%</td>
+											</tr>
+											<tr>
+												<td><label data-translate="settings.textures.tint.color">Overlay tint:</label></td>
+												<td><input type="color" value="#579EFA" name="tintColor"/></td>
+											</tr>
+											<tr>
+												<td><label data-translate="settings.textures.tint.opacity">Overlay tint opacity:</label></td>
+												<td><input type="number" min="1" max="100" value="20" name="tintOpacity">%</td>
+											</tr>
 										</table>
 										<div id="texturePreviewCont">
 											<span data-translate="settings.textures.tint.toggleable_in_game">Tint can be turned on/off in-game</span>
@@ -176,11 +191,26 @@
 									<legend><label><span data-translate="settings.features">Features</span><input type="checkbox"/></label></legend>
 									<div>
 										<table>
-											<tr><td><label data-translate="settings.features.spawn_animation" for="c1">Spawn animation:</label></td><td><input type="checkbox" name="spawnAnimationEnabled" checked id="c1"/></td></tr>
-											<tr><td><label data-translate="settings.features.player_controls" for="c2">Player controls:</label></td><td><input type="checkbox" name="playerControlsEnabled" checked id="c2"/></td></tr>
-											<tr><td><label data-translate="settings.features.material_list" for="c3">Material list:</label></td><td><input type="checkbox" name="materialListEnabled" checked id="c3"/></td></tr>
-											<tr><td><label data-translate="settings.features.retexture_control_items" for="c4">Retexture control items:</label></td><td><input type="checkbox" name="retextureControlItems" checked id="c4"/></td></tr>
-											<tr><td><label data-translate="settings.features.rename_control_items" for="c5">Rename control items:</label></td><td><input type="checkbox" name="renameControlItems" checked id="c5"/></td></tr>
+											<tr>
+												<td><label data-translate="settings.features.spawn_animation" for="c1">Spawn animation:</label></td>
+												<td><input type="checkbox" name="spawnAnimationEnabled" checked id="c1"/></td>
+											</tr>
+											<tr>
+												<td><label data-translate="settings.features.player_controls" for="c2">Player controls:</label></td>
+												<td><input type="checkbox" name="playerControlsEnabled" checked id="c2"/></td>
+											</tr>
+											<tr>
+												<td><label data-translate="settings.features.material_list" for="c3">Material list:</label></td>
+												<td><input type="checkbox" name="materialListEnabled" checked id="c3"/></td>
+											</tr>
+											<tr>
+												<td><label data-translate="settings.features.retexture_control_items" for="c4">Retexture control items:</label></td>
+												<td><input type="checkbox" name="retextureControlItems" checked id="c4"/></td>
+											</tr>
+											<tr>
+												<td><label data-translate="settings.features.rename_control_items" for="c5">Rename control items:</label></td>
+												<td><input type="checkbox" name="renameControlItems" checked id="c5"/></td>
+											</tr>
 										</table>
 									</div>
 								</fieldset>
