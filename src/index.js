@@ -264,12 +264,14 @@ document[onEvent]("DOMContentLoaded", () => {
 	structureFilesList[onEventAndNow]("input", () => {
 		coordinateLockStructureCoordsCont.innerHTML = Array.from(structureFilesList.files).map(file => {
 			let pos = coordinateLockStructureCoords.get(file) ?? [0, 0, 0];
+			let randomId = Math.random();
 			return html`
-				<label>${removeFileExtension(file.name)}: <vec-3-input>
+				<label for="${randomId}">${removeFileExtension(file.name)}:</label>
+				<vec-3-input id="${randomId}">
 					<input type="number" min="-10000000" max="10000000" step="1" value="${pos[0]}" placeholder="0" slot="x"/>
 					<input type="number" min="-10000000" max="10000000" step="1" value="${pos[1]}" placeholder="0" slot="y"/>
 					<input type="number" min="-10000000" max="10000000" step="1" value="${pos[2]}" placeholder="0" slot="z"/>
-				</vec-3-input></label>
+				</vec-3-input>
 			`;
 		}).join("");
 		Array.from(coordinateLockStructureCoordsCont[selectEls]("vec-3-input")).forEach((input, i) => {

@@ -192,7 +192,7 @@ export default class FileInputTable extends HTMLElement {
 			</style>
 			<div id="main">
 				<p id="fileCountHeadingWrapper"><span id="fileCountHeading"></span><button id="removeAllFilesButton"><span data-text-attribute="remove-all-text">Remove all</span> <span translate="no" class="material-symbols">delete_sweep</span></button></p>
-				<table></table>
+				<table translate="no"></table>
 			</div>
 		`;
 		this.#fileCountHeading = this.shadowRoot[selectEl]("#fileCountHeading");
@@ -353,7 +353,7 @@ export default class FileInputTable extends HTMLElement {
 	#addGenericRowButtons(row, file) {
 		row.insertAdjacentHTML("beforeend", html`
 			<td>
-				<div translate="no" class="buttonsCont">
+				<div class="buttonsCont">
 					<button class="downloadButton material-symbols invisible">download</button>
 					<button class="deleteButton material-symbols">delete</button>
 					<button draggable="true" class="dragMoveCell material-symbols">drag_indicator</button>

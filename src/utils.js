@@ -556,6 +556,20 @@ export function htmlCodeToElement(htmlCode) {
 	template.innerHTML = htmlCode;
 	return template.content.firstElementChild;
 }
+/**
+ * Measures the dimensions of a string of text.
+ * @param {string} text
+ * @param {string} font
+ * @returns {TextMetrics}
+ */
+export function measureText(text, font) {
+	let can = new OffscreenCanvas(0, 0);
+	let ctx = can.getContext("2d", {
+		willReadFrequently: true
+	});
+	ctx.font = font;
+	return ctx.measureText(text);
+}
 export function stringToImageData(text, textCol = "black", backgroundCol = "white", font = "12px monospace") {
 	let can = new OffscreenCanvas(0, 20);
 	let ctx = can.getContext("2d", {

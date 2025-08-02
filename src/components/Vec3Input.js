@@ -1,4 +1,4 @@
-import { dispatchInputEvents, flattenObject, html, max, onEvent, onEventAndNow, reduceProperties, selectEl, selectEls } from "../utils.js";
+import { dispatchInputEvents, flattenObject, html, max, measureText, onEvent, onEventAndNow, reduceProperties, selectEl, selectEls } from "../utils.js";
 
 /** A custom input with three number inputs which must be assigned to the x, y, and z slots. */
 export default class Vec3Input extends HTMLElement {
@@ -42,8 +42,9 @@ export default class Vec3Input extends HTMLElement {
 		this.#inputs.forEach(input => {
 			input[onEvent]("input", () => this.#reportFormState());
 			input[onEventAndNow]("input", () => {
-				input.size = max(input.value.length, 1);
-			})
+				let textWidth = measureText(input.value || input.placeholder, getComputedStyle(input).font).width;
+				input.style.width = 26 + textWidth + "px";
+			});
 			Object.defineProperty(input, "value", {
 				get: nativeValueDescriptor.get,
 				set: value => {

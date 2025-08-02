@@ -194,22 +194,29 @@
 									<summary data-translate="settings.advanced">Advanced</summary>
 									<label><span data-translate="settings.coordinate_lock">Coordinate lock:</span> <input type="checkbox" name="coordinateLockEnabled" autocomplete="off"/></label>
 									<div id="coordinateLockCoordsCont" class="hidden">
-										<hr/>
-										<div id="coordinateLockStructureCoords"></div>
-										<button type="button" data-translate="settings.coordinate_lock.get_global_coords">Get global coordinates</button>
+										<button type="button" data-translate="settings.coordinate_lock.get_global_coords" class="importantButton">Get global coordinates</button>
+										<div id="coordinateLockStructureCoords" translate="no"></div>
+										<span data-translate="settings.coordinate_lock.axis">Axis:</span>
 										<input type="radio" name="axis" class="buttonlike" value="X" checked/>
 										<input type="radio" name="axis" class="buttonlike" value="Y"/>
 										<input type="radio" name="axis" class="buttonlike" value="Z"/>
-										<br/>
-										<button type="button" translate="no">-1000</button>
-										<button type="button" translate="no">-100</button>
-										<button type="button" translate="no">-10</button>
-										<button type="button" translate="no">-1</button>
-										<button type="button" translate="no">+1</button>
-										<button type="button" translate="no">+10</button>
-										<button type="button" translate="no">+100</button>
-										<button type="button" translate="no">+1000</button>
-										<hr/>
+										<span id="coordinateLockCoordsAdjustmentCont">
+											<span data-translate="settings.coordinate_lock.adjust">Adjust:</span>
+											<span>
+												<span>
+													<button type="button" translate="no">-1000</button>
+													<button type="button" translate="no">-100</button>
+													<button type="button" translate="no">-10</button>
+													<button type="button" translate="no">-1</button>
+												</span>
+												<span>
+													<button type="button" translate="no">+1</button>
+													<button type="button" translate="no">+10</button>
+													<button type="button" translate="no">+100</button>
+													<button type="button" translate="no">+1000</button>
+												</span>
+											</span>
+										</span>
 									</div>
 									<label><span data-translate="settings.initial_offset">Initial offset:</span> <vec-3-input name="initialOffset">
 										<input type="number" min="-999" max="999" step="1" value="0" placeholder="0" slot="x"/>

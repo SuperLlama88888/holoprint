@@ -1,20 +1,25 @@
 /* This can only be described as functional. */
 :root {
 	--icon-scale: 1;
-	--success-green: #3AB336;
-	--error-red: #E24436;
 	
+	--text-col: #202526;
 	--border-col: #D899D8;
 	--input-bg: #EEDEEE;
 	--input-bg-checked: #E8C8E8;
 	--input-bg-active: #DABADA;
+	--dark-bg: #D38AD3;
+	--dark-bg-hover: #C57CC5;
+	--dark-bg-active: #B66DB7;
+	--dark-border: #9B4F9B;
+	--success-green: #3AB336;
+	--error-red: #E24436;
 }
 body {
 	background-image: linear-gradient(#FFFB, #FFFB), url("assets/logo_background.png");
 	background-size: 100px;
 	/* animation: move-background 10s linear infinite; */
 	font-family: "Catamaran", "Trebuchet MS", sans-serif;
-	color: #202526;
+	color: var(--text-col);
 	line-height: 1.2;
 }
 @keyframes move-background {
@@ -200,6 +205,9 @@ fieldset.expandable > legend::before {
 fieldset.expandable:has(legend input:checked) > legend::before {
 	transform: rotate(135deg);
 }
+span {
+	vertical-align: middle;
+}
 label {
 	display: block;
 }
@@ -229,7 +237,7 @@ button, input[type="checkbox"], input[type="number"], input[type="text"], textar
 	font-family: inherit;
 	color: inherit;
 	cursor: pointer;
-	transition: background 0.15s, border-color 0.15s;
+	transition: background 0.15s, border-color 0.15s, color 0.15s;
 }
 input[type="color"] {
 	border: 2px solid var(--border-col);
@@ -272,7 +280,9 @@ button:not(.packInfoButton):not(:disabled):active, input[type="file"]:not(:disab
 	background: var(--input-bg-active);
 }
 input[type="checkbox"] {
+	margin: 3px 1px;
 	display: inline-block;
+	vertical-align: middle;
 	appearance: none;
 	width: 40px;
 	height: 20px;
@@ -295,13 +305,13 @@ input[type="checkbox"]::after {
 	font-size: 15px;
 	font-weight: bold;
 	color: transparent;
-	text-shadow: 17px -3px 0 black; /* effectively move the text */
+	text-shadow: 17px -3px 0 var(--text-col); /* effectively move the text */
 	transition: left 0.2s, text-shadow 0.2s, background 0.15s;
 }
 input[type="checkbox"]:checked::after {
 	left: 18px;
 	content: "check";
-	text-shadow: -20px -3px 0 black;
+	text-shadow: -20px -3px 0 var(--text-col);
 }
 input[type="checkbox"]:hover::after {
 	background: #B778B7;
@@ -317,8 +327,18 @@ input[type="radio"].buttonlike {
 		width: 20px;
 		height: 20px;
 	}
-	&:checked {
-		background: var(--input-bg-checked);
+}
+input[type="radio"].buttonlike:checked, .importantButton {
+	color: white;
+	font-weight: bold;
+	background: var(--dark-bg);
+	border-color: var(--dark-border);
+	box-shadow: 0 0 5px var(--dark-bg);
+	&:hover {
+		background: var(--dark-bg-hover);
+	}
+	&:active:active {
+		background: var(--dark-bg-active);
 	}
 }
 
@@ -573,4 +593,37 @@ fieldset.textureSettings > div {
 	width: 40%;
 	max-width: 140px;
 	image-rendering: pixelated;
+}
+
+#coordinateLockCoordsCont {
+	padding: 5px;
+	border: 3px dotted #AAA;
+	border-radius: 10px;
+}
+#coordinateLockStructureCoords {
+	margin: 2px 0;
+	display: grid;
+	grid-template-columns: minmax(0, max-content) max-content;
+	align-items: center;
+	gap: 2px 5px;
+	
+	label {
+		overflow: hidden;
+		text-overflow: ellipsis;
+	}
+}
+#coordinateLockCoordsAdjustmentCont {
+	margin-top: 3px;
+	display: flex;
+	align-items: center;
+	gap: 5px;
+	> :first-child {
+		white-space: nowrap;
+	}
+	> :last-child {
+		flex: 1;
+		> span {
+			display: inline-block;
+		}
+	}
 }
