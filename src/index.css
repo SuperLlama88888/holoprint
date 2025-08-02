@@ -334,10 +334,10 @@ input[type="radio"].buttonlike:checked, .importantButton {
 	background: var(--dark-bg);
 	border-color: var(--dark-border);
 	box-shadow: 0 0 5px var(--dark-bg);
-	&:hover {
+	&:hover:hover:hover {
 		background: var(--dark-bg-hover);
 	}
-	&:active:active {
+	&:active:active:active {
 		background: var(--dark-bg-active);
 	}
 }
