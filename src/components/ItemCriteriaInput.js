@@ -1,4 +1,4 @@
-import { html, htmlCodeToElement, onEvent, onEventAndNow, selectEl, selectEls } from "../utils.js";
+import { cast, html, htmlCodeToElement, onEvent, onEventAndNow, selectEl, selectEls } from "../utils.js";
 import * as HoloPrint from "../HoloPrint.js";
 import { VanillaDataFetcher } from "../ResourcePackStack.js";
 
@@ -25,8 +25,8 @@ export default class ItemCriteriaInput extends HTMLElement {
 	
 	internals;
 	
-	#connected;
-	#tasksPendingConnection;
+	#connected = false;
+	#tasksPendingConnection = [];
 	#translateCurrentLanguage;
 	/** @type {HTMLLabelElement} */
 	#criteriaInputsCont;
@@ -41,9 +41,6 @@ export default class ItemCriteriaInput extends HTMLElement {
 			mode: "open"
 		});
 		this.internals = this.attachInternals();
-		
-		this.#connected = false;
-		this.#tasksPendingConnection = [];
 	}
 	connectedCallback() {
 		if(this.#connected) {
@@ -177,7 +174,7 @@ export default class ItemCriteriaInput extends HTMLElement {
 			this.internals.setValidity({});
 		}
 	}
-	#handleAttributeChange(attrName, oldValue, newValue) {
+	#handleAttributeChange(attrName, _, newValue) {
 		let inputValue = JSON.parse(this.value);
 		newValue = newValue.split(",");
 		switch(attrName) {
@@ -203,9 +200,7 @@ export default class ItemCriteriaInput extends HTMLElement {
 			orSpan.innerText = " or ";
 			this.#criteriaInputsCont.appendChild(orSpan);
 		}
-		/** @type {HTMLInputElement} */
-		// @ts-ignore
-		let newInput = htmlCodeToElement(`<input type="text" required pattern="^\\s*(\\w+:)?\\w+\\s*$" spellcheck="false" autocapitalize="off" ${attributesByType[type]}/>`);
+		let newInput = cast(htmlCodeToElement(`<input type="text" required pattern="^\\s*(\\w+:)?\\w+\\s*$" spellcheck="false" autocapitalize="off" ${attributesByType[type]}/>`), HTMLInputElement);
 		newInput[onEvent]("keydown", this.#inputKeyDownEvent);
 		if(initialValue != undefined) {
 			newInput.value = initialValue;

@@ -1,5 +1,5 @@
 import { extractStructureFilesFromMcworld } from "mcbe-leveldb-reader";
-import { selectEl, downloadFile, sleep, selectEls, loadTranslationLanguage, translate, getStackTrace, random, UserError, joinOr, conditionallyGroup, groupByFileExtension, addFilesToFileInput, setFileInputFiles, dispatchInputEvents, getAllChildren, jsonc, toImage, removeFalsies, clearCacheStorage, onEvent, onEventAndNow } from "./utils.js";
+import { selectEl, downloadFile, sleep, selectEls, loadTranslationLanguage, translate, getStackTrace, random, UserError, joinOr, conditionallyGroup, groupByFileExtension, addFilesToFileInput, setFileInputFiles, dispatchInputEvents, getAllChildren, jsonc, toImage, removeFalsies, clearCacheStorage, onEvent, onEventAndNow, cast, clearFileInput, html, removeFileExtension } from "./utils.js";
 import * as HoloPrint from "./HoloPrint.js";
 import SupabaseLogger from "./SupabaseLogger.js";
 
@@ -8,6 +8,7 @@ import LocalResourcePack from "./LocalResourcePack.js";
 import TextureAtlas from "./TextureAtlas.js";
 import ItemCriteriaInput from "./components/ItemCriteriaInput.js";
 import FileInputTable from "./components/FileInputTable.js";
+import Vec3Input from "./components/Vec3Input.js";
 import SimpleLogger from "./components/SimpleLogger.js";
 import LilGui from "./components/LilGui.js";
 
@@ -31,6 +32,10 @@ let oldPackInput;
 /** @type {HTMLInputElement} */
 let structureFilesList;
 let packNameInput;
+/** @type {Element} */
+let coordinateLockStructureCoordsCont;
+/** @type {WeakMap<File, Vec3>} */
+let coordinateLockStructureCoords = new WeakMap();
 let completedPacksCont;
 /** @type {SimpleLogger} */
 let logger;
@@ -47,26 +52,26 @@ document[onEvent]("DOMContentLoaded", () => {
 	
 	selectEls(`input[type="file"][accept]:not([multiple])`).forEach(input => {
 		input[onEventAndNow]("input", e => {
-			if(!validateFileInputFileTypes(input)) {
+			if(!validateFileInputFileTypes(cast(input, HTMLInputElement))) {
 				e?.stopImmediatePropagation();
 			}
 		});
 	});
 	
-	generatePackForm = selectEl("#generatePackForm");
+	generatePackForm = cast(selectEl("#generatePackForm"), HTMLFormElement);
 	dropFileNotice = selectEl("#dropFileNotice");
-	structureFilesInput = selectEl("#structureFilesInput");
+	structureFilesInput = cast(selectEl("#structureFilesInput"), HTMLInputElement);
 	let notStructureFileError = selectEl("#notStructureFileError");
-	worldFileInput = selectEl("#worldFileInput");
+	worldFileInput = cast(selectEl("#worldFileInput"), HTMLInputElement);
 	let worldExtractionMessage = selectEl("#worldExtractionMessage");
-	let worldExtractionSuccess = selectEl("#worldExtractionSuccess");
+	let worldExtractionSuccess = cast(selectEl("#worldExtractionSuccess"), HTMLSpanElement);
 	let worldExtractionError = selectEl("#worldExtractionError");
-	let worldExtractionWorldError = selectEl("#worldExtractionWorldError");
-	oldPackInput = selectEl("#oldPackInput");
+	let worldExtractionWorldError = cast(selectEl("#worldExtractionWorldError"), HTMLSpanElement);
+	oldPackInput = cast(selectEl("#oldPackInput"), HTMLInputElement);
 	let oldPackExtractionMessage = selectEl("#oldPackExtractionMessage");
 	let oldPackExtractionSuccess = selectEl("#oldPackExtractionSuccess");
 	let oldPackExtractionError = selectEl("#oldPackExtractionError");
-	structureFilesList = selectEl("#structureFilesList");
+	structureFilesList = cast(selectEl("#structureFilesList"), HTMLInputElement);
 	packNameInput = generatePackForm.elements.namedItem("packName");
 	packNameInput[onEvent]("invalid", () => {
 		packNameInput.setCustomValidity(translateCurrentLanguage("metadata.pack_name.error"));
@@ -84,6 +89,17 @@ document[onEvent]("DOMContentLoaded", () => {
 			notStructureFileError.classList.add("hidden");
 			structureFilesInput.setCustomValidity("");
 		} else {
+			if(files.length == 1) { // the other input methods can't handle multiple files
+				if(files[0].name.endsWith(".mcworld") || files[0].name.endsWith(".zip")) {
+					clearFileInput(structureFilesInput);
+					setFileInputFiles(worldFileInput, files);
+					return;
+				} else if(files[0].name.endsWith(".mcpack")) {
+					clearFileInput(structureFilesInput);
+					setFileInputFiles(oldPackInput, files);
+					return;
+				}
+			}
 			notStructureFileError.classList.remove("hidden");
 			structureFilesInput.setCustomValidity(notStructureFileError.textContent);
 		}
@@ -99,7 +115,7 @@ document[onEvent]("DOMContentLoaded", () => {
 		if(!worldFile) {
 			return;
 		}
-		selectEl("#extractFromWorldTab").checked = true;
+		cast(selectEl("#extractFromWorldTab"), HTMLInputElement).checked = true;
 		worldExtractionMessage.classList.remove("hidden");
 		worldExtractionMessage.scrollIntoView({
 			block: "center"
@@ -107,6 +123,7 @@ document[onEvent]("DOMContentLoaded", () => {
 		let structureFiles;
 		try {
 			structureFiles = await extractStructureFilesFromMcworld(worldFile);
+			structureFiles.forEach(file => file[FileInputTable.SHOW_DOWNLOAD_BUTTON] = true);
 		} catch(e) {
 			worldExtractionMessage.classList.add("hidden");
 			worldExtractionWorldError.dataset.translationSubError = e;
@@ -117,7 +134,7 @@ document[onEvent]("DOMContentLoaded", () => {
 		worldExtractionMessage.classList.add("hidden");
 		if(structureFiles.size) {
 			addFilesToFileInput(structureFilesList, Array.from(structureFiles.values()));
-			worldExtractionSuccess.dataset.translationSubCount = structureFiles.size;
+			worldExtractionSuccess.dataset.translationSubCount = structureFiles.size.toString();
 			worldExtractionSuccess.classList.remove("hidden");
 		} else {
 			worldExtractionError.classList.remove("hidden");
@@ -133,12 +150,13 @@ document[onEvent]("DOMContentLoaded", () => {
 		if(!oldPack) {
 			return;
 		}
-		selectEl("#updatePackTab").checked = true;
+		cast(selectEl("#updatePackTab"), HTMLInputElement).checked = true;
 		oldPackExtractionMessage.classList.remove("hidden");
 		oldPackExtractionMessage.scrollIntoView({
 			block: "center"
 		});
 		let extractedStructureFiles = await HoloPrint.extractStructureFilesFromPack(oldPack);
+		extractedStructureFiles.forEach(file => file[FileInputTable.SHOW_DOWNLOAD_BUTTON] = true);
 		oldPackExtractionMessage.classList.add("hidden");
 		if(extractedStructureFiles.length) {
 			addFilesToFileInput(structureFilesList, extractedStructureFiles);
@@ -190,11 +208,11 @@ document[onEvent]("DOMContentLoaded", () => {
 		}
 	});
 	customElements.define("file-input-table", FileInputTable);
+	customElements.define("vec-3-input", Vec3Input);
 	customElements.define("simple-logger", SimpleLogger);
 	customElements.define("lil-gui", LilGui);
 	if(!ACTUAL_CONSOLE_LOG) {
-		// @ts-ignore
-		logger = selectEl("#log");
+		logger = cast(selectEl("#log"), SimpleLogger);
 		logger.patchConsoleMethods();
 	}
 	
@@ -203,28 +221,74 @@ document[onEvent]("DOMContentLoaded", () => {
 		
 		let formData = new FormData(generatePackForm);
 		let resourcePacks = [];
-		let localResourcePackFiles = generatePackForm.elements.namedItem("localResourcePack").files;
+		let localResourcePackFiles = cast(generatePackForm.elements.namedItem("localResourcePack"), HTMLInputElement).files;
 		if(localResourcePackFiles.length) {
 			resourcePacks.push(await LocalResourcePack.new(localResourcePackFiles));
 		}
-		makePack(formData.getAll("structureFiles"), resourcePacks);
+		makePack(cast(formData.getAll("structureFiles"), [File]), resourcePacks);
 	});
 	generatePackForm[onEvent]("input", e => {
-		if(e.target.closest("fieldset")?.classList?.contains("textureSettings") && e.target.hasAttribute("name")) {
+		let target = cast(e.target, HTMLElement);
+		if(target.closest("fieldset")?.classList?.contains("textureSettings") && target.hasAttribute("name")) {
 			updateTexturePreview();
 		}
 	});
 	updateTexturePreview();
 	generatePackFormSubmitButton = generatePackForm.elements.namedItem("submit");
 	
-	let opacityModeSelect = generatePackForm.elements.namedItem("opacityMode");
-	opacityModeSelect[onEventAndNow]("change", () => {
-		generatePackForm.elements.namedItem("opacity").parentElement.classList.toggle("hidden", opacityModeSelect.value == "multiple");
+	let coordinateLockToggle = cast(generatePackForm.elements.namedItem("coordinateLockEnabled"), HTMLInputElement);
+	let coordinateLockCoordsCont = selectEl("#coordinateLockCoordsCont");
+	coordinateLockToggle[onEvent]("input", async () => {
+		cast(generatePackForm.elements.namedItem("initialOffset"), Element).parentElement.classList.toggle("hidden", coordinateLockToggle.checked);
+		coordinateLockCoordsCont.classList.toggle("hidden", !coordinateLockToggle.checked);
+	});
+	Array.from(coordinateLockCoordsCont[selectEls]("button")).forEach((button, i) => {
+		button[onEvent]("click", async () => {
+			if(i == 0) { // get global coordinates button
+				let structureFiles = Array.from(structureFilesList.files);
+				let mcstructures = await Promise.all(structureFiles.map(HoloPrint.readStructureNBT));
+				let worldOrigins = mcstructures.map(mcstructure => mcstructure["structure_world_origin"]);
+				let inputs = coordinateLockCoordsCont[selectEls]("vec-3-input");
+				worldOrigins.forEach((worldOrigin, i) => {
+					inputs[i].xyz = worldOrigin;
+				});
+			} else {
+				let axis = cast(generatePackForm.elements.namedItem("axis"), RadioNodeList).value.toLowerCase();
+				coordinateLockCoordsCont[selectEls]("vec-3-input").forEach(vec3input => {
+					vec3input[axis] = vec3input[axis] + parseInt(button.innerText);
+				});
+			}
+		});
+	});
+	coordinateLockStructureCoordsCont = selectEl("#coordinateLockStructureCoords");
+	structureFilesList[onEventAndNow]("input", () => {
+		coordinateLockStructureCoordsCont.innerHTML = Array.from(structureFilesList.files).map(file => {
+			let pos = coordinateLockStructureCoords.get(file) ?? [0, 0, 0];
+			let randomId = Math.random();
+			return html`
+				<label for="${randomId}">${removeFileExtension(file.name)}:</label>
+				<vec-3-input id="${randomId}">
+					<input type="number" min="-10000000" max="10000000" step="1" value="${pos[0]}" placeholder="0" slot="x"/>
+					<input type="number" min="-10000000" max="10000000" step="1" value="${pos[1]}" placeholder="0" slot="y"/>
+					<input type="number" min="-10000000" max="10000000" step="1" value="${pos[2]}" placeholder="0" slot="z"/>
+				</vec-3-input>
+			`;
+		}).join("");
+		Array.from(coordinateLockStructureCoordsCont[selectEls]("vec-3-input")).forEach((input, i) => {
+			input[onEvent]("input", () => {
+				let file = structureFilesList.files[i];
+				if(!file) return;
+				coordinateLockStructureCoords.set(file, input.xyz);
+			});
+		});
 	});
 	
-	/** @type {HTMLTextAreaElement} */
-	// @ts-ignore
-	let descriptionTextArea = generatePackForm.elements.namedItem("description");
+	let opacityModeSelect = cast(generatePackForm.elements.namedItem("opacityMode"), HTMLSelectElement);
+	opacityModeSelect[onEventAndNow]("change", () => {
+		cast(generatePackForm.elements.namedItem("opacity"), Element).parentElement.classList.toggle("hidden", opacityModeSelect.value == "multiple");
+	});
+	
+	let descriptionTextArea = cast(generatePackForm.elements.namedItem("description"), HTMLTextAreaElement);
 	let descriptionLinksCont = selectEl("#descriptionLinksCont");
 	descriptionTextArea[onEventAndNow]("input", () => {
 		let links = HoloPrint.findLinksInDescription(descriptionTextArea.value);
@@ -243,9 +307,7 @@ document[onEvent]("DOMContentLoaded", () => {
 		let label = document.createElement("label");
 		let playerControlTranslationKey = HoloPrint.PLAYER_CONTROL_NAMES[control];
 		label.innerHTML = `<span data-translate="${playerControlTranslationKey}">...</span>:`;
-		/** @type {ItemCriteriaInput} */
-		// @ts-ignore
-		let input = document.createElement("item-criteria-input");
+		let input = cast(document.createElement("item-criteria-input"), ItemCriteriaInput);
 		input.setAttribute("name", `control.${control}`);
 		if(itemCriteria["names"].length > 0) {
 			input.setAttribute("value-items", itemCriteria["names"].join(","));
@@ -258,7 +320,7 @@ document[onEvent]("DOMContentLoaded", () => {
 		input.setAttribute("default", input.value); // has to be called after being added to the DOM
 	});
 	
-	let clearResourcePackCacheButton = selectEl("#clearResourcePackCacheButton");
+	let clearResourcePackCacheButton = cast(selectEl("#clearResourcePackCacheButton"), HTMLButtonElement);
 	clearResourcePackCacheButton[onEvent]("click", async () => {
 		clearCacheStorage(caches);
 		temporarilyChangeText(clearResourcePackCacheButton, clearResourcePackCacheButton.dataset.resetTranslation);
@@ -267,29 +329,33 @@ document[onEvent]("DOMContentLoaded", () => {
 	selectEls(".resetButton").forEach(el => {
 		el[onEvent]("click", () => {
 			let fieldset = el.parentElement;
-			/** @type {Array<HTMLInputElement>} */
-			// @ts-ignore
-			let allEls = Array.from(generatePackForm.elements);
+			let allEls = cast(Array.from(generatePackForm.elements), [HTMLInputElement]);
 			let [elementsBeingReset, elementsToSave] = conditionallyGroup(allEls, el => el.localName != "fieldset" && el.localName != "button" && (!fieldset.contains(el) || !el.hasAttribute("name")));
+			let oldFiles = elementsToSave.map(el => {
+				if(el.type == "file") {
+					let dataTransfer = new DataTransfer(); // Simply copying el.files wouldn't work since that's a FormData object, and resetting the form will reset the files in there as well. To work around this, we just copy all files to a DataTransfer, which is the only other thing that uses FormData. (Using structuredClone() is laggy on Chrome.)
+					Array.from(el.files).forEach(file => dataTransfer.items.add(file));
+					return dataTransfer.files;
+				}
+			});
+			let oldChecks = elementsToSave.map(el => {
+				if(el.type == "checkbox") {
+					return el.checked;
+				}
+			});
 			let oldValues = elementsToSave.map(el => {
-				switch(el.type) {
-					case "file": {
-						let dataTransfer = new DataTransfer(); // Simply copying el.files wouldn't work since that's a FormData object, and resetting the form will reset the files in there as well. To work around this, we just copy all files to a DataTransfer, which is the only other thing that uses FormData. (Using structuredClone() is laggy on Chrome.)
-						Array.from(el.files).forEach(file => dataTransfer.items.add(file));
-						return dataTransfer.files;
-					}
-					case "checkbox": return el.checked;
-					default: return el.value;
+				if(el.type != "file" && el.type != "checkbox") {
+					return el.value;
 				}
 			});
 			generatePackForm.reset(); // this resets the entire form, which is why the old values must be saved
 			elementsToSave.forEach((el, i) => {
 				switch(el.type) {
 					case "file": {
-						el.files = oldValues[i];
+						el.files = oldFiles[i];
 					} break;
 					case "checkbox": {
-						el.checked = oldValues[i];
+						el.checked = oldChecks[i];
 					} break;
 					default: {
 						el.value = oldValues[i];
@@ -299,7 +365,7 @@ document[onEvent]("DOMContentLoaded", () => {
 			elementsBeingReset.forEach(el => {
 				dispatchInputEvents(el);
 			});
-			temporarilyChangeText(el, el.dataset.resetTranslation);
+			temporarilyChangeText(el, cast(el, HTMLButtonElement).dataset.resetTranslation);
 		});
 	});
 	
@@ -362,7 +428,7 @@ window[onEvent]("load", () => { // shadow DOMs aren't populated in the DOMConten
 
 /**
  * Handles files that are dropped on the webpage or opened with the PWA.
- * @param {Array<File>} files
+ * @param {File[]} files
  */
 async function handleInputFiles(files) {
 	let {
@@ -385,21 +451,21 @@ async function updateTexturePreview() {
 	let can = new OffscreenCanvas(texturePreviewImage.width, texturePreviewImage.height);
 	let ctx = can.getContext("2d");
 	ctx.drawImage(texturePreviewImage, 0, 0);
-	let textureOutlineWidth = +generatePackForm.elements.namedItem("textureOutlineWidth").value;
+	let textureOutlineWidth = +cast(generatePackForm.elements.namedItem("textureOutlineWidth"), HTMLInputElement).value;
 	let outlinedCan = textureOutlineWidth > 0? TextureAtlas.addTextureOutlines(can, [{
 		x: 0,
 		y: 0,
 		w: can.width,
 		h: can.height
 	}], HoloPrint.addDefaultConfig({
-		TEXTURE_OUTLINE_COLOR: generatePackForm.elements.namedItem("textureOutlineColor").value,
-		TEXTURE_OUTLINE_OPACITY: +generatePackForm.elements.namedItem("textureOutlineOpacity").value / 100,
+		TEXTURE_OUTLINE_COLOR: cast(generatePackForm.elements.namedItem("textureOutlineColor"), HTMLInputElement).value,
+		TEXTURE_OUTLINE_OPACITY: +cast(generatePackForm.elements.namedItem("textureOutlineOpacity"), HTMLInputElement).value / 100,
 		TEXTURE_OUTLINE_WIDTH: textureOutlineWidth
 	})) : can;
 	let tintlessImage = await outlinedCan.convertToBlob().then(blob => toImage(blob));
 	let outlinedCanCtx = outlinedCan.getContext("2d");
-	outlinedCanCtx.fillStyle = generatePackForm.elements.namedItem("tintColor").value;
-	outlinedCanCtx.globalAlpha = +generatePackForm.elements.namedItem("tintOpacity").value / 100;
+	outlinedCanCtx.fillStyle = cast(generatePackForm.elements.namedItem("tintColor"), HTMLInputElement).value;
+	outlinedCanCtx.globalAlpha = +cast(generatePackForm.elements.namedItem("tintOpacity"), HTMLInputElement).value / 100;
 	outlinedCanCtx.fillRect(0, 0, outlinedCan.width, outlinedCan.height);
 	let tintedImage = await outlinedCan.convertToBlob().then(blob => toImage(blob));
 	texturePreviewImageCont.textContent = "";
@@ -471,8 +537,8 @@ function performTranslationSubstitutions(el, translation) {
 		if(name.startsWith(prefix)) {
 			let subName = name.slice(prefix.length).toUpperCase().replaceAll("-", "_");
 			translation = translation.replaceAll(`{${subName}}`, value);
-			if(typeof value == "number" && parseInt(value) == value) {
-				translation = value > 1? translation.replace(/\[|\]/g, "") : translation.replaceAll(/\[.+\]/g, "");
+			if(parseInt(value) == +value) {
+				translation = +value > 1? translation.replace(/\[|\]/g, "") : translation.replaceAll(/\[.+\]/g, "");
 			}
 		}
 	});
@@ -524,8 +590,8 @@ function validateFileInputFileTypes(fileInput) {
 }
 
 /**
- * @param {Array<File>} structureFiles
- * @param {Array<LocalResourcePack>} localResourcePacks
+ * @param {File[]} structureFiles
+ * @param {LocalResourcePack[]} localResourcePacks
  * @returns {Promise<void>}
  */
 async function makePack(structureFiles, localResourcePacks) {
@@ -555,10 +621,13 @@ async function makePack(structureFiles, localResourcePacks) {
 		PLAYER_CONTROLS_ENABLED: !!formData.get("playerControlsEnabled"),
 		MATERIAL_LIST_ENABLED: !!formData.get("materialListEnabled"),
 		RETEXTURE_CONTROL_ITEMS: !!formData.get("retextureControlItems"),
+		CONTROL_ITEM_TEXTURE_SCALE: +formData.get("controlItemTextureScale"),
 		RENAME_CONTROL_ITEMS: !!formData.get("renameControlItems"),
 		// @ts-ignore
 		CONTROLS: Object.fromEntries(Array.from(formData).filter(([key]) => key.startsWith("control.")).map(([key, value]) => [key.replace(/^control./, ""), JSON.parse(value)])),
-		INITIAL_OFFSET: [+formData.get("initialOffsetX"), +formData.get("initialOffsetY"), +formData.get("initialOffsetZ")],
+		// @ts-expect-error
+		INITIAL_OFFSET: formData.get("initialOffset").toString().split(",").map(x => +x),
+		COORDINATE_LOCK: formData.get("coordinateLockEnabled")? Array.from(coordinateLockStructureCoordsCont[selectEls]("vec-3-input")).map(input => input.xyz) : undefined,
 		BACKUP_SLOT_COUNT: +formData.get("backupSlotCount"),
 		PACK_NAME: formData.get("packName").toString() || undefined,
 		PACK_ICON_BLOB: packIconEntry instanceof File && packIconEntry.size? packIconEntry : undefined,
@@ -620,8 +689,7 @@ async function makePack(structureFiles, localResourcePacks) {
 		if(generationFailedError) {
 			let bugReportAnchor = document.createElement("a");
 			bugReportAnchor.classList.add("buttonlike", "packInfoButton", "reportIssue");
-			// @ts-ignore
-			bugReportAnchor.href = `https://github.com/SuperLlama88888/holoprint/issues/new?template=1-pack-creation-error.yml&title=Pack creation error: ${encodeURIComponent(generationFailedError.toString().replaceAll("\n", " "))}&version=${HoloPrint.VERSION}&logs=${encodeURIComponent(JSON.stringify(selectEl("simple-logger").allLogs))}`;
+			bugReportAnchor.href = `https://github.com/SuperLlama88888/holoprint/issues/new?template=1-pack-creation-error.yml&title=Pack creation error: ${encodeURIComponent(generationFailedError.toString().replaceAll("\n", " "))}&version=${HoloPrint.VERSION}&logs=${encodeURIComponent(JSON.stringify(logger.allLogs))}`;
 			bugReportAnchor.target = "_blank";
 			bugReportAnchor.dataset.translate = "pack_generation_failed.report_github_issue";
 			infoButton.parentNode.replaceChild(bugReportAnchor, infoButton);
@@ -634,4 +702,4 @@ async function makePack(structureFiles, localResourcePacks) {
 	generatePackFormSubmitButton.disabled = false;
 }
 
-/** @import { HoloPrintConfig } from "./HoloPrint.js" */
+/** @import { HoloPrintConfig, Vec3 } from "./HoloPrint.js" */

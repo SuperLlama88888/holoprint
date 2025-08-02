@@ -1,8 +1,11 @@
-import { clamp, createSymbolicEnum, html, isTouchInElementVerticalBounds, max, min, onEvent, onEvents, removeFileExtension, selectEl, selectEls, sleep } from "../utils.js";
+import { clamp, createSymbolicEnum, dispatchInputEvents, downloadFile, fileArrayToFileList, html, isTouchInElementVerticalBounds, max, min, onEvent, onEvents, removeFileExtension, selectEl, selectEls, sleep } from "../utils.js";
 
 export default class FileInputTable extends HTMLElement {
+	/** If files in the file input have this flag, the download button will be visible. */
+	static SHOW_DOWNLOAD_BUTTON = Symbol("FileInputTable.SHOW_DOWNLOAD_BUTTON");
 	static observedAttributes = ["file-count-text", "empty-text", "remove-all-text", "hide-file-extensions"];
 	
+	static #IGNORE_EVENT = Symbol("FileInputTable.#IGNORE_EVENT");
 	static #ANIMATION_MOVEMENTS = createSymbolicEnum(["MOVE_DOWN", "MOVE_UP"]);
 	static #ANIMATION_LENGTH = 400;
 	
@@ -14,17 +17,16 @@ export default class FileInputTable extends HTMLElement {
 	#fileCountHeading;
 	/** @type {HTMLTableRowElement | null} */
 	#rowBeingDragged;
-	/** @type {Number} */
+	/** @type {number} */
 	#touchDragVerticalOffset;
 	/** @type {WeakMap<HTMLTableRowElement, File>} */
-	#filesByRow;
+	#filesByRow = new WeakMap();
 	
 	constructor() {
 		super();
 		this.attachShadow({
 			mode: "open"
 		});
-		this.#filesByRow = new WeakMap();
 	}
 	connectedCallback() {
 		if(this.childElementCount != 1 || !(this.children[0] instanceof HTMLInputElement) || this.children[0].type != "file") {
@@ -32,7 +34,12 @@ export default class FileInputTable extends HTMLElement {
 		}
 		this.fileInput = this.children[0];
 		this.#initShadowDom();
-		this.fileInput[onEvent]("input", () => this.#updateTable());
+		this.fileInput[onEvent]("input", e => {
+			if(e instanceof CustomEvent && e.detail?.[FileInputTable.#IGNORE_EVENT]) {
+				return;
+			}
+			this.#updateTable();
+		});
 		
 		this.#updateTable();
 	}
@@ -124,9 +131,6 @@ export default class FileInputTable extends HTMLElement {
 					table-layout: fixed;
 				}
 				tr {
-					&:first-child .moveUpButton, &:last-child .moveDownButton {
-						visibility: hidden;
-					} 
 					&:only-child .dragMoveCell {
 						opacity: 0; /* silly css bug in both firefox and chrome: the background of the <tr> won't show when the last <td> is hidden. 0 opacity works though. */
 						cursor: initial;
@@ -155,9 +159,9 @@ export default class FileInputTable extends HTMLElement {
 					&:last-child {
 						user-select: none;
 						padding: 0;
-						width: 5.06rem;
+						width: calc(1.265rem * 3);
 					}
-					div {
+					.buttonsCont {
 						height: 24px;
 						display: flex;
 						* {
@@ -174,7 +178,7 @@ export default class FileInputTable extends HTMLElement {
 						background: none;
 						cursor: pointer;
 						&:not(.dragMoveCell):active {
-							font-size: 80%;
+							font-size: 90%;
 						}
 					}
 				}
@@ -182,10 +186,13 @@ export default class FileInputTable extends HTMLElement {
 					font-family: "Material Symbols";
 					line-height: 1;
 				}
+				.invisible {
+					visibility: hidden !important;
+				}
 			</style>
 			<div id="main">
 				<p id="fileCountHeadingWrapper"><span id="fileCountHeading"></span><button id="removeAllFilesButton"><span data-text-attribute="remove-all-text">Remove all</span> <span translate="no" class="material-symbols">delete_sweep</span></button></p>
-				<table></table>
+				<table translate="no"></table>
 			</div>
 		`;
 		this.#fileCountHeading = this.shadowRoot[selectEl]("#fileCountHeading");
@@ -215,16 +222,8 @@ export default class FileInputTable extends HTMLElement {
 				return;
 			}
 			let row = e.target.closest("tr");
-			if(e.target.classList.contains("moveUpButton")) {
-				// @ts-ignore
-				this.#animateRow(row.previousElementSibling, FileInputTable.#ANIMATION_MOVEMENTS.MOVE_DOWN, false);
-				row.previousElementSibling.before(row);
-				this.#animateRow(row, FileInputTable.#ANIMATION_MOVEMENTS.MOVE_UP);
-			} else if(e.target.classList.contains("moveDownButton")) {
-				// @ts-ignore
-				this.#animateRow(row.nextElementSibling, FileInputTable.#ANIMATION_MOVEMENTS.MOVE_UP, false);
-				row.nextElementSibling.after(row);
-				this.#animateRow(row, FileInputTable.#ANIMATION_MOVEMENTS.MOVE_DOWN);
+			if(e.target.classList.contains("downloadButton")) {
+				this.#downloadFile(row);
 			} else if(e.target.classList.contains("deleteButton")) {
 				this.#deleteRow(row);
 			} else {
@@ -233,6 +232,9 @@ export default class FileInputTable extends HTMLElement {
 			this.#updateFileInput();
 		});
 		this.#table[onEvents](["dragstart", "touchstart"], e => {
+			if(!(e.target instanceof Element)) {
+				return;
+			}
 			if(e.target.classList.contains("dragMoveCell") && getComputedStyle(e.target).opacity != "0") {
 				let row = e.target.closest("tr");
 				if(row.classList.contains("beingDeleted")) {
@@ -241,7 +243,7 @@ export default class FileInputTable extends HTMLElement {
 				}
 				this.#rowBeingDragged = row;
 				this.#rowBeingDragged.classList.add("beingDragged");
-				if(e.type == "dragstart") {
+				if(e instanceof DragEvent) {
 					e.dataTransfer.effectAllowed = "move";
 					e.dataTransfer.dropEffect = "move";
 					e.dataTransfer.setDragImage(this.#rowBeingDragged.cells[0], 0, 0);
@@ -256,9 +258,12 @@ export default class FileInputTable extends HTMLElement {
 			if(!this.#rowBeingDragged) {
 				return;
 			}
+			if(!(e.target instanceof Element)) {
+				return;
+			}
 			e.preventDefault();
 			let targetRow;
-			if(e.type == "dragover") {
+			if(e instanceof DragEvent) {
 				targetRow = e.target.closest("tr");
 			} else {
 				let touch = e.changedTouches[0];
@@ -285,7 +290,7 @@ export default class FileInputTable extends HTMLElement {
 				this.#touchDragVerticalOffset += deltaY;
 				this.#updateFileInput();
 			}
-			if(e.type == "touchmove") {
+			if(e instanceof TouchEvent) {
 				let currentOffset = parseFloat(this.#rowBeingDragged.style.top) || 0;
 				let tableBounds = this.#table.getBoundingClientRect();
 				let rowBounds = this.#rowBeingDragged.getBoundingClientRect();
@@ -318,7 +323,7 @@ export default class FileInputTable extends HTMLElement {
 			this.#filesByRow.set(row, file);
 			let fileNameCell = row.insertCell();
 			fileNameCell.textContent = this.hasAttribute("hide-file-extensions") && file.name.lastIndexOf(".") != 0? removeFileExtension(file.name) : file.name;
-			this.#addGenericRowButtons(row);
+			this.#addGenericRowButtons(row, file);
 			if(alreadyHadRows && !oldFiles.has(file)) {
 				this.#animateRow(row);
 			}
@@ -343,24 +348,28 @@ export default class FileInputTable extends HTMLElement {
 	/**
 	 * Adds all the control buttons to a table row.
 	 * @param {HTMLTableRowElement} row
+	 * @param {File} file
 	 */
-	#addGenericRowButtons(row) {
+	#addGenericRowButtons(row, file) {
 		row.insertAdjacentHTML("beforeend", html`
 			<td>
-				<div translate="no">
-					<button class="moveUpButton material-symbols">arrow_upward</button>
-					<button class="moveDownButton material-symbols">arrow_downward</button>
+				<div class="buttonsCont">
+					<button class="downloadButton material-symbols invisible">download</button>
 					<button class="deleteButton material-symbols">delete</button>
 					<button draggable="true" class="dragMoveCell material-symbols">drag_indicator</button>
 				</div>
 			</td>
 		`);
+		if(file[FileInputTable.SHOW_DOWNLOAD_BUTTON]) {
+			row[selectEl](".downloadButton").classList.remove("invisible");
+		}
 	}
 	#updateFileInput() {
 		let files = Array.from(this.#table.rows).filter(row => !row.classList.contains("beingDeleted")).map(row => this.#filesByRow.get(row));
-		let dt = new DataTransfer();
-		files.forEach(file => dt.items.add(file));
-		this.fileInput.files = dt.files;
+		this.fileInput.files = fileArrayToFileList(files);
+		dispatchInputEvents(this.fileInput, {
+			[FileInputTable.#IGNORE_EVENT]: true
+		});
 		this.#updateFileCountHeading();
 	}
 	/**
@@ -408,6 +417,10 @@ export default class FileInputTable extends HTMLElement {
 				easing: "ease"
 			});
 		}
+	}
+	/** @param {HTMLTableRowElement} row */
+	#downloadFile(row) {
+		downloadFile(this.#filesByRow.get(row))
 	}
 	/**
 	 * Deletes the row and plays an animation.

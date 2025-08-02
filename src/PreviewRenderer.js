@@ -1,5 +1,6 @@
-import { abs, AsyncFactory, cosDeg, distanceSquared, downloadFile, JSONSet, max, min, pi, round, sinDeg, subVec2, tanDeg, toImageData } from "./utils.js";
+import { abs, AsyncFactory, cast, cosDeg, distanceSquared, downloadFile, JSONSet, max, min, pi, round, sinDeg, subVec2, tanDeg, toImageData, tuple } from "./utils.js";
 import PolyMeshMaker from "./PolyMeshMaker.js";
+import LilGui from "./components/LilGui.js";
 
 import Stats from "stats.js"; // library not a file
 
@@ -63,13 +64,13 @@ export default class PreviewRenderer extends AsyncFactory {
 	#maxDim;
 	#maxDimPixels;
 	#lastFrameTime = performance.now();
-	/** @type {Array<Array<Vec3>>} */
+	/** @type {Vec3[][]} */
 	#blockPositions = [];
 	/** @type {THREE.DirectionalLight} */
 	#directionalLight;
-	/** @type {Array<PreviewPointLight>} */
+	/** @type {PreviewPointLight[]} */
 	#pointLights = [];
-	/** @type {Array<THREE.PointLight>} */
+	/** @type {THREE.PointLight[]} */
 	#pointLightsInScene = [];
 	/** @type {WeakMap<THREE.PointLight, THREE.PointLightHelper>} */
 	#pointLightHelpers = new WeakMap();
@@ -86,7 +87,7 @@ export default class PreviewRenderer extends AsyncFactory {
 	#shouldRenderNextFrame = true;
 	#stats;
 	#optionsGui;
-	/** @type {Array<THREE.Object3D>} */
+	/** @type {THREE.Object3D[]} */
 	#debugHelpers = [];
 	/**
 	 * Create a preview renderer for a completed geometry file.
@@ -94,8 +95,8 @@ export default class PreviewRenderer extends AsyncFactory {
 	 * @param {string} packName
 	 * @param {TextureAtlas} textureAtlas
 	 * @param {I32Vec3} structureSize
-	 * @param {Array<Block>} blockPalette
-	 * @param {Array<Array<PolyMeshTemplateFaceWithUvs>>} polyMeshTemplatePalette
+	 * @param {Block[]} blockPalette
+	 * @param {PolyMeshTemplateFaceWithUvs[][]} polyMeshTemplatePalette
 	 * @param {[Int32Array, Int32Array]} blockIndices
 	 * @param {Partial<typeof this.options>} [options]
 	 */
@@ -142,9 +143,7 @@ export default class PreviewRenderer extends AsyncFactory {
 			});
 		}
 		if(this.options.showOptions) {
-			/** @type {LilGui} */
-			// @ts-ignore
-			let guiEl = document.createElement("lil-gui");
+			let guiEl = cast(document.createElement("lil-gui"), LilGui);
 			this.cont.appendChild(guiEl);
 			this.#optionsGui = guiEl.gui;
 			this.#optionsGui.$title.dataset.translate = "preview.options";
@@ -494,7 +493,7 @@ export default class PreviewRenderer extends AsyncFactory {
 	}
 	/**
 	 * Finds all the point lights in the camera's view.
-	 * @returns {Array<PreviewPointLight>}
+	 * @returns {PreviewPointLight[]}
 	 */
 	#getPointLightsInView() {
 		let cameraFrustum = new THREE.Frustum();
@@ -559,7 +558,7 @@ export default class PreviewRenderer extends AsyncFactory {
 	}
 	/**
 	 * Checks whether a poly mesh template has translucent textures.
-	 * @param {Array<PolyMeshTemplateFaceWithUvs>} polyMeshTemplate
+	 * @param {PolyMeshTemplateFaceWithUvs[]} polyMeshTemplate
 	 * @returns {boolean}
 	 */
 	#isPolyMeshTemplateTranslucent(polyMeshTemplate) {
@@ -567,10 +566,8 @@ export default class PreviewRenderer extends AsyncFactory {
 			let uvCoords = face["vertices"].map(v => v["uv"]);
 			let xs = uvCoords.map(([x]) => round(x * this.#imageBlobData.width));
 			let ys = uvCoords.map(([, y]) => round((1 - y) * this.#imageBlobData.height));
-			/** @type {Vec2} */
-			let minUvCoords = [min(...xs), min(...ys)];
-			/** @type {Vec2} */
-			let maxUvCoords = [max(...xs), max(...ys)];
+			let minUvCoords = tuple([min(...xs), min(...ys)]);
+			let maxUvCoords = tuple([max(...xs), max(...ys)]);
 			let unscaledUvSize = subVec2(maxUvCoords, minUvCoords);
 			let uv = [minUvCoords[0], minUvCoords[1]];
 			let uvSize = [unscaledUvSize[0], unscaledUvSize[1]];
@@ -593,7 +590,7 @@ export default class PreviewRenderer extends AsyncFactory {
 	/**
 	 * Creates an instanced mesh from a group.
 	 * @param {THREE.BufferGeometry} bufferGeo
-	 * @param {Array<Vec3>} positions
+	 * @param {Vec3[]} positions
 	 * @param {THREE.Material} material
 	 * @returns {THREE.InstancedMesh}
 	 */
@@ -610,9 +607,8 @@ export default class PreviewRenderer extends AsyncFactory {
 	}
 }
 
-/** @import { Vec2, I32Vec3, Vec3, Block, PreviewPointLight, PolyMeshTemplateFaceWithUvs} from "./HoloPrint.js" */
+/** @import { I32Vec3, Vec3, Block, PreviewPointLight, PolyMeshTemplateFaceWithUvs} from "./HoloPrint.js" */
 /** @import TextureAtlas from "./TextureAtlas.js" */
-/** @import LilGui from "./components/LilGui.js" */
 /** @import { Controller } from "lil-gui" */
 /** @import * as THREE from "three" */
 /** @import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js" */

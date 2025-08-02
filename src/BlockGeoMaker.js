@@ -2,7 +2,7 @@
 // READ: this also looks pretty comprehensive: https://github.com/MCBE-Development-Wiki/mcbe-dev-home/blob/main/docs/misc/enums/block_shape.md
 // https://github.com/bricktea/MCStructure/blob/main/docs/1.16.201/enums/B.md
 
-import { addVec3, crossProduct, hexColorToClampedTriplet, JSONSet, max, mulVec3, normalizeVec3, rotateDeg, vec3ToFixed, subVec3, conditionallyGroup, mulMat4, addVec2 } from "./utils.js";
+import { addVec3, crossProduct, hexColorToClampedTriplet, JSONSet, max, mulVec3, normalizeVec3, rotateDeg, vec3ToFixed, subVec3, conditionallyGroup, mulMat4, addVec2, tuple } from "./utils.js";
 
 // https://wiki.bedrock.dev/visuals/material-creations.html#overlay-color-in-render-controllers
 // https://wiki.bedrock.dev/documentation/materials.html#entity-alphatest
@@ -75,8 +75,8 @@ export default class BlockGeoMaker {
 	}
 	/**
 	 * Makes poly mesh templates from a block palette.
-	 * @param {Array<Block>} blockPalette
-	 * @returns {Array<Array<PolyMeshTemplateFace>>}
+	 * @param {Block[]} blockPalette
+	 * @returns {PolyMeshTemplateFace[][]}
 	 */
 	makePolyMeshTemplates(blockPalette) {
 		return blockPalette.map(block => this.#makePolyMeshTemplate(block));
@@ -84,7 +84,7 @@ export default class BlockGeoMaker {
 	/**
 	 * Makes a poly mesh template (i.e. an array of poly mesh template faces) from a block. Texture UVs are unresolved, and are indices for the textureRefs property.
 	 * @param {Block} block
-	 * @returns {Array<PolyMeshTemplateFace>}
+	 * @returns {PolyMeshTemplateFace[]}
 	 */
 	#makePolyMeshTemplate(block) {
 		let blockName = block["name"];
@@ -140,7 +140,7 @@ export default class BlockGeoMaker {
 	 * Makes the poly mesh faces for a block.
 	 * @param {Block} block
 	 * @param {string} blockShape
-	 * @returns {{ faces?: Array<PolyMeshTemplateFace & { fullbright?: boolean }>, centerOfMass?: Vec3 }}
+	 * @returns {{ faces?: (PolyMeshTemplateFace & { fullbright?: boolean })[], centerOfMass?: Vec3 }}
 	 */
 	#makePolyMeshTemplateFaces(block, blockShape) {
 		let specialTexture;
@@ -315,7 +315,7 @@ export default class BlockGeoMaker {
 				cubeVariant = variant; // default variant for this block
 			}
 			
-			/** @type {Array<PolyMeshTemplateFace & { fullbright: boolean }>} */
+			/** @type {(PolyMeshTemplateFace & { fullbright: boolean })[]} */
 			let faces = [];
 			let textureSize = cube["texture_size"] ?? [16, 16];
 			// add generic keys to all faces, and convert texture references into indices
@@ -488,15 +488,15 @@ export default class BlockGeoMaker {
 	/**
 	 * Returns the entries of a block's states and block entity data (prefixed by `entity.`; only first-level properties are supported).
 	 * @param {Block} block
-	 * @returns {Array<[string, any]>}
+	 * @returns {[string, any][]}
 	 */
 	#getBlockStatesAndEntityDataEntries(block) {
 		return [...Object.entries(block["states"] ?? {}), ...Object.entries(block["block_entity_data"] ?? {}).map(([key, value]) => [`entity.${key}`, value])];
 	}
 	/**
 	 * Optimises geometries by merging adjacent cubes and culling hidden faces.
-	 * @param {Array<object>} cubes
-	 * @returns {Array<object>}
+	 * @param {object[]} cubes
+	 * @returns {object[]}
 	 */
 	#optimizeGeometry(cubes) {
 		let [unoptimizableCubes, optimizableCubes] = conditionallyGroup(cubes, cube => !("rot" in cube));
@@ -801,21 +801,16 @@ export default class BlockGeoMaker {
 	#getVertices(cube, faceName) {
 		let { pos, size } = cube;
 		const cubeFaces = {
-			"west": [[1, 1, 0], [1, 1, 1], [1, 0, 0], [1, 0, 1]],
-			"east": [[0, 1, 1], [0, 1, 0], [0, 0, 1], [0, 0, 0]],
-			"down": [[0, 0, 0], [1, 0, 0], [0, 0, 1], [1, 0, 1]],
-			"up": [[0, 1, 1], [1, 1, 1], [0, 1, 0], [1, 1, 0]],
-			"north": [[0, 1, 0], [1, 1, 0], [0, 0, 0], [1, 0, 0]],
-			"south": [[1, 1, 1], [0, 1, 1], [1, 0, 1], [0, 0, 1]]
+			"west": tuple([[1, 1, 0], [1, 1, 1], [1, 0, 0], [1, 0, 1]]),
+			"east": tuple([[0, 1, 1], [0, 1, 0], [0, 0, 1], [0, 0, 0]]),
+			"down": tuple([[0, 0, 0], [1, 0, 0], [0, 0, 1], [1, 0, 1]]),
+			"up": tuple([[0, 1, 1], [1, 1, 1], [0, 1, 0], [1, 1, 0]]),
+			"north": tuple([[0, 1, 0], [1, 1, 0], [0, 0, 0], [1, 0, 0]]),
+			"south": tuple([[1, 1, 1], [0, 1, 1], [1, 0, 1], [0, 0, 1]])
 		};
-		/** @type {[Vec3, Vec3, Vec3, Vec3]} */
-		// @ts-ignore
-		let faces = cubeFaces[faceName];
-		return faces.map(([a, b, c], i) => {
-			/** @type {Vec3} */
-			let vertexPos = [pos[0] + size[0] * a, pos[1] + size[1] * b, pos[2] + size[2] * c];
+		return cubeFaces[faceName].map(([a, b, c], i) => {
 			return {
-				"pos": vertexPos,
+				"pos": tuple([pos[0] + size[0] * a, pos[1] + size[1] * b, pos[2] + size[2] * c]),
 				"corner": i
 			};
 		});
@@ -833,12 +828,11 @@ export default class BlockGeoMaker {
 	}
 	/**
 	 * Calculates the center of mass of some cubes, assuming mass = volume. If all cubes are flat it will take surface area for mass.
-	 * @param {Array<object>} cubes
+	 * @param {object[]} cubes
 	 * @returns {Vec3}
 	 */
 	#calculateCenterOfMass(cubes) {
-		/** @type {Vec3} */
-		let center = [0, 0, 0];
+		let center = tuple([0, 0, 0]);
 		let totalMass = 0;
 		cubes.forEach(cube => {
 			let mass = cube.w * cube.h * cube.d; // assume uniform mass density
@@ -869,9 +863,9 @@ export default class BlockGeoMaker {
 	}
 	/**
 	 * Scales poly mesh templates faces towards a center of mass.
-	 * @param {Array<PolyMeshTemplateFace>} faces
+	 * @param {PolyMeshTemplateFace[]} faces
 	 * @param {Vec3} centerOfMass
-	 * @returns {Array<PolyMeshTemplateFace>}
+	 * @returns {PolyMeshTemplateFace[]}
 	 */
 	#scaleFaces(faces, centerOfMass) {
 		return faces.map(face => {
@@ -1038,9 +1032,9 @@ export default class BlockGeoMaker {
 	
 	/**
 	 * Resolves UVs in template faces.
-	 * @param {Array<PolyMeshTemplateFace>} faces
+	 * @param {PolyMeshTemplateFace[]} faces
 	 * @param {TextureAtlas} textureAtlas
-	 * @returns {Array<PolyMeshTemplateFaceWithUvs>}
+	 * @returns {PolyMeshTemplateFaceWithUvs[]}
 	 */
 	static resolveTemplateFaceUvs(faces, textureAtlas) {
 		return faces.map(face => {
@@ -1049,19 +1043,14 @@ export default class BlockGeoMaker {
 			if("crop" in imageUv) {
 				this.#applyFaceCropping(face, imageUv["crop"]);
 			}
-			/** @type {[PolyMeshTemplateVertex, PolyMeshTemplateVertex, PolyMeshTemplateVertex, PolyMeshTemplateVertex]} */
-			let vertices = [face["vertices"][0], face["vertices"][1], face["vertices"][3], face["vertices"][2]]; // go around in a square
+			let vertices = tuple([face["vertices"][0], face["vertices"][1], face["vertices"][3], face["vertices"][2]]); // go around in a square
 			return {
 				"normal": face["normal"],
 				"transparency": imageUv["transparency"],
-				"vertices": vertices.map(vertex => {
-					/** @type {Vec2} */
-					let uv = [+((imageUv["uv"][0] + imageUv["uv_size"][0] * (vertex["corner"] & 1)) / textureAtlas.textureWidth).toFixed(4), +(1 - (imageUv["uv"][1] + imageUv["uv_size"][1] * (vertex["corner"] >> 1)) / textureAtlas.textureHeight).toFixed(4)];
-					return {
-						"pos": vertex["pos"],
-						"uv": uv
-					};
-				})
+				"vertices": vertices.map(vertex => ({
+					"pos": vertex["pos"],
+					"uv": tuple([+((imageUv["uv"][0] + imageUv["uv_size"][0] * (vertex["corner"] & 1)) / textureAtlas.textureWidth).toFixed(4), +(1 - (imageUv["uv"][1] + imageUv["uv_size"][1] * (vertex["corner"] >> 1)) / textureAtlas.textureHeight).toFixed(4)])
+				}))
 			};
 		});
 	}
@@ -1090,6 +1079,6 @@ export default class BlockGeoMaker {
 	}
 }
 
-/** @import { Vec2, Vec3, Block, HoloPrintConfig, PolyMeshTemplateFaceWithUvs, PolyMeshTemplateFace, Rectangle, PolyMeshTemplateVertex, CubeUv } from "./HoloPrint.js"  */
+/** @import { Vec3, Block, HoloPrintConfig, PolyMeshTemplateFaceWithUvs, PolyMeshTemplateFace, Rectangle, PolyMeshTemplateVertex, CubeUv } from "./HoloPrint.js"  */
 /** @import TextureAtlas from "./TextureAtlas.js" */
 /** @import * as Data from "./data/schemas" */

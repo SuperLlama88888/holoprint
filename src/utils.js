@@ -5,7 +5,7 @@ import stripJsonComments from "strip-json-comments";
 /**
  * Patches a method onto an object, returning a symbol that can be used to access that method.
  * @overload
- * @param {object | Array<object>} objects An object or multiple objects onto which the method patch will be applied
+ * @param {object | object[]} objects An object or multiple objects onto which the method patch will be applied
  * @param {Function} primaryMethod The method that will be patched onto the object(s)
  * @returns {symbol}
 */
@@ -13,7 +13,7 @@ import stripJsonComments from "strip-json-comments";
  * Patches a method onto an object, and making a function turn into a symbol during property access, with which the patched method can be accessed. 
  * @template {Function} F
  * @overload
- * @param {object | Array<object>} objects An object or multiple objects onto which the method patch will be applied
+ * @param {object | object[]} objects An object or multiple objects onto which the method patch will be applied
  * @param {Function} primaryMethod The method that will be patched onto the object(s)
  * @param {F} secondaryMethod The function that will have a patch applied to turn into a symbol during property access
  * @returns {F & symbol}
@@ -38,14 +38,10 @@ function symbolPatch(objects, primaryMethod, secondaryMethod) {
 
 export const selectEl = symbolPatch([Element.prototype, DocumentFragment.prototype], function selectEl(query) {
 	return this.querySelector(query);
-}, function(/** @type {string} */ query) {
-	return document.querySelector(query);
-});
+}, document.querySelector.bind(document));
 export const selectEls = symbolPatch([Element.prototype, DocumentFragment.prototype], function selectEls(query) {
 	return this.querySelectorAll(query);
-}, function(/** @type {string} */ query) {
-	return document.querySelectorAll(query);
-});
+}, document.querySelectorAll.bind(document));
 /**
  * Finds the closest descendent of an element or itself that matches a given selector.
  * @param {Element} el
@@ -62,7 +58,7 @@ export function closestDescendentOrSelf(el, selector) {
 /**
  * Gets all children of a node, including those in shadow roots. (Doesn't work with nested shadow roots.)
  * @param {Element | DocumentFragment} node
- * @returns {Array<HTMLElement>}
+ * @returns {HTMLElement[]}
  */
 export function getAllChildren(node) {
 	let children = Array.from(node[selectEls]("*"));
@@ -77,12 +73,18 @@ export function getAllChildren(node) {
 	return allChildren;
 }
 
+/** @type {unique symbol} */
+// @ts-expect-error
 export const onEvent = symbolPatch(EventTarget.prototype, EventTarget.prototype.addEventListener);
+/** @type {unique symbol} */
+// @ts-expect-error
 export const onEvents = symbolPatch(EventTarget.prototype, function onEvents(types, listener, options = false) {
 	types.forEach(type => {
 		this.addEventListener(type, listener, options);
 	});
 });
+/** @type {unique symbol} */
+// @ts-expect-error
 export const onEventAndNow = symbolPatch(EventTarget.prototype, function onEventAndNow(type, listener, options) {
 	listener();
 	this.addEventListener(type, listener, options);
@@ -157,6 +159,10 @@ export const sleep = async time => new Promise(resolve => setTimeout(resolve, ti
 
 /** @template T @param {T} x @returns {T} */
 export const doNothing = x => x;
+/** @template {any[]} T @param {[...T]} x @returns {T} */
+export const tuple = x => x;
+/** @template T @param {T} _type @returns {T extends any[]? T[number]["prototype"][] : T["prototype"]} */
+export const cast = (x, _type) => x;
 export const { min, max, floor, ceil, sqrt, round, abs, PI: pi, exp, log: ln, sin, cos, tan, hypot } = Math;
 export const clamp = (n, lowest, highest) => min(max(n, lowest), highest);
 export const lerp = (a, b, x) => a + (b - a) * x;
@@ -265,11 +271,11 @@ export function arrayMin(arr) {
 }
 export function range(a, b, c) {
 	if(b == undefined && c == undefined) {
-		return (new Array(a + 1)).fill().map((x, i) => i);
+		return (new Array(a + 1)).fill().map((_, i) => i);
 	} else if(c == undefined) {
-		return (new Array(b - a + 1)).fill().map((x, i) => i + a);
+		return (new Array(b - a + 1)).fill().map((_, i) => i + a);
 	} else {
-		return (new Array((b - a) / c + 1)).fill().map((x, i) => i * c + a);
+		return (new Array((b - a) / c + 1)).fill().map((_, i) => i * c + a);
 	}
 }
 export function random(arr) {
@@ -278,8 +284,8 @@ export function random(arr) {
 /**
  * Removes empty slots from a potentially sparse array.
  * @template T
- * @param {Array<T>} arr
- * @returns {Array<T>}
+ * @param {T[]} arr
+ * @returns {T[]}
  */
 export function desparseArray(arr) {
 	return arr.filter(() => true);
@@ -287,8 +293,8 @@ export function desparseArray(arr) {
 /**
  * Makes nulls empty slots in an array.
  * @template T
- * @param {Array<T>} arr
- * @returns {Array<T>}
+ * @param {T[]} arr
+ * @returns {T[]}
  */
 export function makeNullsEmpty(arr) {
 	let res = new Array(arr.length);
@@ -302,13 +308,12 @@ export function makeNullsEmpty(arr) {
 /**
  * Groups an array into two arrays based on a condition function.
  * @template T
- * @param {Array<T>} arr
+ * @param {T[]} arr
  * @param {(item: T) => boolean} conditionFunc
- * @returns {[Array<T>, Array<T>]}
+ * @returns {[T[], T[]]}
  */
 export function conditionallyGroup(arr, conditionFunc) {
-	/** @type {[Array<T>, Array<T>]} */
-	let res = [[], []];
+	let res = tuple([[], []]);
 	arr.forEach(el => {
 		res[+conditionFunc(el)].push(el);
 	});
@@ -317,12 +322,12 @@ export function conditionallyGroup(arr, conditionFunc) {
 /**
  * Separates array items based on the result of a grouping function.
  * @template T
- * @param {Array<T>} items
+ * @param {T[]} items
  * @param {(item: T) => string} groupFunc
- * @returns {Record<string, Array<T>>}
+ * @returns {Record<string, T[]>}
  */
 export function groupBy(items, groupFunc) { // native Object.groupBy is only 89.47% on caniuse...
-	/** @type {Record<string, Array<T>>} */
+	/** @type {Record<string, T[]>} */
 	let res = {};
 	items.forEach(item => {
 		let group = groupFunc(item);
@@ -330,28 +335,67 @@ export function groupBy(items, groupFunc) { // native Object.groupBy is only 89.
 		res[group].push(item);
 	});
 	return res;
-};
+}
 /**
  * Groups files by their file extensions.
- * @param {Array<File>} files
- * @returns {Record<string, Array<File> | undefined>}
+ * @param {File[]} files
+ * @returns {Record<string, File[] | undefined>}
  */
 export function groupByFileExtension(files) {
 	return groupBy(files, file => getFileExtension(file));
 }
 /**
+ * Object.entries for **all** entries, including inherited ones.
+ * @template {string} K
+ * @template V
+ * @param {Record<K, V>} object
+ * @returns {[K, V][]}
+ */
+export function allEntries(object) {
+	let entries = [];
+	for(let key in object) {
+		entries.push(tuple([key, object[key]]));
+	}
+	return entries;
+}
+/**
+ * Flattens inherited properties to be direct properties of an object.
+ * @template {string} K
+ * @template V
+ * @param {Record<K, V>} object
+ * @returns {{ [Key in K]: V }}
+ */
+export function flattenObject(object) {
+	return Object.fromEntries(allEntries(object));
+}
+/**
+ * Applies Array.prototype.reduce on each property from all objects.
+ * @template  V
+ * @template {Record<string, V>} T
+ * @param {T[]} objects
+ * @param {(previousValue: V, currentValue: V, currentIndex: number, array: V[]) => V} reducer
+ * @returns {T}
+ */
+export function reduceProperties(objects, reducer) {
+	let keys = Object.keys(objects[0]);
+	let entries = keys.map(key => [key, objects.map(o => o[key]).reduce(reducer)]);
+	// @ts-expect-error
+	return Object.fromEntries(entries);
+}
+/**
  * Create a pseudo-enumeration using numbers.
  * @template {string[]} T
  * @param {[...T]} keys - An array of string literals to use as keys.
- * @returns {Record<T[number], number>}
+ * @returns {Readonly<{ [K in keyof T as (K extends `${number}`? T[K] : never)]: K extends `${infer N extends number}`? N : never }>}
  */
 export function createNumericEnum(keys) {
+	// @ts-expect-error
 	return Object.freeze(Object.fromEntries(keys.map((key, i) => [key, i])));
 }
 /**
  * Creates an enumeration using Symbols.
  * @template {string} T
- * @param {Array<T>} keys
+ * @param {T[]} keys
  * @returns {Readonly<Record<T, symbol>>}
  */
 export function createSymbolicEnum(keys) {
@@ -360,7 +404,7 @@ export function createSymbolicEnum(keys) {
 /**
  * Crates a pseudo-enumeration using strings.
  * @template {string} T
- * @param {Array<T>} keys
+ * @param {T[]} keys
  * @returns {Readonly<Record<T, string>>}
  */
 export function createStringEnum(keys) {
@@ -381,9 +425,7 @@ export function createStringEnum(keys) {
  */
 export function hexColorToClampedTriplet(hexColor) {
 	let [, r, g, b] = hexColor.match(/^#([0-9a-f]{2})([0-9a-f]{2})([0-9a-f]{2})/i);
-	/** @type {[string, string, string]} */
-	let rgb = [r, g, b];
-	return rgb.map(x => parseInt(x, 16) / 255);
+	return tuple([r, g, b]).map(x => parseInt(x, 16) / 255);
 }
 export function addOrdinalSuffix(num) {
 	return num + (num % 10 == 1 && num % 100 != 11? "st" : num % 10 == 2 && num % 100 != 12? "nd" : num % 10 == 3 && num % 100 != 13? "rd" : "th");
@@ -429,7 +471,7 @@ export function removeFileExtension(filename) {
 }
 /**
  * Joins an array of strings with "or", localised.
- * @param {Array<string>} arr
+ * @param {string[]} arr
  * @param {string} [language]
  * @returns {string}
  */
@@ -443,7 +485,7 @@ export function joinOr(arr, language = "en") {
 /**
  * Sets a file input's files and dispatches input an dchange events.
  * @param {HTMLInputElement} fileInput
- * @param {FileList | Array<File>} files
+ * @param {FileList | File[]} files
  */
 export function setFileInputFiles(fileInput, files) {
 	if(!files.length) {
@@ -458,7 +500,7 @@ export function setFileInputFiles(fileInput, files) {
 /**
  * Adds files to a file input.
  * @param {HTMLInputElement} fileInput
- * @param {Array<File>} files
+ * @param {File[]} files
  */
 export function addFilesToFileInput(fileInput, files) {
 	if(!files.length) {
@@ -468,7 +510,7 @@ export function addFilesToFileInput(fileInput, files) {
 }
 /**
  * Turns an array of files into a FileList.
- * @param {Array<File>} files
+ * @param {File[]} files
  * @returns {FileList}
  */
 export function fileArrayToFileList(files) {
@@ -487,13 +529,16 @@ export function clearFileInput(fileInput) {
 /**
  * Dispatches the input and change events on an <input>.
  * @param {HTMLInputElement} input
+ * @param {any} [detail]
  */
-export function dispatchInputEvents(input) {
-	input.dispatchEvent(new Event("input", {
-		bubbles: true
+export function dispatchInputEvents(input, detail) {
+	input.dispatchEvent(new CustomEvent("input", {
+		bubbles: true,
+		detail
 	}));
-	input.dispatchEvent(new Event("change", {
-		bubbles: true
+	input.dispatchEvent(new CustomEvent("change", {
+		bubbles: true,
+		detail
 	}));
 }
 /**
@@ -510,6 +555,20 @@ export function htmlCodeToElement(htmlCode) {
 	let template = document.createElement("template");
 	template.innerHTML = htmlCode;
 	return template.content.firstElementChild;
+}
+/**
+ * Measures the dimensions of a string of text.
+ * @param {string} text
+ * @param {string} font
+ * @returns {TextMetrics}
+ */
+export function measureText(text, font) {
+	let can = new OffscreenCanvas(0, 0);
+	let ctx = can.getContext("2d", {
+		willReadFrequently: true
+	});
+	ctx.font = font;
+	return ctx.measureText(text);
 }
 export function stringToImageData(text, textCol = "black", backgroundCol = "white", font = "12px monospace") {
 	let can = new OffscreenCanvas(0, 20);
@@ -689,8 +748,8 @@ export function toHexadecimalString(arr) {
 /**
  * Removes "falsy" elements from an array.
  * @template T
- * @param {Array<T>} arr
- * @returns {Array<T>}
+ * @param {T[]} arr
+ * @returns {T[]}
  */
 export function removeFalsies(arr) {
 	return arr.filter(el => el);
@@ -755,6 +814,10 @@ export function distanceSquared(a, b) {
 	return (a[0] - b[0]) * (a[0] - b[0]) + (a[1] - b[1]) * (a[1] - b[1]) + (a[2] - b[2]) * (a[2] - b[2]);
 }
 
+/**
+ * @param {File} file
+ * @param {String} [filename]
+ */
 export function downloadFile(file, filename = file.name) {
 	let a = document.createElement("a");
 	let objectURL = URL.createObjectURL(file);
@@ -765,9 +828,26 @@ export function downloadFile(file, filename = file.name) {
 }
 
 /**
+ * @template {WeakKey} P
+ * @template R
+ * @param {(x: P) => R} func
+ * @returns {(x: P) => R}
+ */
+export function cacheUnaryFunc(func) {
+	let cache = new WeakMap();
+	return x => {
+		if(cache.has(x)) {
+			return cache.get(x);
+		}
+		let res = func(x);
+		cache.set(x, res);
+		return res;
+	};
+}
+/**
  * Gets the inheritance chain of a class.
  * @param {Function} c
- * @returns {Array<Function>}
+ * @returns {Function[]}
  */
 export function getClassInheritance(c) {
 	let classes = [];
@@ -780,7 +860,7 @@ export function getClassInheritance(c) {
 /**
  * Gets the full name of a class and all other classes it is inherited from.
  * @param {Function} c
- * @returns {String}
+ * @returns {string}
  */
 export function getClassFullName(c) {
 	return getClassInheritance(c).map(f => f.name).join(":");
@@ -815,12 +895,13 @@ export class AsyncFactory {
 function stringifyJsonBigIntSafe(value) {
 	return JSON.stringify(value, (_, x) => typeof x == "bigint"? (JSON.rawJSON ?? doNothing)(x.toString()) : x); // JSON.rawJSON offers the perfect solution but is very modern, so stringifying them is the next best option
 }
+// @ts-expect-error
 function parseJsonBigIntSafe(value) { // this function is unused but I'm keeping it here because it works well with the function above
 	return JSON.parse(value, (_, x, context) => context && Number.isInteger(x) && !Number.isSafeInteger(x)? BigInt(context.source) : x);
 }
 
 export class Vec2Set {
-	/** @type {Array<Vec2>} */
+	/** @type {Vec2[]} */
 	values = [];
 	#val0s = new Map();
 	/**
@@ -842,7 +923,7 @@ export class Vec2Set {
 	}
 }
 export class Vec3Set {
-	/** @type {Array<Vec3>} */
+	/** @type {Vec3[]} */
 	values = [];
 	#val0s = new Map();
 	/**
@@ -905,9 +986,7 @@ export class JSONSet extends Set {
 	}
 	*entries() {
 		for(let value of this.#actualValues) {
-			/** @type {[any, any]} */
-			let tuple = [value, value];
-			yield tuple;
+			yield tuple([value, value]);
 		}
 	}
 	keys() {

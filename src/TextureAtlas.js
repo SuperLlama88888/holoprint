@@ -1,4 +1,4 @@
-import { addVec2, ceil, floor, hexColorToClampedTriplet, JSONSet, max, range, stringToImageData, subVec2, toImage, toImageData } from "./utils.js";
+import { addVec2, ceil, floor, hexColorToClampedTriplet, JSONSet, max, range, stringToImageData, subVec2, toImage, toImageData, tuple } from "./utils.js";
 import TGALoader from "tga-js"; // We could use dynamic import as this isn't used all the time but it's so small it won't matter
 import potpack from "potpack";
 import ResourcePackStack from "./ResourcePackStack.js";
@@ -20,13 +20,13 @@ export default class TextureAtlas {
 	
 	/**
 	 * When makeAtlas() is called, this will contain UV coordinates and sizes for texture references passed as input, as well as cropping information.
-	 * @type {Array<ImageUv>}
+	 * @type {ImageUv[]}
 	 */
 	uvs;
 	
 	/**
 	 * Contains the actual texture atlas images: [textureName, imageBlob]
-	 * @type {Array<[string, Blob]>}
+	 * @type {[string, Blob][]}
 	 */
 	imageBlobs;
 	textureWidth;
@@ -65,7 +65,7 @@ export default class TextureAtlas {
 	}
 	/**
 	 * Makes a texture atlas from texture references and changes the textureUvs property to reflect UV coordinates and sizes for each reference.
-	 * @param {Array<TextureReference>} textureRefs
+	 * @param {TextureReference[]} textureRefs
 	 */
 	async makeAtlas(textureRefs) {
 		console.log("Texture references:", textureRefs);
@@ -261,7 +261,7 @@ export default class TextureAtlas {
 	/**
 	 * Loads images from a set of tinted texture paths.
 	 * @param {Set<TextureFragment>} textureFragments
-	 * @returns {Promise<Array<ImageFragment>>}
+	 * @returns {Promise<ImageFragment[]>}
 	 */
 	async #loadImages(textureFragments) {
 		let tgaLoader = new TGALoader();
@@ -345,8 +345,8 @@ export default class TextureAtlas {
 	}
 	/**
 	 * Stitches together images with widths and heights, and puts the UV coordinates and sizes into the textureUvs property.
-	 * @param {Array<ImageFragment>} imageFragments
-	 * @returns {Promise<Array<ImageUv>>}
+	 * @param {ImageFragment[]} imageFragments
+	 * @returns {Promise<ImageUv[]>}
 	 */
 	async #stitchTextureAtlas(imageFragments) {
 		imageFragments.forEach((imageFragment, i) => {
@@ -379,7 +379,7 @@ export default class TextureAtlas {
 			imageFragments = imageFragments2;
 		}
 		imageFragments.sort((a, b) => a["i"] - b["i"]);
-		/** @type {Array<ImageFragment & Rectangle & { actualSize: Vec2, offset: Vec2 }>} */
+		/** @type {(ImageFragment & Rectangle & { actualSize: Vec2, offset: Vec2 })[]} */
 		// @ts-ignore
 		let packedImageFragments = imageFragments;
 		this.textureWidth = packing.w;
@@ -394,12 +394,9 @@ export default class TextureAtlas {
 		
 		console.log("Packed image fragments:", imageFragments);
 		let imageUvs = packedImageFragments.map(imageFragment => {
-			/** @type {Vec2} */
-			let sourcePos = [imageFragment.sourceX, imageFragment.sourceY];
-			/** @type {Vec2} */
-			let destPos = [imageFragment.x, imageFragment.y];
-			/** @type {Vec2} */
-			let textureSize = [imageFragment.w, imageFragment.h];
+			let sourcePos = tuple([imageFragment.sourceX, imageFragment.sourceY]);
+			let destPos = tuple([imageFragment.x, imageFragment.y]);
+			let textureSize = tuple([imageFragment.w, imageFragment.h]);
 			// console.table({sourcePos,textureSize,destPos})
 			ctx.putImageData(imageFragment.imageData, ...subVec2(destPos, sourcePos), ...sourcePos, ...textureSize); // when drawing image data, the source position and size crop it but don't move it back to the original destination position, meaning it must be offset.
 			let imageUv = {
@@ -463,7 +460,7 @@ export default class TextureAtlas {
 	}
 	/** Add an outline around each texture.
 	 * @param {OffscreenCanvas} ogCan
-	 * @param {Array<Rectangle>} imagePositions
+	 * @param {Rectangle[]} imagePositions
 	 * @param {HoloPrintConfig} config
 	 * @param {ImageData} [imageData]
 	 * @returns {OffscreenCanvas}
@@ -483,7 +480,7 @@ export default class TextureAtlas {
 		
 		/** difference: will compare alpha channel difference; threshold: will only look at the second pixel @type {("threshold" | "difference")} */
 		const TEXTURE_OUTLINE_ALPHA_DIFFERENCE_MODE = "threshold";
-		/** If using difference mode, will draw outline between pixels with at least this much alpha difference; if using threshold mode, will draw outline on pixels next to pixels with an alpha less than or equal to this @type {Number} */
+		/** If using difference mode, will draw outline between pixels with at least this much alpha difference; if using threshold mode, will draw outline on pixels next to pixels with an alpha less than or equal to this @type {number} */
 		const TEXTURE_OUTLINE_ALPHA_THRESHOLD = 0;
 		// @ts-expect-error
 		const compareAlpha = (currentPixel, otherPixel) => TEXTURE_OUTLINE_ALPHA_DIFFERENCE_MODE == "difference"? currentPixel - otherPixel >= TEXTURE_OUTLINE_ALPHA_THRESHOLD : otherPixel <= TEXTURE_OUTLINE_ALPHA_THRESHOLD;
@@ -539,8 +536,8 @@ export default class TextureAtlas {
 	/**
 	 * Calculates the transparencies of each image fragment.
 	 * @param {ImageData} imageData
-	 * @param {Array<Rectangle>} imageFragments
-	 * @returns {Array<number>}
+	 * @param {Rectangle[]} imageFragments
+	 * @returns {number[]}
 	 */
 	#getImageFragmentTransparencies(imageData, imageFragments) {
 		return imageFragments.map(({ x: startX, y: startY, w, h }) => {

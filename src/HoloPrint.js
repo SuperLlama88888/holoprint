@@ -7,7 +7,7 @@ import MaterialList from "./MaterialList.js";
 import PreviewRenderer from "./PreviewRenderer.js";
 
 import * as entityScripts from "./entityScripts.molang.js";
-import { addPaddingToImage, awaitAllEntries, CachingFetcher, concatenateFiles, createNumericEnum, desparseArray, floor, getFileExtension, hexColorToClampedTriplet, jsonc, JSONMap, JSONSet, lcm, loadTranslationLanguage, max, min, onEvent, overlaySquareImages, pi, removeFalsies, removeFileExtension, resizeImageToBlob, round, setImageOpacity, sha256, toBlob, toImage, translate, UserError } from "./utils.js";
+import { addPaddingToImage, awaitAllEntries, cacheUnaryFunc, CachingFetcher, concatenateFiles, createNumericEnum, desparseArray, floor, getFileExtension, hexColorToClampedTriplet, jsonc, JSONMap, JSONSet, lcm, loadTranslationLanguage, max, min, onEvent, overlaySquareImages, pi, removeFalsies, removeFileExtension, resizeImageToBlob, round, setImageOpacity, sha256, toBlob, toImage, translate, tuple, UserError } from "./utils.js";
 import ResourcePackStack, { VanillaDataFetcher } from "./ResourcePackStack.js";
 import BlockUpdater from "./BlockUpdater.js";
 import SpawnAnimationMaker from "./SpawnAnimationMaker.js";
@@ -49,11 +49,11 @@ const HOLOGRAM_LAYER_MODES = createNumericEnum(["SINGLE", "ALL_BELOW"]);
 
 /**
  * Makes a HoloPrint resource pack from a structure file.
- * @param {File | Array<File>} structureFiles Either a singular structure file (`*.mcstructure`), or an array of structure files
+ * @param {File | File[]} structureFiles Either a singular structure file (`*.mcstructure`), or an array of structure files
  * @param {HoloPrintConfig} [config]
  * @param {ResourcePackStack} [resourcePackStack]
  * @param {HTMLElement} [previewCont]
- * @param {(previews: Array<PreviewRenderer>) => void} [previewLoadedCallback] A function that will be called once the preview has finished loading
+ * @param {(previews: PreviewRenderer[]) => void} [previewLoadedCallback] A function that will be called once the preview has finished loading
  * @returns {Promise<File>} Resource pack (`*.mcpack`)
  */
 export async function makePack(structureFiles, config, resourcePackStack, previewCont, previewLoadedCallback) {
@@ -191,10 +191,6 @@ export async function makePack(structureFiles, config, resourcePackStack, previe
 	structureGeoTemplate["description"]["texture_width"] = textureAtlas.atlasWidth;
 	structureGeoTemplate["description"]["texture_height"] = textureAtlas.atlasHeight;
 	
-	let structureWMolang = arrayToMolang(structureSizes.map(structureSize => structureSize[0]), "v.hologram.structure_index");
-	let structureHMolang = arrayToMolang(structureSizes.map(structureSize => structureSize[1]), "v.hologram.structure_index");
-	let structureDMolang = arrayToMolang(structureSizes.map(structureSize => structureSize[2]), "v.hologram.structure_index");
-	
 	let entityDescription = entityFile["minecraft:client_entity"]["description"];
 	
 	let totalBlockCount = 0;
@@ -234,8 +230,7 @@ export async function makePack(structureFiles, config, resourcePackStack, previe
 						}
 						
 						let blockCoordinateName = `b_${x}_${y}_${z}`;
-						/** @type {Vec3} */
-						let geoSpaceBlockPos = [-16 * x - 8, 16 * y, 16 * z - 8]; // I got these values from trial and error with blockbench (which makes the x negative I think. it's weird.)
+						let geoSpaceBlockPos = tuple([-16 * x - 8, 16 * y, 16 * z - 8]); // I got these values from trial and error with blockbench (which makes the x negative I think. it's weird.)
 						polyMeshMaker.add(paletteI, geoSpaceBlockPos, layerI);
 						if(firstBoneForThisCoordinate) { // we only need 1 locator for each block position, even though there may be 2 bones in this position because of the 2nd layer
 							hologramGeo["minecraft:geometry"][2]["bones"][1]["locators"][blockCoordinateName] ??= geoSpaceBlockPos.map(x => x + 8); // 2nd geometry is for particle alignment
@@ -285,18 +280,35 @@ export async function makePack(structureFiles, config, resourcePackStack, previe
 		for(let y = 0; y < maxHeight; y++) {
 			if(!layerIsEmpty[y]) {
 				let layerName = `l_${y}`;
-				spawnAnimationMaker.addBone(layerName, [0, y, 0], [0, 16 * y, -16]);
+				spawnAnimationMaker.addBone(layerName, [0, y, 0]);
 			}
 		}
 		hologramAnimations["animations"]["animation.armor_stand.hologram.spawn"] = spawnAnimationMaker.makeAnimation();
 	}
+	
+	let structureSizesMolang = [
+		arrayToMolang(structureSizes.map(structureSize => structureSize[1]), "v.hologram.structure_index"),
+		arrayToMolang(structureSizes.map(structureSize => structureSize[0]), "v.hologram.structure_index"),
+		arrayToMolang(structureSizes.map(structureSize => structureSize[2]), "v.hologram.structure_index")
+	];
+	let coordinateLockCoordsMolang = config.COORDINATE_LOCK? [
+		arrayToMolang(config.COORDINATE_LOCK.map(([x]) => x), "v.hologram.structure_index"),
+		arrayToMolang(config.COORDINATE_LOCK.map(([, y]) => y), "v.hologram.structure_index"),
+		arrayToMolang(config.COORDINATE_LOCK.map(([, , z]) => z), "v.hologram.structure_index")
+	] : ["0", "0", "0"];
 	
 	entityDescription["materials"]["hologram"] = "holoprint_hologram";
 	entityDescription["materials"]["hologram.wrong_block_overlay"] = "holoprint_hologram.wrong_block_overlay";
 	entityDescription["textures"]["hologram.overlay"] = "textures/entity/overlay";
 	entityDescription["textures"]["hologram.save_icon"] = "textures/particle/save_icon";
 	entityDescription["animations"]["hologram.align"] = "animation.armor_stand.hologram.align";
-	entityDescription["animations"]["hologram.offset"] = "animation.armor_stand.hologram.offset";
+	if(config.COORDINATE_LOCK) {
+		entityDescription["animations"]["hologram.coordinate_lock"] = "animation.armor_stand.hologram.coordinate_lock";
+		delete hologramAnimations["animations"]["animation.armor_stand.hologram.offset"];
+	} else {
+		entityDescription["animations"]["hologram.offset"] = "animation.armor_stand.hologram.offset";
+		delete hologramAnimations["animations"]["animation.armor_stand.hologram.coordinate_lock"];
+	}
 	entityDescription["animations"]["hologram.spawn"] = "animation.armor_stand.hologram.spawn";
 	entityDescription["animations"]["hologram.wrong_block_overlay"] = "animation.armor_stand.hologram.wrong_block_overlay";
 	entityDescription["animations"]["controller.hologram.spawn_animation"] = "controller.animation.armor_stand.hologram.spawn_animation";
@@ -305,7 +317,7 @@ export async function makePack(structureFiles, config, resourcePackStack, previe
 	entityDescription["animations"]["controller.hologram.block_validation"] = "controller.animation.armor_stand.hologram.block_validation";
 	entityDescription["animations"]["controller.hologram.saving_backup_particles"] = "controller.animation.armor_stand.hologram.saving_backup_particles";
 	entityDescription["scripts"]["animate"] ??= [];
-	entityDescription["scripts"]["animate"].push("hologram.align", "hologram.offset", "hologram.wrong_block_overlay", "controller.hologram.spawn_animation", "controller.hologram.layers", "controller.hologram.bounding_box", "controller.hologram.block_validation", "controller.hologram.saving_backup_particles");
+	entityDescription["scripts"]["animate"].push("hologram.align", config.COORDINATE_LOCK? "hologram.coordinate_lock" : "hologram.offset", "hologram.wrong_block_overlay", "controller.hologram.spawn_animation", "controller.hologram.layers", "controller.hologram.bounding_box", "controller.hologram.block_validation", "controller.hologram.saving_backup_particles");
 	entityDescription["scripts"]["should_update_bones_and_effects_offscreen"] = true; // makes backups work when offscreen (from my testing it helps a bit). this also makes it render when you're facing away, removing the need for visible_bounds_width/visible_bounds_height in the geometry file. (when should_update_effects_offscreen is set, it renders when facing away, but doesn't seem to have access to v. variables.)
 	entityDescription["scripts"]["initialize"] ??= [];
 	entityDescription["scripts"]["initialize"].push(functionToMolang(entityScripts.armorStandInitialization, {
@@ -321,9 +333,9 @@ export async function makePack(structureFiles, config, resourcePackStack, previe
 		totalBlocksToValidate: arrayToMolang(totalBlocksToValidateByStructure, "v.hologram.structure_index"),
 		totalBlocksToValidateByLayer: array2DToMolang(totalBlocksToValidateByStructureByLayer, "v.hologram.structure_index", "v.hologram.layer"),
 		backupSlotCount: config.BACKUP_SLOT_COUNT,
-		structureWMolang,
-		structureHMolang,
-		structureDMolang,
+		structureSizesMolang,
+		coordinateLockEnabled: !!config.COORDINATE_LOCK,
+		coordinateLockCoordsMolang,
 		toggleRendering: itemCriteriaToMolang(config.CONTROLS.TOGGLE_RENDERING),
 		changeOpacity: itemCriteriaToMolang(config.CONTROLS.CHANGE_OPACITY),
 		toggleTint: itemCriteriaToMolang(config.CONTROLS.TOGGLE_TINT),
@@ -541,7 +553,7 @@ export async function makePack(structureFiles, config, resourcePackStack, previe
 /**
  * Retrieves the structure files from a completed HoloPrint resource pack.
  * @param {File} resourcePack HoloPrint resource pack (`*.mcpack)
- * @returns {Promise<Array<File>>}
+ * @returns {Promise<File[]>}
  */
 export async function extractStructureFilesFromPack(resourcePack) {
 	let packFileReader = new BlobReader(resourcePack);
@@ -573,7 +585,7 @@ export async function updatePack(resourcePack, config, resourcePackStack, previe
 }
 /**
  * Returns the default pack name that would be used if no pack name is specified.
- * @param {Array<File>} structureFiles
+ * @param {File[]} structureFiles
  * @returns {string}
  */
 export function getDefaultPackName(structureFiles) {
@@ -589,7 +601,7 @@ export function getDefaultPackName(structureFiles) {
 /**
  * Finds all labels and links in a description section that will be put in the settings links section.
  * @param {string} description
- * @returns {Array<[string, string]>}
+ * @returns {[string, string][]}
  */
 export function findLinksInDescription(description) {
 	let links = [];
@@ -602,8 +614,8 @@ export function findLinksInDescription(description) {
 }
 /**
  * Creates an ItemCriteria from arrays of names and tags.
- * @param {string | Array<string>} names
- * @param {string | Array<string>} [tags]
+ * @param {string | string[]} names
+ * @param {string | string[]} [tags]
  * @returns {ItemCriteria}
  */
 export function createItemCriteria(names, tags = []) { // IDK why I haven't made this a class
@@ -642,8 +654,9 @@ export function addDefaultConfig(config) {
 			RETEXTURE_CONTROL_ITEMS: true,
 			CONTROL_ITEM_TEXTURE_SCALE: 1,
 			RENAME_CONTROL_ITEMS: true,
-			WRONG_BLOCK_OVERLAY_COLOR: /** @type {Vec4} */ ([1, 0, 0, 0.3]),
-			INITIAL_OFFSET: /** @type {Vec3} */ ([0, 0, 0]),
+			WRONG_BLOCK_OVERLAY_COLOR: tuple([1, 0, 0, 0.3]),
+			INITIAL_OFFSET: tuple([0, 0, 0]),
+			COORDINATE_LOCK: undefined,
 			BACKUP_SLOT_COUNT: 10,
 			PACK_NAME: undefined,
 			PACK_ICON_BLOB: undefined,
@@ -672,14 +685,62 @@ export async function createPmmpBedrockDataFetcher() {
 	const pmmpBedrockDataVersion = "4.1.0+bedrock-1.21.70";
 	return await CachingFetcher.new(`BedrockData@${pmmpBedrockDataVersion}`, `https://cdn.jsdelivr.net/gh/pmmp/BedrockData@${pmmpBedrockDataVersion}/`);
 }
+/** Reads the NBT of a structure file, returning a JSON object. */
+export const readStructureNBT = cacheUnaryFunc(
+	/**
+	 * @param {File} structureFile `*.mcstructure`
+	 * @returns {Promise<MCStructure>}
+	 */
+	async structureFile => {
+		let arrayBuffer = await structureFile.arrayBuffer().catch(e => {
+			throw new Error(`Could not read contents of structure file "${structureFile.name}"!\n${e}`);
+		});
+		if(structureFile.size == 0) { // this check must happen after reading the bytes, otherwise Google Drive files can't be read on Android Chrome: https://issues.chromium.org/issues/40123366#comment104
+			throw new UserError(`"${structureFile.name}" is an empty file! Please try exporting your structure again.\nIf you play on a version below 1.20.50, exporting to OneDrive will cause your structure file to be empty.`);
+		}
+		try {
+			return await readStructureNBTWithOptions(structureFile, arrayBuffer, {
+				endian: "little", // true .mcstructure files are little-endian
+				strict: false // some files have duplicated sections, which makes strict mode throw an error: #68
+			});
+		} catch(e) {
+			console.warn(`Structure file ${structureFile.name} couldn't be read with default .mcstructure NBT read settings. Trying generic settings...`);
+			console.debug(e);
+			return await readStructureNBTWithOptions(structureFile, arrayBuffer); // if the .mcstructure was generated from an external source, it's best to try with generic NBT read settings
+		}
+	}
+);
 
 /**
+ * Reads the NBT of a structure file, returning a JSON object.
+ * @param {File} structureFile `*.mcstructure`
+ * @param {ArrayBuffer} arrayBuffer
+ * @param {Partial<NBT.ReadOptions>} [options]
+ * @returns {Promise<MCStructure>}
+ */
+async function readStructureNBTWithOptions(structureFile, arrayBuffer, options = {}) {
+	let nbtRes = await NBT.read(arrayBuffer, options).catch(e => {
+		if(e instanceof NBT.InvalidTagError) {
+			throw new UserError(`"${structureFile.name}" is not a .mcstructure file! Please look at the tutorial on the wiki: https://holoprint-mc.github.io/wiki/creating-packs`);
+		}
+		throw new Error(`Invalid NBT in structure file "${structureFile.name}"!\n${e}`);
+	});
+	/** @type {MCStructure} */
+	// @ts-ignore
+	let nbt = nbtRes.data;
+	if(!isNBTValidMcstructure(nbt)) {
+		let errorMessage = getInvalidMcstructureErrorMessage(structureFile, nbt);
+		throw new UserError(errorMessage);
+	}
+	return nbt;
+}
+/**
  * Checks if a NBT object is valid .mcstructure NBT.
- * @param {object} nbt
+ * @param {MCStructure} nbt
  * @returns {boolean}
  */
 function isNBTValidMcstructure(nbt) {
-	return nbt["format_version"] == 1 && "size" in nbt && "structure" in nbt && "structure_world_origin" in nbt;
+	return nbt["format_version"] == 1 && nbt["size"] instanceof Int32Array && nbt["size"].length == 3 && "structure" in nbt && nbt["structure_world_origin"] instanceof Int32Array && nbt["structure_world_origin"].length == 3;
 }
 /**
  * Gets the error message for a NBT file that isn't .mcstructures.
@@ -701,51 +762,6 @@ function getInvalidMcstructureErrorMessage(structureFile, nbt) {
 		errorMessage += `\nNote: Renaming .${probableSourceFileExtension} to .mcstructure doesn't work, you must create the structure file from inside Minecraft Bedrock! Minecraft Java structures aren't the same as Minecraft Bedrock structures!`;
 	}
 	return errorMessage;
-}
-/**
- * Reads the NBT of a structure file, returning a JSON object.
- * @param {File} structureFile `*.mcstructure`
- * @returns {Promise<MCStructure>}
- */
-async function readStructureNBT(structureFile) {
-	let arrayBuffer = await structureFile.arrayBuffer().catch(e => {
-		throw new Error(`Could not read contents of structure file "${structureFile.name}"!\n${e}`);
-	});
-	if(structureFile.size == 0) { // this check must happen after reading the bytes, otherwise Google Drive files can't be read on Android Chrome: https://issues.chromium.org/issues/40123366#comment104
-		throw new UserError(`"${structureFile.name}" is an empty file! Please try exporting your structure again.\nIf you play on a version below 1.20.50, exporting to OneDrive will cause your structure file to be empty.`);
-	}
-	try {
-		return await readStructureNBTWithOptions(structureFile, arrayBuffer, {
-			endian: "little", // true .mcstructure files are little-endian
-			strict: false // some files have duplicated sections, which makes strict mode throw an error: #68
-		});
-	} catch(e) {
-		console.warn(`Structure file ${structureFile.name} couldn't be read with default .mcstructure NBT read settings. Trying generic settings...`);
-		console.debug(e);
-		return await readStructureNBTWithOptions(structureFile, arrayBuffer); // if the .mcstructure was generated from an external source, it's best to try with generic NBT read settings
-	}
-}
-/**
- * Reads the NBT of a structure file, returning a JSON object.
- * @param {File} structureFile `*.mcstructure`
- * @param {ArrayBuffer} arrayBuffer
- * @param {Partial<NBT.ReadOptions>} [options]
- * @returns {Promise<MCStructure>}
- */
-async function readStructureNBTWithOptions(structureFile, arrayBuffer, options = {}) {
-	let nbtRes = await NBT.read(arrayBuffer, options).catch(e => {
-		if(e instanceof NBT.InvalidTagError) {
-			throw new UserError(`"${structureFile.name}" is not a .mcstructure file! Please look at the tutorial on the wiki: https://holoprint-mc.github.io/wiki/creating-packs`);
-		}
-		throw new Error(`Invalid NBT in structure file "${structureFile.name}"!\n${e}`);
-	});
-	let nbt = nbtRes.data;
-	if(!isNBTValidMcstructure(nbt)) {
-		let errorMessage = getInvalidMcstructureErrorMessage(structureFile, nbt);
-		throw new UserError(errorMessage);
-	}
-	// @ts-ignore
-	return nbt;
 }
 /**
  * @template {string} F
@@ -833,8 +849,8 @@ async function getResponseContents(resPromise, filePath) {
 /**
  * Removes ignored blocks from the block palette, updates old blocks, and adds block entities as separate entries.
  * @param {MCStructure["structure"]} structure The de-NBT-ed structure file
- * @param {Array<string>} ignoredBlocks
- * @returns {Promise<{ palette: Array<Block>, indices: [Int32Array, Int32Array] }>}
+ * @param {string[]} ignoredBlocks
+ * @returns {Promise<{ palette: Block[], indices: [Int32Array, Int32Array] }>}
  */
 async function tweakBlockPalette(structure, ignoredBlocks) {
 	let palette = structuredClone(structure["palette"]["default"]["block_palette"]);
@@ -912,8 +928,8 @@ async function tweakBlockPalette(structure, ignoredBlocks) {
 }
 /**
  * Combines multiple block palettes into one, and updates indices for each.
- * @param {Array<{palette: Array<Block>, indices: [Int32Array, Int32Array]}>} palettesAndIndices
- * @returns {{palette: Array<Block>, indices: Array<[Int32Array, Int32Array]>}}
+ * @param {{palette: Block[], indices: [Int32Array, Int32Array]}[]} palettesAndIndices
+ * @returns {{palette: Block[], indices: [Int32Array, Int32Array][]}}
  */
 function mergeMultiplePalettesAndIndices(palettesAndIndices) {
 	if(palettesAndIndices.length == 1) {
@@ -940,7 +956,7 @@ function mergeMultiplePalettesAndIndices(palettesAndIndices) {
 /**
  * Makes the layer animations and animation controllers. Mutates the original arguments.
  * @param {HoloPrintConfig} config
- * @param {Array<I32Vec3>} structureSizes
+ * @param {I32Vec3[]} structureSizes
  * @param {object} entityDescription
  * @param {object} hologramAnimations
  * @param {object} hologramAnimationControllers
@@ -1089,7 +1105,7 @@ function addBoundingBoxParticles(hologramAnimationControllers, structureI, struc
  * Adds block validation particles for a single structure to the hologram animation controllers in-place.
  * @param {Record<string, any>} hologramAnimationControllers
  * @param {number} structureI
- * @param {Array<Record<string, any>>} blocksToValidate
+ * @param {Record<string, any>[]} blocksToValidate
  * @param {I32Vec3} structureSize
  */
 function addBlockValidationParticles(hologramAnimationControllers, structureI, blocksToValidate, structureSize) {
@@ -1219,7 +1235,7 @@ function patchRenderControllers(renderControllers, patches) {
 }
 /**
  * Adds the material list to the `hud_screen.json` UI file.
- * @param {Array<MaterialListEntry>} finalisedMaterialList
+ * @param {MaterialListEntry[]} finalisedMaterialList
  * @param {object} hudScreenUI
  * @param {object} blockMetadata
  */
@@ -1249,7 +1265,7 @@ function addMaterialListUI(finalisedMaterialList, hudScreenUI, blockMetadata) {
  * @param {Record<string, any>} itemMetadata
  * @param {Data.MaterialListMappings} materialListMappings
  * @param {Record<string, string>} resourceLangFiles
- * @param {Record<string, Array<string>>} itemTags
+ * @param {Record<string, string[]>} itemTags
  * @returns {{ inGameControls: Record<string, string>, controlItemTranslations: Record<string, string> }}
  */
 function translateControlItems(config, blockMetadata, itemMetadata, materialListMappings, resourceLangFiles, itemTags) {
@@ -1263,7 +1279,7 @@ function translateControlItems(config, blockMetadata, itemMetadata, materialList
 		inGameControls[language] = "";
 		let translatedControlNames = {};
 		let translatedControlItems = {};
-		/** @type {Record<String, Set<String>>} */
+		/** @type {Record<string, Set<string>>} */
 		let controlItemTranslationKeys = {};
 		controlsMaterialList.setLanguage(resourceLangFile);
 		Object.entries(config.CONTROLS).forEach(([control, itemCriteria]) => {
@@ -1298,11 +1314,11 @@ function translateControlItems(config, blockMetadata, itemMetadata, materialList
  * @param {Record<string, string>} packTemplateLangFiles
  * @param {string} packName
  * @param {MaterialList} materialList
- * @param {Record<string, Array<MaterialListEntry>>} exportedMaterialLists
+ * @param {Record<string, MaterialListEntry[]>} exportedMaterialLists
  * @param {boolean} controlsHaveBeenCustomised
  * @param {Record<string, string>} inGameControls
  * @param {Record<string, string>} controlItemTranslations
- * @returns {Array<[string, string]>}
+ * @returns {[string, string][]}
  */
 function makeLangFiles(config, packTemplateLangFiles, packName, materialList, exportedMaterialLists, controlsHaveBeenCustomised, inGameControls, controlItemTranslations) {
 	const disabledFeatureTranslations = { // these look at the .lang RP files
@@ -1362,7 +1378,7 @@ function makeLangFiles(config, packTemplateLangFiles, packName, materialList, ex
  * Retextures the control items. Modifies `itemTexture` and `terrainTexture`.
  * @param {HoloPrintConfig} config
  * @param {Data.ItemIcons} itemIcons
- * @param {Record<string, Array<string>>} itemTags
+ * @param {Record<string, string[]>} itemTags
  * @param {object} resourceItemTexture `RP/textures/item_texture.json`
  * @param {object} blocksDotJson
  * @param {object} vanillaTerrainTexture
@@ -1370,7 +1386,7 @@ function makeLangFiles(config, packTemplateLangFiles, packName, materialList, ex
  * @param {ResourcePackStack} resourcePackStack
  * @param {object} itemTexture
  * @param {object} terrainTexture
- * @returns {Promise<{ controlItemTextures: Array<[string, Blob]>, hasModifiedTerrainTexture: boolean }>}
+ * @returns {Promise<{ controlItemTextures: [string, Blob][], hasModifiedTerrainTexture: boolean }>}
  */
 async function retextureControlItems(config, itemIcons, itemTags, resourceItemTexture, blocksDotJson, vanillaTerrainTexture, pmmpBedrockDataFetcher, resourcePackStack, itemTexture, terrainTexture) {
 	let controlItemTextures = [];
@@ -1581,8 +1597,8 @@ async function makePackIcon(structureFile) {
 /**
  * Expands item criteria into an array of item names by expanding all item tags.
  * @param {ItemCriteria} itemCriteria
- * @param {Record<string, Array<string>>} itemTags
- * @returns {Array<string>}
+ * @param {Record<string, string[]>} itemTags
+ * @returns {string[]}
  */
 function expandItemCriteria(itemCriteria, itemTags) {
 	let minecraftTags = itemCriteria["tags"].filter(tag => !tag.includes(":")); // we can't find which items are used in custom tags
@@ -1603,7 +1619,7 @@ function itemCriteriaToMolang(itemCriteria, slot = "slot.weapon.mainhand") {
 }
 /**
  * Creates a Molang expression that mimics array access. Defaults to the last element if nothing is found.
- * @param {Array} array A continuous array
+ * @param {any[]} array A continuous array
  * @param {string} indexVar
  * @returns {string}
  */
@@ -1621,7 +1637,7 @@ function arrayEntriesToMolang(entries, indexVar) {
 }
 /**
  * Creates a Molang expression that mimics 2D array access.
- * @param {Array<Array>} array
+ * @param {any[][]} array
  * @param {string} indexVar1
  * @param {string} indexVar2
  * @returns {string}
@@ -1663,10 +1679,15 @@ function functionToMolang(func, vars = {}) {
 		}
 		expandedElseIfCode += minifiedFuncBody[i];
 	}
-	let mathedCode = expandedElseIfCode.replaceAll(`"`, `'`).replaceAll(/([\w\.]+)(\+|-){2};/g, "$1=$1$21;").replaceAll(/([\w\.]+)--;/g, "$1=$1-1;").replaceAll(/([\w\.\$\[\]]+)(\+|-|\*|\/|\?\?)=([^;]+);/g, "$1=$1$2$3;");
+	let mathedCode = expandedElseIfCode
+		.replaceAll(`"`, `'`)
+		.replaceAll(/([\w\.]+)(\+|-){2};/g, "$1=$1$21;") // x++ and x-- -> x=x+1 and x=x-1
+		.replaceAll(/([\w\.\$\[\]]+)(\+|-|\*|\/|\?\?)=([^;]+);/g, "$1=$1$2$3;") // x += y -> x=x+y for +, -, *, /, ??
+		.replaceAll("return;", "return 0;"); // complex Molang expressions can't return nothing
 	
 	// Yay more fun regular expressions, this time to work with variable substitution ($[...])
-	let substituteInVariables = (code, vars) => code.replaceAll(/\$\[(\w+)(?:\[(\d+)\]|\.(\w+))?(?:(\+|-|\*|\/)(\d+))?\]/g, (match, varName, index, key, operator, operand) => {
+	/** @param {string} code */
+	let substituteInVariables = (code, vars) => code.replaceAll(/\$\[(\w+)(?:\[(\d+)\]|\.(\w+))?(?:(\+|-|\*|\/)(\d+))?\]/g, (_, varName, index, key, operator, operand) => {
 		if(varName in vars) {
 			let value = vars[varName];
 			index ??= key;
@@ -1724,7 +1745,7 @@ function functionToMolang(func, vars = {}) {
 			}
 			let forBlockContent = mathedCode.slice(forBlockStartI + 1, forBlockEndI - 1);
 			let expandedForCode = "";
-			for(let forI = +initialValue; forI < upperBound; forI++) {
+			for(let forI = +initialValue; forI < +upperBound; forI++) {
 				expandedForCode += substituteInVariables(forBlockContent, {
 					...vars,
 					...{
@@ -1754,6 +1775,39 @@ function functionToMolang(func, vars = {}) {
 		conditionedCode += char;
 	}
 	let variabledCode = substituteInVariables(conditionedCode, vars);
+	for(let i = 0; i < variabledCode.length; i++) {
+		if(variabledCode.slice(i, i + 7) == "false?{") {
+			let j = i + 7;
+			let braceCounter = 1;
+			let elseBlockStart = -1;
+			while(braceCounter || variabledCode[j] != ";") {
+				if(variabledCode[j] == "{") braceCounter++;
+				else if(variabledCode[j] == "}") braceCounter--;
+				if(braceCounter == 0 && variabledCode[j] == ":") {
+					elseBlockStart = j + 2;
+				}
+				j++;
+			}
+			let elseBlock = elseBlockStart > -1? variabledCode.slice(elseBlockStart, j - 1) : "";
+			variabledCode = variabledCode.slice(0, i) + elseBlock + variabledCode.slice(j + 1);
+			i--;
+		} else if(variabledCode.slice(i, i + 6) == "true?{") {
+			let j = i + 6;
+			let braceCounter = 1;
+			let trueBlockEnd;
+			while(braceCounter || variabledCode[j] != ";") {
+				if(variabledCode[j] == "{") braceCounter++;
+				else if(variabledCode[j] == "}") braceCounter--;
+				if(braceCounter == 0 && variabledCode[j] == ":") {
+					trueBlockEnd = j;
+				}
+				j++;
+			}
+			trueBlockEnd ??= j;
+			variabledCode = variabledCode.slice(0, i) + variabledCode.slice(i + 6, trueBlockEnd - 1) + variabledCode.slice(j + 1);
+			i--;
+		}
+	}
 	return variabledCode;
 }
 
@@ -1761,8 +1815,8 @@ function functionToMolang(func, vars = {}) {
 /** @import { ZipWriterAddDataOptions } from "@zip.js/zip.js" */
 /**
  * @typedef {object} HoloPrintConfig An object for storing HoloPrint config options.
- * @property {Array<string>} IGNORED_BLOCKS
- * @property {Array<string>} IGNORED_MATERIAL_LIST_BLOCKS
+ * @property {string[]} IGNORED_BLOCKS
+ * @property {string[]} IGNORED_MATERIAL_LIST_BLOCKS
  * @property {number} SCALE
  * @property {number} OPACITY
  * @property {boolean} MULTIPLE_OPACITIES Whether to generate multiple opacity images and allow in-game switching, or have a constant opacity
@@ -1782,10 +1836,11 @@ function functionToMolang(func, vars = {}) {
  * @property {boolean} RENAME_CONTROL_ITEMS
  * @property {Vec4} WRONG_BLOCK_OVERLAY_COLOR Clamped colour quartet
  * @property {Vec3} INITIAL_OFFSET
+ * @property {Vec3[] | undefined} COORDINATE_LOCK If present, each structure's hologram will be locked to these coordinates.
  * @property {number} BACKUP_SLOT_COUNT
  * @property {string | undefined} PACK_NAME The name of the completed pack; will default to the structure file names
  * @property {Blob} PACK_ICON_BLOB Blob for `pack_icon.png`
- * @property {Array<string>} AUTHORS
+ * @property {string[]} AUTHORS
  * @property {string | undefined} DESCRIPTION
  * @property {number} COMPRESSION_LEVEL
  * @property {number} PREVIEW_BLOCK_LIMIT The maximum number of blocks a structure can have for rendering a preview
@@ -1809,8 +1864,8 @@ function functionToMolang(func, vars = {}) {
  */
 /**
  * @typedef {object} ItemCriteria Stores item names and tags for checking items. Leaving everything empty will check for nothing being held.
- * @property {Array<string>} names Item names the matching item could have. The `minecraft:` namespace will be used if no namespace is specified.
- * @property {Array<string>} tags Item tags the matching item could have. The `minecraft:` namespace will be used if no namespace is specified.
+ * @property {string[]} names Item names the matching item could have. The `minecraft:` namespace will be used if no namespace is specified.
+ * @property {string[]} tags Item tags the matching item could have. The `minecraft:` namespace will be used if no namespace is specified.
  */
 /**
  * @typedef {object} NBTBlock A block as stored in NBT.
@@ -1830,10 +1885,10 @@ function functionToMolang(func, vars = {}) {
 /**
  * @typedef {object} PolyMesh A `poly_mesh` object as in geometry files.
  * @property {boolean} [normalized_uvs]
- * @property {Array<Vec3>} normals
- * @property {Array<Vec2>} uvs
- * @property {Array<Vec3>} positions
- * @property {Array<PolyMeshFace>} polys
+ * @property {Vec3[]} normals
+ * @property {Vec2[]} uvs
+ * @property {Vec3[]} positions
+ * @property {PolyMeshFace[]} polys
  */
 /**
  * @typedef {[Vec3, Vec3, Vec3, Vec3]} PolyMeshFace A square face.
@@ -1909,7 +1964,6 @@ function functionToMolang(func, vars = {}) {
  * @typedef {object} SpawnAnimationBone Information about a bone in the spawn animation.
  * @property {string} boneName
  * @property {Vec3} blockPos The block position (i.e. in-game blocks relative to the structure origin)
- * @property {Vec3} bonePos The bone position in the model (i.e. measured in geometry space pixels)
  */
 /**
  * @typedef {object} MinecraftAnimation A Minecraft animation as seen in `.animation.json` files.
@@ -1928,10 +1982,10 @@ function functionToMolang(func, vars = {}) {
  * @property {I32Vec3} size Size of the structure in blocks.
  * @property {object} structure
  * @property {[Int32Array, Int32Array]} structure.block_indices Block indices for the structure.
- * @property {Array<EntityNBTCompound>} structure.entities List of entities stored as NBT.
+ * @property {EntityNBTCompound[]} structure.entities List of entities stored as NBT.
  * @property {object} structure.palette
  * @property {object} structure.palette.default
- * @property {Array<NBTBlock>} structure.palette.default.block_palette List of ordered block entries that the indices refer to.
+ * @property {NBTBlock[]} structure.palette.default.block_palette List of ordered block entries that the indices refer to.
  * @property {Record<number, BlockPositionData>} [structure.palette.default.block_position_data] Additional data for individual blocks in the structure.
  * @property {I32Vec3} structure_world_origin The original world position where the structure was saved.
  */
@@ -1941,7 +1995,7 @@ function functionToMolang(func, vars = {}) {
 /**
  * @typedef {object} BlockPositionData Additional data for individual blocks.
  * @property {EntityNBTCompound} [block_entity_data] Block entity data.
- * @property {Array<TickQueueData>} [tick_queue_data] Scheduled tick information for blocks that need updates.
+ * @property {TickQueueData[]} [tick_queue_data] Scheduled tick information for blocks that need updates.
  */
 /**
  * @typedef {object} TickQueueData Represents a scheduled pending tick update. Used in observers.
@@ -1967,7 +2021,7 @@ function functionToMolang(func, vars = {}) {
  * @property {string} [newName] - An optional new name for the block.
  * @property {BlockUpdateSchemaFlattenRule} [newFlattenedName] - An optional flattened property rule providing a new name.
  * @property {Record<string, TypedBlockStateProperty> | null} newState - The new property values after the remapping.
- * @property {Array<string>} [copiedState] - Optional list of property names to copy from the old state.
+ * @property {string[]} [copiedState] - Optional list of property names to copy from the old state.
  */
 /**
  * @typedef {object} BlockUpdateSchemaSkeleton
@@ -1986,11 +2040,11 @@ function functionToMolang(func, vars = {}) {
  * @property {Record<string, string>} [renamedIds] - Mapping of renamed IDs.
  * @property {Record<string, Record<string, TypedBlockStateProperty>>} [addedProperties] - Mapping of added properties.
  * @property {Record<string, Record<string, string>>} [renamedProperties] - Mapping of renamed properties.
- * @property {Record<string, Array<string>>} [removedProperties] - Mapping of removed properties.
+ * @property {Record<string, string[]>} [removedProperties] - Mapping of removed properties.
  * @property {Record<string, Record<string, string>>} [remappedPropertyValues] - Mapping of remapped property values.
- * @property {Record<string, Array<{ old: TypedBlockStateProperty, new: TypedBlockStateProperty }>>} [remappedPropertyValuesIndex] - Index of remapped property values.
+ * @property {Record<string, { old: TypedBlockStateProperty, new: TypedBlockStateProperty }[]>} [remappedPropertyValuesIndex] - Index of remapped property values.
  * @property {Record<string, BlockUpdateSchemaFlattenRule>} [flattenedProperties] - Mapping of flattened properties.
- * @property {Record<string, Array<BlockUpdateSchemaRemappedState>>} [remappedStates] - Mapping of remapped states.
+ * @property {Record<string, BlockUpdateSchemaRemappedState[]>} [remappedStates] - Mapping of remapped states.
  */
 /**
  * @typedef {object} Rectangle

@@ -1,6 +1,16 @@
 /* This can only be described as functional. */
 :root {
 	--icon-scale: 1;
+	
+	--text-col: #202526;
+	--border-col: #D899D8;
+	--input-bg: #EEDEEE;
+	--input-bg-checked: #E8C8E8;
+	--input-bg-active: #DABADA;
+	--dark-bg: #D38AD3;
+	--dark-bg-hover: #C57CC5;
+	--dark-bg-active: #B66DB7;
+	--dark-border: #9B4F9B;
 	--success-green: #3AB336;
 	--error-red: #E24436;
 }
@@ -9,7 +19,7 @@ body {
 	background-size: 100px;
 	/* animation: move-background 10s linear infinite; */
 	font-family: "Catamaran", "Trebuchet MS", sans-serif;
-	color: #202526;
+	color: var(--text-col);
 	line-height: 1.2;
 }
 @keyframes move-background {
@@ -83,6 +93,8 @@ form {
 	}
 	main {
 		padding: 2px;
+		width: calc(100% - 5vmin);
+		height: calc(100% - 5vmin);
 	}
 	fieldset {
 		padding: 5px;
@@ -100,11 +112,11 @@ input[type="file"]:invalid {
 	width: 70%;
 	font-weight: 500;
 	text-align: center;
-	border: 3px dashed #D899D8;
+	border: 3px dashed var(--border-col);
 	border-radius: 25px;
 }
 #structureFileInputCont fieldset:first-of-type input[type="file"] ~ div {
-	border: 3px solid #D899D8;
+	border: 3px solid var(--border-col);
 }
 #structureFileInputCont input[type="file"] ~ div p {
 	margin: 0;
@@ -193,6 +205,9 @@ fieldset.expandable > legend::before {
 fieldset.expandable:has(legend input:checked) > legend::before {
 	transform: rotate(135deg);
 }
+span {
+	vertical-align: middle;
+}
 label {
 	display: block;
 }
@@ -204,7 +219,6 @@ details {
 	width: fit-content;
 	border: 1px solid #AAA;
 	border-radius: 5px;
-	font-size: 0.825em;
 }
 summary {
 	padding: 0 3px;
@@ -216,19 +230,19 @@ input, button {
 }
 button, input[type="checkbox"], input[type="number"], input[type="text"], textarea, input[type="file"]::file-selector-button, select, .buttonlike {
 	padding: 1px 4px;
-	border: 2px solid #D899D8;
-	accent-color: #D899D8;
+	border: 2px solid var(--border-col);
+	accent-color: var(--border-col);
 	border-radius: 7px;
-	background: #EEDEEE;
+	background: var(--input-bg);
 	font-family: inherit;
 	color: inherit;
 	cursor: pointer;
-	transition: background 0.15s, border-color 0.15s;
+	transition: background 0.15s, border-color 0.15s, color 0.15s;
 }
 input[type="color"] {
-	border: 2px solid #D899D8;
+	border: 2px solid var(--border-col);
 	border-radius: 7px;
-	background: #EEDEEE;
+	background: var(--input-bg);
 	cursor: pointer;
 	transition: background 0.15s;
 }
@@ -250,7 +264,7 @@ a.buttonlike {
 	text-decoration: initial;
 }
 button:not(:disabled):not(.packInfoButton):hover, input[type="file"]:not(:disabled):hover::file-selector-button, select:not(:disabled):hover, .buttonlike:not(.packInfoButton):hover {
-	background: #E8C8E8;
+	background: var(--input-bg-checked);
 }
 button:disabled, input[type="file"]:disabled::file-selector-button, select:disabled, .buttonlike:disabled {
 	cursor: not-allowed;
@@ -263,10 +277,12 @@ input[type="number"]:hover, input[type="text"]:hover, input[type="color"]:hover,
 	background: #EAD5EA;
 }
 button:not(.packInfoButton):not(:disabled):active, input[type="file"]:not(:disabled):active::file-selector-button, select:not(:disabled):active, .buttonlike:not(.packInfoButton):not(:disabled):active:active {
-	background: #DABADA;
+	background: var(--input-bg-active);
 }
 input[type="checkbox"] {
+	margin: 3px 1px;
 	display: inline-block;
+	vertical-align: middle;
 	appearance: none;
 	width: 40px;
 	height: 20px;
@@ -289,17 +305,43 @@ input[type="checkbox"]::after {
 	font-size: 15px;
 	font-weight: bold;
 	color: transparent;
-	text-shadow: 17px -3px 0 black; /* effectively move the text */
+	text-shadow: 17px -3px 0 var(--text-col); /* effectively move the text */
 	transition: left 0.2s, text-shadow 0.2s, background 0.15s;
 }
 input[type="checkbox"]:checked::after {
 	left: 18px;
 	content: "check";
-	text-shadow: -20px -3px 0 black;
+	text-shadow: -20px -3px 0 var(--text-col);
 }
 input[type="checkbox"]:hover::after {
 	background: #B778B7;
 }
+input[type="radio"].buttonlike {
+	appearance: none; /* necessary for pseudo-elements to work */
+	margin: 0;
+	padding: 0;
+	text-align: center;
+	&::after {
+		content: attr(value);
+		display: block;
+		width: 20px;
+		height: 20px;
+	}
+}
+input[type="radio"].buttonlike:checked, .importantButton {
+	color: white;
+	font-weight: bold;
+	background: var(--dark-bg);
+	border-color: var(--dark-border);
+	box-shadow: 0 0 5px var(--dark-bg);
+	&:hover:hover:hover {
+		background: var(--dark-bg-hover);
+	}
+	&:active:active:active {
+		background: var(--dark-bg-active);
+	}
+}
+
 .resetButton {
 	position: absolute;
 	right: 10px;
@@ -329,7 +371,7 @@ input[type="checkbox"]:hover::after {
 	contain: layout;
 }
 .multiTabCont > input[type="radio"][name^="configTabs"]:checked + label {
-	background: #E8C8E8;
+	background: var(--input-bg-checked);
 	font-weight: 500;
 }
 .multiTabCont > input[type="radio"][name^="configTabs"]:not(:checked) + label + fieldset {
@@ -365,8 +407,8 @@ input[type="checkbox"]:hover::after {
 	font-weight: 500;
 }
 .packInfoButton {
-	--bg-col-1: #E8C8E8;
-	--bg-col-2: #D899D8;
+	--bg-col-1: var(--input-bg-checked);
+	--bg-col-2: var(--border-col);
 	background-image: repeating-linear-gradient(150deg, var(--bg-col-1) 0, var(--bg-col-1) 10px, var(--bg-col-2) 10px, var(--bg-col-2) 20px);
 	background-size: 200% !important;
 	border-color: var(--bg-col-2);
@@ -419,7 +461,7 @@ img:not(#languageSelectorButton), canvas {
 	color: #2C33B3;
 	color: #4CF0A0
 	color: hsl(300, 24%, 53%);
-	color: #D899D8;
+	color: var(--border-col);
 	color: #D7B3D7; */
 }
 .previewCont {
@@ -431,6 +473,9 @@ img:not(#languageSelectorButton), canvas {
 	
 	& > .previewMessage, & > canvas, & ~ hr {
 		width: min(80vmin, 100%);
+	}
+	& > canvas {
+		user-select: none;
 	}
 	& > .previewMessage, & > canvas {
 		aspect-ratio: 1;
@@ -503,7 +548,7 @@ img:not(#languageSelectorButton), canvas {
 	margin: 10px auto auto;
 	width: 45px;
 	aspect-ratio: 1;
-	--c: no-repeat linear-gradient(#D899D8 0 0);
+	--c: no-repeat linear-gradient(var(--border-col) 0 0);
 	background: var(--c) 0% 50%, var(--c) 50% 50%, var(--c) 100% 50%;
 	background-size: 20% 100%;
 	animation: l1 1s infinite linear;
@@ -529,10 +574,13 @@ img:not(#languageSelectorButton), canvas {
 fieldset.textureSettings > div {
 	display: flex;
 	flex-wrap: wrap;
-	gap: 15px 0;	
-}
-fieldset.textureSettings > div > div {
-	flex: 1 1 auto;
+	gap: 15px 0;
+	> div {
+		flex: 1 1 auto;
+	}
+	td {
+		padding: 0 5px;
+	}
 }
 #texturePreviewCont {
 	text-align: center;
@@ -545,4 +593,37 @@ fieldset.textureSettings > div > div {
 	width: 40%;
 	max-width: 140px;
 	image-rendering: pixelated;
+}
+
+#coordinateLockCoordsCont {
+	padding: 5px;
+	border: 3px dotted #AAA;
+	border-radius: 10px;
+}
+#coordinateLockStructureCoords {
+	margin: 2px 0;
+	display: grid;
+	grid-template-columns: minmax(0, max-content) max-content;
+	align-items: center;
+	gap: 2px 5px;
+	
+	label {
+		overflow: hidden;
+		text-overflow: ellipsis;
+	}
+}
+#coordinateLockCoordsAdjustmentCont {
+	margin-top: 3px;
+	display: flex;
+	align-items: center;
+	gap: 5px;
+	> :first-child {
+		white-space: nowrap;
+	}
+	> :last-child {
+		flex: 1;
+		> span {
+			display: inline-block;
+		}
+	}
 }

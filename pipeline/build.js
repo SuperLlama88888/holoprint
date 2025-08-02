@@ -7,10 +7,10 @@ import browserslist from "browserslist";
 import { transform, browserslistToTargets } from "lightningcss";
 import minifyJSON from "jsonminify";
 
-const browserParamName = "--browser=";
+const versionParamName = "--version=";
 const exportHoloPrintLibFlagName = "--export-holoprint-lib";
 
-const buildVersion = process.argv.find(arg => arg.startsWith(browserParamName))?.slice(browserParamName.length) ?? "testing";
+const buildVersion = process.argv.find(arg => arg.startsWith(versionParamName))?.slice(versionParamName.length) ?? "testing";
 const exportHoloPrintLib = process.argv.includes(exportHoloPrintLibFlagName);
 
 if(fs.existsSync("dist")) {
@@ -95,6 +95,11 @@ function findProcessingFunction(filename) {
  */
 function processHTML(code, filename) {
 	code = code.replaceAll(/<script type="(importmap|application\/ld\+json)">([^]+?)<\/script>/g, (_, scriptType, json) => `<script type="${scriptType}">${processJSON(json).code}</script>`);
+	const inlineCustomElements = [["vec-3-input", "acronym"], ["slot", "big"]]; // acronym/big are deprecated inline elements. the minifier doesn't recognise that custom elements are inline, hence a substitution is performed right before and after the minification.
+	inlineCustomElements.forEach(([elementName, replacement]) => {;
+		code = code.replaceAll(`<${elementName}`, `<${replacement}`);
+		code = code.replaceAll(`</${elementName}>`, `</${replacement}>`)
+	});
 	code = minifyHTML(code, {
 		removeComments: true,
 		collapseWhitespace: true,
@@ -102,6 +107,10 @@ function processHTML(code, filename) {
 		sortAttributes: true,
 		sortClassName: true,
 		minifyCSS: css => processCSS(css, filename, true).code
+	});
+	inlineCustomElements.forEach(([elementName, replacement]) => {
+		code = code.replaceAll(`<${replacement}`, `<${elementName}`);
+		code = code.replaceAll(`</${replacement}>`, `</${elementName}>`)
 	});
 	return { code };
 }

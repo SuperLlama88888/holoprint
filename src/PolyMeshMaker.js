@@ -4,12 +4,12 @@ const stringifyVec3 = "InternalError" in window? vec => vec[0] + "," + vec[1] + 
 
 export default class PolyMeshMaker {
 	templatePalette;
-	/** @type {Array<Array<[Vec3, number]>>} */
+	/** @type {[Vec3, number][][]} */
 	#blocks = [];
 	/** @type {JSONMap<Vec3, number>} */
 	#positionsWithMultipleBlocks = new JSONMap([], stringifyVec3);
 	
-	/** @param {Array<Array<PolyMeshTemplateFaceWithUvs>>} templatePalette */
+	/** @param {PolyMeshTemplateFaceWithUvs[][]} templatePalette */
 	constructor(templatePalette) {
 		this.templatePalette = templatePalette;
 		for(let i in templatePalette) {

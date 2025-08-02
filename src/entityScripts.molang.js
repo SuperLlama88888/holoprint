@@ -1,10 +1,10 @@
-let { $, v, q, t, structureSize, singleLayerMode, structureCount, HOLOGRAM_INITIAL_ACTIVATION, initialOffset, defaultTextureIndex, textureBlobsCount, totalBlocksToValidate, totalBlocksToValidateByLayer, backupSlotCount, toggleRendering, changeOpacity, toggleTint, toggleValidating, changeLayer, decreaseLayer, changeLayerMode, disablePlayerControls, backupHologram, changeStructure, moveHologram, rotateHologram, initVariables, renderingControls, broadcastActions, structureWMolang, structureHMolang, structureDMolang } = {}; // prevent linting errors
+let { $, v, q, t, structureSize, singleLayerMode, structureCount, HOLOGRAM_INITIAL_ACTIVATION, initialOffset, defaultTextureIndex, textureBlobsCount, totalBlocksToValidate, totalBlocksToValidateByLayer, backupSlotCount, toggleRendering, changeOpacity, toggleTint, toggleValidating, changeLayer, decreaseLayer, changeLayerMode, disablePlayerControls, backupHologram, changeStructure, moveHologram, rotateHologram, initVariables, renderingControls, broadcastActions, structureSizesMolang, coordinateLockEnabled, coordinateLockCoordsMolang } = {}; // prevent linting errors
 
 export const ACTIONS = createNumericEnum(["NEXT_STRUCTURE", "PREVIOUS_STRUCTURE", "INCREASE_LAYER", "DECREASE_LAYER", "TOGGLE_RENDERING", "INCREASE_OPACITY", "DECREASE_OPACITY", "TOGGLE_TINT", "TOGGLE_VALIDATING", "CHANGE_LAYER_MODE", "ROTATE_HOLOGRAM_CLOCKWISE", "ROTATE_HOLOGRAM_ANTICLOCKWISE", "BACKUP_HOLOGRAM", "MOVE_HOLOGRAM"]);
 
 export function armorStandInitialization() {
 	v.hologram_activated = HOLOGRAM_INITIAL_ACTIVATION; // true/false are substituted in here for the different subpacks
-	v.hologram.offset_x = $[initialOffset[0]];
+	v.hologram.offset_x = -$[initialOffset[0]];
 	v.hologram.offset_y = $[initialOffset[1]];
 	v.hologram.offset_z = $[initialOffset[2]];
 	v.hologram.rotation = 0;
@@ -30,8 +30,7 @@ export function armorStandInitialization() {
 	v.hologram.last_held_item = ""; // this will be kept in the backup
 	v.last_pose = 0;
 	v.last_hurt_direction = q.hurt_direction;
-	// v.player_action_counter = t.player_action_counter ?? 0;
-	v.player_action_counter = 0;
+	v.player_action_counter = t.player_action_counter ?? 0;
 	v.hologram_dir = 0;
 	
 	v.spawn_time = q.time_stamp;
@@ -45,7 +44,6 @@ export function armorStandPreAnimation() {
 	if(q.time_stamp - v.spawn_time < 5) {
 		v.last_pose = v.armor_stand.pose_index; // armour stands take a tick or two at the start to set their pose correctly
 	}
-	v.armor_stand_dir = Math.floor(q.body_y_rotation / 90) + 2; // [south, west, north, east] (since it goes from -180 to 180)
 	
 	t.should_set_wrong_blocks = false;
 	if(q.time_stamp - v.spawn_time < 200 && !v.player_has_interacted) { // if it's less than 10 seconds after being spawned and the player hasn't interacted yet...
@@ -73,7 +71,7 @@ export function armorStandPreAnimation() {
 			v.hologram_activated = true;
 			v.hologram.rendering = true;
 		} else {
-			return 0; // must have a return value
+			return;
 		}
 	}
 	
@@ -193,7 +191,14 @@ export function armorStandPreAnimation() {
 		}
 	}
 	
-	v.hologram_dir = Math.mod(v.armor_stand_dir + v.hologram.rotation, 4);
+	if($[coordinateLockEnabled]) {
+		v.hologram.offset_x = -($[coordinateLockCoordsMolang[0]]) + q.position(0) - 0.5; // x in coordinates is opposite to x in geometry
+		v.hologram.offset_y = ($[coordinateLockCoordsMolang[1]]) - Math.floor(q.position(1));
+		v.hologram.offset_z = ($[coordinateLockCoordsMolang[2]]) - q.position(2) + 0.5;
+		v.hologram.rotation = 2 - Math.floor(q.body_y_rotation / 90);
+	} else {
+		v.hologram_dir = Math.mod(Math.floor(q.body_y_rotation / 90) + 2 + v.hologram.rotation, 4); // q.body_y_rotation goes from -180 to 180, hence the + 2
+	}
 	if(t.check_layer_validity) {
 		if(v.hologram.layer < -1) {
 			v.hologram.layer = v.hologram.structure_h - (v.hologram.layer_mode == $[singleLayerMode]? 1 : 2);
@@ -216,9 +221,9 @@ export function armorStandPreAnimation() {
 		if(v.hologram.structure_index >= v.hologram.structure_count) {
 			v.hologram.structure_index = 0;
 		}
-		v.hologram.structure_w = $[structureWMolang];
-		v.hologram.structure_h = $[structureHMolang];
-		v.hologram.structure_d = $[structureDMolang];
+		v.hologram.structure_w = $[structureSizesMolang[0]];
+		v.hologram.structure_h = $[structureSizesMolang[1]];
+		v.hologram.structure_d = $[structureSizesMolang[2]];
 		v.hologram.layer = -1;
 		v.hologram.validating = false;
 		v.hologram.show_wrong_block_overlay = false;
@@ -270,7 +275,7 @@ export function armorStandPreAnimation() {
 		}
 		if(v.hologram_backup_index == -1) { // none are empty, so overwrite the earliest backup
 			if(t.earliest_backup_index == -1) { // will only happen when the backup slot count is 0
-				return 0;
+				return;
 			}
 			v.hologram_backup_index = t.earliest_backup_index;
 		}
@@ -399,8 +404,9 @@ export function playerThirdPerson() {
  * Create a pseudo-enumeration using numbers.
  * @template {string[]} T
  * @param {[...T]} keys - An array of string literals to use as keys.
- * @returns {Record<T[number], number>}
+ * @returns {Readonly<{ [K in keyof T as (K extends `${number}`? T[K] : never)]: K extends `${infer N extends number}`? N : never }>}
  */
 function createNumericEnum(keys) {
+	// @ts-expect-error
 	return Object.freeze(Object.fromEntries(keys.map((key, i) => [key, i])));
 }

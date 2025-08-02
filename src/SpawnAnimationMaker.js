@@ -3,7 +3,7 @@ import { exp, max } from "./utils.js";
 export default class SpawnAnimationMaker {
 	config;
 	structureSize;
-	/** @type {Array<SpawnAnimationBone>} */
+	/** @type {SpawnAnimationBone[]} */
 	#animatedBones = [];
 	#totalAnimationLength = 0;
 	#randomness;
@@ -23,10 +23,9 @@ export default class SpawnAnimationMaker {
 	 * Adds a bone to the animation.
 	 * @param {string} boneName
 	 * @param {Vec3} blockPos
-	 * @param {Vec3} bonePos
 	 */
-	addBone(boneName, blockPos, bonePos) {
-		this.#animatedBones.push({ boneName, blockPos, bonePos });
+	addBone(boneName, blockPos) {
+		this.#animatedBones.push({ boneName, blockPos });
 	}
 	/**
 	 * Makes the animation and returns it.
@@ -37,9 +36,9 @@ export default class SpawnAnimationMaker {
 		let orderedRanking = this.#orderDelayRanking(delayRanking);
 		let delays = orderedRanking.map(order => this.#calculateDelay(order));
 		let bones = {};
-		this.#animatedBones.forEach(({ boneName, bonePos }, i) => {
+		this.#animatedBones.forEach(({ boneName }, i) => {
 			let delay = +delays[i].toFixed(2);
-			bones[boneName] = this.#makeBoneAnimation(delay, bonePos);
+			bones[boneName] = this.#makeBoneAnimation(delay);
 		});
 		return {
 			"animation_length": this.#totalAnimationLength,
@@ -58,8 +57,8 @@ export default class SpawnAnimationMaker {
 	}
 	/**
 	 * Sorts and condenses a ranking into a proper order. Returns each original rank's value in the new order.
-	 * @param {Array<number>} ranking E.g. [1, 5, 3, 5, 2, 8]
-	 * @returns {Array<number>} E.g. [0, 3, 2, 3, 1, 4]
+	 * @param {number[]} ranking E.g. [1, 5, 3, 5, 2, 8]
+	 * @returns {number[]} E.g. [0, 3, 2, 3, 1, 4]
 	 */
 	#orderDelayRanking(ranking) {
 		let offset = 0;
@@ -91,28 +90,22 @@ export default class SpawnAnimationMaker {
 	/**
 	 * Makes the animation for a single bone.
 	 * @param {number} delay
-	 * @param {Vec3} bonePos
 	 */
-	#makeBoneAnimation(delay, bonePos) {
+	#makeBoneAnimation(delay) {
 		let animationEnd = Number((delay + this.config.SPAWN_ANIMATION_LENGTH).toFixed(2));
 		this.#totalAnimationLength = max(this.#totalAnimationLength, animationEnd);
 		let keyframes = [0, 0.2, 0.4, 0.6, 0.8, 1]; // this is smooth enough
-		let positionOffset = [-bonePos[0] - 8, -bonePos[1], -bonePos[2] - 8]; // the offset to go back to [0, 0, 0] in the structure.
 		return {
 			"scale": this.#createAnimFromKeyframes(keyframe => {
 				let keyframeValue = +this.#animationTimingFunc(keyframe).toFixed(2); // TWO SIG FIGS
 				return [keyframeValue, keyframeValue, keyframeValue]; // has to be an array here...
-			}, keyframes, delay),
-			"position": this.#createAnimFromKeyframes(keyframe => positionOffset.map(x => {
-				let offset = x * (1 - this.#animationTimingFunc(keyframe)); // the coefficient means the offset transformation to the structure origin will decrease over time
-				return +offset.toFixed(2);
-			}), keyframes, delay)
+			}, keyframes, delay)
 		};
 	}
 	/**
 	 * Creates an animation from keyframes.
 	 * @param {(keyframe: number) => any} animFunc The function to be animated with keyframes
-	 * @param {Array<number>} keyframes
+	 * @param {number[]} keyframes
 	 * @param {number} delay
 	 * @returns {Record<string, number>}
 	 */

@@ -45,6 +45,18 @@ I also wonder if we could have a "rotation lock" option which makes the hologram
 				}
 			}
 		},
+		"animation.armor_stand.hologram.coordinate_lock": {
+			"loop": "hold_on_last_frame",
+			"bones": {
+				"hologram_offset_wrapper": {
+					"position": [
+						"(v.hologram_dir == 0? v.hologram.offset_x : (v.hologram_dir == 1? -v.hologram.offset_z : (v.hologram_dir == 2? -v.hologram.offset_x : v.hologram.offset_z)) + 1.5) * 16",
+						"v.hologram.offset_y * 16",
+						"(v.hologram_dir == 0? v.hologram.offset_z: (v.hologram_dir == 1? v.hologram.offset_x : (v.hologram_dir == 2? -v.hologram.offset_z : -v.hologram.offset_x)) + 1.5) * 16"
+					]
+				}
+			}
+		},
 		"animation.armor_stand.hologram.spawn": {}, // A fun spawning animation
 		"animation.armor_stand.hologram.wrong_block_overlay": {
 			"loop": "hold_on_last_frame",
