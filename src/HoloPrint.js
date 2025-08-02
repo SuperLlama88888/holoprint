@@ -259,7 +259,7 @@ export async function makePack(structureFiles, config, resourcePackStack, previe
 			let layerBone = {
 				"name": layerName,
 				"parent": "hologram_offset_wrapper",
-				"pivot": [8, y * 16, -8],
+				"pivot": [8, 0, -8],
 				"poly_mesh": polyMeshMaker.export()
 			};
 			geo["bones"].push(layerBone);
@@ -280,7 +280,7 @@ export async function makePack(structureFiles, config, resourcePackStack, previe
 		for(let y = 0; y < maxHeight; y++) {
 			if(!layerIsEmpty[y]) {
 				let layerName = `l_${y}`;
-				spawnAnimationMaker.addBone(layerName, [0, y, 0], [0, 16 * y, -16]);
+				spawnAnimationMaker.addBone(layerName, [0, y, 0]);
 			}
 		}
 		hologramAnimations["animations"]["animation.armor_stand.hologram.spawn"] = spawnAnimationMaker.makeAnimation();
@@ -1960,7 +1960,6 @@ function functionToMolang(func, vars = {}) {
  * @typedef {object} SpawnAnimationBone Information about a bone in the spawn animation.
  * @property {string} boneName
  * @property {Vec3} blockPos The block position (i.e. in-game blocks relative to the structure origin)
- * @property {Vec3} bonePos The bone position in the model (i.e. measured in geometry space pixels)
  */
 /**
  * @typedef {object} MinecraftAnimation A Minecraft animation as seen in `.animation.json` files.
