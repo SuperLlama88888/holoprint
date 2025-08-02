@@ -1,4 +1,4 @@
-import { dispatchInputEvents, flattenObject, html, max, measureText, onEvent, onEventAndNow, reduceProperties, selectEl, selectEls } from "../utils.js";
+import { dispatchInputEvents, flattenObject, html, measureText, onEvent, onEventAndNow, reduceProperties, selectEl, selectEls } from "../utils.js";
 
 /** A custom input with three number inputs which must be assigned to the x, y, and z slots. */
 export default class Vec3Input extends HTMLElement {
