@@ -98,7 +98,12 @@ export async function makePack(structureFiles, config, resourcePackStack, previe
 		_1: "textures/particle/save_icon.png",
 		itemTexture: config.RETEXTURE_CONTROL_ITEMS? "textures/item_texture.json" : undefined,
 		terrainTexture: config.RETEXTURE_CONTROL_ITEMS? "textures/terrain_texture.json" : undefined,
-		hudScreenUI: config.MATERIAL_LIST_ENABLED? "ui/hud_screen.json" : undefined,
+		...(config.MATERIAL_LIST_ENABLED? {
+			$3: "ui/_ui_defs.json",
+			$4: "ui/hud_screen.json",
+			materialListUI: "ui/holoprint_material_list.json",
+			$5: "ui/holoprint_keybinds.json"
+		} : {}),
 		_2: "font/glyph_E2.png",
 		languagesDotJson: "texts/languages.json"
 	});
@@ -176,7 +181,7 @@ export async function makePack(structureFiles, config, resourcePackStack, previe
 	let polyMeshTemplatePalette = unresolvedPolyMeshTemplatePalette.map(polyMeshTemplate => BlockGeoMaker.resolveTemplateFaceUvs(polyMeshTemplate, textureAtlas));
 	console.log("Poly mesh template palette with resolved UVs:", polyMeshTemplatePalette);
 	
-	let { manifest, hologramRenderControllers, hologramGeo, hologramAnimationControllers, hologramAnimations, blockValidationParticle, singleWhitePixelTexture, hudScreenUI } = await packTemplatePromise.allValues;
+	let { manifest, hologramRenderControllers, hologramGeo, hologramAnimationControllers, hologramAnimations, blockValidationParticle, singleWhitePixelTexture, materialListUI } = await packTemplatePromise.allValues;
 	
 	let structureGeoTemplate = hologramGeo["minecraft:geometry"][0];
 	hologramGeo["minecraft:geometry"].splice(0, 1);
@@ -391,7 +396,7 @@ export async function makePack(structureFiles, config, resourcePackStack, previe
 	// console.log(partitionedBlockCounts);
 	let highestItemCount;
 	if(config.MATERIAL_LIST_ENABLED) {
-		addMaterialListUI(exportedMaterialListEnglish, hudScreenUI, bedrockMetadata.blocks);
+		addMaterialListUI(exportedMaterialListEnglish, materialListUI, bedrockMetadata.blocks);
 		highestItemCount = max(...exportedMaterialListEnglish.map(({ count }) => count));
 	}
 	
@@ -1232,15 +1237,15 @@ function patchRenderControllers(renderControllers, patches) {
 	};
 }
 /**
- * Adds the material list to the `hud_screen.json` UI file.
+ * Adds the material list to the `holoprint_material_list.json` UI file.
  * @param {MaterialListEntry[]} finalisedMaterialList
- * @param {object} hudScreenUI
+ * @param {object} materialListUI
  * @param {object} blockMetadata
  */
-function addMaterialListUI(finalisedMaterialList, hudScreenUI, blockMetadata) {
+function addMaterialListUI(finalisedMaterialList, materialListUI, blockMetadata) {
 	let missingItemAux = blockMetadata["data_items"].find(block => block.name == "minecraft:reserved6")?.["raw_id"] ?? 0;
-	hudScreenUI["material_list_entries"]["controls"].push(...finalisedMaterialList.map(({ translationKey, partitionedCount, auxId }, i) => ({
-		[`material_list_${i}@hud.material_list_entry`]: {
+	materialListUI["material_list_entries"]["controls"].push(...finalisedMaterialList.map(({ translationKey, partitionedCount, auxId }, i) => ({
+		[`material_list_${i}@holoprint:material_list.material_list_entry`]: {
 			"$item_translation_key": translationKey,
 			"$item_count": partitionedCount,
 			"$item_id_aux": auxId ?? missingItemAux,
@@ -1250,11 +1255,11 @@ function addMaterialListUI(finalisedMaterialList, hudScreenUI, blockMetadata) {
 	let longestItemNameLength = max(...finalisedMaterialList.map(({ translatedName }) => translatedName.length));
 	let longestCountLength = max(...finalisedMaterialList.map(({ partitionedCount }) => partitionedCount.length));
 	if(longestItemNameLength + longestCountLength >= 43) {
-		hudScreenUI["material_list"]["size"][0] = "50%"; // up from 40%
-		hudScreenUI["material_list"]["max_size"][0] = "50%";
+		materialListUI["material_list"]["size"][0] = "50%"; // up from 40%
+		materialListUI["material_list"]["max_size"][0] = "50%";
 	}
-	hudScreenUI["material_list"]["size"][1] = finalisedMaterialList.length * 12 + 12; // 12px for each item + 12px for the heading
-	hudScreenUI["material_list_entry"]["controls"][0]["content"]["controls"][3]["item_name"]["size"][0] += `${round(longestCountLength * 4.2 + 10)}px`;
+	materialListUI["material_list"]["size"][1] = finalisedMaterialList.length * 12 + 12; // 12px for each item + 12px for the heading
+	materialListUI["material_list_entry"]["controls"][0]["content"]["controls"][3]["item_name"]["size"][0] += `${round(longestCountLength * 4.2 + 10)}px`;
 }
 /**
  * Translates control items by making a fake material list.

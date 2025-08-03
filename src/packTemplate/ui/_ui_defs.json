@@ -1,0 +1,6 @@
+{
+	"ui_defs": [
+		"ui/holoprint_material_list.json",
+		"ui/holoprint_keybinds.json"
+	]
+}
