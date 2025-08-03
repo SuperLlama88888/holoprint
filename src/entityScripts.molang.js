@@ -50,6 +50,10 @@ export function armorStandPreAnimation() {
 			t.ui_action = $[ACTIONS.DECREASE_LAYER];
 		} else if(q.is_item_name_any("slot.weapon.offhand", "minecraft:grass_block")) {
 			t.ui_action = $[ACTIONS.INCREASE_LAYER];
+		} else if(q.is_item_name_any("slot.weapon.offhand", "minecraft:dirt")) {
+			t.ui_action = $[ACTIONS.TOGGLE_RENDERING];
+		} else if(q.is_item_name_any("slot.weapon.offhand", "minecraft:cobblestone")) {
+			t.ui_action = $[ACTIONS.INCREASE_OPACITY];
 		} else {
 			return;
 		}
