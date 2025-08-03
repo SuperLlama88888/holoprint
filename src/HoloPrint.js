@@ -76,14 +76,6 @@ export async function makePack(structureFiles, config, resourcePackStack, previe
 	let packName = config.PACK_NAME ?? getDefaultPackName(structureFiles);
 	
 	// Make the pack
-	let packTemplateFiles = ["manifest.json", "render_controllers/armor_stand.hologram.render_controllers.json", "models/entity/armor_stand.hologram.geo.json", "materials/entity.material", "animation_controllers/armor_stand.hologram.animation_controllers.json", "animations/armor_stand.hologram.animation.json", "particles/bounding_box_outline.json", "particles/block_validation.json", "particles/saving_backup.json", "textures/particle/single_white_pixel.png", "textures/particle/exclamation_mark.png", "textures/particle/save_icon.png", "font/glyph_E2.png", "texts/languages.json"];
-	if(config.RETEXTURE_CONTROL_ITEMS) {
-		packTemplateFiles.push("textures/item_texture.json", "textures/terrain_texture.json");
-	}
-	if(config.MATERIAL_LIST_ENABLED) {
-		packTemplateFiles.push("ui/hud_screen.json");
-	}
-	
 	/** @type {[PathToData<"textureAtlasMappings", Data.TextureAtlasMappings>, PathToData<"blockShapes", Data.BlockShapes>, PathToData<"blockShapeGeos", Data.BlockShapeGeos>, PathToData<"blockStateDefinitions", Data.BlockStateDefinitions>, PathToData<"blockEigenvariants", Data.BlockEigenvariants>, PathToData<"materialListMappings", Data.MaterialListMappings>, PathToData<"itemIcons", Data.ItemIcons>]} */
 	// @ts-expect-error
 	let dataFileNames = ["textureAtlasMappings", "blockShapes", "blockShapeGeos", "blockStateDefinitions", "blockEigenvariants", "materialListMappings"];
@@ -95,19 +87,19 @@ export async function makePack(structureFiles, config, resourcePackStack, previe
 		manifest: "manifest.json",
 		hologramRenderControllers: "render_controllers/armor_stand.hologram.render_controllers.json",
 		hologramGeo: "models/entity/armor_stand.hologram.geo.json", // this is where we put all the ghost blocks
-		hologramMaterial: "materials/entity.material",
+		$0: "materials/entity.material",
 		hologramAnimationControllers: "animation_controllers/armor_stand.hologram.animation_controllers.json",
 		hologramAnimations: "animations/armor_stand.hologram.animation.json",
-		boundingBoxOutlineParticle: "particles/bounding_box_outline.json",
+		$1: "particles/bounding_box_outline.json",
 		blockValidationParticle: "particles/block_validation.json",
-		savingBackupParticle: "particles/saving_backup.json",
+		$2: "particles/saving_backup.json",
 		singleWhitePixelTexture: "textures/particle/single_white_pixel.png",
-		exclamationMarkTexture: "textures/particle/exclamation_mark.png",
-		saveIconTexture: "textures/particle/save_icon.png",
+		_0: "textures/particle/exclamation_mark.png",
+		_1: "textures/particle/save_icon.png",
 		itemTexture: config.RETEXTURE_CONTROL_ITEMS? "textures/item_texture.json" : undefined,
 		terrainTexture: config.RETEXTURE_CONTROL_ITEMS? "textures/terrain_texture.json" : undefined,
 		hudScreenUI: config.MATERIAL_LIST_ENABLED? "ui/hud_screen.json" : undefined,
-		customEmojiFont: "font/glyph_E2.png",
+		_2: "font/glyph_E2.png",
 		languagesDotJson: "texts/languages.json"
 	});
 	let resourcesPromise = loadResources({
@@ -135,19 +127,20 @@ export async function makePack(structureFiles, config, resourcePackStack, previe
 		})
 	});
 	let resourceLangFilesPromise = loadResources(Object.fromEntries(languagesDotJson.map(language => [language, `texts/${language}.lang`])), resourcePackStack);
-	let packTemplateLangFilesPromise = loadPackTemplate(Object.fromEntries(languagesDotJson.map(language => [language, `texts/${language}.lang`]))).all;
+	let packTemplateLangFilesPromise = loadPackTemplate(Object.fromEntries(languagesDotJson.map(language => [language, `texts/${language}.lang`]))).allValues;
 	let translationLanguagesLoadingPromise;
 	if(controlsHaveBeenCustomised || config.RENAME_CONTROL_ITEMS) {
 		translationLanguagesLoadingPromise = Promise.all(languagesDotJson.map(language => loadTranslationLanguage(language)));
 	}
+	/** @type {[string, Blob][]} */
 	let controlItemTextures = [];
 	let hasModifiedTerrainTexture = false;
 	let retexturingControlItemsPromise;
-		if(config.RETEXTURE_CONTROL_ITEMS) {
-			retexturingControlItemsPromise = itemTagsPromise.then(async itemTags => {
-				({ controlItemTextures, hasModifiedTerrainTexture } = await retextureControlItems(config, await dataPromise.itemIcons, itemTags, await resourcesPromise.resourceItemTexture, await resourcesPromise.blocksDotJson, await resourcesPromise.vanillaTerrainTexture, await pmmpBedrockDataFetcherPromise, resourcePackStack, await packTemplatePromise.itemTexture, await packTemplatePromise.terrainTexture));
-			});
-		}
+	if(config.RETEXTURE_CONTROL_ITEMS) {
+		retexturingControlItemsPromise = itemTagsPromise.then(async itemTags => {
+			({ controlItemTextures, hasModifiedTerrainTexture } = await retextureControlItems(config, await dataPromise.itemIcons, itemTags, await resourcesPromise.resourceItemTexture, await resourcesPromise.blocksDotJson, await resourcesPromise.vanillaTerrainTexture, await pmmpBedrockDataFetcherPromise, resourcePackStack, await packTemplatePromise.itemTexture, await packTemplatePromise.terrainTexture));
+		});
+	}
 	let packIcon = config.PACK_ICON_BLOB ?? await makePackIcon(concatenateFiles(structureFiles));
 	
 	let structures = nbts.map(nbt => nbt["structure"]);
@@ -172,7 +165,7 @@ export async function makePack(structureFiles, config, resourcePackStack, previe
 	console.log("Block geo maker:", blockGeoMaker);
 	console.log("Poly mesh template palette:", structuredClone(unresolvedPolyMeshTemplatePalette));
 	
-	let { entityFile, defaultPlayerRenderControllers, blocksDotJson, vanillaTerrainTexture, flipbookTextures } = await resourcesPromise.all;
+	let { entityFile, defaultPlayerRenderControllers, blocksDotJson, vanillaTerrainTexture, flipbookTextures } = await resourcesPromise.allValues;
 	let textureAtlas = new TextureAtlas(config, resourcePackStack, blocksDotJson, vanillaTerrainTexture, flipbookTextures, data.textureAtlasMappings);
 	let textureRefs = Array.from(blockGeoMaker.textureRefs);
 	await textureAtlas.makeAtlas(textureRefs); // each texture reference will get added to the textureUvs array property
@@ -183,7 +176,7 @@ export async function makePack(structureFiles, config, resourcePackStack, previe
 	let polyMeshTemplatePalette = unresolvedPolyMeshTemplatePalette.map(polyMeshTemplate => BlockGeoMaker.resolveTemplateFaceUvs(polyMeshTemplate, textureAtlas));
 	console.log("Poly mesh template palette with resolved UVs:", polyMeshTemplatePalette);
 	
-	let { manifest, hologramRenderControllers, hologramGeo, hologramMaterial, hologramAnimationControllers, hologramAnimations, boundingBoxOutlineParticle, blockValidationParticle, savingBackupParticle, singleWhitePixelTexture, exclamationMarkTexture, saveIconTexture, itemTexture, hudScreenUI, customEmojiFont, terrainTexture } = await packTemplatePromise.all;
+	let { manifest, hologramRenderControllers, hologramGeo, hologramAnimationControllers, hologramAnimations, blockValidationParticle, singleWhitePixelTexture, hudScreenUI } = await packTemplatePromise.allValues;
 	
 	let structureGeoTemplate = hologramGeo["minecraft:geometry"][0];
 	hologramGeo["minecraft:geometry"].splice(0, 1);
@@ -387,7 +380,7 @@ export async function makePack(structureFiles, config, resourcePackStack, previe
 	let playerRenderControllers = defaultPlayerRenderControllers && addPlayerControlsToRenderControllers(config, defaultPlayerRenderControllers);
 	
 	console.log("Block counts map:", materialList.materials);
-	let resourceLangFiles = await resourceLangFilesPromise.all;
+	let resourceLangFiles = await resourceLangFilesPromise.allValues;
 	let exportedMaterialLists = Object.fromEntries(languagesDotJson.map(language => {
 		materialList.setLanguage(resourceLangFiles[language]); // we could make the material list export to multiple languages simultaneously, but I'm assuming here that there could be gaps between language files so they have to be done separately (for whatever reason... maybe international relations deteriorate and they refuse to translate the new update to Chinese... idk)
 		return [language, materialList.export()];
@@ -438,71 +431,71 @@ export async function makePack(structureFiles, config, resourcePackStack, previe
 	
 	console.info("Finished making all pack files!");
 	
-	let packFiles = [];
+	const zipComment = Symbol("add comment to file entries");
+	let packFiles = await packTemplatePromise.allEntries;
 	if(structureFiles.length == 1) {
-		packFiles.push([".mcstructure", structureFiles[0], structureFiles[0].name]);
+		structureFiles[0][zipComment] = structureFiles[0].name;
+		packFiles[".mcstructure"] = structureFiles[0];
 	} else {
-		packFiles.push(...structureFiles.map((structureFile, i) => [`${i}.mcstructure`, structureFile, structureFile.name]));
+		structureFiles.forEach((structureFile, i) => {
+			structureFile[zipComment] = structureFile.name;
+			packFiles[`${i}.mcstructure`] = structureFile;
+		});
 	}
-	packFiles.push(["manifest.json", JSON.stringify(manifest)]);
-	packFiles.push(["pack_icon.png", packIcon]);
-	packFiles.push(["entity/armor_stand.entity.json", JSON.stringify(entityFile).replaceAll("HOLOGRAM_INITIAL_ACTIVATION", "true")]);
-	packFiles.push(["subpacks/punch_to_activate/entity/armor_stand.entity.json", JSON.stringify(entityFile).replaceAll("HOLOGRAM_INITIAL_ACTIVATION", "false")]);
-	packFiles.push(["render_controllers/armor_stand.hologram.render_controllers.json", JSON.stringify(hologramRenderControllers)]);
+	packFiles["pack_icon.png"] = packIcon;
+	let entityFileJson = JSON.stringify(entityFile);
+	packFiles["entity/armor_stand.entity.json"] = entityFileJson.replaceAll("HOLOGRAM_INITIAL_ACTIVATION", "true");
+	packFiles["subpacks/punch_to_activate/entity/armor_stand.entity.json"] = entityFileJson.replaceAll("HOLOGRAM_INITIAL_ACTIVATION", "false");
 	if(config.PLAYER_CONTROLS_ENABLED) {
-		packFiles.push(["render_controllers/player.render_controllers.json", JSON.stringify(playerRenderControllers)]);
+		packFiles["render_controllers/player.render_controllers.json"] = playerRenderControllers;
 	}
-	packFiles.push(["models/entity/armor_stand.hologram.geo.json", JSON.stringify(hologramGeo)]);
-	packFiles.push(["materials/entity.material", JSON.stringify(hologramMaterial)]);
-	packFiles.push(["animation_controllers/armor_stand.hologram.animation_controllers.json", JSON.stringify(hologramAnimationControllers)]);
-	packFiles.push(["particles/bounding_box_outline.json", JSON.stringify(boundingBoxOutlineParticle)]);
+	delete packFiles["particles/block_validation.json"]; // this one is only a template, used below
 	uniqueBlocksToValidate.forEach(blockName => {
 		let particleName = `validate_${blockName.replace(":", ".")}`; // file names can't have : in them
 		let particle = structuredClone(blockValidationParticle);
 		particle["particle_effect"]["description"]["identifier"] = `holoprint:${particleName}`;
 		particle["particle_effect"]["components"]["minecraft:particle_expire_if_in_blocks"] = [blockName.includes(":")? blockName : `minecraft:${blockName}`]; // add back minecraft: namespace if it's missing
-		packFiles.push([`particles/${particleName}.json`, JSON.stringify(particle)]);
+		packFiles[`particles/${particleName}.json`] = particle;
 	});
-	packFiles.push(["particles/saving_backup.json", JSON.stringify(savingBackupParticle)]);
-	packFiles.push(["textures/particle/single_white_pixel.png", await toBlob(singleWhitePixelTexture)]);
-	packFiles.push(["textures/particle/exclamation_mark.png", await toBlob(exclamationMarkTexture)]);
-	packFiles.push(["textures/particle/save_icon.png", await toBlob(saveIconTexture)]);
-	packFiles.push(["textures/entity/overlay.png", await toBlob(overlayTexture)]);
-	packFiles.push(["animations/armor_stand.hologram.animation.json", JSON.stringify(hologramAnimations)]);
+	packFiles["textures/entity/overlay.png"] = overlayTexture;
 	textureBlobs.forEach(([textureName, blob]) => {
-		packFiles.push([`textures/entity/${textureName}.png`, blob]);
+		packFiles[`textures/entity/${textureName}.png`] = blob;
 	});
 	if(config.RETEXTURE_CONTROL_ITEMS) {
-		packFiles.push(["textures/item_texture.json", JSON.stringify(itemTexture)]);
-		if(hasModifiedTerrainTexture) {
-			packFiles.push(["textures/terrain_texture.json", JSON.stringify(terrainTexture)]);
+		if(!hasModifiedTerrainTexture) {
+			delete packFiles["textures/terrain_texture.json"];
 		}
-		packFiles.push(...controlItemTextures);
+		controlItemTextures.forEach(([fileName, imageBlob]) => {
+			packFiles[fileName] = imageBlob;
+		});
 	}
-	if(config.MATERIAL_LIST_ENABLED) {
-		packFiles.push(["ui/hud_screen.json", JSON.stringify(hudScreenUI)]);
-		if(highestItemCount >= 1728) {
-			packFiles.push(["font/glyph_E2.png", await toBlob(customEmojiFont)]);
-		}
+	if(config.MATERIAL_LIST_ENABLED && highestItemCount < 1728) {
+		delete packFiles["font/glyph_E2.png"];
 	}
-	packFiles.push(["texts/languages.json", JSON.stringify(languagesDotJson)]);
 	langFiles.forEach(([language, langFile]) => {
-		packFiles.push([`texts/${language}.lang`, langFile]);
+		packFiles[`texts/${language}.lang`] = langFile;
 	});
+	console.log(packFiles)
 	
 	let packFileWriter = new BlobWriter();
 	let zipWriter = new ZipWriter(packFileWriter);
-	await Promise.all(packFiles.map(([fileName, fileContents, comment]) => {
+	await Promise.all(Object.entries(packFiles).map(async ([fileName, fileContents]) => {
+		let comment = fileContents[zipComment];
 		/** @type {ZipWriterAddDataOptions} */
 		let options = {
 			comment,
 			level: config.COMPRESSION_LEVEL
 		};
+		if(fileContents instanceof HTMLImageElement) {
+			fileContents = await toBlob(fileContents);
+		}
 		if(fileContents instanceof Blob) {
 			return zipWriter.add(fileName, new BlobReader(fileContents), options);
-		} else {
-			return zipWriter.add(fileName, new TextReader(fileContents), options);
 		}
+		if(typeof fileContents == "object") {
+			fileContents = JSON.stringify(fileContents)
+		}
+		return zipWriter.add(fileName, new TextReader(fileContents), options);
 	}));
 	let zippedPack = await zipWriter.close();
 	
@@ -762,7 +755,8 @@ function getInvalidMcstructureErrorMessage(structureFile, nbt) {
 }
 /**
  * @template {string} F
- * @typedef {F extends `${string}.json` | `${string}.material`? object : F extends `${string}.lang`? string : F extends `${string}.png`? HTMLImageElement : never} GetFileType
+ * @template {string} [N = ""]
+ * @typedef {N extends `_${string}`? Blob : F extends `${string}.json` | `${string}.material`? object : F extends `${string}.lang`? string : F extends `${string}.png`? HTMLImageElement : never} GetFileType
  */
 /**
  * @template {Record<string, string>} T
@@ -784,15 +778,16 @@ function loadResources(resourceFiles, resourcePackStack) {
  * @template {Record<string, string>} T
  * @param {{ [K in keyof T]: T[K] }} fileNamesAndPaths
  * @param {(filePath: string) => Promise<Response>} fetchFunc
- * @returns {{ [K in keyof T]: Promise<GetFileType<T[K]>>} & { all: Promise<{ [K in keyof T]: GetFileType<T[K]> }> }}
+ * @returns {{ [K in keyof T]: Promise<GetFileType<T[K], K>> } & { allValues: Promise<{ [K in keyof T]: GetFileType<T[K], K> }>, allEntries: Promise<{ [K in keyof T as T[K]]: GetFileType<T[K], K> }> }}
  */
 function multiload(fileNamesAndPaths, fetchFunc) {
 	let entries = Object.entries(fileNamesAndPaths).filter(([, path]) => path);
-	let contents = Object.fromEntries(entries.map(([name, path]) => [name, getResponseContents(fetchFunc(path), path)]));
+	let contents = Object.fromEntries(entries.map(([name, path]) => [name, getResponseContents(fetchFunc(path), path, name.startsWith("_"))]));
 	// @ts-ignore
 	return {
 		...contents,
-		all: awaitAllEntries(contents)
+		allValues: awaitAllEntries(contents),
+		allEntries: Promise.all(entries.map(async ([name, path]) => [path, await contents[name]])).then(res => Object.fromEntries(res))
 	};
 }
 /**
@@ -824,14 +819,20 @@ async function loadBedrockMetadataFiles(files) {
 /**
  * Gets the contents of a response based on the requested file extension (e.g. object from .json, image from .png, etc.).
  * @template {string} T
+ * @template {boolean} B
  * @param {Promise<Response>} resPromise
  * @param {T} filePath
- * @returns {Promise<GetFileType<T>>}
+ * @param {B} [rawBlob] Whether to return a Blob instead of converting to a more usable object.
+ * @returns {Promise<B extends true? Blob : GetFileType<T>>}
  */
-async function getResponseContents(resPromise, filePath) {
+async function getResponseContents(resPromise, filePath, rawBlob) {
 	let res = await resPromise;
 	if(res.status >= 400) {
 		throw new Error(`HTTP error ${res.status} for ${res.url}`);
+	}
+	if(rawBlob) {
+		// @ts-expect-error
+		return await res.blob();
 	}
 	let fileExtension = getFileExtension(filePath);
 	switch(fileExtension) {
