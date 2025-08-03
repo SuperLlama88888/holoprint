@@ -1,4 +1,22 @@
 {
 	"mc-color.prefixes": ["§"],
-	"quick-lint-js.snarky": true
+	"quick-lint-js.snarky": true,
+	"json.schemas": [
+		{
+			"url": "https://kalmemarq.github.io/Bugrock-JSON-UI-Schemas/ui.schema.json",
+			"fileMatch": ["*.ui.json", "*.uidx", "ui/**/*.json", "!_global_variables.json", "!_ui_defs.json", "!/textures/**/*.json"]
+		},
+		{
+			"url": "https://kalmemarq.github.io/Bugrock-JSON-UI-Schemas/ui.sprite.schema.json",
+			"fileMatch": ["textures/**/*.json", "!flame_atlas.texture_set.json", "!flipbook_textures.json", "!item_texture.json", "!terrain_texture.json", "!texture_list.json"]
+		},
+		{
+			"url": "https://kalmemarq.github.io/Bugrock-JSON-UI-Schemas/ui_defs.schema.json",
+			"fileMatch": ["ui/_ui_defs.json"]
+		},
+		{
+			"url": "https://kalmemarq.github.io/Bugrock-JSON-UI-Schemas/global_variables.schema.json",
+			"fileMatch": ["ui/_global_variables.json"]
+		}
+	]
 }

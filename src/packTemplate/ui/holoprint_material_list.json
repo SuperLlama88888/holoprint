@@ -1,0 +1,201 @@
+{
+	"namespace": "holoprint:material_list",
+	
+	"material_list_touch_toggle_input_panel": {
+		"type": "input_panel",
+		"anchor_from": "top_left",
+		"anchor_to": "top_left",
+		"offset": [0, 74],
+		"size": [29.23, 20],
+		"layer": 32,
+		"prevent_touch_input": true,
+		"bindings": [
+			{
+				"binding_name": "#inventory_touch_button", // #using_touch didn't work
+				"binding_name_override": "#visible"
+			}
+		],
+		"controls": [
+			{
+				"material_list_touch_toggle@common_toggles.light_content_toggle": {
+					"$toggle_name": "material_list_touch_toggle",
+					"$button_content": "holoprint:material_list.material_list_touch_toggle_image",
+					"$toggle_view_binding_name": "material_list_toggle",
+					"$default_border_visible": false,
+					"$hover_border_visible": false,
+					"$pressed_texture": "textures/ui/button_borderless_light",
+					"$pressed_no_hover_texture": "textures/ui/button_borderless_lightpressednohover",
+					"anchor_from": "top_left",
+					"anchor_to": "top_left",
+					"bindings": [
+						{
+							"binding_name": "#hud_visible",
+							"binding_name_override": "#visible",
+							"binding_type": "global"
+						}
+					]
+				}
+			}
+		]
+	},
+	"material_list_touch_toggle_image": {
+		"type": "image",
+		"texture": "textures/ui/recipe_book_icon"
+	},
+	"material_list_wrapper": {
+		"type": "panel",
+		"anchor_from": "top_middle",
+		"anchor_to": "top_middle",
+		"offset": [0, 23],
+		"layer": 50,
+		"controls": [
+			{
+				"material_list@holoprint:material_list.material_list": {}
+			}
+		]
+	},
+	"material_list": {
+		"type": "image",
+		"size": ["40%", "this gets put in by the JS"],
+		"max_size": ["40%", "100% - 84px"],
+		"texture": "textures/ui/White",
+		"color": [0, 0, 0],
+		"alpha": 0.5,
+		"layer": 10,
+		"anchor_from": "top_middle",
+		"anchor_to": "top_middle",
+		"controls": [
+			{
+				"material_list_heading@holoprint:material_list.material_list_heading": {}
+			},
+			{
+				"material_list_scrolling_input_panel": {
+					"type": "input_panel",
+					"prevent_touch_input": true,
+					"controls": [
+						{
+							"material_list_scrolling_panel@common.scrolling_panel": {
+								"anchor_from": "bottom_middle",
+								"anchor_to": "bottom_middle",
+								"size": ["100%", "100% - 12px"],
+								"$show_background": false,
+								"$scrolling_content": "holoprint:material_list.material_list_entries",
+								"$always_handle_scrolling": true
+							}
+						}
+					]
+				}
+			}
+		],
+		"bindings": [
+			{
+				"binding_name": "#hud_visible",
+				"binding_name_override": "#visible",
+				"binding_type": "global"
+			}
+		]
+	},
+	"material_list_heading": {
+		"type": "image",
+		"anchor_from": "top_middle",
+		"anchor_to": "top_middle",
+		"size": ["100%", 12],
+		"texture": "textures/ui/White",
+		"color": [0, 0, 0],
+		"alpha": 0.2,
+		"controls": [
+			{
+				"book_icon": {
+					"type": "image",
+					"offset": [1, 0],
+					"size": [14.62, 10],
+					"anchor_from": "left_middle",
+					"anchor_to": "left_middle",
+					// "texture": "textures/ui/creative_icon"
+					"texture": "textures/ui/recipe_book_icon"
+				}
+			},
+			{
+				"pack_name": {
+					"type": "label",
+					"size": ["100% - 18px", 10],
+					"text": "holoprint.material_list.heading",
+					"localize": true,
+					"anchor_from": "right_middle",
+					"anchor_to": "right_middle"
+				}
+			}
+		]
+	},
+	"material_list_entries": {
+		"type": "stack_panel",
+		"orientation": "vertical",
+		"anchor_to": "top_left",
+		"anchor_from": "top_left",
+		"controls": []
+	},
+	"material_list_entry": {
+		"type": "image",
+		"size": ["100%", 12],
+		"texture": "textures/ui/White",
+		"color": [0, 0, 0],
+		"$background_opacity|default": 0,
+		"alpha": "$background_opacity",
+		"layer": 100,
+		"controls": [
+			{
+				"content": {
+					"type": "stack_panel",
+					"orientation": "horizontal",
+					"size": ["100%", "100%"],
+					"offset": [0, 1],
+					"layer": 101,
+					"controls": [
+						{
+							"padding_1": {
+								"type": "panel",
+								"size": [1, 0]
+							}
+						},
+						{
+							"item_icon": {
+								"type": "custom",
+								"renderer": "inventory_item_renderer",
+								"property_bag": {
+									"#item_id_aux": "$item_id_aux"
+								},
+								"size": [10, 10],
+								"anchor_from": "top_left",
+								"anchor_to": "top_left"
+							}
+						},
+						{
+							"padding_2": {
+								"type": "panel",
+								"size": [2, 0]
+							}
+						},
+						{
+							"item_name": {
+								"type": "label",
+								"text": "$item_translation_key",
+								"localize": true,
+								"size": ["100% - 13px - ", 10], // space left for item count is put in by the JS
+								"font_scale_factor": 0.8
+							}
+						},
+						{
+							"item_count": {
+								"type": "label",
+								"text": "$item_count",
+								"size": ["fill", 10],
+								// "text_alignment": "right",
+								"font_scale_factor": 0.8
+							}
+						}
+					]
+				}
+			}
+		]
+	}
+}
