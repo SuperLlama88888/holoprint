@@ -59,124 +59,65 @@
 						}
 					},
 					{
-						"material_list_tab_button": {
-							"type": "button",
-							"size": ["100%", "100%"],
-							"default_control": "default",
-							"hover_control": "hover",
-							"pressed_control": "pressed",
-							"button_mappings": [
-								{
-									"from_button_id": "button.scoreboard", // tab key
-									"to_button_id": "button.dummy",
-									"mapping_type": "global"
-								}
-							],
-							"controls": [
-								{
-									"default": {
-										"type": "input_panel",
-										"button_mappings": [
-											{
-												"from_button_id": "button.inventory_left",
-												"to_button_id": "button.hotbar_inventory_left",
-												"mapping_type": "global"
-											},
-											{
-												"from_button_id": "button.inventory_right",
-												"to_button_id": "button.hotbar_inventory_right",
-												"mapping_type": "global"
-											}
-										]
-									}
-								},
-								{
-									"hover": {
-										"type": "input_panel",
-										"button_mappings": [
-											{
-												"from_button_id": "button.inventory_left",
-												"to_button_id": "button.hotbar_inventory_left",
-												"mapping_type": "global"
-											},
-											{
-												"from_button_id": "button.inventory_right",
-												"to_button_id": "button.hotbar_inventory_right",
-												"mapping_type": "global"
-											}
-										]
-									}
-								},
-								{
-									"pressed": {
-										"type": "panel",
-										"controls": [
-											{
-												"material_list_wrapper@hud.material_list_wrapper": {}
-											}
-										]
-									}
-								}
-							]
+						"material_list_tab_button@keyboard_trigger": {
+							"$button_name": "button.scoreboard", // tab key
+							"$content": "hud.material_list_wrapper",
+							"$off_content": "hotbar_scroll_keybinds"
 						}
 					},
 					{
-						"decrease_layer_button": {
-							"type": "button",
-							"size": ["100%", "100%"],
-							"pressed_control": "pressed",
-							"button_mappings": [
-								{
-									"from_button_id": "button.arrow_down",
-									"to_button_id": "button.dummy",
-									"mapping_type": "global"
-								}
-							],
-							"controls": [
-								{
-									"pressed": {
-										"type": "panel",
-										"controls": [
-											{
-												"move_down_trigger@armor_stand_holding_item": {
-													"$item_id_aux": 65536 // stone
-												}
-											}
-										]
-									}
-								}
-							]
+						"decrease_layer_button@keyboard_trigger": {
+							"$button_name": "button.arrow_down",
+							"$content": "invis_armor_stand_holding_item",
+							"$armor_stand_item_id": 1 // stone
 						}
 					},
 					{
-						"increase_layer_button": {
-							"type": "button",
-							"size": ["100%", "100%"],
-							"pressed_control": "pressed",
-							"button_mappings": [
-								{
-									"from_button_id": "button.arrow_up",
-									"to_button_id": "button.dummy",
-									"mapping_type": "global"
-								}
-							],
-							"controls": [
-								{
-									"pressed": {
-										"type": "panel",
-										"controls": [
-											{
-												"move_up_trigger@armor_stand_holding_item": {
-													"$item_id_aux": 131072 // grass block
-												}
-											}
-										]
-									}
-								}
-							]
+						"increase_layer_button@keyboard_trigger": {
+							"$button_name": "button.arrow_up",
+							"$content": "invis_armor_stand_holding_item",
+							"$armor_stand_item_id": 2 // grass block
 						}
 					}
 				]
+			}
+		]
+	},
+	"keyboard_trigger": {
+		"type": "button",
+		"size": ["100%", "100%"],
+		"pressed_control": "pressed",
+		"default_control": "off",
+		"hover_control": "off",
+		"button_mappings": [
+			{
+				"from_button_id": "$button_name",
+				"to_button_id": "button.dummy",
+				"mapping_type": "global"
+			}
+		],
+		"$off_content|default": "common.empty_panel",
+		"controls": [
+			{
+				"pressed@$content": {}
+			},
+			{
+				"off@$off_content": {}
+			}
+		]
+	},
+	"hotbar_scroll_keybinds": {
+		"type": "input_panel",
+		"button_mappings": [
+			{
+				"from_button_id": "button.inventory_left",
+				"to_button_id": "button.hotbar_inventory_left",
+				"mapping_type": "global"
+			},
+			{
+				"from_button_id": "button.inventory_right",
+				"to_button_id": "button.hotbar_inventory_right",
+				"mapping_type": "global"
 			}
 		]
 	},
@@ -339,12 +280,12 @@
 			}
 		]
 	},
-	"armor_stand_holding_item": {
+	"invis_armor_stand_holding_item": {
 		"type": "custom",
 		"renderer": "equipment_preview_renderer", // used in smithing tables to render armour stands
 		"size": [0, 0],
 		"property_bag": {
-			"#item_id_aux": "$item_id_aux" // set the armour stand's (offhand) item
+			"#item_id_aux": "($armor_stand_item_id * 65536)" // set the armour stand's (offhand) item
 		}
 	},
 	"hud_screen": {
