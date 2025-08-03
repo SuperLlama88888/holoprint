@@ -1243,7 +1243,7 @@ function addMaterialListUI(finalisedMaterialList, hudScreenUI, blockMetadata) {
 			"$item_translation_key": translationKey,
 			"$item_count": partitionedCount,
 			"$item_id_aux": auxId ?? missingItemAux,
-			"$background_opacity": i % 2 * 0.2
+			"$background_opacity": i & 1? 0.2 : undefined
 		}
 	})));
 	let longestItemNameLength = max(...finalisedMaterialList.map(({ translatedName }) => translatedName.length));
