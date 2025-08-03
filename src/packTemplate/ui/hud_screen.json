@@ -236,6 +236,7 @@
 		"size": ["100%", 12],
 		"texture": "textures/ui/White",
 		"color": [0, 0, 0],
+		"$background_opacity|default": 0,
 		"alpha": "$background_opacity",
 		"layer": 100,
 		"controls": [
