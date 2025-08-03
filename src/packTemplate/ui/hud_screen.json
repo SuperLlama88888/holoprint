@@ -78,6 +78,20 @@
 							"$content": "invis_armor_stand_holding_item",
 							"$armor_stand_item_id": 2 // grass block
 						}
+					},
+					{
+						"toggle_rendering_button@keyboard_trigger": {
+							"$button_name": "button.arrow_left",
+							"$content": "invis_armor_stand_holding_item",
+							"$armor_stand_item_id": 3 // dirt
+						}
+					},
+					{
+						"increase_opacity_button@keyboard_trigger": {
+							"$button_name": "button.arrow_right",
+							"$content": "invis_armor_stand_holding_item",
+							"$armor_stand_item_id": 4 // cobblestone
+						}
 					}
 				]
 			}
@@ -289,76 +303,20 @@
 		}
 	},
 	"hud_screen": {
-		"button_mappings": [ // this is the same as the original, except the inventory_left and inventory_right mappings are left out, so they can be conditionally applied depending on visibility of the material list.
+		"modifications": [
 			{
-				"from_button_id": "button.scoreboard",
-				"to_button_id": "button.scoreboard",
-				"mapping_type": "global"
+				"array_name": "button_mappings",
+				"operation": "remove",
+				"where": {
+					"from_button_id": "button.inventory_left" // these will be added back when the tab key isn't pressed
+				}
 			},
 			{
-				"from_button_id": "button.hide_gui",
-				"to_button_id": "button.hide_gui_all",
-				"mapping_type": "global"
-			},
-			{
-				"from_button_id": "button.hide_tooltips",
-				"to_button_id": "button.hide_tooltips_hud",
-				"mapping_type": "global"
-			},
-			{
-				"from_button_id": "button.hide_paperdoll",
-				"to_button_id": "button.hide_paperdoll_hud",
-				"mapping_type": "global"
-			},
-			{
-				"from_button_id": "button.slot1",
-				"to_button_id": "button.slot_1",
-				"mapping_type": "global"
-			},
-			{
-				"from_button_id": "button.slot2",
-				"to_button_id": "button.slot_2",
-				"mapping_type": "global"
-			},
-			{
-				"from_button_id": "button.slot3",
-				"to_button_id": "button.slot_3",
-				"mapping_type": "global"
-			},
-			{
-				"from_button_id": "button.slot4",
-				"to_button_id": "button.slot_4",
-				"mapping_type": "global"
-			},
-			{
-				"from_button_id": "button.slot5",
-				"to_button_id": "button.slot_5",
-				"mapping_type": "global"
-			},
-			{
-				"from_button_id": "button.slot6",
-				"to_button_id": "button.slot_6",
-				"mapping_type": "global"
-			},
-			{
-				"from_button_id": "button.slot7",
-				"to_button_id": "button.slot_7",
-				"mapping_type": "global"
-			},
-			{
-				"from_button_id": "button.slot8",
-				"to_button_id": "button.slot_8",
-				"mapping_type": "global"
-			},
-			{
-				"from_button_id": "button.slot9",
-				"to_button_id": "button.slot_9",
-				"mapping_type": "global"
-			},
-			{
-				"from_button_id": "button.slot0",
-				"to_button_id": "button.slot_0",
-				"mapping_type": "global"
+				"array_name": "button_mappings",
+				"operation": "remove",
+				"where": {
+					"from_button_id": "button.inventory_right"
+				}
 			}
 		]
 	}
