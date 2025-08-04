@@ -1,0 +1,6 @@
+{
+	"$decrease_layer_item": 1, // stone
+	"$increase_layer_item": 2, // dirt
+	"$toggle_rendering_item": 3, // grass block
+	"$increase_opacity_item": 4 // cobblestone
+}
