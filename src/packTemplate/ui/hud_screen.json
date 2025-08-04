@@ -8,19 +8,7 @@
 				"operation": "insert_front",
 				"value": [
 					{
-						"material_list_touch_toggle_input_panel@holoprint:material_list.material_list_touch_toggle_input_panel": {}
-					},
-					{
-						"material_list_touch_wrapper@holoprint:material_list.material_list_wrapper": {
-							"bindings": [
-								{
-									"binding_type": "view",
-									"source_control_name": "material_list_toggle",
-									"source_property_name": "#toggle_state",
-									"target_property_name": "#visible"
-								}
-							]
-						}
+						"material_list_touch_toggle@holoprint:material_list.touch_toggle": {}
 					},
 					{
 						"keybinds@holoprint:keybinds.keybinds": {}
@@ -29,7 +17,6 @@
 			}
 		]
 	},
-	
 	"hud_screen": {
 		"modifications": [
 			{

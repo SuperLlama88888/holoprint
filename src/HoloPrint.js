@@ -100,6 +100,7 @@ export async function makePack(structureFiles, config, resourcePackStack, previe
 		terrainTexture: config.RETEXTURE_CONTROL_ITEMS? "textures/terrain_texture.json" : undefined,
 		...(config.MATERIAL_LIST_ENABLED? {
 			$3: "ui/_ui_defs.json",
+			$6: "ui/_global_variables.json",
 			$4: "ui/hud_screen.json",
 			materialListUI: "ui/holoprint_material_list.json",
 			$5: "ui/holoprint_keybinds.json"
@@ -480,7 +481,6 @@ export async function makePack(structureFiles, config, resourcePackStack, previe
 	langFiles.forEach(([language, langFile]) => {
 		packFiles[`texts/${language}.lang`] = langFile;
 	});
-	console.log(packFiles)
 	
 	let packFileWriter = new BlobWriter();
 	let zipWriter = new ZipWriter(packFileWriter);
@@ -1244,8 +1244,8 @@ function patchRenderControllers(renderControllers, patches) {
  */
 function addMaterialListUI(finalisedMaterialList, materialListUI, blockMetadata) {
 	let missingItemAux = blockMetadata["data_items"].find(block => block.name == "minecraft:reserved6")?.["raw_id"] ?? 0;
-	materialListUI["material_list_entries"]["controls"].push(...finalisedMaterialList.map(({ translationKey, partitionedCount, auxId }, i) => ({
-		[`material_list_${i}@holoprint:material_list.material_list_entry`]: {
+	materialListUI["entries"]["controls"].push(...finalisedMaterialList.map(({ translationKey, partitionedCount, auxId }, i) => ({
+		[`entry_${i}@holoprint:material_list.entry`]: {
 			"$item_translation_key": translationKey,
 			"$item_count": partitionedCount,
 			"$item_id_aux": auxId ?? missingItemAux,
@@ -1255,11 +1255,11 @@ function addMaterialListUI(finalisedMaterialList, materialListUI, blockMetadata)
 	let longestItemNameLength = max(...finalisedMaterialList.map(({ translatedName }) => translatedName.length));
 	let longestCountLength = max(...finalisedMaterialList.map(({ partitionedCount }) => partitionedCount.length));
 	if(longestItemNameLength + longestCountLength >= 43) {
-		materialListUI["material_list"]["size"][0] = "50%"; // up from 40%
-		materialListUI["material_list"]["max_size"][0] = "50%";
+		materialListUI["material_list_content"]["size"][0] = "50%"; // up from 40%
+		materialListUI["material_list_content"]["max_size"][0] = "50%";
 	}
-	materialListUI["material_list"]["size"][1] = finalisedMaterialList.length * 12 + 12; // 12px for each item + 12px for the heading
-	materialListUI["material_list_entry"]["controls"][0]["content"]["controls"][3]["item_name"]["size"][0] += `${round(longestCountLength * 4.2 + 10)}px`;
+	materialListUI["material_list_content"]["size"][1] = finalisedMaterialList.length * 12 + 12; // 12px for each item + 12px for the heading
+	materialListUI["entry"]["controls"][0]["content"]["controls"][3]["item_name"]["size"][0] += `${round(longestCountLength * 4.2 + 10)}px`;
 }
 /**
  * Translates control items by making a fake material list.

@@ -5,38 +5,38 @@
 		"type": "panel",
 		"controls": [
 			{
-				"material_list_tab_button@keyboard_trigger": {
+				"material_list_trigger@keyboard_trigger": {
 					"$button_name": "button.scoreboard", // tab key
-					"$content": "holoprint:material_list.material_list_wrapper",
+					"$content": "holoprint:material_list.material_list",
 					"$off_content": "hotbar_scroll_keybinds"
 				}
 			},
 			{
-				"decrease_layer_button@keyboard_trigger": {
+				"decrease_layer_trigger@keyboard_trigger": {
 					"$button_name": "button.arrow_down",
 					"$content": "invis_armor_stand_holding_item",
-					"$armor_stand_item_id": 1 // stone
+					"$armor_stand_item_id": "$decrease_layer_item"
 				}
 			},
 			{
-				"increase_layer_button@keyboard_trigger": {
+				"increase_layer_trigger@keyboard_trigger": {
 					"$button_name": "button.arrow_up",
 					"$content": "invis_armor_stand_holding_item",
-					"$armor_stand_item_id": 2 // grass block
+					"$armor_stand_item_id": "$increase_layer_item"
 				}
 			},
 			{
-				"toggle_rendering_button@keyboard_trigger": {
+				"toggle_rendering_trigger@keyboard_trigger": {
 					"$button_name": "button.arrow_left",
 					"$content": "invis_armor_stand_holding_item",
-					"$armor_stand_item_id": 3 // dirt
+					"$armor_stand_item_id": "$toggle_rendering_item"
 				}
 			},
 			{
-				"increase_opacity_button@keyboard_trigger": {
+				"increase_opacity_trigger@keyboard_trigger": {
 					"$button_name": "button.arrow_right",
 					"$content": "invis_armor_stand_holding_item",
-					"$armor_stand_item_id": 4 // cobblestone
+					"$armor_stand_item_id": "$increase_opacity_item"
 				}
 			}
 		]
@@ -79,7 +79,6 @@
 			}
 		]
 	},
-	
 	"invis_armor_stand_holding_item": {
 		"type": "custom",
 		"renderer": "equipment_preview_renderer", // used in smithing tables to render armour stands
