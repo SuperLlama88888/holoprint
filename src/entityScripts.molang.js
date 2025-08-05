@@ -224,9 +224,9 @@ export function armorStandPreAnimation() {
 					v.hologram.offset_z--;
 				}
 			} else if(t.action == $[ACTIONS.ROTATE_HOLOGRAM_CLOCKWISE]) {
-				v.hologram.rotation = Math.mod(v.hologram.rotation + 1, 4);
+				v.hologram.rotation = (v.hologram.rotation + 1) % 4;
 			} else if(t.action == $[ACTIONS.ROTATE_HOLOGRAM_ANTICLOCKWISE]) {
-				v.hologram.rotation = Math.mod(v.hologram.rotation + 3, 4); // Molang Math.mod is more of a remainder function (like JS), so it can return values from -3 to 3. Because of this I do + 3 not - 1.
+				v.hologram.rotation = (v.hologram.rotation + 3) % 4; // Molang Math.mod is more of a remainder function (like JS), so it can return values from -3 to 3. Because of this I do + 3 not - 1.
 			} else if(t.action == $[ACTIONS.NEXT_STRUCTURE] && v.hologram.structure_count > 1) {
 				v.hologram.structure_index++;
 				t.changed_structure = true;
@@ -243,7 +243,7 @@ export function armorStandPreAnimation() {
 		v.hologram.offset_z = ($[coordinateLockCoordsMolang[2]]) - q.position(2) + 0.5;
 		v.hologram.rotation = 2 - Math.floor(q.body_y_rotation / 90);
 	} else {
-		v.hologram_dir = Math.mod(Math.floor(q.body_y_rotation / 90) + 2 + v.hologram.rotation, 4); // q.body_y_rotation goes from -180 to 180, hence the + 2
+		v.hologram_dir = (Math.floor(q.body_y_rotation / 90) + 2 + v.hologram.rotation) % 4; // q.body_y_rotation goes from -180 to 180, hence the + 2
 	}
 	if(t.check_layer_validity) {
 		if(v.hologram.layer < -1) {

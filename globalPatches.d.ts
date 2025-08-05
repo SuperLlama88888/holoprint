@@ -25,10 +25,6 @@ declare global {
 		rawJSON(text: string): RawJSON;
 	}
 	interface RawJSON {}
-	interface Math {
-		/** FOR .MOLANG.JS ONLY!!! */
-		mod(n: number, d: number): number;
-	}
 	interface EventTarget {
 		[onEvent]: this["addEventListener"];
 		[onEventAndNow]: this["addEventListener"];
