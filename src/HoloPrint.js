@@ -1685,7 +1685,9 @@ function functionToMolang(func, vars = {}) {
 	let mathedCode = expandedElseIfCode
 		.replaceAll(`"`, `'`)
 		.replaceAll(/([\w\.]+)(\+|-){2};/g, "$1=$1$21;") // x++ and x-- -> x=x+1 and x=x-1
-		.replaceAll(/([\w\.\$\[\]]+)(\+|-|\*|\/|\?\?)=([^;]+);/g, "$1=$1$2$3;") // x += y -> x=x+y for +, -, *, /, ??
+		.replaceAll(/([\w\.\$\[\]]+)(\+|-|\*|\/|\?\?|%)=([^;]+);/g, "$1=$1$2$3;") // x += y -> x=x+y for +, -, *, /, ??, %
+		.replaceAll(/([\w\.]+)%(-?\d+)/g, "math.mod($1,$2)")
+		.replaceAll(/\(([^()]+|[^()]*\([^()]+\)[^()]*)\)%(-?\d+)/g, "math.mod($1,$2)")
 		.replaceAll("return;", "return 0;"); // complex Molang expressions can't return nothing
 	
 	// Yay more fun regular expressions, this time to work with variable substitution ($[...])
