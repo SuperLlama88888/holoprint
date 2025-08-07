@@ -1,6 +1,6 @@
 let { $, v, q, t, structureSize, singleLayerMode, structureCount, HOLOGRAM_INITIAL_ACTIVATION, initialOffset, defaultTextureIndex, textureBlobsCount, totalBlocksToValidate, totalBlocksToValidateByLayer, backupSlotCount, toggleRendering, changeOpacity, toggleTint, toggleValidating, changeLayer, decreaseLayer, changeLayerMode, disablePlayerControls, backupHologram, changeStructure, moveHologram, rotateHologram, initVariables, renderingControls, broadcastActions, structureSizesMolang, coordinateLockEnabled, coordinateLockCoordsMolang } = {}; // prevent linting errors
 
-export const ACTIONS = createNumericEnum(["NEXT_STRUCTURE", "PREVIOUS_STRUCTURE", "INCREASE_LAYER", "DECREASE_LAYER", "TOGGLE_RENDERING", "INCREASE_OPACITY", "DECREASE_OPACITY", "TOGGLE_TINT", "TOGGLE_VALIDATING", "CHANGE_LAYER_MODE", "ROTATE_HOLOGRAM_CLOCKWISE", "ROTATE_HOLOGRAM_ANTICLOCKWISE", "BACKUP_HOLOGRAM", "MOVE_HOLOGRAM"]);
+export const ACTIONS = createNumericEnum(["NEXT_STRUCTURE", "PREVIOUS_STRUCTURE", "INCREASE_LAYER", "DECREASE_LAYER", "TOGGLE_RENDERING", "INCREASE_OPACITY", "DECREASE_OPACITY", "TOGGLE_TINT", "TOGGLE_VALIDATING", "CHANGE_LAYER_MODE", "ROTATE_HOLOGRAM_CLOCKWISE", "ROTATE_HOLOGRAM_ANTICLOCKWISE", "BACKUP_HOLOGRAM", "MOVE_HOLOGRAM", "MOVE_POS_X", "MOVE_NEG_X", "MOVE_POS_Y", "MOVE_NEG_Y", "MOVE_POS_Z", "MOVE_NEG_Z"]);
 
 export function armorStandInitialization() {
 	v.hologram_activated = HOLOGRAM_INITIAL_ACTIVATION; // true/false are substituted in here for the different subpacks
@@ -46,14 +46,46 @@ export function armorStandInitialization() {
 }
 export function armorStandPreAnimation() {
 	if(q.is_in_ui) {
-		if(q.is_item_name_any("slot.weapon.offhand", "minecraft:stone")) { // if the armour stand is holding stone/grass and in the ui, it must be from our custom ui code. I doubt any other addons would interfere here...
-			t.ui_action = $[ACTIONS.DECREASE_LAYER];
-		} else if(q.is_item_name_any("slot.weapon.offhand", "minecraft:grass_block")) {
-			t.ui_action = $[ACTIONS.INCREASE_LAYER];
-		} else if(q.is_item_name_any("slot.weapon.offhand", "minecraft:dirt")) {
+		// if the armour stand is holding an item and in the ui, it must be from our custom ui code. I doubt any other addons would interfere here...
+		// no there is not any better way to do this better
+		if(q.is_item_name_any("slot.weapon.offhand", "minecraft:stone")) {
 			t.ui_action = $[ACTIONS.TOGGLE_RENDERING];
-		} else if(q.is_item_name_any("slot.weapon.offhand", "minecraft:cobblestone")) {
+		} else if(q.is_item_name_any("slot.weapon.offhand", "minecraft:grass_block")) {
 			t.ui_action = $[ACTIONS.INCREASE_OPACITY];
+		} else if(q.is_item_name_any("slot.weapon.offhand", "minecraft:dirt")) {
+			t.ui_action = $[ACTIONS.DECREASE_OPACITY];
+		} else if(q.is_item_name_any("slot.weapon.offhand", "minecraft:cobblestone")) {
+			t.ui_action = $[ACTIONS.TOGGLE_TINT];
+		} else if(q.is_item_name_any("slot.weapon.offhand", "minecraft:oak_planks")) {
+			t.ui_action = $[ACTIONS.TOGGLE_VALIDATING];
+		} else if(q.is_item_name_any("slot.weapon.offhand", "minecraft:oak_sapling")) {
+			t.ui_action = $[ACTIONS.INCREASE_LAYER];
+		} else if(q.is_item_name_any("slot.weapon.offhand", "minecraft:bedrock")) {
+			t.ui_action = $[ACTIONS.DECREASE_LAYER];
+		} else if(q.is_item_name_any("slot.weapon.offhand", "minecraft:sand")) {
+			t.ui_action = $[ACTIONS.CHANGE_LAYER_MODE];
+		} else if(q.is_item_name_any("slot.weapon.offhand", "minecraft:gravel")) {
+			t.ui_action = $[ACTIONS.MOVE_POS_X];
+		} else if(q.is_item_name_any("slot.weapon.offhand", "minecraft:gold_ore")) {
+			t.ui_action = $[ACTIONS.MOVE_NEG_X];
+		} else if(q.is_item_name_any("slot.weapon.offhand", "minecraft:iron_ore")) {
+			t.ui_action = $[ACTIONS.MOVE_POS_Y];
+		} else if(q.is_item_name_any("slot.weapon.offhand", "minecraft:coal_ore")) {
+			t.ui_action = $[ACTIONS.MOVE_NEG_Y];
+		} else if(q.is_item_name_any("slot.weapon.offhand", "minecraft:oak_log")) {
+			t.ui_action = $[ACTIONS.MOVE_POS_Z];
+		} else if(q.is_item_name_any("slot.weapon.offhand", "minecraft:oak_leaves")) {
+			t.ui_action = $[ACTIONS.MOVE_NEG_Z];
+		} else if(q.is_item_name_any("slot.weapon.offhand", "minecraft:sponge")) {
+			t.ui_action = $[ACTIONS.ROTATE_HOLOGRAM_CLOCKWISE];
+		} else if(q.is_item_name_any("slot.weapon.offhand", "minecraft:glass")) {
+			t.ui_action = $[ACTIONS.ROTATE_HOLOGRAM_ANTICLOCKWISE];
+		} else if(q.is_item_name_any("slot.weapon.offhand", "minecraft:lapis_ore")) {
+			t.ui_action = $[ACTIONS.NEXT_STRUCTURE];
+		} else if(q.is_item_name_any("slot.weapon.offhand", "minecraft:lapis_block")) {
+			t.ui_action = $[ACTIONS.PREVIOUS_STRUCTURE];
+		} else if(q.is_item_name_any("slot.weapon.offhand", "minecraft:dispenser")) {
+			t.ui_action = $[ACTIONS.BACKUP_HOLOGRAM];
 		} else {
 			return;
 		}
@@ -223,6 +255,18 @@ export function armorStandPreAnimation() {
 				} else {
 					v.hologram.offset_z--;
 				}
+			} else if(t.action == $[ACTIONS.MOVE_POS_X]) {
+				v.hologram.offset_x++;
+			} else if(t.action == $[ACTIONS.MOVE_NEG_X]) {
+				v.hologram.offset_x--;
+			} else if(t.action == $[ACTIONS.MOVE_POS_Y]) {
+				v.hologram.offset_y++;
+			} else if(t.action == $[ACTIONS.MOVE_NEG_Y]) {
+				v.hologram.offset_y--;
+			} else if(t.action == $[ACTIONS.MOVE_POS_Z]) {
+				v.hologram.offset_z++;
+			} else if(t.action == $[ACTIONS.MOVE_NEG_Z]) {
+				v.hologram.offset_z--;
 			} else if(t.action == $[ACTIONS.ROTATE_HOLOGRAM_CLOCKWISE]) {
 				v.hologram.rotation = (v.hologram.rotation + 1) % 4;
 			} else if(t.action == $[ACTIONS.ROTATE_HOLOGRAM_ANTICLOCKWISE]) {
