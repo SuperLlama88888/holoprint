@@ -1255,10 +1255,10 @@ function addMaterialListUI(finalisedMaterialList, materialListUI, blockMetadata)
 	let longestItemNameLength = max(...finalisedMaterialList.map(({ translatedName }) => translatedName.length));
 	let longestCountLength = max(...finalisedMaterialList.map(({ partitionedCount }) => partitionedCount.length));
 	if(longestItemNameLength + longestCountLength >= 43) {
-		materialListUI["material_list_content"]["size"][0] = "50%"; // up from 40%
-		materialListUI["material_list_content"]["max_size"][0] = "50%";
+		materialListUI["content"]["size"][0] = "50%"; // up from 40%
+		materialListUI["content"]["max_size"][0] = "50%";
 	}
-	materialListUI["material_list_content"]["size"][1] = finalisedMaterialList.length * 12 + 12; // 12px for each item + 12px for the heading
+	materialListUI["content"]["size"][1] = finalisedMaterialList.length * 12 + 12; // 12px for each item + 12px for the heading
 	materialListUI["entry"]["controls"][0]["content"]["controls"][3]["item_name"]["size"][0] += `${round(longestCountLength * 4.2 + 10)}px`;
 }
 /**
