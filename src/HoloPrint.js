@@ -287,8 +287,8 @@ export async function makePack(structureFiles, config, resourcePackStack, previe
 	}
 	
 	let structureSizesMolang = [
-		arrayToMolang(structureSizes.map(structureSize => structureSize[1]), "v.hologram.structure_index"),
 		arrayToMolang(structureSizes.map(structureSize => structureSize[0]), "v.hologram.structure_index"),
+		arrayToMolang(structureSizes.map(structureSize => structureSize[1]), "v.hologram.structure_index"),
 		arrayToMolang(structureSizes.map(structureSize => structureSize[2]), "v.hologram.structure_index")
 	];
 	let coordinateLockCoordsMolang = config.COORDINATE_LOCK? [
