@@ -11,6 +11,7 @@ import FileInputTable from "./components/FileInputTable.js";
 import Vec3Input from "./components/Vec3Input.js";
 import SimpleLogger from "./components/SimpleLogger.js";
 import LilGui from "./components/LilGui.js";
+import ResizingInput from "./components/ResizingInput.js";
 
 const IN_PRODUCTION = false;
 const ACTUAL_CONSOLE_LOG = false;
@@ -208,6 +209,9 @@ document[onEvent]("DOMContentLoaded", () => {
 		}
 	});
 	customElements.define("file-input-table", FileInputTable);
+	customElements.define("resizing-input", ResizingInput, {
+		extends: "input"
+	});
 	customElements.define("vec-3-input", Vec3Input);
 	customElements.define("simple-logger", SimpleLogger);
 	customElements.define("lil-gui", LilGui);
@@ -268,9 +272,9 @@ document[onEvent]("DOMContentLoaded", () => {
 			return html`
 				<label for="${randomId}">${removeFileExtension(file.name)}:</label>
 				<vec-3-input id="${randomId}">
-					<input type="number" min="-10000000" max="10000000" step="1" value="${pos[0]}" placeholder="0" slot="x"/>
-					<input type="number" min="-10000000" max="10000000" step="1" value="${pos[1]}" placeholder="0" slot="y"/>
-					<input type="number" min="-10000000" max="10000000" step="1" value="${pos[2]}" placeholder="0" slot="z"/>
+					<input is="resizing-input" type="number" min="-10000000" max="10000000" step="1" value="${pos[0]}" placeholder="0" slot="x"/>
+					<input is="resizing-input" type="number" min="-10000000" max="10000000" step="1" value="${pos[1]}" placeholder="0" slot="y"/>
+					<input is="resizing-input" type="number" min="-10000000" max="10000000" step="1" value="${pos[2]}" placeholder="0" slot="z"/>
 				</vec-3-input>
 			`;
 		}).join("");
