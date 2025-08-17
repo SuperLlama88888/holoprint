@@ -7,7 +7,7 @@ import MaterialList from "./MaterialList.js";
 import PreviewRenderer from "./PreviewRenderer.js";
 
 import * as entityScripts from "./entityScripts.molang.js";
-import { addPaddingToImage, awaitAllEntries, cacheUnaryFunc, CachingFetcher, concatenateFiles, createNumericEnum, desparseArray, floor, getFileExtension, hexColorToClampedTriplet, jsonc, JSONMap, JSONSet, lcm, loadTranslationLanguage, max, min, onEvent, overlaySquareImages, pi, removeFalsies, removeFileExtension, resizeImageToBlob, round, setImageOpacity, sha256, toBlob, toImage, translate, tuple, UserError } from "./utils.js";
+import { addPaddingToImage, awaitAllEntries, cacheUnaryFunc, CachingFetcher, concatenateFiles, createNumericEnum, desparseArray, floor, getFileExtension, hexColorToClampedTriplet, jsonc, JSONMap, JSONSet, lcm, loadTranslationLanguage, max, min, onEvent, overlaySquareImages, pi, removeFalsies, removeFileExtension, resizeImageToBlob, round, setImageOpacity, sha256, toBlob, toImage, translate, transposeMatrix, tuple, UserError } from "./utils.js";
 import ResourcePackStack, { VanillaDataFetcher } from "./ResourcePackStack.js";
 import BlockUpdater from "./BlockUpdater.js";
 import SpawnAnimationMaker from "./SpawnAnimationMaker.js";
@@ -287,15 +287,12 @@ export async function makePack(structureFiles, config, resourcePackStack, previe
 	}
 	
 	let structureSizesMolang = [
-		arrayToMolang(structureSizes.map(structureSize => structureSize[1]), "v.hologram.structure_index"),
 		arrayToMolang(structureSizes.map(structureSize => structureSize[0]), "v.hologram.structure_index"),
+		arrayToMolang(structureSizes.map(structureSize => structureSize[1]), "v.hologram.structure_index"),
 		arrayToMolang(structureSizes.map(structureSize => structureSize[2]), "v.hologram.structure_index")
 	];
-	let coordinateLockCoordsMolang = config.COORDINATE_LOCK? [
-		arrayToMolang(config.COORDINATE_LOCK.map(([x]) => x), "v.hologram.structure_index"),
-		arrayToMolang(config.COORDINATE_LOCK.map(([, y]) => y), "v.hologram.structure_index"),
-		arrayToMolang(config.COORDINATE_LOCK.map(([, , z]) => z), "v.hologram.structure_index")
-	] : ["0", "0", "0"];
+	let coordinateLockAxes = config.COORDINATE_LOCK && transposeMatrix(config.COORDINATE_LOCK);
+	let coordinateLockCoordsMolang = config.COORDINATE_LOCK? coordinateLockAxes.slice(0, 3).map(axis => arrayToMolang(axis, "v.hologram.structure_index")) : ["0", "0", "0"];
 	
 	entityDescription["materials"]["hologram"] = "holoprint_hologram";
 	entityDescription["materials"]["hologram.wrong_block_overlay"] = "holoprint_hologram.wrong_block_overlay";
@@ -304,6 +301,8 @@ export async function makePack(structureFiles, config, resourcePackStack, previe
 	entityDescription["animations"]["hologram.align"] = "animation.armor_stand.hologram.align";
 	if(config.COORDINATE_LOCK) {
 		entityDescription["animations"]["hologram.coordinate_lock"] = "animation.armor_stand.hologram.coordinate_lock";
+		let coordinateLockRotsMolang = arrayToMolang(coordinateLockAxes[3], "v.hologram.structure_index");
+		hologramAnimations["animations"]["animation.armor_stand.hologram.coordinate_lock"]["bones"]["hologram_offset_wrapper"]["rotation"][1] = coordinateLockRotsMolang;
 		delete hologramAnimations["animations"]["animation.armor_stand.hologram.offset"];
 	} else {
 		entityDescription["animations"]["hologram.offset"] = "animation.armor_stand.hologram.offset";
@@ -725,8 +724,6 @@ async function readStructureNBTWithOptions(structureFile, arrayBuffer, options =
 		}
 		throw new Error(`Invalid NBT in structure file "${structureFile.name}"!\n${e}`);
 	});
-	/** @type {MCStructure} */
-	// @ts-ignore
 	let nbt = nbtRes.data;
 	if(!isNBTValidMcstructure(nbt)) {
 		let errorMessage = getInvalidMcstructureErrorMessage(structureFile, nbt);
@@ -736,8 +733,8 @@ async function readStructureNBTWithOptions(structureFile, arrayBuffer, options =
 }
 /**
  * Checks if a NBT object is valid .mcstructure NBT.
- * @param {MCStructure} nbt
- * @returns {boolean}
+ * @param {NBT.RootTag} nbt
+ * @returns {nbt is MCStructure}
  */
 function isNBTValidMcstructure(nbt) {
 	return nbt["format_version"] == 1 && nbt["size"] instanceof Int32Array && nbt["size"].length == 3 && "structure" in nbt && nbt["structure_world_origin"] instanceof Int32Array && nbt["structure_world_origin"].length == 3;
@@ -745,7 +742,7 @@ function isNBTValidMcstructure(nbt) {
 /**
  * Gets the error message for a NBT file that isn't .mcstructures.
  * @param {File} structureFile
- * @param {object} nbt
+ * @param {NBT.RootTag} nbt
  * @returns {string}
  */
 function getInvalidMcstructureErrorMessage(structureFile, nbt) {
@@ -1836,7 +1833,7 @@ function functionToMolang(func, vars = {}) {
  * @property {boolean} RENAME_CONTROL_ITEMS
  * @property {Vec4} WRONG_BLOCK_OVERLAY_COLOR Clamped colour quartet
  * @property {Vec3} INITIAL_OFFSET
- * @property {Vec3[] | undefined} COORDINATE_LOCK If present, each structure's hologram will be locked to these coordinates.
+ * @property {Vec4[] | undefined} COORDINATE_LOCK If present, each structure's hologram will be locked to these coordinates. The last component is rotation.
  * @property {number} BACKUP_SLOT_COUNT
  * @property {string | undefined} PACK_NAME The name of the completed pack; will default to the structure file names
  * @property {Blob} PACK_ICON_BLOB Blob for `pack_icon.png`
@@ -2061,6 +2058,24 @@ function functionToMolang(func, vars = {}) {
  */
 /**
  * @typedef {[number, number, number, number]} Vec4 4D vector.
+ */
+/**
+ * @template T
+ * @template {number} N
+ * @template {T[]} [R=[]]
+ * @typedef {number extends N? T[] : R["length"] extends N? R : Tuple<T, N, [T, ...R]>} Tuple
+ */
+/**
+ * @template {number} R
+ * @template {number} C
+ * @template [T=number]
+ * @typedef {R extends R? C extends C? (T[] & { length: C })[] & { length: R } : never : never} Matrix
+ */
+/**
+ * @template {number} R
+ * @template {number} C
+ * @template [T=number]
+ * @typedef {R extends R? C extends C? Tuple<Tuple<T, C>, R> : never : never} TupleMatrix
  */
 /**
  * @typedef {[Vec4, Vec4, Vec4, Vec4]} Mat4 4x4 matrix.

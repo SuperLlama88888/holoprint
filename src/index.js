@@ -1,5 +1,5 @@
 import { extractStructureFilesFromMcworld } from "mcbe-leveldb-reader";
-import { selectEl, downloadFile, sleep, selectEls, loadTranslationLanguage, translate, getStackTrace, random, UserError, joinOr, conditionallyGroup, groupByFileExtension, addFilesToFileInput, setFileInputFiles, dispatchInputEvents, getAllChildren, jsonc, toImage, removeFalsies, clearCacheStorage, onEvent, onEventAndNow, cast, clearFileInput, html, removeFileExtension } from "./utils.js";
+import { selectEl, downloadFile, sleep, selectEls, loadTranslationLanguage, translate, getStackTrace, random, UserError, joinOr, conditionallyGroup, groupByFileExtension, addFilesToFileInput, setFileInputFiles, dispatchInputEvents, getAllChildren, jsonc, toImage, removeFalsies, clearCacheStorage, onEvent, onEventAndNow, cast, clearFileInput, html, removeFileExtension, tuple, assertAs } from "./utils.js";
 import * as HoloPrint from "./HoloPrint.js";
 import SupabaseLogger from "./SupabaseLogger.js";
 
@@ -11,6 +11,7 @@ import FileInputTable from "./components/FileInputTable.js";
 import Vec3Input from "./components/Vec3Input.js";
 import SimpleLogger from "./components/SimpleLogger.js";
 import LilGui from "./components/LilGui.js";
+import ResizingInput from "./components/ResizingInput.js";
 
 const IN_PRODUCTION = false;
 const ACTUAL_CONSOLE_LOG = false;
@@ -52,7 +53,8 @@ document[onEvent]("DOMContentLoaded", () => {
 	
 	selectEls(`input[type="file"][accept]:not([multiple])`).forEach(input => {
 		input[onEventAndNow]("input", e => {
-			if(!validateFileInputFileTypes(cast(input, HTMLInputElement))) {
+			TS: assertAs(input, HTMLInputElement);
+			if(!validateFileInputFileTypes(input)) {
 				e?.stopImmediatePropagation();
 			}
 		});
@@ -208,6 +210,9 @@ document[onEvent]("DOMContentLoaded", () => {
 		}
 	});
 	customElements.define("file-input-table", FileInputTable);
+	customElements.define("resizing-input", ResizingInput, {
+		extends: "input"
+	});
 	customElements.define("vec-3-input", Vec3Input);
 	customElements.define("simple-logger", SimpleLogger);
 	customElements.define("lil-gui", LilGui);
@@ -268,10 +273,11 @@ document[onEvent]("DOMContentLoaded", () => {
 			return html`
 				<label for="${randomId}">${removeFileExtension(file.name)}:</label>
 				<vec-3-input id="${randomId}">
-					<input type="number" min="-10000000" max="10000000" step="1" value="${pos[0]}" placeholder="0" slot="x"/>
-					<input type="number" min="-10000000" max="10000000" step="1" value="${pos[1]}" placeholder="0" slot="y"/>
-					<input type="number" min="-10000000" max="10000000" step="1" value="${pos[2]}" placeholder="0" slot="z"/>
+					<input is="resizing-input" type="number" min="-10000000" max="10000000" step="1" value="${pos[0]}" placeholder="0" slot="x"/>
+					<input is="resizing-input" type="number" min="-10000000" max="10000000" step="1" value="${pos[1]}" placeholder="0" slot="y"/>
+					<input is="resizing-input" type="number" min="-10000000" max="10000000" step="1" value="${pos[2]}" placeholder="0" slot="z"/>
 				</vec-3-input>
+				<label><span class="material-symbols">rotate_right</span>: <input is="resizing-input" type="number" min="-270" max="270" step="90" value="0" placeholder="0"/><span>&deg;</span></label>
 			`;
 		}).join("");
 		Array.from(coordinateLockStructureCoordsCont[selectEls]("vec-3-input")).forEach((input, i) => {
@@ -307,7 +313,7 @@ document[onEvent]("DOMContentLoaded", () => {
 		let label = document.createElement("label");
 		let playerControlTranslationKey = HoloPrint.PLAYER_CONTROL_NAMES[control];
 		label.innerHTML = `<span data-translate="${playerControlTranslationKey}">...</span>:`;
-		let input = cast(document.createElement("item-criteria-input"), ItemCriteriaInput);
+		let input = document.createElement("item-criteria-input");
 		input.setAttribute("name", `control.${control}`);
 		if(itemCriteria["names"].length > 0) {
 			input.setAttribute("value-items", itemCriteria["names"].join(","));
@@ -365,7 +371,8 @@ document[onEvent]("DOMContentLoaded", () => {
 			elementsBeingReset.forEach(el => {
 				dispatchInputEvents(el);
 			});
-			temporarilyChangeText(el, cast(el, HTMLButtonElement).dataset.resetTranslation);
+			TS: assertAs(el, HTMLButtonElement);
+			temporarilyChangeText(el, el.dataset.resetTranslation);
 		});
 	});
 	
@@ -627,7 +634,10 @@ async function makePack(structureFiles, localResourcePacks) {
 		CONTROLS: Object.fromEntries(Array.from(formData).filter(([key]) => key.startsWith("control.")).map(([key, value]) => [key.replace(/^control./, ""), JSON.parse(value)])),
 		// @ts-expect-error
 		INITIAL_OFFSET: formData.get("initialOffset").toString().split(",").map(x => +x),
-		COORDINATE_LOCK: formData.get("coordinateLockEnabled")? Array.from(coordinateLockStructureCoordsCont[selectEls]("vec-3-input")).map(input => input.xyz) : undefined,
+		COORDINATE_LOCK: formData.get("coordinateLockEnabled")? Array.from(coordinateLockStructureCoordsCont[selectEls]("vec-3-input")).map(input => {
+			TS: assertAs(input, Vec3Input);
+			return tuple([...input.xyz, +input.nextElementSibling.querySelector("input").value]);
+		}) : undefined,
 		BACKUP_SLOT_COUNT: +formData.get("backupSlotCount"),
 		PACK_NAME: formData.get("packName").toString() || undefined,
 		PACK_ICON_BLOB: packIconEntry instanceof File && packIconEntry.size? packIconEntry : undefined,

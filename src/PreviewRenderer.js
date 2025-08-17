@@ -1,6 +1,5 @@
-import { abs, AsyncFactory, cast, cosDeg, distanceSquared, downloadFile, JSONSet, max, min, pi, round, sinDeg, subVec2, tanDeg, toImageData, tuple } from "./utils.js";
+import { abs, AsyncFactory, cosDeg, distanceSquared, downloadFile, JSONSet, max, min, pi, round, sinDeg, subVec2, tanDeg, toImageData, tuple } from "./utils.js";
 import PolyMeshMaker from "./PolyMeshMaker.js";
-import LilGui from "./components/LilGui.js";
 
 import Stats from "stats.js"; // library not a file
 
@@ -143,7 +142,7 @@ export default class PreviewRenderer extends AsyncFactory {
 			});
 		}
 		if(this.options.showOptions) {
-			let guiEl = cast(document.createElement("lil-gui"), LilGui);
+			let guiEl = document.createElement("lil-gui");
 			this.cont.appendChild(guiEl);
 			this.#optionsGui = guiEl.gui;
 			this.#optionsGui.$title.dataset.translate = "preview.options";

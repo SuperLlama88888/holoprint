@@ -2,7 +2,7 @@ import * as path from "node:path";
 import * as fs from "node:fs";
 
 import * as esbuild from "esbuild";
-import { minify as minifyHTML } from "html-minifier";
+import { minify as minifyHTML } from "html-minifier-next";
 import browserslist from "browserslist";
 import { transform, browserslistToTargets } from "lightningcss";
 import minifyJSON from "jsonminify";
@@ -26,7 +26,7 @@ process.chdir("dist");
 const baseDir = ".";
 const cssTargets = browserslistToTargets(browserslist(">= 0.1%"));
 
-processDir(baseDir);
+await processDir(baseDir);
 
 let importMapJSON = fs.readFileSync("index.html", "utf-8").match(/<script type="importmap">([^]+?)<\/script>/)[1];
 let externalModules = Object.keys(JSON.parse(importMapJSON)["imports"]);
@@ -35,6 +35,7 @@ let { metafile } = esbuild.buildSync({
 	entryPoints: ["index.js"],
 	bundle: true,
 	external: ["./entityScripts.molang.js", ...externalModules],
+	dropLabels: ["TS"],
 	minify: true,
 	format: "esm",
 	outdir: ".",
@@ -52,29 +53,29 @@ Object.keys(metafile["inputs"]).forEach(filename => {
 /**
  * @param {string} dir
  */
-function processDir(dir) {
+async function processDir(dir) {
 	let directoryContents = fs.readdirSync(dir);
-	directoryContents.forEach(filename => {
+	await Promise.all(directoryContents.map(async filename => {
 		let filepath = path.join(dir, filename);
 		let stats = fs.statSync(filepath);
 		if(stats.isDirectory()) {
-			processDir(filepath);
+			await processDir(filepath);
 		} else {
 			let processingFunction = findProcessingFunction(filepath);
 			if(processingFunction) {
 				let fileContent = fs.readFileSync(filepath, "utf-8");
-				let { code, sourceMap } = processingFunction(fileContent, filename);
+				let { code, sourceMap } = await processingFunction(fileContent, filename);
 				fs.writeFileSync(filepath, code);
 				if(sourceMap) {
 					fs.writeFileSync(filepath + ".map", sourceMap);
 				}
 			}
 		}
-	});
+	}));
 }
 /**
  * @param {string} filename
- * @returns {((code: string, filename: string) => { code: string, sourceMap?: string }) | undefined}
+ * @returns {((code: string, filename: string) => MaybePromise<{ code: string, sourceMap?: string }>) | undefined}
  */
 function findProcessingFunction(filename) {
 	let fileExtension = path.extname(filename);
@@ -91,26 +92,18 @@ function findProcessingFunction(filename) {
 /**
  * @param {string} code
  * @param {string} filename
- * @returns {{ code: string }}
+ * @returns {Promise<{ code: string }>}
  */
-function processHTML(code, filename) {
+async function processHTML(code, filename) {
 	code = code.replaceAll(/<script type="(importmap|application\/ld\+json)">([^]+?)<\/script>/g, (_, scriptType, json) => `<script type="${scriptType}">${processJSON(json).code}</script>`);
-	const inlineCustomElements = [["vec-3-input", "acronym"], ["slot", "big"]]; // acronym/big are deprecated inline elements. the minifier doesn't recognise that custom elements are inline, hence a substitution is performed right before and after the minification.
-	inlineCustomElements.forEach(([elementName, replacement]) => {;
-		code = code.replaceAll(`<${elementName}`, `<${replacement}`);
-		code = code.replaceAll(`</${elementName}>`, `</${replacement}>`)
-	});
-	code = minifyHTML(code, {
+	code = await minifyHTML(code, {
 		removeComments: true,
 		collapseWhitespace: true,
 		collapseBooleanAttributes: true,
 		sortAttributes: true,
 		sortClassName: true,
-		minifyCSS: css => processCSS(css, filename, true).code
-	});
-	inlineCustomElements.forEach(([elementName, replacement]) => {
-		code = code.replaceAll(`<${replacement}`, `<${elementName}`);
-		code = code.replaceAll(`</${replacement}>`, `</${elementName}>`)
+		minifyCSS: css => processCSS(css, filename, true).code,
+		inlineCustomElements: ["vec-3-input", "slot", "span"]
 	});
 	return { code };
 }
@@ -140,9 +133,9 @@ function processCSS(code, filename, disableSourceMap = false) {
 /**
  * @param {string} code
  * @param {string} filename
- * @returns {{ code: string }}
+ * @returns {Promise<{ code: string }>}
  */
-function processJS(code, filename) {
+async function processJS(code, filename) {
 	code = code.replace("const IN_PRODUCTION = false;", "const IN_PRODUCTION = true;");
 	if(filename == "HoloPrint.js") {
 		code = code.replace(`const VERSION = "dev";`, `const VERSION = "${buildVersion}";`);
@@ -151,7 +144,7 @@ function processJS(code, filename) {
 			code = `export * from "./HoloPrint.js";` + code;
 		}
 	}
-	code = code.replaceAll(/html`([^]+?)`/g, (_, html) => "`" + processHTML(html, filename).code + "`");
+	code = await replaceAllAsync(code, /html`([^]+?)`/g, async (_, html) => "`" + (await processHTML(html, filename)).code + "`");
 	return { code };
 }
 /**
@@ -162,3 +155,26 @@ function processJSON(code) {
 	code = minifyJSON(code);
 	return { code };
 }
+
+/**
+ * @param {string} str
+ * @param {RegExp} regexp
+ * @param {(substring: string, ...args: string[]) => Promise<string>} replacer
+ * @returns {Promise<string>}
+ */
+async function replaceAllAsync(str, regexp, replacer) {
+	/** @type {Promise<string>[]} */
+	let promises = [];
+	str.replaceAll(regexp, (substring, ...args) => {
+		promises.push(replacer(substring, ...args));
+		return substring;
+	});
+	let replacements = await Promise.all(promises);
+	let i = 0;
+	return str.replaceAll(regexp, () => replacements[i++]);
+}
+
+/**
+ * @template T
+ * @typedef {Promise<T> | T} MaybePromise
+ */

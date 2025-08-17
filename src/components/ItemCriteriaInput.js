@@ -1,4 +1,4 @@
-import { cast, html, htmlCodeToElement, onEvent, onEventAndNow, selectEl, selectEls } from "../utils.js";
+import { assertAs, html, htmlCodeToElement, onEvent, onEventAndNow, selectEl, selectEls } from "../utils.js";
 import * as HoloPrint from "../HoloPrint.js";
 import { VanillaDataFetcher } from "../ResourcePackStack.js";
 
@@ -200,7 +200,8 @@ export default class ItemCriteriaInput extends HTMLElement {
 			orSpan.innerText = " or ";
 			this.#criteriaInputsCont.appendChild(orSpan);
 		}
-		let newInput = cast(htmlCodeToElement(`<input type="text" required pattern="^\\s*(\\w+:)?\\w+\\s*$" spellcheck="false" autocapitalize="off" ${attributesByType[type]}/>`), HTMLInputElement);
+		let newInput = htmlCodeToElement(`<input type="text" required pattern="^\\s*(\\w+:)?\\w+\\s*$" spellcheck="false" autocapitalize="off" ${attributesByType[type]}/>`);
+		TS: assertAs(newInput, HTMLInputElement);
 		newInput[onEvent]("keydown", this.#inputKeyDownEvent);
 		if(initialValue != undefined) {
 			newInput.value = initialValue;

@@ -163,6 +163,8 @@ export const doNothing = x => x;
 export const tuple = x => x;
 /** @template T @param {T} _type @returns {T extends any[]? T[number]["prototype"][] : T["prototype"]} */
 export const cast = (x, _type) => x;
+/** @template T @param {T} _type @returns {asserts x is (T extends any[]? T[number]["prototype"][] : T["prototype"])} */
+export const assertAs = (x, _type) => x;
 export const { min, max, floor, ceil, sqrt, round, abs, PI: pi, exp, log: ln, sin, cos, tan, hypot } = Math;
 export const clamp = (n, lowest, highest) => min(max(n, lowest), highest);
 export const lerp = (a, b, x) => a + (b - a) * x;
@@ -247,6 +249,18 @@ export function normalizeVec3(vec) {
 export function vec3ToFixed(vec, decimals) {
 	let power = 10 ** decimals;
 	return [round(vec[0] * power) / power, round(vec[1] * power) / power, round(vec[2] * power) / power];
+}
+/**
+ * Changes the rows and columns of a matrix.
+ * @template {number} R
+ * @template {number} C
+ * @template T
+ * @param {Matrix<R, C, T>} matrix
+ * @returns {TupleMatrix<C, R, T>}
+ */
+export function transposeMatrix(matrix) {
+	// @ts-ignore
+	return matrix[0].map((_, i) => matrix.map(row => row[i]));
 }
 /**
  * @param {Mat4} mat
@@ -1112,4 +1126,4 @@ export function createCustomError(name) {
 }
 export const UserError = createCustomError("UserError");
 
-/** @import { Mat4, Vec2, Vec3, Vec4 } from "./HoloPrint.js" */
+/** @import { Mat4, Matrix, TupleMatrix, Vec2, Vec3, Vec4 } from "./HoloPrint.js" */
