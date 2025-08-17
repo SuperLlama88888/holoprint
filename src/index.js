@@ -1,5 +1,5 @@
 import { extractStructureFilesFromMcworld } from "mcbe-leveldb-reader";
-import { selectEl, downloadFile, sleep, selectEls, loadTranslationLanguage, translate, getStackTrace, random, UserError, joinOr, conditionallyGroup, groupByFileExtension, addFilesToFileInput, setFileInputFiles, dispatchInputEvents, getAllChildren, jsonc, toImage, removeFalsies, clearCacheStorage, onEvent, onEventAndNow, cast, clearFileInput, html, removeFileExtension } from "./utils.js";
+import { selectEl, downloadFile, sleep, selectEls, loadTranslationLanguage, translate, getStackTrace, random, UserError, joinOr, conditionallyGroup, groupByFileExtension, addFilesToFileInput, setFileInputFiles, dispatchInputEvents, getAllChildren, jsonc, toImage, removeFalsies, clearCacheStorage, onEvent, onEventAndNow, cast, clearFileInput, html, removeFileExtension, tuple } from "./utils.js";
 import * as HoloPrint from "./HoloPrint.js";
 import SupabaseLogger from "./SupabaseLogger.js";
 
@@ -276,6 +276,7 @@ document[onEvent]("DOMContentLoaded", () => {
 					<input is="resizing-input" type="number" min="-10000000" max="10000000" step="1" value="${pos[1]}" placeholder="0" slot="y"/>
 					<input is="resizing-input" type="number" min="-10000000" max="10000000" step="1" value="${pos[2]}" placeholder="0" slot="z"/>
 				</vec-3-input>
+				<label><span class="material-symbols">rotate_right</span>: <input is="resizing-input" type="number" min="-270" max="270" step="90" value="0" placeholder="0"/><span>&deg;</span></label>
 			`;
 		}).join("");
 		Array.from(coordinateLockStructureCoordsCont[selectEls]("vec-3-input")).forEach((input, i) => {
@@ -631,7 +632,9 @@ async function makePack(structureFiles, localResourcePacks) {
 		CONTROLS: Object.fromEntries(Array.from(formData).filter(([key]) => key.startsWith("control.")).map(([key, value]) => [key.replace(/^control./, ""), JSON.parse(value)])),
 		// @ts-expect-error
 		INITIAL_OFFSET: formData.get("initialOffset").toString().split(",").map(x => +x),
-		COORDINATE_LOCK: formData.get("coordinateLockEnabled")? Array.from(coordinateLockStructureCoordsCont[selectEls]("vec-3-input")).map(input => input.xyz) : undefined,
+		COORDINATE_LOCK: formData.get("coordinateLockEnabled")? Array.from(coordinateLockStructureCoordsCont[selectEls]("vec-3-input")).map(input => {
+			return tuple([...input.xyz, +input.nextElementSibling.querySelector("input").value]);
+		}) : undefined,
 		BACKUP_SLOT_COUNT: +formData.get("backupSlotCount"),
 		PACK_NAME: formData.get("packName").toString() || undefined,
 		PACK_ICON_BLOB: packIconEntry instanceof File && packIconEntry.size? packIconEntry : undefined,

@@ -249,6 +249,18 @@ export function vec3ToFixed(vec, decimals) {
 	return [round(vec[0] * power) / power, round(vec[1] * power) / power, round(vec[2] * power) / power];
 }
 /**
+ * Changes the rows and columns of a matrix.
+ * @template {number} R
+ * @template {number} C
+ * @template T
+ * @param {Matrix<R, C, T>} matrix
+ * @returns {TupleMatrix<C, R, T>}
+ */
+export function transposeMatrix(matrix) {
+	// @ts-ignore
+	return matrix[0].map((_, i) => matrix.map(row => row[i]));
+}
+/**
  * @param {Mat4} mat
  * @param {Vec3 | Vec4} vec
  * @returns {Vec4}
@@ -1112,4 +1124,4 @@ export function createCustomError(name) {
 }
 export const UserError = createCustomError("UserError");
 
-/** @import { Mat4, Vec2, Vec3, Vec4 } from "./HoloPrint.js" */
+/** @import { Mat4, Matrix, TupleMatrix, Vec2, Vec3, Vec4 } from "./HoloPrint.js" */
