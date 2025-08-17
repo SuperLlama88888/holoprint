@@ -724,8 +724,6 @@ async function readStructureNBTWithOptions(structureFile, arrayBuffer, options =
 		}
 		throw new Error(`Invalid NBT in structure file "${structureFile.name}"!\n${e}`);
 	});
-	/** @type {MCStructure} */
-	// @ts-ignore
 	let nbt = nbtRes.data;
 	if(!isNBTValidMcstructure(nbt)) {
 		let errorMessage = getInvalidMcstructureErrorMessage(structureFile, nbt);
@@ -735,8 +733,8 @@ async function readStructureNBTWithOptions(structureFile, arrayBuffer, options =
 }
 /**
  * Checks if a NBT object is valid .mcstructure NBT.
- * @param {MCStructure} nbt
- * @returns {boolean}
+ * @param {NBT.RootTag} nbt
+ * @returns {nbt is MCStructure}
  */
 function isNBTValidMcstructure(nbt) {
 	return nbt["format_version"] == 1 && nbt["size"] instanceof Int32Array && nbt["size"].length == 3 && "structure" in nbt && nbt["structure_world_origin"] instanceof Int32Array && nbt["structure_world_origin"].length == 3;
@@ -744,7 +742,7 @@ function isNBTValidMcstructure(nbt) {
 /**
  * Gets the error message for a NBT file that isn't .mcstructures.
  * @param {File} structureFile
- * @param {object} nbt
+ * @param {NBT.RootTag} nbt
  * @returns {string}
  */
 function getInvalidMcstructureErrorMessage(structureFile, nbt) {

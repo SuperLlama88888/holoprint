@@ -35,6 +35,7 @@ let { metafile } = esbuild.buildSync({
 	entryPoints: ["index.js"],
 	bundle: true,
 	external: ["./entityScripts.molang.js", ...externalModules],
+	dropLabels: ["TS"],
 	minify: true,
 	format: "esm",
 	outdir: ".",

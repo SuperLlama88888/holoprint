@@ -163,6 +163,8 @@ export const doNothing = x => x;
 export const tuple = x => x;
 /** @template T @param {T} _type @returns {T extends any[]? T[number]["prototype"][] : T["prototype"]} */
 export const cast = (x, _type) => x;
+/** @template T @param {T} _type @returns {asserts x is (T extends any[]? T[number]["prototype"][] : T["prototype"])} */
+export const assertAs = (x, _type) => x;
 export const { min, max, floor, ceil, sqrt, round, abs, PI: pi, exp, log: ln, sin, cos, tan, hypot } = Math;
 export const clamp = (n, lowest, highest) => min(max(n, lowest), highest);
 export const lerp = (a, b, x) => a + (b - a) * x;

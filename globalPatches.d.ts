@@ -1,5 +1,11 @@
 // Fixes a few issues with TypeScript types.
 
+import FileInputTable from "./src/components/FileInputTable";
+import ItemCriteriaInput from "./src/components/ItemCriteriaInput";
+import LilGui from "./src/components/LilGui";
+import ResizingInput from "./src/components/ResizingInput";
+import SimpleLogger from "./src/components/SimpleLogger";
+import Vec3Input from "./src/components/Vec3Input";
 import { onEvent, onEvents, onEventAndNow } from "./src/utils";
 
 declare global {
@@ -28,6 +34,14 @@ declare global {
 	interface Math {
 		/** FOR .MOLANG.JS ONLY!!! */
 		mod(n: number, d: number): number;
+	}
+	interface HTMLElementTagNameMap {
+		"item-criteria-input": ItemCriteriaInput;
+		"file-input-table": FileInputTable;
+		"resizing-input": ResizingInput;
+		"vec-3-input": Vec3Input;
+		"simple-logger": SimpleLogger;
+		"lil-gui": LilGui;
 	}
 	interface EventTarget {
 		[onEvent]: this["addEventListener"];
