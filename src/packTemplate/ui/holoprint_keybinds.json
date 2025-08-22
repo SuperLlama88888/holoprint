@@ -12,31 +12,10 @@
 				}
 			},
 			{
-				"decrease_layer_trigger@keyboard_trigger": {
-					"$button_name": "button.arrow_down",
-					"$content": "invis_armor_stand_holding_item",
-					"$armor_stand_item_id": "$decrease_layer_item"
-				}
-			},
-			{
-				"increase_layer_trigger@keyboard_trigger": {
-					"$button_name": "button.arrow_up",
-					"$content": "invis_armor_stand_holding_item",
-					"$armor_stand_item_id": "$increase_layer_item"
-				}
-			},
-			{
-				"toggle_rendering_trigger@keyboard_trigger": {
-					"$button_name": "button.arrow_left",
-					"$content": "invis_armor_stand_holding_item",
-					"$armor_stand_item_id": "$toggle_rendering_item"
-				}
-			},
-			{
-				"increase_opacity_trigger@keyboard_trigger": {
-					"$button_name": "button.arrow_right",
-					"$content": "invis_armor_stand_holding_item",
-					"$armor_stand_item_id": "$increase_opacity_item"
+				"input_mode_toggle@keyboard_toggle": {
+					"$toggle_name": "input_mode_toggle",
+					"$button_name": "button.hide_tooltips", // F10
+					"$content": "quick_input_keybinds"
 				}
 			}
 		]
@@ -64,6 +43,44 @@
 			}
 		]
 	},
+	"keyboard_toggle": {
+		"type": "toggle",
+		"toggle_name": "$toggle_name", // a unique string
+		"button_mappings": [
+			{
+				"from_button_id": "$button_name",
+				"to_button_id": "button.menu_select",
+				"mapping_type": "global"
+			}
+		],
+		"$untoggled_content|default": "common.empty_panel", // this cannot be named $off_content because if any children use keyboard_trigger, the $off_content will be inherited and hence cause recursion, crashing the game
+		"controls": [
+			{
+				"on@$content": {
+					"bindings": [
+						{
+							"binding_type": "view",
+							"source_control_name": "$toggle_name",
+							"source_property_name": "#toggle_state",
+							"target_property_name": "#visible"
+						}
+					]
+				}
+			},
+			{
+				"off@$untoggled_content": {
+					"bindings": [
+						{
+							"binding_type": "view",
+							"source_control_name": "$toggle_name",
+							"source_property_name": "(not #toggle_state)",
+							"target_property_name": "#visible"
+						}
+					]
+				}
+			}
+		]
+	},
 	"hotbar_scroll_keybinds": {
 		"type": "input_panel",
 		"button_mappings": [
@@ -76,6 +93,39 @@
 				"from_button_id": "button.inventory_right",
 				"to_button_id": "button.hotbar_inventory_right",
 				"mapping_type": "global"
+			}
+		]
+	},
+	"quick_input_keybinds": {
+		"type": "panel",
+		"controls": [
+			{
+				"decrease_layer_trigger@keyboard_trigger": {
+					"$button_name": "button.arrow_down",
+					"$content": "invis_armor_stand_holding_item",
+					"$armor_stand_item_id": "$decrease_layer_item"
+				}
+			},
+			{
+				"increase_layer_trigger@keyboard_trigger": {
+					"$button_name": "button.arrow_up",
+					"$content": "invis_armor_stand_holding_item",
+					"$armor_stand_item_id": "$increase_layer_item"
+				}
+			},
+			{
+				"toggle_rendering_trigger@keyboard_trigger": {
+					"$button_name": "button.arrow_left",
+					"$content": "invis_armor_stand_holding_item",
+					"$armor_stand_item_id": "$toggle_rendering_item"
+				}
+			},
+			{
+				"increase_opacity_trigger@keyboard_trigger": {
+					"$button_name": "button.arrow_right",
+					"$content": "invis_armor_stand_holding_item",
+					"$armor_stand_item_id": "$increase_opacity_item"
+				}
 			}
 		]
 	},
