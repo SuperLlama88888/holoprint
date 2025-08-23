@@ -132,10 +132,10 @@
 	},
 	"full_input_mode": {
 		"type": "panel",
-		"size": ["17.5%", 40],
+		"size": ["15%", 40],
 		"anchor_from": "bottom_right",
 		"anchor_to": "bottom_right",
-		"offset": [-30, -5],
+		"offset": ["-5%", -5],
 		"controls": [
 			{
 				"a": {
@@ -146,23 +146,11 @@
 				}
 			},
 			{
-				"cycler": {
+				"icon_cycler@common.common_cycler": {
 					"type": "image_cycler",
 					"size": [15, 15],
-					"next_sub_page_button_name": "button.arrow_right",
-					"prev_sub_page_button_name": "button.arrow_left",
-					"button_mappings": [
-						{
-							"from_button_id": "button.arrow_right",
-							"to_button_id": "button.arrow_right",
-							"mapping_type": "global"
-						},
-						{
-							"from_button_id": "button.arrow_left",
-							"to_button_id": "button.arrow_left",
-							"mapping_type": "global"
-						}
-					],
+					"$next_page_button_event": "button.arrow_right",
+					"$prev_page_button_event": "button.arrow_left",
 					"images": [
 						{ "texture_path": "textures/ui/toggle_rendering" },
 						{ "texture_path": "textures/ui/change_opacity" },
@@ -183,13 +171,69 @@
 				}
 			},
 			{
+				"previous_icon_cycler@common.common_cycler": {
+					"type": "image_cycler",
+					"size": [10, 10],
+					"anchor_from": "left_middle",
+					"anchor_to": "left_middle",
+					"alpha": 0.4,
+					"$next_page_button_event": "button.arrow_right",
+					"$prev_page_button_event": "button.arrow_left",
+					"images": [
+						{ "texture_path": "textures/ui/backup_hologram" },
+						{ "texture_path": "textures/ui/toggle_rendering" },
+						{ "texture_path": "textures/ui/change_opacity" },
+						{ "texture_path": "textures/ui/toggle_tint" },
+						{ "texture_path": "textures/ui/toggle_validating" },
+						{ "texture_path": "textures/ui/change_layer" },
+						{ "texture_path": "textures/ui/change_layer_mode" },
+						{ "texture_path": "textures/ui/move_hologram" },
+						{ "texture_path": "textures/ui/move_hologram" },
+						{ "texture_path": "textures/ui/move_hologram" },
+						{ "texture_path": "textures/ui/move_hologram" },
+						{ "texture_path": "textures/ui/move_hologram" },
+						{ "texture_path": "textures/ui/move_hologram" },
+						{ "texture_path": "textures/ui/rotate_hologram" },
+						{ "texture_path": "textures/ui/change_structure" }
+					]
+				}
+			},
+			{
+				"next_icon_cycler@common.common_cycler": {
+					"type": "image_cycler",
+					"size": [10, 10],
+					"anchor_from": "right_middle",
+					"anchor_to": "right_middle",
+					"alpha": 0.4,
+					"$next_page_button_event": "button.arrow_right",
+					"$prev_page_button_event": "button.arrow_left",
+					"images": [
+						{ "texture_path": "textures/ui/change_opacity" },
+						{ "texture_path": "textures/ui/toggle_tint" },
+						{ "texture_path": "textures/ui/toggle_validating" },
+						{ "texture_path": "textures/ui/change_layer" },
+						{ "texture_path": "textures/ui/change_layer_mode" },
+						{ "texture_path": "textures/ui/move_hologram" },
+						{ "texture_path": "textures/ui/move_hologram" },
+						{ "texture_path": "textures/ui/move_hologram" },
+						{ "texture_path": "textures/ui/move_hologram" },
+						{ "texture_path": "textures/ui/move_hologram" },
+						{ "texture_path": "textures/ui/move_hologram" },
+						{ "texture_path": "textures/ui/rotate_hologram" },
+						{ "texture_path": "textures/ui/change_structure" },
+						{ "texture_path": "textures/ui/backup_hologram" },
+						{ "texture_path": "textures/ui/toggle_rendering" }
+					]
+				}
+			},
+			{
 				"full_input_keybinds": {
 					"type": "grid_page_indicator",
 					"size": [200, 30],
 					"grid_item_template": "holoprint:keybinds.full_input_keybind_item",
 					"grid_item_when_current": "current",
 					"grid_item_when_not_current": "not_current",
-					"cycler_manager_size_control_target": "cycler",
+					"cycler_manager_size_control_target": "icon_cycler",
 					"collection_name": "test_grid"
 				}
 			}
