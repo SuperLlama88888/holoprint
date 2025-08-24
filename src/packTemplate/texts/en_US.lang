@@ -11,6 +11,8 @@ pack.description.retextured_control_items_disabled=Retextured control items disa
 pack.description.renamed_control_items_disabled=Renamed control items disabled
 
 holoprint.material_list.heading=Material List: {PACK_NAME}
+holoprint.controls.increase_layer=Increase layer
+holoprint.controls.increase_opacity=Increase opacity
 holoprint.controls.move_hologram_x=Move hologram X
 holoprint.controls.move_hologram_y=Move hologram Y
 holoprint.controls.move_hologram_z=Move hologram Z

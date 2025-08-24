@@ -139,7 +139,6 @@
 					"type": "label",
 					"size": ["100% - 18px", 10],
 					"text": "holoprint.material_list.heading",
-					"localize": true,
 					"anchor_from": "right_middle",
 					"anchor_to": "right_middle"
 				}
@@ -198,7 +197,6 @@
 							"item_name": {
 								"type": "label",
 								"text": "$item_translation_key",
-								"localize": true,
 								"size": ["100% - 13px - ", 10], // space left for item count is put in by the JS
 								"font_scale_factor": 0.8
 							}

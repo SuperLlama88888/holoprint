@@ -100,9 +100,12 @@ export async function makePack(structureFiles, config, resourcePackStack, previe
 		terrainTexture: config.RETEXTURE_CONTROL_ITEMS? "textures/terrain_texture.json" : undefined,
 		_3: "textures/ui/toggle_rendering.png",
 		_4: "textures/ui/change_opacity.png",
+		_18: "textures/ui/increase_opacity.png",
 		_5: "textures/ui/toggle_tint.png",
 		_6: "textures/ui/toggle_validating.png",
 		_7: "textures/ui/change_layer.png",
+		_16: "textures/ui/increase_layer.png",
+		_17: "textures/ui/decrease_layer.png",
 		_8: "textures/ui/change_layer_mode.png",
 		_9: "textures/ui/move_hologram_x.png",
 		_13: "textures/ui/move_hologram_y.png",
@@ -1382,7 +1385,7 @@ function makeLangFiles(config, packTemplateLangFiles, packName, materialList, ex
 		langFile = langFile.replaceAll(/\t*#.+/g, ""); // remove comments
 		
 		// add the control name translations for the keyboard UI
-		["toggle_rendering", "change_opacity", "toggle_tint", "change_layer", "change_layer_mode", "toggle_validating", "rotate_hologram", "change_structure", "backup_hologram"].forEach(actionName => {
+		["toggle_rendering", "change_opacity", "toggle_tint", "change_layer", "decrease_layer", "change_layer_mode", "toggle_validating", "rotate_hologram", "change_structure", "backup_hologram"].forEach(actionName => {
 			langFile += `\nholoprint.controls.${actionName}=${translate(`player_controls.${actionName}`, language)}`;
 		});
 		

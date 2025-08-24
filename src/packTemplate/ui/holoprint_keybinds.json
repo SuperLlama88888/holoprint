@@ -103,29 +103,83 @@
 			{
 				"decrease_layer_trigger@keyboard_trigger": {
 					"$button_name": "button.arrow_down",
-					"$content": "invis_armor_stand_holding_item",
-					"$armor_stand_item_id": "$decrease_layer_item"
+					"$content": "quick_input_keybind_content",
+					"$armor_stand_item_id": "$decrease_layer_item",
+					"$control": "decrease_layer"
 				}
 			},
 			{
 				"increase_layer_trigger@keyboard_trigger": {
 					"$button_name": "button.arrow_up",
-					"$content": "invis_armor_stand_holding_item",
-					"$armor_stand_item_id": "$increase_layer_item"
+					"$content": "quick_input_keybind_content",
+					"$armor_stand_item_id": "$increase_layer_item",
+					"$control": "increase_layer"
 				}
 			},
 			{
 				"toggle_rendering_trigger@keyboard_trigger": {
 					"$button_name": "button.arrow_left",
-					"$content": "invis_armor_stand_holding_item",
-					"$armor_stand_item_id": "$toggle_rendering_item"
+					"$content": "quick_input_keybind_content",
+					"$armor_stand_item_id": "$toggle_rendering_item",
+					"$control": "toggle_rendering"
 				}
 			},
 			{
 				"increase_opacity_trigger@keyboard_trigger": {
 					"$button_name": "button.arrow_right",
-					"$content": "invis_armor_stand_holding_item",
-					"$armor_stand_item_id": "$increase_opacity_item"
+					"$content": "quick_input_keybind_content",
+					"$armor_stand_item_id": "$increase_opacity_item",
+					"$control": "increase_opacity"
+				}
+			}
+		]
+	},
+	"quick_input_keybind_content": {
+		"type": "label", // the text label has to be the parent because its width isn't constant, so everything else is positioned relative to it
+		"text": "('holoprint.controls.' + $control)",
+		"font_scale_factor": 0.8,
+		"anchor_from": "bottom_right",
+		"anchor_to": "bottom_right",
+		"offset": ["-5%", -15.2],
+		"controls": [
+			{
+				"armor_stand_trigger@invis_armor_stand_holding_item": {}
+			},
+			{
+				"background_1": {
+					"type": "image",
+					"size": ["100% + 28px", 26],
+					"anchor_from": "right_middle",
+					"anchor_to": "right_middle",
+					"offset": [3, 0],
+					"layer": -1, // make text (parent) render on top
+					"texture": "textures/ui/white_circle",
+					"color": [0, 0, 0],
+					"alpha": 0.3,
+					"controls": [
+						{
+							"background_2": {
+								"type": "image",
+								"size": [22, 22],
+								"anchor_from": "left_middle",
+								"anchor_to": "left_middle",
+								"offset": [2, 0],
+								"texture": "textures/ui/white_circle",
+								"color": [0, 0, 0],
+								"alpha": 0.3
+							}
+						},
+						{
+							"icon": {
+								"type": "image",
+								"size": [15, 15],
+								"anchor_from": "left_middle",
+								"anchor_to": "left_middle",
+								"offset": [5.5, 0],
+								"texture": "('textures/ui/' + $control)"
+							}
+						}
+					]
 				}
 			}
 		]
