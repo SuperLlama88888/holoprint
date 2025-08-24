@@ -1,0 +1,6 @@
+{
+	"$toggle_rendering_item": 1, // stone
+	"$increase_opacity_item": 3, // dirt
+	"$increase_layer_item": 7, // bedrock
+	"$decrease_layer_item": 8 // flowing_water
+}

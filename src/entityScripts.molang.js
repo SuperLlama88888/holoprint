@@ -1,10 +1,10 @@
 let { $, v, q, t, structureSize, singleLayerMode, structureCount, HOLOGRAM_INITIAL_ACTIVATION, initialOffset, defaultTextureIndex, textureBlobsCount, totalBlocksToValidate, totalBlocksToValidateByLayer, backupSlotCount, toggleRendering, changeOpacity, toggleTint, toggleValidating, changeLayer, decreaseLayer, changeLayerMode, disablePlayerControls, backupHologram, changeStructure, moveHologram, rotateHologram, initVariables, renderingControls, broadcastActions, structureSizesMolang, coordinateLockEnabled, coordinateLockCoordsMolang } = {}; // prevent linting errors
 
-export const ACTIONS = createNumericEnum(["NEXT_STRUCTURE", "PREVIOUS_STRUCTURE", "INCREASE_LAYER", "DECREASE_LAYER", "TOGGLE_RENDERING", "INCREASE_OPACITY", "DECREASE_OPACITY", "TOGGLE_TINT", "TOGGLE_VALIDATING", "CHANGE_LAYER_MODE", "ROTATE_HOLOGRAM_CLOCKWISE", "ROTATE_HOLOGRAM_ANTICLOCKWISE", "BACKUP_HOLOGRAM", "MOVE_HOLOGRAM"]);
+export const ACTIONS = createNumericEnum(["NEXT_STRUCTURE", "PREVIOUS_STRUCTURE", "INCREASE_LAYER", "DECREASE_LAYER", "TOGGLE_RENDERING", "INCREASE_OPACITY", "DECREASE_OPACITY", "TOGGLE_TINT", "TOGGLE_VALIDATING", "CHANGE_LAYER_MODE", "ROTATE_HOLOGRAM_CLOCKWISE", "ROTATE_HOLOGRAM_ANTICLOCKWISE", "BACKUP_HOLOGRAM", "MOVE_HOLOGRAM", "MOVE_POS_X", "MOVE_NEG_X", "MOVE_POS_Y", "MOVE_NEG_Y", "MOVE_POS_Z", "MOVE_NEG_Z"]);
 
 export function armorStandInitialization() {
 	v.hologram_activated = HOLOGRAM_INITIAL_ACTIVATION; // true/false are substituted in here for the different subpacks
-	v.hologram.offset_x = -$[initialOffset[0]];
+	v.hologram.offset_x = $[initialOffset[0]];
 	v.hologram.offset_y = $[initialOffset[1]];
 	v.hologram.offset_z = $[initialOffset[2]];
 	v.hologram.rotation = 0;
@@ -31,6 +31,10 @@ export function armorStandInitialization() {
 	v.last_pose = 0;
 	v.last_hurt_direction = q.hurt_direction;
 	v.player_action_counter = t.player_action_counter ?? 0;
+	v.ui_action_counter = t.ui_action_counter ?? 0;
+	v.last_ui_action_time = q.time_stamp;
+	v.was_ui_action_last_frame = false;
+	v.ui_action_hold_start_time = -1;
 	v.hologram_dir = 0;
 	
 	v.spawn_time = q.time_stamp;
@@ -41,6 +45,58 @@ export function armorStandInitialization() {
 	v.skip_spawn_animation = false;
 }
 export function armorStandPreAnimation() {
+	if(q.is_in_ui) {
+		// if the armour stand is holding an item and in the ui, it must be from our custom ui code. I doubt any other addons would interfere here...
+		// no there is not any better way to do this better
+		if(q.is_item_name_any("slot.weapon.offhand", "minecraft:stone", "minecraft:grass_block")) {
+			t.ui_action = $[ACTIONS.TOGGLE_RENDERING];
+		} else if(q.is_item_name_any("slot.weapon.offhand", "minecraft:dirt")) {
+			t.ui_action = $[ACTIONS.INCREASE_OPACITY];
+		} else if(q.is_item_name_any("slot.weapon.offhand", "minecraft:cobblestone")) {
+			t.ui_action = $[ACTIONS.DECREASE_OPACITY];
+		} else if(q.is_item_name_any("slot.weapon.offhand", "minecraft:oak_planks", "minecraft:oak_sapling")) {
+			t.ui_action = $[ACTIONS.TOGGLE_TINT];
+		} else if(q.is_item_name_any("slot.weapon.offhand", "minecraft:bedrock")) {
+			t.ui_action = $[ACTIONS.INCREASE_LAYER];
+		} else if(q.is_item_name_any("slot.weapon.offhand", "minecraft:flowing_water")) {
+			t.ui_action = $[ACTIONS.DECREASE_LAYER];
+		} else if(q.is_item_name_any("slot.weapon.offhand", "minecraft:water", "minecraft:flowing_lava")) {
+			t.ui_action = $[ACTIONS.CHANGE_LAYER_MODE];
+		} else if(q.is_item_name_any("slot.weapon.offhand", "minecraft:lava", "minecraft:sand")) {
+			t.ui_action = $[ACTIONS.TOGGLE_VALIDATING];
+		} else if(q.is_item_name_any("slot.weapon.offhand", "minecraft:gravel")) {
+			t.ui_action = $[ACTIONS.MOVE_POS_X];
+		} else if(q.is_item_name_any("slot.weapon.offhand", "minecraft:gold_ore")) {
+			t.ui_action = $[ACTIONS.MOVE_NEG_X];
+		} else if(q.is_item_name_any("slot.weapon.offhand", "minecraft:iron_ore")) {
+			t.ui_action = $[ACTIONS.MOVE_POS_Y];
+		} else if(q.is_item_name_any("slot.weapon.offhand", "minecraft:coal_ore")) {
+			t.ui_action = $[ACTIONS.MOVE_NEG_Y];
+		} else if(q.is_item_name_any("slot.weapon.offhand", "minecraft:oak_log")) {
+			t.ui_action = $[ACTIONS.MOVE_POS_Z];
+		} else if(q.is_item_name_any("slot.weapon.offhand", "minecraft:oak_leaves")) {
+			t.ui_action = $[ACTIONS.MOVE_NEG_Z];
+		} else if(q.is_item_name_any("slot.weapon.offhand", "minecraft:sponge")) {
+			t.ui_action = $[ACTIONS.ROTATE_HOLOGRAM_CLOCKWISE];
+		} else if(q.is_item_name_any("slot.weapon.offhand", "minecraft:glass")) {
+			t.ui_action = $[ACTIONS.ROTATE_HOLOGRAM_ANTICLOCKWISE];
+		} else if(q.is_item_name_any("slot.weapon.offhand", "minecraft:lapis_ore")) {
+			t.ui_action = $[ACTIONS.NEXT_STRUCTURE];
+		} else if(q.is_item_name_any("slot.weapon.offhand", "minecraft:lapis_block")) {
+			t.ui_action = $[ACTIONS.PREVIOUS_STRUCTURE];
+		} else if(q.is_item_name_any("slot.weapon.offhand", "minecraft:dispenser", "minecraft:sandstone")) {
+			t.ui_action = $[ACTIONS.BACKUP_HOLOGRAM];
+		} else {
+			return;
+		}
+		if((t.ui_action_counter ?? -1) != -1) {
+			v.ui_action_counter = t.ui_action_counter;
+		}
+		v.ui_action_counter++;
+		t.ui_action_counter = v.ui_action_counter;
+		return;
+	}
+	
 	if(q.time_stamp - v.spawn_time < 5) {
 		v.last_pose = v.armor_stand.pose_index; // armour stands take a tick or two at the start to set their pose correctly
 	}
@@ -126,6 +182,28 @@ export function armorStandPreAnimation() {
 			t.action = t.player_action;
 		}
 	}
+	t.ui_action_counter ??= 0;
+	if(t.ui_action_counter != v.ui_action_counter && t.ui_action_counter > 0) {
+		v.ui_action_counter = t.ui_action_counter;
+		if(!$[disablePlayerControls]) {
+			t.process_action = false;
+			t.delta_time = q.time_stamp - v.last_ui_action_time; // unfortunately q.time_stamp doesn't work in armour stands rendered in the ui, so we need to do the timing logic here
+			if(!v.was_ui_action_last_frame && t.delta_time >= 1) { // you can press it repeatedly up to 20 times a second
+				t.process_action = true;
+				v.ui_action_hold_start_time = q.time_stamp;
+			}
+			if(v.was_ui_action_last_frame && q.time_stamp - v.ui_action_hold_start_time >= 8 && t.delta_time >= 2.5) { // if you've been holding a key down for 0.4s, it will repeat the action 8 times a second. kinda like how keyboards work when you hold down a key.
+				t.process_action = true;
+			}
+			if(t.process_action) {
+				t.action = t.ui_action;
+				v.last_ui_action_time = q.time_stamp;
+			}
+		}
+		v.was_ui_action_last_frame = true;
+	} else {
+		v.was_ui_action_last_frame = false;
+	}
 	if(t.action != -1) {
 		v.player_has_interacted = true;
 		if(t.action == $[ACTIONS.TOGGLE_RENDERING]) {
@@ -171,16 +249,28 @@ export function armorStandPreAnimation() {
 				} else if(t.camera_rot_y > -45 && t.camera_rot_y <= 45) {
 					v.hologram.offset_z++;
 				} else if(t.camera_rot_y > 45 && t.camera_rot_y <= 135) {
-					v.hologram.offset_x++;
-				} else if(t.camera_rot_y > -135 && t.camera_rot_y <= -45) {
 					v.hologram.offset_x--;
+				} else if(t.camera_rot_y > -135 && t.camera_rot_y <= -45) {
+					v.hologram.offset_x++;
 				} else {
 					v.hologram.offset_z--;
 				}
+			} else if(t.action == $[ACTIONS.MOVE_POS_X]) {
+				v.hologram.offset_x++;
+			} else if(t.action == $[ACTIONS.MOVE_NEG_X]) {
+				v.hologram.offset_x--;
+			} else if(t.action == $[ACTIONS.MOVE_POS_Y]) {
+				v.hologram.offset_y++;
+			} else if(t.action == $[ACTIONS.MOVE_NEG_Y]) {
+				v.hologram.offset_y--;
+			} else if(t.action == $[ACTIONS.MOVE_POS_Z]) {
+				v.hologram.offset_z++;
+			} else if(t.action == $[ACTIONS.MOVE_NEG_Z]) {
+				v.hologram.offset_z--;
 			} else if(t.action == $[ACTIONS.ROTATE_HOLOGRAM_CLOCKWISE]) {
-				v.hologram.rotation = Math.mod(v.hologram.rotation + 1, 4);
+				v.hologram.rotation = (v.hologram.rotation + 1) % 4;
 			} else if(t.action == $[ACTIONS.ROTATE_HOLOGRAM_ANTICLOCKWISE]) {
-				v.hologram.rotation = Math.mod(v.hologram.rotation + 3, 4); // Molang Math.mod is more of a remainder function (like JS), so it can return values from -3 to 3. Because of this I do + 3 not - 1.
+				v.hologram.rotation = (v.hologram.rotation + 3) % 4; // Molang Math.mod is more of a remainder function (like JS), so it can return values from -3 to 3. Because of this I do + 3 not - 1.
 			} else if(t.action == $[ACTIONS.NEXT_STRUCTURE] && v.hologram.structure_count > 1) {
 				v.hologram.structure_index++;
 				t.changed_structure = true;
@@ -192,12 +282,12 @@ export function armorStandPreAnimation() {
 	}
 	
 	if($[coordinateLockEnabled]) {
-		v.hologram.offset_x = -($[coordinateLockCoordsMolang[0]]) + q.position(0) - 0.5; // x in coordinates is opposite to x in geometry
+		v.hologram.offset_x = ($[coordinateLockCoordsMolang[0]]) - q.position(0) + 0.5;
 		v.hologram.offset_y = ($[coordinateLockCoordsMolang[1]]) - Math.floor(q.position(1));
 		v.hologram.offset_z = ($[coordinateLockCoordsMolang[2]]) - q.position(2) + 0.5;
 		v.hologram.rotation = 2 - Math.floor(q.body_y_rotation / 90);
 	} else {
-		v.hologram_dir = Math.mod(Math.floor(q.body_y_rotation / 90) + 2 + v.hologram.rotation, 4); // q.body_y_rotation goes from -180 to 180, hence the + 2
+		v.hologram_dir = (Math.floor(q.body_y_rotation / 90) + 2 + v.hologram.rotation) % 4; // q.body_y_rotation goes from -180 to 180, hence the + 2
 	}
 	if(t.check_layer_validity) {
 		if(v.hologram.layer < -1) {

@@ -1,0 +1,435 @@
+{
+	"namespace": "holoprint:keybinds",
+	
+	"keybinds": {
+		"type": "panel",
+		"bindings": [
+			{
+				"binding_name": "(not #inventory_touch_button)",
+				"binding_name_override": "#visible"
+			}
+		],
+		"controls": [
+			{
+				"material_list_trigger@keyboard_trigger": {
+					"$button_name": "button.scoreboard", // tab key
+					"$content": "holoprint:material_list.material_list",
+					"$off_content": "hotbar_scroll_keybinds"
+				}
+			},
+			{
+				"input_mode_toggle@keyboard_toggle": {
+					"$toggle_name": "input_mode_toggle",
+					"$button_name": "button.hide_tooltips", // F10
+					"$untoggled_content": "quick_input_keybinds",
+					"$content": "full_input_mode"
+				}
+			}
+		]
+	},
+	"keyboard_trigger": {
+		"type": "button",
+		"size": ["100%", "100%"],
+		"pressed_control": "pressed",
+		"default_control": "off",
+		"hover_control": "off",
+		"button_mappings": [
+			{
+				"from_button_id": "$button_name",
+				"to_button_id": "button.dummy",
+				"mapping_type": "global"
+			}
+		],
+		"$off_content|default": "common.empty_panel",
+		"controls": [
+			{
+				"pressed@$content": {}
+			},
+			{
+				"off@$off_content": {}
+			}
+		]
+	},
+	"keyboard_toggle": {
+		"type": "toggle",
+		"toggle_name": "$toggle_name", // a unique string
+		"button_mappings": [
+			{
+				"from_button_id": "$button_name",
+				"to_button_id": "button.menu_select",
+				"mapping_type": "global"
+			}
+		],
+		"$untoggled_content|default": "common.empty_panel", // this cannot be named $off_content because if any children use keyboard_trigger, the $off_content will be inherited and hence cause recursion, crashing the game
+		"controls": [
+			{
+				"on@$content": {
+					"bindings": [
+						{
+							"binding_type": "view",
+							"source_control_name": "$toggle_name",
+							"source_property_name": "#toggle_state",
+							"target_property_name": "#visible"
+						}
+					]
+				}
+			},
+			{
+				"off@$untoggled_content": {
+					"bindings": [
+						{
+							"binding_type": "view",
+							"source_control_name": "$toggle_name",
+							"source_property_name": "(not #toggle_state)",
+							"target_property_name": "#visible"
+						}
+					]
+				}
+			}
+		]
+	},
+	"hotbar_scroll_keybinds": {
+		"type": "input_panel",
+		"button_mappings": [
+			{
+				"from_button_id": "button.inventory_left",
+				"to_button_id": "button.hotbar_inventory_left",
+				"mapping_type": "global"
+			},
+			{
+				"from_button_id": "button.inventory_right",
+				"to_button_id": "button.hotbar_inventory_right",
+				"mapping_type": "global"
+			}
+		]
+	},
+	"quick_input_keybinds": {
+		"type": "panel",
+		"controls": [
+			{
+				"keyboard_hints": {
+					"type": "panel",
+					"size": ["13.5%", "88.0368098%x"],
+					"anchor_from": "bottom_right",
+					"anchor_to": "bottom_right",
+					"offset": ["-5%", -5],
+					"anims": ["@holoprint:keybinds.keyboard_hints_anim"],
+					"propagate_alpha": true,
+					"controls": [
+						{
+							"background": {
+								"type": "image",
+								"size": ["100% + 6px", "100% + 6px"],
+								"texture": "textures/ui/white_circle",
+								"color": [0.7, 0.7, 0.7],
+								"alpha": 0.4
+							}
+						},
+						{
+							"image": {
+								"type": "image",
+								"texture": "textures/ui/quick_input_keyboard_hints"
+							}
+						}
+					]
+				}
+			},
+			{
+				"decrease_layer_trigger@keyboard_trigger": {
+					"$button_name": "button.arrow_down",
+					"$content": "quick_input_keybind_content",
+					"$armor_stand_item_id": "$decrease_layer_item",
+					"$control": "decrease_layer"
+				}
+			},
+			{
+				"increase_layer_trigger@keyboard_trigger": {
+					"$button_name": "button.arrow_up",
+					"$content": "quick_input_keybind_content",
+					"$armor_stand_item_id": "$increase_layer_item",
+					"$control": "increase_layer"
+				}
+			},
+			{
+				"toggle_rendering_trigger@keyboard_trigger": {
+					"$button_name": "button.arrow_left",
+					"$content": "quick_input_keybind_content",
+					"$armor_stand_item_id": "$toggle_rendering_item",
+					"$control": "toggle_rendering"
+				}
+			},
+			{
+				"increase_opacity_trigger@keyboard_trigger": {
+					"$button_name": "button.arrow_right",
+					"$content": "quick_input_keybind_content",
+					"$armor_stand_item_id": "$increase_opacity_item",
+					"$control": "increase_opacity"
+				}
+			}
+		]
+	},
+	"quick_input_keybind_content": {
+		"type": "label", // the text label has to be the parent because its width isn't constant, so everything else is positioned relative to it
+		"text": "('holoprint.controls.' + $control)",
+		"font_scale_factor": 0.8,
+		"anchor_from": "bottom_right",
+		"anchor_to": "bottom_right",
+		"offset": ["-5%", -15.2],
+		"controls": [
+			{
+				"armor_stand_trigger@invis_armor_stand_holding_item": {}
+			},
+			{
+				"background_1": {
+					"type": "image",
+					"size": ["100% + 28px", 26],
+					"anchor_from": "right_middle",
+					"anchor_to": "right_middle",
+					"offset": [3, 0],
+					"layer": -1, // make text (parent) render on top
+					"texture": "textures/ui/white_circle",
+					"color": [0, 0, 0],
+					"alpha": 0.3,
+					"controls": [
+						{
+							"background_2": {
+								"type": "image",
+								"size": [22, 22],
+								"anchor_from": "left_middle",
+								"anchor_to": "left_middle",
+								"offset": [2, 0],
+								"texture": "textures/ui/white_circle",
+								"color": [0, 0, 0],
+								"alpha": 0.3
+							}
+						},
+						{
+							"icon": {
+								"type": "image",
+								"size": [15, 15],
+								"anchor_from": "left_middle",
+								"anchor_to": "left_middle",
+								"offset": [5.5, 0],
+								"texture": "('textures/ui/' + $control)"
+							}
+						}
+					]
+				}
+			}
+		]
+	},
+	"keyboard_hints_anim": {
+		"anim_type": "wait",
+		"duration": 5,
+		"next": "@holoprint:keybinds.keyboard_hints_fade_out_anim"
+	},
+	"keyboard_hints_fade_out_anim": {
+		"anim_type": "alpha",
+		"from": 1,
+		"to": 0,
+		"duration": 2
+	},
+	"full_input_mode": {
+		"type": "panel",
+		"size": ["13.5%", 30],
+		"anchor_from": "bottom_right",
+		"anchor_to": "bottom_right",
+		"offset": ["-5%", -5],
+		"controls": [
+			{
+				"background_1": {
+					"type": "image",
+					"texture": "textures/ui/white_circle",
+					"color": [0, 0, 0],
+					"alpha": 0.3
+				}
+			},
+			{
+				"background_2": {
+					"type": "image",
+					"size": [22, 22],
+					"offset": [0, -3],
+					"texture": "textures/ui/white_circle",
+					"color": [0, 0, 0],
+					"alpha": 0.3
+				}
+			},
+			{
+				"icon_cycler@common.common_cycler": {
+					"type": "image_cycler",
+					"size": [15, 15],
+					"offset": [0, -3],
+					"$next_page_button_event": "button.arrow_right",
+					"$prev_page_button_event": "button.arrow_left",
+					"images": [
+						{ "texture_path": "textures/ui/toggle_rendering" },
+						{ "texture_path": "textures/ui/change_opacity" },
+						{ "texture_path": "textures/ui/toggle_tint" },
+						{ "texture_path": "textures/ui/change_layer" },
+						{ "texture_path": "textures/ui/change_layer_mode" },
+						{ "texture_path": "textures/ui/toggle_validating" },
+						{ "texture_path": "textures/ui/move_hologram_x" },
+						{ "texture_path": "textures/ui/move_hologram_y" },
+						{ "texture_path": "textures/ui/move_hologram_z" },
+						{ "texture_path": "textures/ui/rotate_hologram" },
+						{ "texture_path": "textures/ui/change_structure" },
+						{ "texture_path": "textures/ui/backup_hologram" }
+					]
+				}
+			},
+			{
+				"previous_icon_cycler@common.common_cycler": {
+					"type": "image_cycler",
+					"size": [9, 9],
+					"anchor_from": "left_middle",
+					"anchor_to": "left_middle",
+					"offset": [3, 0],
+					"alpha": 0.6,
+					"$next_page_button_event": "button.arrow_right",
+					"$prev_page_button_event": "button.arrow_left",
+					"images": [
+						{ "texture_path": "textures/ui/backup_hologram" },
+						{ "texture_path": "textures/ui/toggle_rendering" },
+						{ "texture_path": "textures/ui/change_opacity" },
+						{ "texture_path": "textures/ui/toggle_tint" },
+						{ "texture_path": "textures/ui/change_layer" },
+						{ "texture_path": "textures/ui/change_layer_mode" },
+						{ "texture_path": "textures/ui/toggle_validating" },
+						{ "texture_path": "textures/ui/move_hologram_x" },
+						{ "texture_path": "textures/ui/move_hologram_y" },
+						{ "texture_path": "textures/ui/move_hologram_z" },
+						{ "texture_path": "textures/ui/rotate_hologram" },
+						{ "texture_path": "textures/ui/change_structure" }
+					]
+				}
+			},
+			{
+				"next_icon_cycler@common.common_cycler": {
+					"type": "image_cycler",
+					"size": [9, 9],
+					"anchor_from": "right_middle",
+					"anchor_to": "right_middle",
+					"offset": [-3, 0],
+					"alpha": 0.6,
+					"$next_page_button_event": "button.arrow_right",
+					"$prev_page_button_event": "button.arrow_left",
+					"images": [
+						{ "texture_path": "textures/ui/change_opacity" },
+						{ "texture_path": "textures/ui/toggle_tint" },
+						{ "texture_path": "textures/ui/change_layer" },
+						{ "texture_path": "textures/ui/change_layer_mode" },
+						{ "texture_path": "textures/ui/toggle_validating" },
+						{ "texture_path": "textures/ui/move_hologram_x" },
+						{ "texture_path": "textures/ui/move_hologram_y" },
+						{ "texture_path": "textures/ui/move_hologram_z" },
+						{ "texture_path": "textures/ui/rotate_hologram" },
+						{ "texture_path": "textures/ui/change_structure" },
+						{ "texture_path": "textures/ui/backup_hologram" },
+						{ "texture_path": "textures/ui/toggle_rendering" }
+					]
+				}
+			},
+			{
+				"control_name_cycler@common.common_cycler": {
+					"type": "label_cycler",
+					"anchor_from": "bottom_middle",
+					"anchor_to": "bottom_middle",
+					"offset": [0, -3],
+					"font_size": "small",
+					"$next_page_button_event": "button.arrow_right",
+					"$prev_page_button_event": "button.arrow_left",
+					"text_labels": [
+						"holoprint.controls.toggle_rendering",
+						"holoprint.controls.change_opacity",
+						"holoprint.controls.toggle_tint",
+						"holoprint.controls.change_layer",
+						"holoprint.controls.change_layer_mode",
+						"holoprint.controls.toggle_validating",
+						"holoprint.controls.move_hologram_x",
+						"holoprint.controls.move_hologram_y",
+						"holoprint.controls.move_hologram_z",
+						"holoprint.controls.rotate_hologram",
+						"holoprint.controls.change_structure",
+						"holoprint.controls.backup_hologram"
+					]
+				}
+			},
+			{
+				"full_input_keybinds": {
+					"type": "grid_page_indicator",
+					"size": [200, 30],
+					"grid_item_template": "holoprint:keybinds.full_input_keybind_item",
+					"grid_item_when_current": "current",
+					"cycler_manager_size_control_target": "icon_cycler",
+					"collection_name": "full_input_keybinds_grid"
+				}
+			}
+		]
+	},
+	"full_input_keybind_item": {
+		"type": "panel",
+		"controls": [
+			{
+				"current": {
+					"type": "panel",
+					"controls": [
+						{
+							"down_keybind@keyboard_trigger": {
+								"$button_name": "button.arrow_down",
+								"$content": "full_input_down"
+							}
+						},
+						{
+							"up_keybind@keyboard_trigger": {
+								"$button_name": "button.arrow_up",
+								"$content": "full_input_up"
+							}
+						}
+					]
+				}
+			}
+		]
+	},
+	"full_input_up": {
+		"type": "custom",
+		"renderer": "equipment_preview_renderer",
+		"size": [0, 0],
+		"bindings": [
+			{
+				"binding_type": "collection",
+				"binding_collection_name": "full_input_keybinds_grid",
+				"binding_name": "#collection_index"
+			},
+			{
+				"binding_type": "view",
+				"source_property_name": "(#collection_index * 131072 + 65536)", // 65536 * 2 = 131072
+				"target_property_name": "#item_id_aux"
+			}
+		]
+	},
+	"full_input_down": {
+		"type": "custom",
+		"renderer": "equipment_preview_renderer",
+		"size": [0, 0],
+		"bindings": [
+			{
+				"binding_type": "collection",
+				"binding_collection_name": "full_input_keybinds_grid",
+				"binding_name": "#collection_index"
+			},
+			{
+				"binding_type": "view",
+				"source_property_name": "(#collection_index * 131072 + 131072)",
+				"target_property_name": "#item_id_aux"
+			}
+		]
+	},
+	"invis_armor_stand_holding_item": {
+		"type": "custom",
+		"renderer": "equipment_preview_renderer", // used in smithing tables to render armour stands
+		"size": [0, 0],
+		"property_bag": {
+			"#item_id_aux": "($armor_stand_item_id * 65536)" // set the armour stand's (offhand) item
+		}
+	}
+}
