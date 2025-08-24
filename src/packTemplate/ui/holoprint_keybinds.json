@@ -15,8 +15,8 @@
 				"input_mode_toggle@keyboard_toggle": {
 					"$toggle_name": "input_mode_toggle",
 					"$button_name": "button.hide_tooltips", // F10
-					"$content": "quick_input_keybinds",
-					"$untoggled_content": "full_input_mode"
+					"$untoggled_content": "quick_input_keybinds",
+					"$content": "full_input_mode"
 				}
 			}
 		]
@@ -101,6 +101,34 @@
 		"type": "panel",
 		"controls": [
 			{
+				"keyboard_hints": {
+					"type": "panel",
+					"size": ["13.5%", "88.0368098%x"],
+					"anchor_from": "bottom_right",
+					"anchor_to": "bottom_right",
+					"offset": ["-5%", -5],
+					"anims": ["@holoprint:keybinds.keyboard_hints_anim"],
+					"propagate_alpha": true,
+					"controls": [
+						{
+							"background": {
+								"type": "image",
+								"size": ["100% + 6px", "100% + 6px"],
+								"texture": "textures/ui/white_circle",
+								"color": [0.7, 0.7, 0.7],
+								"alpha": 0.4
+							}
+						},
+						{
+							"image": {
+								"type": "image",
+								"texture": "textures/ui/quick_input_keyboard_hints"
+							}
+						}
+					]
+				}
+			},
+			{
 				"decrease_layer_trigger@keyboard_trigger": {
 					"$button_name": "button.arrow_down",
 					"$content": "quick_input_keybind_content",
@@ -183,6 +211,17 @@
 				}
 			}
 		]
+	},
+	"keyboard_hints_anim": {
+		"anim_type": "wait",
+		"duration": 5,
+		"next": "@holoprint:keybinds.keyboard_hints_fade_out_anim"
+	},
+	"keyboard_hints_fade_out_anim": {
+		"anim_type": "alpha",
+		"from": 1,
+		"to": 0,
+		"duration": 2
 	},
 	"full_input_mode": {
 		"type": "panel",

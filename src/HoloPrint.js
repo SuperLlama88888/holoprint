@@ -115,6 +115,7 @@ export async function makePack(structureFiles, config, resourcePackStack, previe
 		_12: "textures/ui/backup_hologram.png",
 		_15: "textures/ui/white_circle.png",
 		$7: "textures/ui/white_circle.json",
+		_19: "textures/ui/quick_input_keyboard_hints.png",
 		...(config.MATERIAL_LIST_ENABLED? {
 			$3: "ui/_ui_defs.json",
 			$6: "ui/_global_variables.json",
