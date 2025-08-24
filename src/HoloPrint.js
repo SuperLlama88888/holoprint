@@ -96,6 +96,8 @@ export async function makePack(structureFiles, config, resourcePackStack, previe
 		singleWhitePixelTexture: "textures/particle/single_white_pixel.png",
 		_0: "textures/particle/exclamation_mark.png",
 		_1: "textures/particle/save_icon.png",
+		itemTexture: config.RETEXTURE_CONTROL_ITEMS? "textures/item_texture.json" : undefined,
+		terrainTexture: config.RETEXTURE_CONTROL_ITEMS? "textures/terrain_texture.json" : undefined,
 		_3: "textures/ui/toggle_rendering.png",
 		_4: "textures/ui/change_opacity.png",
 		_5: "textures/ui/toggle_tint.png",
@@ -108,8 +110,8 @@ export async function makePack(structureFiles, config, resourcePackStack, previe
 		_10: "textures/ui/rotate_hologram.png",
 		_11: "textures/ui/change_structure.png",
 		_12: "textures/ui/backup_hologram.png",
-		itemTexture: config.RETEXTURE_CONTROL_ITEMS? "textures/item_texture.json" : undefined,
-		terrainTexture: config.RETEXTURE_CONTROL_ITEMS? "textures/terrain_texture.json" : undefined,
+		_15: "textures/ui/white_circle.png",
+		$7: "textures/ui/white_circle.json",
 		...(config.MATERIAL_LIST_ENABLED? {
 			$3: "ui/_ui_defs.json",
 			$6: "ui/_global_variables.json",
@@ -146,10 +148,7 @@ export async function makePack(structureFiles, config, resourcePackStack, previe
 	});
 	let resourceLangFilesPromise = loadResources(Object.fromEntries(languagesDotJson.map(language => [language, `texts/${language}.lang`])), resourcePackStack);
 	let packTemplateLangFilesPromise = loadPackTemplate(Object.fromEntries(languagesDotJson.map(language => [language, `texts/${language}.lang`]))).allValues;
-	let translationLanguagesLoadingPromise;
-	if(controlsHaveBeenCustomised || config.RENAME_CONTROL_ITEMS) {
-		translationLanguagesLoadingPromise = Promise.all(languagesDotJson.map(language => loadTranslationLanguage(language)));
-	}
+	let translationLanguagesLoadingPromise = Promise.all(languagesDotJson.map(language => loadTranslationLanguage(language)));
 	/** @type {[string, Blob][]} */
 	let controlItemTextures = [];
 	let hasModifiedTerrainTexture = false;
@@ -1381,6 +1380,11 @@ function makeLangFiles(config, packTemplateLangFiles, packName, materialList, ex
 		
 		langFile = langFile.replaceAll(/pack\.description\..+\s*/g, ""); // remove all the description template sections
 		langFile = langFile.replaceAll(/\t*#.+/g, ""); // remove comments
+		
+		// add the control name translations for the keyboard UI
+		["toggle_rendering", "change_opacity", "toggle_tint", "change_layer", "change_layer_mode", "toggle_validating", "rotate_hologram", "change_structure", "backup_hologram"].forEach(actionName => {
+			langFile += `\nholoprint.controls.${actionName}=${translate(`player_controls.${actionName}`, language)}`;
+		});
 		
 		if(config.RENAME_CONTROL_ITEMS) {
 			langFile += controlItemTranslations[language];

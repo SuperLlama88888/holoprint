@@ -132,7 +132,7 @@
 	},
 	"full_input_mode": {
 		"type": "panel",
-		"size": ["12.5%", 30],
+		"size": ["13.5%", 30],
 		"anchor_from": "bottom_right",
 		"anchor_to": "bottom_right",
 		"offset": ["-5%", -5],
@@ -149,6 +149,7 @@
 				"background_2": {
 					"type": "image",
 					"size": [22, 22],
+					"offset": [0, -3],
 					"texture": "textures/ui/white_circle",
 					"color": [0, 0, 0],
 					"alpha": 0.3
@@ -158,6 +159,7 @@
 				"icon_cycler@common.common_cycler": {
 					"type": "image_cycler",
 					"size": [15, 15],
+					"offset": [0, -3],
 					"$next_page_button_event": "button.arrow_right",
 					"$prev_page_button_event": "button.arrow_left",
 					"images": [
@@ -225,6 +227,31 @@
 						{ "texture_path": "textures/ui/change_structure" },
 						{ "texture_path": "textures/ui/backup_hologram" },
 						{ "texture_path": "textures/ui/toggle_rendering" }
+					]
+				}
+			},
+			{
+				"control_name_cycler@common.common_cycler": {
+					"type": "label_cycler",
+					"anchor_from": "bottom_middle",
+					"anchor_to": "bottom_middle",
+					"offset": [0, -3],
+					"font_size": "small",
+					"$next_page_button_event": "button.arrow_right",
+					"$prev_page_button_event": "button.arrow_left",
+					"text_labels": [
+						"holoprint.controls.toggle_rendering",
+						"holoprint.controls.change_opacity",
+						"holoprint.controls.toggle_tint",
+						"holoprint.controls.change_layer",
+						"holoprint.controls.change_layer_mode",
+						"holoprint.controls.toggle_validating",
+						"holoprint.controls.move_hologram_x",
+						"holoprint.controls.move_hologram_y",
+						"holoprint.controls.move_hologram_z",
+						"holoprint.controls.rotate_hologram",
+						"holoprint.controls.change_structure",
+						"holoprint.controls.backup_hologram"
 					]
 				}
 			},
