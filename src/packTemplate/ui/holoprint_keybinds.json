@@ -138,11 +138,20 @@
 		"offset": ["-5%", -5],
 		"controls": [
 			{
-				"a": {
+				"background_1": {
 					"type": "image",
-					"texture": "textures/ui/White",
+					"texture": "textures/ui/white_circle",
 					"color": [0, 0, 0],
-					"alpha": 0.5
+					"alpha": 0.3
+				}
+			},
+			{
+				"background_2": {
+					"type": "image",
+					"size": [22, 22],
+					"texture": "textures/ui/white_circle",
+					"color": [0, 0, 0],
+					"alpha": 0.3
 				}
 			},
 			{
@@ -173,7 +182,8 @@
 					"size": [9, 9],
 					"anchor_from": "left_middle",
 					"anchor_to": "left_middle",
-					"alpha": 0.4,
+					"offset": [3, 0],
+					"alpha": 0.6,
 					"$next_page_button_event": "button.arrow_right",
 					"$prev_page_button_event": "button.arrow_left",
 					"images": [
@@ -198,7 +208,8 @@
 					"size": [9, 9],
 					"anchor_from": "right_middle",
 					"anchor_to": "right_middle",
-					"alpha": 0.4,
+					"offset": [-3, 0],
+					"alpha": 0.6,
 					"$next_page_button_event": "button.arrow_right",
 					"$prev_page_button_event": "button.arrow_left",
 					"images": [
@@ -237,15 +248,15 @@
 					"type": "panel",
 					"controls": [
 						{
-							"up_keybind@keyboard_trigger": {
-								"$button_name": "button.arrow_up",
-								"$content": "full_input_up"
-							}
-						},
-						{
 							"down_keybind@keyboard_trigger": {
 								"$button_name": "button.arrow_down",
 								"$content": "full_input_down"
+							}
+						},
+						{
+							"up_keybind@keyboard_trigger": {
+								"$button_name": "button.arrow_up",
+								"$content": "full_input_up"
 							}
 						}
 					]
