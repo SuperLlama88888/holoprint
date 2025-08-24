@@ -98,25 +98,25 @@ export async function makePack(structureFiles, config, resourcePackStack, previe
 		_1: "textures/particle/save_icon.png",
 		itemTexture: config.RETEXTURE_CONTROL_ITEMS? "textures/item_texture.json" : undefined,
 		terrainTexture: config.RETEXTURE_CONTROL_ITEMS? "textures/terrain_texture.json" : undefined,
-		_3: "textures/ui/toggle_rendering.png",
-		_4: "textures/ui/change_opacity.png",
-		_18: "textures/ui/increase_opacity.png",
-		_5: "textures/ui/toggle_tint.png",
-		_6: "textures/ui/toggle_validating.png",
-		_7: "textures/ui/change_layer.png",
-		_16: "textures/ui/increase_layer.png",
-		_17: "textures/ui/decrease_layer.png",
-		_8: "textures/ui/change_layer_mode.png",
-		_9: "textures/ui/move_hologram_x.png",
-		_13: "textures/ui/move_hologram_y.png",
-		_14: "textures/ui/move_hologram_z.png",
-		_10: "textures/ui/rotate_hologram.png",
-		_11: "textures/ui/change_structure.png",
-		_12: "textures/ui/backup_hologram.png",
-		_15: "textures/ui/white_circle.png",
-		$7: "textures/ui/white_circle.json",
-		_19: "textures/ui/quick_input_keyboard_hints.png",
-		...(config.MATERIAL_LIST_ENABLED? {
+		...(config.UI_CONTROLS_ENABLED? {
+			_3: "textures/ui/toggle_rendering.png",
+			_4: "textures/ui/change_opacity.png",
+			_18: "textures/ui/increase_opacity.png",
+			_5: "textures/ui/toggle_tint.png",
+			_6: "textures/ui/toggle_validating.png",
+			_7: "textures/ui/change_layer.png",
+			_16: "textures/ui/increase_layer.png",
+			_17: "textures/ui/decrease_layer.png",
+			_8: "textures/ui/change_layer_mode.png",
+			_9: "textures/ui/move_hologram_x.png",
+			_13: "textures/ui/move_hologram_y.png",
+			_14: "textures/ui/move_hologram_z.png",
+			_10: "textures/ui/rotate_hologram.png",
+			_11: "textures/ui/change_structure.png",
+			_12: "textures/ui/backup_hologram.png",
+			_15: "textures/ui/white_circle.png",
+			$7: "textures/ui/white_circle.json",
+			_19: "textures/ui/quick_input_keyboard_hints.png",
 			$3: "ui/_ui_defs.json",
 			$6: "ui/_global_variables.json",
 			$4: "ui/hud_screen.json",
@@ -411,7 +411,7 @@ export async function makePack(structureFiles, config, resourcePackStack, previe
 	
 	// console.log(partitionedBlockCounts);
 	let highestItemCount;
-	if(config.MATERIAL_LIST_ENABLED) {
+	if(config.UI_CONTROLS_ENABLED) {
 		addMaterialListUI(exportedMaterialListEnglish, materialListUI, bedrockMetadata.blocks);
 		highestItemCount = max(...exportedMaterialListEnglish.map(({ count }) => count));
 	}
@@ -490,7 +490,7 @@ export async function makePack(structureFiles, config, resourcePackStack, previe
 			packFiles[fileName] = imageBlob;
 		});
 	}
-	if(config.MATERIAL_LIST_ENABLED && highestItemCount < 1728) {
+	if(config.UI_CONTROLS_ENABLED && highestItemCount < 1728) {
 		delete packFiles["font/glyph_E2.png"];
 	}
 	langFiles.forEach(([language, langFile]) => {
@@ -662,7 +662,7 @@ export function addDefaultConfig(config) {
 			SPAWN_ANIMATION_LENGTH: 0.4, // in seconds
 			PLAYER_CONTROLS_ENABLED: true,
 			CONTROLS: {},
-			MATERIAL_LIST_ENABLED: true,
+			UI_CONTROLS_ENABLED: true,
 			RETEXTURE_CONTROL_ITEMS: true,
 			CONTROL_ITEM_TEXTURE_SCALE: 1,
 			RENAME_CONTROL_ITEMS: true,
@@ -1342,7 +1342,7 @@ function makeLangFiles(config, packTemplateLangFiles, packName, materialList, ex
 	const disabledFeatureTranslations = { // these look at the .lang RP files
 		"SPAWN_ANIMATION_ENABLED": "spawn_animation_disabled",
 		"PLAYER_CONTROLS_ENABLED": "player_controls_disabled",
-		"MATERIAL_LIST_ENABLED": "material_list_disabled",
+		"UI_CONTROLS_ENABLED": "ui_controls_disabled",
 		"RETEXTURE_CONTROL_ITEMS": "retextured_control_items_disabled",
 		"RENAME_CONTROL_ITEMS": "renamed_control_items_disabled"
 	};
@@ -1855,7 +1855,7 @@ function functionToMolang(func, vars = {}) {
  * @property {number} SPAWN_ANIMATION_LENGTH Length of each individual block's spawn animation (seconds)
  * @property {boolean} PLAYER_CONTROLS_ENABLED
  * @property {HoloPrintControlsConfig} CONTROLS
- * @property {boolean} MATERIAL_LIST_ENABLED
+ * @property {boolean} UI_CONTROLS_ENABLED
  * @property {boolean} RETEXTURE_CONTROL_ITEMS
  * @property {number} CONTROL_ITEM_TEXTURE_SCALE How much to scale control item overlay textures. When compositing textures, MCBE scales all textures to the maximum, so the size of the overlay control texture has to be the LCM of itself and in-game items. Hence, if in-game items have a higher resolution than expected, they will probably be scaled wrong. The solution is to scale the overlay textures even more, which can be adjusted with this.
  * @property {boolean} RENAME_CONTROL_ITEMS

@@ -69,7 +69,7 @@
   "settings.features": "Features",
   "settings.features.spawn_animation": "生成动画：",
   "settings.features.player_controls": "Player controls:",
-  "settings.features.material_list": "Material list:",
+  "settings.features.ui_controls": "UI controls:",
   "settings.features.retexture_control_items": "Retexture control items:",
   "settings.features.rename_control_items": "Rename control items:",
   "settings.ghost_block_scale": "投影比例：",

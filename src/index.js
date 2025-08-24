@@ -626,7 +626,7 @@ async function makePack(structureFiles, localResourcePacks) {
 		TEXTURE_OUTLINE_OPACITY: +formData.get("textureOutlineOpacity") / 100,
 		SPAWN_ANIMATION_ENABLED: !!formData.get("spawnAnimationEnabled"),
 		PLAYER_CONTROLS_ENABLED: !!formData.get("playerControlsEnabled"),
-		MATERIAL_LIST_ENABLED: !!formData.get("materialListEnabled"),
+		UI_CONTROLS_ENABLED: !!formData.get("uiControlsEnabled"),
 		RETEXTURE_CONTROL_ITEMS: !!formData.get("retextureControlItems"),
 		CONTROL_ITEM_TEXTURE_SCALE: +formData.get("controlItemTextureScale"),
 		RENAME_CONTROL_ITEMS: !!formData.get("renameControlItems"),
