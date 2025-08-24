@@ -3,6 +3,12 @@
 	
 	"keybinds": {
 		"type": "panel",
+		"bindings": [
+			{
+				"binding_name": "(not #inventory_touch_button)",
+				"binding_name_override": "#visible"
+			}
+		],
 		"controls": [
 			{
 				"material_list_trigger@keyboard_trigger": {
