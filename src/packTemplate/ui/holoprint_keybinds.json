@@ -132,7 +132,7 @@
 	},
 	"full_input_mode": {
 		"type": "panel",
-		"size": ["15%", 40],
+		"size": ["12.5%", 30],
 		"anchor_from": "bottom_right",
 		"anchor_to": "bottom_right",
 		"offset": ["-5%", -5],
@@ -155,12 +155,9 @@
 						{ "texture_path": "textures/ui/toggle_rendering" },
 						{ "texture_path": "textures/ui/change_opacity" },
 						{ "texture_path": "textures/ui/toggle_tint" },
-						{ "texture_path": "textures/ui/toggle_validating" },
 						{ "texture_path": "textures/ui/change_layer" },
 						{ "texture_path": "textures/ui/change_layer_mode" },
-						{ "texture_path": "textures/ui/move_hologram" },
-						{ "texture_path": "textures/ui/move_hologram" },
-						{ "texture_path": "textures/ui/move_hologram" },
+						{ "texture_path": "textures/ui/toggle_validating" },
 						{ "texture_path": "textures/ui/move_hologram" },
 						{ "texture_path": "textures/ui/move_hologram" },
 						{ "texture_path": "textures/ui/move_hologram" },
@@ -173,7 +170,7 @@
 			{
 				"previous_icon_cycler@common.common_cycler": {
 					"type": "image_cycler",
-					"size": [10, 10],
+					"size": [9, 9],
 					"anchor_from": "left_middle",
 					"anchor_to": "left_middle",
 					"alpha": 0.4,
@@ -184,12 +181,9 @@
 						{ "texture_path": "textures/ui/toggle_rendering" },
 						{ "texture_path": "textures/ui/change_opacity" },
 						{ "texture_path": "textures/ui/toggle_tint" },
-						{ "texture_path": "textures/ui/toggle_validating" },
 						{ "texture_path": "textures/ui/change_layer" },
 						{ "texture_path": "textures/ui/change_layer_mode" },
-						{ "texture_path": "textures/ui/move_hologram" },
-						{ "texture_path": "textures/ui/move_hologram" },
-						{ "texture_path": "textures/ui/move_hologram" },
+						{ "texture_path": "textures/ui/toggle_validating" },
 						{ "texture_path": "textures/ui/move_hologram" },
 						{ "texture_path": "textures/ui/move_hologram" },
 						{ "texture_path": "textures/ui/move_hologram" },
@@ -201,7 +195,7 @@
 			{
 				"next_icon_cycler@common.common_cycler": {
 					"type": "image_cycler",
-					"size": [10, 10],
+					"size": [9, 9],
 					"anchor_from": "right_middle",
 					"anchor_to": "right_middle",
 					"alpha": 0.4,
@@ -210,12 +204,9 @@
 					"images": [
 						{ "texture_path": "textures/ui/change_opacity" },
 						{ "texture_path": "textures/ui/toggle_tint" },
-						{ "texture_path": "textures/ui/toggle_validating" },
 						{ "texture_path": "textures/ui/change_layer" },
 						{ "texture_path": "textures/ui/change_layer_mode" },
-						{ "texture_path": "textures/ui/move_hologram" },
-						{ "texture_path": "textures/ui/move_hologram" },
-						{ "texture_path": "textures/ui/move_hologram" },
+						{ "texture_path": "textures/ui/toggle_validating" },
 						{ "texture_path": "textures/ui/move_hologram" },
 						{ "texture_path": "textures/ui/move_hologram" },
 						{ "texture_path": "textures/ui/move_hologram" },
@@ -232,9 +223,8 @@
 					"size": [200, 30],
 					"grid_item_template": "holoprint:keybinds.full_input_keybind_item",
 					"grid_item_when_current": "current",
-					"grid_item_when_not_current": "not_current",
 					"cycler_manager_size_control_target": "icon_cycler",
-					"collection_name": "test_grid"
+					"collection_name": "full_input_keybinds_grid"
 				}
 			}
 		]
@@ -243,25 +233,19 @@
 		"type": "panel",
 		"controls": [
 			{
-				"current@touch_toggle_image": {
-					"size": [40, 40]
-				}
-			},
-			{
-				"not_current": {
+				"current": {
 					"type": "panel",
 					"controls": [
 						{
-							"i@touch_toggle_image": {
-								"size": [20, 20],
-								"bindings": [
-									{
-										"binding_type": "collection",
-										"binding_collection_name": "test_grid",
-										"binding_name": "(#collection_index < 3)",
-										"binding_name_override": "#visible"
-									}
-								]
+							"up_keybind@keyboard_trigger": {
+								"$button_name": "button.arrow_up",
+								"$content": "full_input_up"
+							}
+						},
+						{
+							"down_keybind@keyboard_trigger": {
+								"$button_name": "button.arrow_down",
+								"$content": "full_input_down"
 							}
 						}
 					]
@@ -269,9 +253,39 @@
 			}
 		]
 	},
-	"touch_toggle_image": {
-		"type": "image",
-		"texture": "textures/ui/recipe_book_icon"
+	"full_input_up": {
+		"type": "custom",
+		"renderer": "equipment_preview_renderer",
+		"size": [0, 0],
+		"bindings": [
+			{
+				"binding_type": "collection",
+				"binding_collection_name": "full_input_keybinds_grid",
+				"binding_name": "#collection_index"
+			},
+			{
+				"binding_type": "view",
+				"source_property_name": "(#collection_index * 131072 + 65536)", // 65536 * 2 = 131072
+				"target_property_name": "#item_id_aux"
+			}
+		]
+	},
+	"full_input_down": {
+		"type": "custom",
+		"renderer": "equipment_preview_renderer",
+		"size": [0, 0],
+		"bindings": [
+			{
+				"binding_type": "collection",
+				"binding_collection_name": "full_input_keybinds_grid",
+				"binding_name": "#collection_index"
+			},
+			{
+				"binding_type": "view",
+				"source_property_name": "(#collection_index * 131072 + 131072)",
+				"target_property_name": "#item_id_aux"
+			}
+		]
 	},
 	"invis_armor_stand_holding_item": {
 		"type": "custom",

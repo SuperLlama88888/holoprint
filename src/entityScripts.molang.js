@@ -48,22 +48,22 @@ export function armorStandPreAnimation() {
 	if(q.is_in_ui) {
 		// if the armour stand is holding an item and in the ui, it must be from our custom ui code. I doubt any other addons would interfere here...
 		// no there is not any better way to do this better
-		if(q.is_item_name_any("slot.weapon.offhand", "minecraft:stone")) {
+		if(q.is_item_name_any("slot.weapon.offhand", "minecraft:stone", "minecraft:grass_block")) {
 			t.ui_action = $[ACTIONS.TOGGLE_RENDERING];
-		} else if(q.is_item_name_any("slot.weapon.offhand", "minecraft:grass_block")) {
-			t.ui_action = $[ACTIONS.INCREASE_OPACITY];
 		} else if(q.is_item_name_any("slot.weapon.offhand", "minecraft:dirt")) {
-			t.ui_action = $[ACTIONS.DECREASE_OPACITY];
+			t.ui_action = $[ACTIONS.INCREASE_OPACITY];
 		} else if(q.is_item_name_any("slot.weapon.offhand", "minecraft:cobblestone")) {
+			t.ui_action = $[ACTIONS.DECREASE_OPACITY];
+		} else if(q.is_item_name_any("slot.weapon.offhand", "minecraft:oak_planks", "minecraft:oak_sapling")) {
 			t.ui_action = $[ACTIONS.TOGGLE_TINT];
-		} else if(q.is_item_name_any("slot.weapon.offhand", "minecraft:oak_planks")) {
-			t.ui_action = $[ACTIONS.TOGGLE_VALIDATING];
-		} else if(q.is_item_name_any("slot.weapon.offhand", "minecraft:oak_sapling")) {
-			t.ui_action = $[ACTIONS.INCREASE_LAYER];
 		} else if(q.is_item_name_any("slot.weapon.offhand", "minecraft:bedrock")) {
+			t.ui_action = $[ACTIONS.INCREASE_LAYER];
+		} else if(q.is_item_name_any("slot.weapon.offhand", "minecraft:flowing_water")) {
 			t.ui_action = $[ACTIONS.DECREASE_LAYER];
-		} else if(q.is_item_name_any("slot.weapon.offhand", "minecraft:sand")) {
+		} else if(q.is_item_name_any("slot.weapon.offhand", "minecraft:water", "minecraft:flowing_lava")) {
 			t.ui_action = $[ACTIONS.CHANGE_LAYER_MODE];
+		} else if(q.is_item_name_any("slot.weapon.offhand", "minecraft:lava", "minecraft:sand")) {
+			t.ui_action = $[ACTIONS.TOGGLE_VALIDATING];
 		} else if(q.is_item_name_any("slot.weapon.offhand", "minecraft:gravel")) {
 			t.ui_action = $[ACTIONS.MOVE_POS_X];
 		} else if(q.is_item_name_any("slot.weapon.offhand", "minecraft:gold_ore")) {
@@ -84,7 +84,7 @@ export function armorStandPreAnimation() {
 			t.ui_action = $[ACTIONS.NEXT_STRUCTURE];
 		} else if(q.is_item_name_any("slot.weapon.offhand", "minecraft:lapis_block")) {
 			t.ui_action = $[ACTIONS.PREVIOUS_STRUCTURE];
-		} else if(q.is_item_name_any("slot.weapon.offhand", "minecraft:dispenser")) {
+		} else if(q.is_item_name_any("slot.weapon.offhand", "minecraft:dispenser", "minecraft:sandstone")) {
 			t.ui_action = $[ACTIONS.BACKUP_HOLOGRAM];
 		} else {
 			return;

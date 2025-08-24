@@ -1,21 +1,6 @@
 {
 	"$toggle_rendering_item": 1, // stone
-	"$increase_opacity_item": 2, // grass_block
-	"$decrease_opacity_item": 3, // dirt
-	"$toggle_tint_item": 4, // cobblestone
-	"$toggle_validating_item": 5, // oak_planks
-	"$increase_layer_item": 6, // oak_sapling
-	"$decrease_layer_item": 7, // bedrock
-	"$change_layer_mode_item": 12, // sand
-	"$increase_x_item": 13, // gravel
-	"$decrease_x_item": 14, // gold_ore
-	"$increase_y_item": 15, // iron_ore
-	"$decrease_y_item": 16, // coal_ore
-	"$increase_z_item": 17, // oak_log
-	"$decrease_z_item": 18, // oak_leaves
-	"$rotate_clockwise_item": 19, // sponge
-	"$rotate_anticlockwise_item": 20, // glass
-	"$next_structure_item": 21, // lapis_ore
-	"$previous_structure_item": 22, // lapis_block
-	"$backup_hologram_icon": 23 // dispenser
+	"$increase_opacity_item": 3, // dirt
+	"$increase_layer_item": 7, // bedrock
+	"$decrease_layer_item": 8 // flowing_water
 }
