@@ -38,9 +38,9 @@ I also wonder if we could have a "rotation lock" option which makes the hologram
 			"bones": {
 				"hologram_offset_wrapper": {
 					"position": [
-						"((v.hologram_dir == 0? v.hologram.offset_x : (v.hologram_dir == 1? -v.hologram.offset_z : (v.hologram_dir == 2? -v.hologram.offset_x : v.hologram.offset_z))) + (v.hologram.rotation > 1? v.hologram.structure_w - 1 : 0)) * 16",
+						"((v.hologram_dir == 0? -v.hologram.offset_x : (v.hologram_dir == 1? -v.hologram.offset_z : (v.hologram_dir == 2? v.hologram.offset_x : v.hologram.offset_z))) + (v.hologram.rotation > 1? v.hologram.structure_w - 1 : 0)) * 16",
 						"v.hologram.offset_y * 16",
-						"((v.hologram_dir == 0? v.hologram.offset_z: (v.hologram_dir == 1? v.hologram.offset_x : (v.hologram_dir == 2? -v.hologram.offset_z : -v.hologram.offset_x))) - (v.hologram.rotation == 1 || v.hologram.rotation == 2? v.hologram.structure_d - 1 : 0)) * 16"
+						"((v.hologram_dir == 0? v.hologram.offset_z: (v.hologram_dir == 1? -v.hologram.offset_x : (v.hologram_dir == 2? -v.hologram.offset_z : v.hologram.offset_x))) - (v.hologram.rotation == 1 || v.hologram.rotation == 2? v.hologram.structure_d - 1 : 0)) * 16"
 					]
 				}
 			}
@@ -50,9 +50,9 @@ I also wonder if we could have a "rotation lock" option which makes the hologram
 			"bones": {
 				"hologram_offset_wrapper": {
 					"position": [
-						"(v.hologram_dir == 0? v.hologram.offset_x : (v.hologram_dir == 1? -v.hologram.offset_z : (v.hologram_dir == 2? -v.hologram.offset_x : v.hologram.offset_z)) + 1.5) * 16",
+						"(v.hologram_dir == 0? -v.hologram.offset_x : (v.hologram_dir == 1? -v.hologram.offset_z : (v.hologram_dir == 2? v.hologram.offset_x : v.hologram.offset_z)) + 1.5) * 16",
 						"v.hologram.offset_y * 16",
-						"(v.hologram_dir == 0? v.hologram.offset_z: (v.hologram_dir == 1? v.hologram.offset_x : (v.hologram_dir == 2? -v.hologram.offset_z : -v.hologram.offset_x)) + 1.5) * 16"
+						"(v.hologram_dir == 0? v.hologram.offset_z: (v.hologram_dir == 1? -v.hologram.offset_x : (v.hologram_dir == 2? -v.hologram.offset_z : v.hologram.offset_x)) + 1.5) * 16"
 					],
 					"rotation": [0, "js does this", 0]
 				}

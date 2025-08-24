@@ -4,7 +4,7 @@ export const ACTIONS = createNumericEnum(["NEXT_STRUCTURE", "PREVIOUS_STRUCTURE"
 
 export function armorStandInitialization() {
 	v.hologram_activated = HOLOGRAM_INITIAL_ACTIVATION; // true/false are substituted in here for the different subpacks
-	v.hologram.offset_x = -$[initialOffset[0]];
+	v.hologram.offset_x = $[initialOffset[0]];
 	v.hologram.offset_y = $[initialOffset[1]];
 	v.hologram.offset_z = $[initialOffset[2]];
 	v.hologram.rotation = 0;
@@ -249,9 +249,9 @@ export function armorStandPreAnimation() {
 				} else if(t.camera_rot_y > -45 && t.camera_rot_y <= 45) {
 					v.hologram.offset_z++;
 				} else if(t.camera_rot_y > 45 && t.camera_rot_y <= 135) {
-					v.hologram.offset_x++;
-				} else if(t.camera_rot_y > -135 && t.camera_rot_y <= -45) {
 					v.hologram.offset_x--;
+				} else if(t.camera_rot_y > -135 && t.camera_rot_y <= -45) {
+					v.hologram.offset_x++;
 				} else {
 					v.hologram.offset_z--;
 				}
@@ -282,7 +282,7 @@ export function armorStandPreAnimation() {
 	}
 	
 	if($[coordinateLockEnabled]) {
-		v.hologram.offset_x = -($[coordinateLockCoordsMolang[0]]) + q.position(0) - 0.5; // x in coordinates is opposite to x in geometry
+		v.hologram.offset_x = ($[coordinateLockCoordsMolang[0]]) - q.position(0) + 0.5;
 		v.hologram.offset_y = ($[coordinateLockCoordsMolang[1]]) - Math.floor(q.position(1));
 		v.hologram.offset_z = ($[coordinateLockCoordsMolang[2]]) - q.position(2) + 0.5;
 		v.hologram.rotation = 2 - Math.floor(q.body_y_rotation / 90);
