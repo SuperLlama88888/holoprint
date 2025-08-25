@@ -1647,16 +1647,71 @@ function itemCriteriaToMolang(itemCriteria, slot = "slot.weapon.mainhand") {
  * @returns {string}
  */
 function arrayToMolang(array, indexVar) {
-	let arrayEntries = Object.entries(array); // to handle splitting, original indices need to be preserved, hence looking at index-value pairs
+	let arrayEntries = Object.entries(array).map(([i, x]) => [+i, x]); // to handle splitting, original indices need to be preserved, hence looking at index-value pairs
 	return arrayEntriesToMolang(arrayEntries, indexVar);
 }
+/**
+ * @param {[number, any][]} entries
+ * @param {string} indexVar
+ * @returns {string}
+ */
 function arrayEntriesToMolang(entries, indexVar) {
-	const splittingThreshold = 50;
+	const splittingThreshold = 10;
 	if(entries.length > splittingThreshold) { // large arrays cause Molang stack overflows, so this splits them in half in such a situation.
 		let middle = floor(entries.length / 2);
-		return `${indexVar}<${entries[middle][0]}?(${arrayEntriesToMolang(entries.slice(0, middle), indexVar)}):(${arrayEntriesToMolang(entries.slice(middle), indexVar)})`;
+		let lowerMolang = arrayEntriesToMolang(entries.slice(0, middle), indexVar);
+		let upperMolang = arrayEntriesToMolang(entries.slice(middle), indexVar);
+		let lower = parseInt(lowerMolang) == +lowerMolang? lowerMolang : `(${lowerMolang})`;
+		let upper = parseInt(upperMolang) == +upperMolang? upperMolang : `(${upperMolang})`;
+		if(lower == upper) {
+			return lower;
+		}
+		return `${indexVar}<${entries[middle][0]}?${lower}:${upper}`;
 	}
-	return entries.map(([index, value], i) => i == entries.length - 1? value : `${i > 0? "(" : ""}${indexVar}==${index}?${value}:`).join("") + ")".repeat(max(entries.length - 2, 0));
+	let uniqueValues = Array.from(new Set(entries.map(([, value]) => value)));
+	let valuesAndIndices = uniqueValues.map(x => [x, entries.filter(([, value]) => value == x).map(([i]) => i)]);
+	let lowestIndex = min(...entries.map(([i]) => i));
+	let highestIndex = max(...entries.map(([i]) => i));
+	let conditionsAndValues = valuesAndIndices.map(([value, indices]) => {
+		/** @type {Vec2[]} */
+		let intervals = [];
+		indices.forEach(i => {
+			if(intervals?.at(-1)?.[1] == i - 1) {
+				intervals.at(-1)[1] = i;
+			} else {
+				intervals.push([i, i]);
+			}
+		});
+		let intervalConditions = intervals.map(([lower, upper]) => {
+			if(lower == upper) {
+				return `${indexVar}==${lower}`;
+			} else if(lower == lowestIndex && upper == highestIndex) {
+				return "true";
+			} else if(lower == lowestIndex) {
+				return `${indexVar}<${upper + 1}`;
+			} else if(upper == highestIndex) {
+				return `${indexVar}>${lower - 1}`;
+			} else {
+				let condition = `${indexVar}>${lower - 1}&&${indexVar}<${upper + 1}`;
+				return intervals.length == 1? condition : `(${condition})`; // because min_engine_version is 1.16.0, Molang || always run before &&, so it has to be put inside brackets
+			}
+		});
+		return [intervalConditions.join("||"), value];
+	});
+	
+	// Move the longest condition to the end. Because it's at the end of a ternary condition, we don't have to include the condition, saving characters (and a tiny bit of computation)
+	let longestConditionLength = max(...conditionsAndValues.map(([condition]) => condition.length));
+	let longestConditionAndValueIndex = conditionsAndValues.findIndex(([condition]) => condition.length == longestConditionLength);
+	let longestConditionAndValue = conditionsAndValues[longestConditionAndValueIndex];
+	conditionsAndValues.splice(longestConditionAndValueIndex, 1);
+	conditionsAndValues.push(longestConditionAndValue);
+	
+	return conditionsAndValues.map(([condition, value], i) => {
+		if(condition == "true" || i == conditionsAndValues.length - 1) {
+			return value;
+		}
+		return `${i > 0? "(" : ""}${condition}?${value}:`;
+	}).join("") + ")".repeat(max(conditionsAndValues.length - 2, 0));
 }
 /**
  * Creates a Molang expression that mimics 2D array access.
