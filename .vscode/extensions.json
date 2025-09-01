@@ -6,6 +6,7 @@
 		"quick-lint.quick-lint-js",
 		"ije.esm-vscode",
 		"sissel.json-script-tag",
-		"jackolope.lit-analyzer-plugin"
+		"jackolope.lit-analyzer-plugin",
+		"dingsel.bedrock-ui"
 	]
 }

@@ -121,7 +121,9 @@ export async function makePack(structureFiles, config, resourcePackStack, previe
 			$6: "ui/_global_variables.json",
 			$4: "ui/hud_screen.json",
 			materialListUI: "ui/holoprint_material_list.json",
-			$5: "ui/holoprint_keybinds.json"
+			$5: "ui/holoprint_keybinds.json",
+			$8: "ui/holoprint_touch_buttons.json",
+			$9: "ui/holoprint_common.json"
 		} : {}),
 		_2: "font/glyph_E2.png",
 		languagesDotJson: "texts/languages.json"

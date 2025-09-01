@@ -1,0 +1,158 @@
+{
+	"namespace": "holoprint:touch_buttons",
+	
+	"touch_buttons": {
+		"type": "panel",
+		"controls": [
+			{
+				"input_panel": {
+					"type": "input_panel",
+					"anchor_from": "top_left",
+					"anchor_to": "top_left",
+					"offset": [0, 74],
+					"size": [29.23, 80],
+					"layer": 32,
+					"prevent_touch_input": true,
+					"controls": [
+						{
+							"buttons_and_toggles@buttons_and_toggles": {}
+						}
+					]
+				}
+			},
+			{
+				"draggable_apple": {
+					"type": "input_panel",
+					"draggable": "both", // accepts: "horizontal", "vertical" and "both"
+					"size": [40,40],
+					"prevent_touch_input": true,
+					// "anchor_from": "left_middle",
+					// "anchor_to": "left_middle",
+					"controls": [
+						{
+							"image": {
+								"type": "image",
+								"texture": "textures/ui/White",
+								"size": ["100%","100%"],
+								"color": [0,1,1]
+							}
+						}
+					],
+					"button_mappings": [
+						{
+							"from_button_id": "button.menu_select",
+							"to_button_id": "button.menu_select",
+							"mapping_type": "pressed",
+							"button_up_right_of_first_refusal": true
+						}
+					]
+				}
+			},
+			{
+				"material_list@holoprint:material_list.material_list": {
+					"bindings": [
+						{
+							"binding_type": "view",
+							"source_control_name": "material_list_toggle",
+							"source_property_name": "#toggle_state",
+							"target_property_name": "#visible"
+						}
+					]
+				}
+			}
+		]
+	},
+	"buttons_and_toggles": {
+		"type": "stack_panel",
+		"controls": [
+			{
+				"material_list_toggle_button@common_toggles.light_content_toggle": {
+					"size": "$holoprint:touch_button_size",
+					"$toggle_name": "toggle_button",
+					"$button_content": "holoprint:touch_buttons.material_list_toggle_icon",
+					"$toggle_view_binding_name": "material_list_toggle",
+					"$default_border_visible": false,
+					"$hover_border_visible": false,
+					"$pressed_texture": "textures/ui/button_borderless_light",
+					"$pressed_no_hover_texture": "textures/ui/button_borderless_lightpressednohover"
+				}
+			},
+			{
+				"toggle_rendering_button@control_button": {
+					"$control": "toggle_rendering",
+					"$armor_stand_item_id": "$holoprint:toggle_rendering_item"
+				}
+			},
+			{
+				"increase_layer_button@control_button": {
+					"$control": "increase_layer",
+					"$armor_stand_item_id": "$holoprint:increase_layer_item"
+				}
+			},
+			{
+				"decrease_layer_button@control_button": {
+					"$control": "decrease_layer",
+					"$armor_stand_item_id": "$holoprint:decrease_layer_item"
+				}
+			},
+			{
+				"increase_opacity_button@control_button": {
+					"$control": "increase_opacity",
+					"$armor_stand_item_id": "$holoprint:increase_opacity_item"
+				}
+			}
+		]
+	},
+	"control_button": {
+		"type": "button",
+		"size": "$holoprint:touch_button_size",
+		"sound_name": "random.click",
+		"sound_volume": 1.0,
+		"sound_pitch": 1.0,
+		"pressed_control": "pressed",
+		"button_mappings": [
+			{
+				"from_button_id": "button.menu_select",
+				"to_button_id": "button.dummy",
+				"mapping_type": "pressed"
+			},
+			{
+				"from_button_id": "button.menu_ok",
+				"to_button_id": "button.dummy",
+				"mapping_type": "focused"
+			}
+		],
+		"controls": [
+			{
+				"background": {
+					"type": "image",
+					"texture": "textures/ui/button_borderless_light",
+					"size": ["100% - 2px", "100% - 2px"]
+				}
+			},
+			{
+				"pressed": {
+					"type": "image",
+					"texture": "textures/ui/button_borderless_lightpressednohover",
+					"size": ["100% - 2px", "100% - 2px"],
+					"controls": [
+						{
+							"trigger@holoprint:common.invis_armor_stand_holding_item": {}
+						}
+					]
+				}
+			},
+			{
+				"icon": {
+					"type": "image",
+					"texture": "('textures/ui/' + $control)",
+					"size": ["100% - 4px", "100% - 4px"]
+				}
+			}
+		]
+	},
+	"material_list_toggle_icon": {
+		"type": "image",
+		"texture": "textures/ui/recipe_book_icon"
+	}
+}

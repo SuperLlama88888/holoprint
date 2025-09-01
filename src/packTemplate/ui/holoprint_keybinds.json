@@ -3,12 +3,6 @@
 	
 	"keybinds": {
 		"type": "panel",
-		"bindings": [
-			{
-				"binding_name": "(not #inventory_touch_button)",
-				"binding_name_override": "#visible"
-			}
-		],
 		"controls": [
 			{
 				"material_list_trigger@keyboard_trigger": {
@@ -138,7 +132,7 @@
 				"decrease_layer_trigger@keyboard_trigger": {
 					"$button_name": "button.arrow_down",
 					"$content": "quick_input_keybind_content",
-					"$armor_stand_item_id": "$decrease_layer_item",
+					"$armor_stand_item_id": "$holoprint:decrease_layer_item",
 					"$control": "decrease_layer"
 				}
 			},
@@ -146,7 +140,7 @@
 				"increase_layer_trigger@keyboard_trigger": {
 					"$button_name": "button.arrow_up",
 					"$content": "quick_input_keybind_content",
-					"$armor_stand_item_id": "$increase_layer_item",
+					"$armor_stand_item_id": "$holoprint:increase_layer_item",
 					"$control": "increase_layer"
 				}
 			},
@@ -154,7 +148,7 @@
 				"toggle_rendering_trigger@keyboard_trigger": {
 					"$button_name": "button.arrow_left",
 					"$content": "quick_input_keybind_content",
-					"$armor_stand_item_id": "$toggle_rendering_item",
+					"$armor_stand_item_id": "$holoprint:toggle_rendering_item",
 					"$control": "toggle_rendering"
 				}
 			},
@@ -162,7 +156,7 @@
 				"increase_opacity_trigger@keyboard_trigger": {
 					"$button_name": "button.arrow_right",
 					"$content": "quick_input_keybind_content",
-					"$armor_stand_item_id": "$increase_opacity_item",
+					"$armor_stand_item_id": "$holoprint:increase_opacity_item",
 					"$control": "increase_opacity"
 				}
 			}
@@ -177,7 +171,7 @@
 		"offset": ["-5%", -15.2],
 		"controls": [
 			{
-				"armor_stand_trigger@invis_armor_stand_holding_item": {}
+				"armor_stand_trigger@holoprint:common.invis_armor_stand_holding_item": {}
 			},
 			{
 				"background_1": {
@@ -390,10 +384,7 @@
 			}
 		]
 	},
-	"full_input_up": {
-		"type": "custom",
-		"renderer": "equipment_preview_renderer",
-		"size": [0, 0],
+	"full_input_up@holoprint:common.invis_armor_stand": {
 		"bindings": [
 			{
 				"binding_type": "collection",
@@ -407,10 +398,7 @@
 			}
 		]
 	},
-	"full_input_down": {
-		"type": "custom",
-		"renderer": "equipment_preview_renderer",
-		"size": [0, 0],
+	"full_input_down@holoprint:common.invis_armor_stand": {
 		"bindings": [
 			{
 				"binding_type": "collection",
@@ -423,13 +411,5 @@
 				"target_property_name": "#item_id_aux"
 			}
 		]
-	},
-	"invis_armor_stand_holding_item": {
-		"type": "custom",
-		"renderer": "equipment_preview_renderer", // used in smithing tables to render armour stands
-		"size": [0, 0],
-		"property_bag": {
-			"#item_id_aux": "($armor_stand_item_id * 65536)" // set the armour stand's (offhand) item
-		}
 	}
 }
