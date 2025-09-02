@@ -168,6 +168,10 @@
 			}
 		]
 	},
+	"material_list_toggle_icon": {
+		"type": "image",
+		"texture": "textures/ui/recipe_book_icon"
+	},
 	"control_button@generic_button": {
 		"size": "$holoprint:touch_button_size",
 		"$content": "holoprint:common.invis_armor_stand_holding_item",
@@ -209,7 +213,8 @@
 				"icon": {
 					"type": "image",
 					"texture": "('textures/ui/' + $icon)",
-					"size": ["100% - 4px", "100% - 4px"]
+					"size": ["100% - 4px", "100% - 4px"],
+					"layer": 3
 				}
 			}
 		]
@@ -227,13 +232,8 @@
 		"button_mappings": [
 			{
 				"from_button_id": "button.menu_select",
-				"to_button_id": "button.dummy",
+				"to_button_id": "button.menu_select",
 				"mapping_type": "pressed"
-			},
-			{
-				"from_button_id": "button.menu_ok",
-				"to_button_id": "button.dummy",
-				"mapping_type": "focused"
 			}
 		],
 		"controls": [
@@ -252,6 +252,7 @@
 					"type": "image",
 					"texture": "textures/ui/button_borderless_lightpressednohover",
 					"size": ["100%", "100%"],
+					"layer": 1,
 					"clip_ratio": "$background_clip_ratio",
 					"clip_direction": "$background_clip_direction",
 					"clip_pixelperfect": true,
@@ -259,7 +260,9 @@
 						{
 							"content@$content": {}
 						}
-					]
+					],
+					"anims": ["@holoprint:touch_buttons.pressed_button_anim"],
+					"animation_reset_name": "button.menu_select"
 				}
 			},
 			{
@@ -269,13 +272,28 @@
 					"size": "$icon_size",
 					"anchor_from": "$icon_anchor",
 					"anchor_to": "$icon_anchor",
-					"layer": 1
+					"layer": 2
 				}
 			}
 		]
 	},
-	"material_list_toggle_icon": {
-		"type": "image",
-		"texture": "textures/ui/recipe_book_icon"
+	"pressed_button_anim": {
+		"anim_type": "alpha",
+		"from": 0,
+		"to": 1,
+		"duration": 0.1,
+		"next": "@holoprint:touch_buttons.wait_before_pulsing"
+	},
+	"wait_before_pulsing": {
+		"anim_type": "wait",
+		"duration": 0.3, // 0.1s from above + 0.3s = 0.4s, the same as in the Molang
+		"next": "@holoprint:touch_buttons.pulse_size"
+	},
+	"pulse_size": {
+		"anim_type": "size",
+		"from": ["110%", "110%"],
+		"to": ["100%", "100%"],
+		"duration": 0.125,
+		"next": "@holoprint:touch_buttons.pulse_size"
 	}
 }
