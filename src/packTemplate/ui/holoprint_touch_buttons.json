@@ -248,6 +248,15 @@
 				}
 			},
 			{
+				"icon": {
+					"type": "image",
+					"texture": "$texture",
+					"size": "$icon_size",
+					"anchor_from": "$icon_anchor",
+					"anchor_to": "$icon_anchor"
+				}
+			},
+			{
 				"pressed": {
 					"type": "image",
 					"texture": "textures/ui/button_borderless_lightpressednohover",
@@ -259,41 +268,45 @@
 					"controls": [
 						{
 							"content@$content": {}
+						},
+						{
+							"icon": { // must be redefined in here as well for the pulsing animation to be applied to it. technically the original icon is still there, just hidden
+								"type": "image",
+								"texture": "$texture",
+								"size": "$icon_size",
+								"anchor_from": "$icon_anchor",
+								"anchor_to": "$icon_anchor"
+							}
 						}
 					],
 					"anims": ["@holoprint:touch_buttons.pressed_button_anim"],
 					"animation_reset_name": "button.menu_select"
 				}
-			},
-			{
-				"icon": {
-					"type": "image",
-					"texture": "$texture",
-					"size": "$icon_size",
-					"anchor_from": "$icon_anchor",
-					"anchor_to": "$icon_anchor",
-					"layer": 2
-				}
 			}
 		]
 	},
 	"pressed_button_anim": {
+		"anim_type": "size", // reset size first and then instantly do the actual fading in animatino
+		"duration": 0,
+		"next": "@holoprint:touch_buttons.fade_in_anim"
+	},
+	"fade_in_anim": {
 		"anim_type": "alpha",
 		"from": 0,
 		"to": 1,
 		"duration": 0.1,
-		"next": "@holoprint:touch_buttons.wait_before_pulsing"
+		"next": "@holoprint:touch_buttons.wait_before_pulsing_anim"
 	},
-	"wait_before_pulsing": {
+	"wait_before_pulsing_anim": {
 		"anim_type": "wait",
 		"duration": 0.3, // 0.1s from above + 0.3s = 0.4s, the same as in the Molang
-		"next": "@holoprint:touch_buttons.pulse_size"
+		"next": "@holoprint:touch_buttons.pulse_size_anim"
 	},
-	"pulse_size": {
+	"pulse_size_anim": {
 		"anim_type": "size",
 		"from": ["110%", "110%"],
 		"to": ["100%", "100%"],
 		"duration": 0.125,
-		"next": "@holoprint:touch_buttons.pulse_size"
+		"next": "@holoprint:touch_buttons.pulse_size_anim" // references itself, creating a looping animation
 	}
 }
