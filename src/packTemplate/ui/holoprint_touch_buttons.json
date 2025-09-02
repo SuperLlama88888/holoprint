@@ -306,7 +306,7 @@
 		"anim_type": "size",
 		"from": ["110%", "110%"],
 		"to": ["100%", "100%"],
-		"duration": 0.125,
+		"duration": 0.15,
 		"next": "@holoprint:touch_buttons.pulse_size_anim" // references itself, creating a looping animation
 	}
 }

@@ -192,7 +192,7 @@ export function armorStandPreAnimation() {
 				t.process_action = true;
 				v.ui_action_hold_start_time = q.time_stamp;
 			}
-			if(v.was_ui_action_last_frame && q.time_stamp - v.ui_action_hold_start_time >= 8 && t.delta_time >= 2.5) { // if you've been holding a key down for 0.4s, it will repeat the action 8 times a second. kinda like how keyboards work when you hold down a key.
+			if(v.was_ui_action_last_frame && q.time_stamp - v.ui_action_hold_start_time >= 8 && t.delta_time >= 3) { // if you've been holding a key down for 0.4s, it will repeat the action every 0.15s. kinda like how keyboards work when you hold down a key. note that q.time_stamp always returns an integer (i.e. doesn't interpolate between ticks) so the repeat interval has to be a multiple of 0.05s.
 				t.process_action = true;
 			}
 			if(t.process_action) {
