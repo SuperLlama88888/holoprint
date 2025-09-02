@@ -6,7 +6,7 @@
 		"controls": [
 			{
 				"material_list_trigger@keyboard_trigger": {
-					"$button_name": "button.scoreboard", // tab key
+					"$button_name": "$holoprint:material_list_key",
 					"$content": "holoprint:material_list.material_list",
 					"$off_content": "hotbar_scroll_keybinds"
 				}
@@ -14,7 +14,7 @@
 			{
 				"input_mode_toggle@keyboard_toggle": {
 					"$toggle_name": "input_mode_toggle",
-					"$button_name": "button.hide_tooltips", // F10
+					"$button_name": "$holoprint:change_input_mode_key",
 					"$untoggled_content": "quick_input_keybinds",
 					"$content": "full_input_mode"
 				}

@@ -286,7 +286,7 @@
 		]
 	},
 	"pressed_button_anim": {
-		"anim_type": "size", // reset size first and then instantly do the actual fading in animatino
+		"anim_type": "size", // reset size first and then instantly do the actual fading in animation
 		"duration": 0,
 		"next": "@holoprint:touch_buttons.fade_in_anim"
 	},

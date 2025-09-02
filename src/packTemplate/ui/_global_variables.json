@@ -2,6 +2,9 @@
 	"$holoprint:touch_button_size": [30, 20],
 	"$holoprint:double_touch_button_size": [60, 20],
 	
+	"$holoprint:material_list_key": "button.scoreboard", // tab key
+	"$holoprint:change_input_mode_key": "button.hide_tooltips", // F10
+	
 	"$holoprint:toggle_rendering_item": 1, // stone
 	"$holoprint:increase_opacity_item": 3, // dirt
 	"$holoprint:decrease_opacity_item": 4, // cobblestone
