@@ -1,5 +1,6 @@
 {
-	"$holoprint:touch_button_size": [29.23076923, 20],
+	"$holoprint:touch_button_size": [30, 20],
+	"$holoprint:double_touch_button_size": [60, 20],
 	
 	"$holoprint:toggle_rendering_item": 1, // stone
 	"$holoprint:increase_opacity_item": 3, // dirt
