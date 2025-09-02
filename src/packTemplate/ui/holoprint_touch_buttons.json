@@ -53,16 +53,8 @@
 		"grid_dimensions": [2, 10],
 		"controls": [
 			{
-				"material_list_toggle_button@common_toggles.light_content_toggle": {
-					"grid_position": [0, 0],
-					"size": "$holoprint:touch_button_size",
-					"$toggle_name": "toggle_button",
-					"$button_content": "holoprint:touch_buttons.material_list_toggle_icon",
-					"$toggle_view_binding_name": "material_list_toggle",
-					"$default_border_visible": false,
-					"$hover_border_visible": false,
-					"$pressed_texture": "textures/ui/button_borderless_light",
-					"$pressed_no_hover_texture": "textures/ui/button_borderless_lightpressednohover"
+				"material_list_toggle_button@material_list_toggle_button": {
+					"grid_position": [0, 0]
 				}
 			},
 			{
@@ -154,6 +146,24 @@
 					"grid_position": [1, 9],
 					"$icon": "backup_hologram",
 					"$armor_stand_item_id": "$holoprint:backup_hologram_icon"
+				}
+			}
+		]
+	},
+	"material_list_toggle_button": {
+		"type": "panel",
+		"size": "$holoprint:touch_button_size",
+		"controls": [
+			{
+				"toggle@common_toggles.light_content_toggle": {
+					"size": ["100% + 2px", "100% + 2px"], // json ui can't do math with arrays :(
+					"$toggle_name": "toggle_button",
+					"$button_content": "holoprint:touch_buttons.material_list_toggle_icon",
+					"$toggle_view_binding_name": "material_list_toggle",
+					"$default_border_visible": false,
+					"$hover_border_visible": false,
+					"$pressed_texture": "textures/ui/button_borderless_light",
+					"$pressed_no_hover_texture": "textures/ui/button_borderless_lightpressednohover"
 				}
 			}
 		]
@@ -258,7 +268,8 @@
 					"texture": "$texture",
 					"size": "$icon_size",
 					"anchor_from": "$icon_anchor",
-					"anchor_to": "$icon_anchor"
+					"anchor_to": "$icon_anchor",
+					"layer": 1
 				}
 			}
 		]
