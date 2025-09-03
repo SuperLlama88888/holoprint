@@ -432,6 +432,14 @@ export function createStringEnum(keys) {
 		return [key, value];
 	})));
 }
+/**
+ * Joins multiple regular expressions or strings. The flags of the last regular expression will be used.
+ * @param  {...(RegExp | string)} values
+ * @returns {RegExp}
+ */
+export function joinRegExps(...values) {
+	return new RegExp(values.reduce((acc, val) => acc + (val instanceof RegExp? val.source : val), ""), values.reverse().find(val => val instanceof RegExp)?.flags ?? ""); // findLast isn't well supported :/
+}
 
 /**
  * @param {string} hexColor

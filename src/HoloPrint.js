@@ -7,7 +7,7 @@ import MaterialList from "./MaterialList.js";
 import PreviewRenderer from "./PreviewRenderer.js";
 
 import * as entityScripts from "./entityScripts.molang.js";
-import { addPaddingToImage, awaitAllEntries, cacheUnaryFunc, CachingFetcher, concatenateFiles, createNumericEnum, desparseArray, floor, getFileExtension, hexColorToClampedTriplet, jsonc, JSONMap, JSONSet, lcm, loadTranslationLanguage, max, min, onEvent, overlaySquareImages, pi, removeFalsies, removeFileExtension, resizeImageToBlob, round, setImageOpacity, sha256, toBlob, toImage, translate, transposeMatrix, tuple, UserError } from "./utils.js";
+import { addPaddingToImage, awaitAllEntries, cacheUnaryFunc, CachingFetcher, concatenateFiles, createNumericEnum, desparseArray, floor, getFileExtension, hexColorToClampedTriplet, joinRegExps, jsonc, JSONMap, JSONSet, lcm, loadTranslationLanguage, max, min, onEvent, overlaySquareImages, pi, removeFalsies, removeFileExtension, resizeImageToBlob, round, setImageOpacity, sha256, toBlob, toImage, translate, transposeMatrix, tuple, UserError } from "./utils.js";
 import ResourcePackStack, { VanillaDataFetcher } from "./ResourcePackStack.js";
 import BlockUpdater from "./BlockUpdater.js";
 import SpawnAnimationMaker from "./SpawnAnimationMaker.js";
@@ -1733,7 +1733,7 @@ function array2DToMolang(array, indexVar1, indexVar2) {
  */
 function functionToMolang(func, vars = {}) {
 	let funcCode = func.toString();
-	let minifiedFuncBody = funcCode.slice(funcCode.indexOf("{") + 1, funcCode.lastIndexOf("}")).replaceAll(/\/\/.+/g, "").replaceAll(/(?<!return)\s/g, "");
+	let minifiedFuncBody = funcCode.slice(funcCode.indexOf("{") + 1, funcCode.lastIndexOf("}")).replaceAll(/\/\/.+/g, "").replaceAll(/(?<!return|let)\s/g, "");
 	// else if() {...} statements must be expanded to be else { if() {...} }
 	let expandedElseIfCode = "";
 	for(let i = 0; i < minifiedFuncBody.length; i++) {
@@ -1767,30 +1767,6 @@ function functionToMolang(func, vars = {}) {
 		.replaceAll(/\(([^()]+|[^()]*\([^()]+\)[^()]*)\)%(-?\d+)/g, "math.mod($1,$2)")
 		.replaceAll("return;", "return 0;"); // complex Molang expressions can't return nothing
 	
-	// Yay more fun regular expressions, this time to work with variable substitution ($[...])
-	/** @param {string} code */
-	let substituteInVariables = (code, vars) => code.replaceAll(/\$\[(\w+)(?:\[(\d+)\]|\.(\w+))?(?:(\+|-|\*|\/)(\d+))?\]/g, (_, varName, index, key, operator, operand) => {
-		if(varName in vars) {
-			let value = vars[varName];
-			index ??= key;
-			if(index != undefined) {
-				if(index in value) {
-					value = value[index];
-				} else {
-					throw new RangeError(`Index out of bounds: [${value.join(", ")}][${index}] does not exist`);
-				}
-			}
-			switch(operator) {
-				case "+": return +value + +operand; // must cast operands to numbers to avoid string concatenation
-				case "-": return value - operand;
-				case "*": return value * operand;
-				case "/": return value / operand;
-				default: return value;
-			}
-		} else {
-			throw new ReferenceError(`Variable "${varName}" was not passed to function -> Molang converter!`);
-		}
-	});
 	// I have no idea how to make this smaller. I really wish JS had a native AST conversion API
 	let conditionedCode = "";
 	let parenthesisCounter = 0;
@@ -1812,8 +1788,8 @@ function functionToMolang(func, vars = {}) {
 			i += 3;
 			continue;
 		} else if(/^for\([^)]+\)/.test(mathedCode.slice(i))) {
-			let forStatement = substituteInVariables(mathedCode.slice(i).match(/^for\([^)]+\)/)[0], vars);
-			let [, forVarName, initialValue, upperBound] = forStatement.match(/^for\(let(\w+)=(\d+);\w+<(\d+);\w+\+\+\)/);
+			let forStatement = substituteVariablesIntoMolang(mathedCode.slice(i).match(/^for\([^)]+\)/)[0], vars);
+			let [, forVarName, initialValue, upperBound] = forStatement.match(/^for\(let (\w+)=(\d+);\w+<(\d+);\w+\+\+\)/);
 			let forBlockStartI = mathedCode.slice(i).indexOf("{") + i;
 			let forBlockEndI = forBlockStartI + 1;
 			let braceCounter = 1;
@@ -1828,7 +1804,7 @@ function functionToMolang(func, vars = {}) {
 			let forBlockContent = mathedCode.slice(forBlockStartI + 1, forBlockEndI - 1);
 			let expandedForCode = "";
 			for(let forI = +initialValue; forI < +upperBound; forI++) {
-				expandedForCode += substituteInVariables(forBlockContent, {
+				expandedForCode += substituteVariablesIntoMolang(forBlockContent, {
 					...vars,
 					...{
 						[forVarName]: forI
@@ -1856,41 +1832,96 @@ function functionToMolang(func, vars = {}) {
 		}
 		conditionedCode += char;
 	}
-	let variabledCode = substituteInVariables(conditionedCode, vars);
-	for(let i = 0; i < variabledCode.length; i++) {
-		if(variabledCode.slice(i, i + 7) == "false?{") {
+	let variabledCode = substituteVariablesIntoMolang(conditionedCode, vars);
+	let tempVariabledCode = convertJSVariablesToMolangTemps(variabledCode);
+	let deadBranchRemovedCode = removeDeadMolangBranches(tempVariabledCode);
+	return deadBranchRemovedCode;
+}
+/**
+ * Substitutes variables into Molang code. Variables must be written as `$[varName]`.
+ * @param {string} code
+ * @param {Record<string, any>} vars
+*/
+function substituteVariablesIntoMolang(code, vars) {
+	// Yay more fun regular expressions, this time to work with variable substitution ($[...])
+	return code.replaceAll(/\$\[(\w+)(?:\[(\d+)\]|\.(\w+))?(?:(\+|-|\*|\/)(\d+))?\]/g, (_, varName, index, key, operator, operand) => {
+		if(varName in vars) {
+			let value = vars[varName];
+			index ??= key;
+			if(index != undefined) {
+				if(index in value) {
+					value = value[index];
+				} else {
+					throw new RangeError(`Index out of bounds: [${value.join(", ")}][${index}] does not exist`);
+				}
+			}
+			switch(operator) {
+				case "+": return +value + +operand; // must cast operands to numbers to avoid string concatenation
+				case "-": return value - operand;
+				case "*": return value * operand;
+				case "/": return value / operand;
+				default: return value;
+			}
+		} else {
+			throw new ReferenceError(`Variable "${varName}" was not passed to function -> Molang converter!`);
+		}
+	});
+}
+/**
+ * Converts JavaScript variables in Molang code (e.g. `let x = 42;`) into proper temp variables (e.g. `t.loc_1234 = 42;`).
+ * @param {string} code
+ * @returns {string}
+ */
+function convertJSVariablesToMolangTemps(code) {
+	let variableNames = Array.from(code.matchAll(/\blet (\w+)/gm)).map(([, varName]) => varName);
+	let counter = 0;
+	let uniqueVariableNames = new Set(variableNames);
+	uniqueVariableNames.forEach(varName => {
+		let tempVarName = `t._${counter++}`;
+		code = code.replaceAll(joinRegExps(/(?<!\.)\b(let )?/, varName, /\b/g), tempVarName);
+	});
+	return code;
+}
+/**
+ * Removes dead branches from Molang code, only if the condition is explicitly true or false.
+ * @param {string} code
+ * @returns {string}
+ */
+function removeDeadMolangBranches(code) {
+	for(let i = 0; i < code.length; i++) {
+		if(code.slice(i, i + 7) == "false?{") {
 			let j = i + 7;
 			let braceCounter = 1;
 			let elseBlockStart = -1;
-			while(braceCounter || variabledCode[j] != ";") {
-				if(variabledCode[j] == "{") braceCounter++;
-				else if(variabledCode[j] == "}") braceCounter--;
-				if(braceCounter == 0 && variabledCode[j] == ":") {
+			while(braceCounter || code[j] != ";") {
+				if(code[j] == "{") braceCounter++;
+				else if(code[j] == "}") braceCounter--;
+				if(braceCounter == 0 && code[j] == ":") {
 					elseBlockStart = j + 2;
 				}
 				j++;
 			}
-			let elseBlock = elseBlockStart > -1? variabledCode.slice(elseBlockStart, j - 1) : "";
-			variabledCode = variabledCode.slice(0, i) + elseBlock + variabledCode.slice(j + 1);
+			let elseBlock = elseBlockStart > -1? code.slice(elseBlockStart, j - 1) : "";
+			code = code.slice(0, i) + elseBlock + code.slice(j + 1);
 			i--;
-		} else if(variabledCode.slice(i, i + 6) == "true?{") {
+		} else if(code.slice(i, i + 6) == "true?{") {
 			let j = i + 6;
 			let braceCounter = 1;
 			let trueBlockEnd;
-			while(braceCounter || variabledCode[j] != ";") {
-				if(variabledCode[j] == "{") braceCounter++;
-				else if(variabledCode[j] == "}") braceCounter--;
-				if(braceCounter == 0 && variabledCode[j] == ":") {
+			while(braceCounter || code[j] != ";") {
+				if(code[j] == "{") braceCounter++;
+				else if(code[j] == "}") braceCounter--;
+				if(braceCounter == 0 && code[j] == ":") {
 					trueBlockEnd = j;
 				}
 				j++;
 			}
 			trueBlockEnd ??= j;
-			variabledCode = variabledCode.slice(0, i) + variabledCode.slice(i + 6, trueBlockEnd - 1) + variabledCode.slice(j + 1);
+			code = code.slice(0, i) + code.slice(i + 6, trueBlockEnd - 1) + code.slice(j + 1);
 			i--;
 		}
 	}
-	return variabledCode;
+	return code;
 }
 
 /** @import * as Data from "./data/schemas" */
