@@ -29,7 +29,6 @@
 								"controls": [
 									{
 										"expand_menu_toggle_button@generic_toggle_button": {
-											"$toggle_name": "asdf",
 											"$button_content": "holoprint:touch_buttons.expand_menu_toggle_icon",
 											"$toggle_view_binding_name": "expand_menu_toggle",
 											"$toggle_default_state": true
@@ -254,7 +253,6 @@
 		"controls": [
 			{
 				"toggle@generic_toggle_button": {
-					"$toggle_name": "toggle_button",
 					"$button_content": "holoprint:touch_buttons.show_full_menu_toggle_icon",
 					"$toggle_view_binding_name": "show_full_menu_toggle"
 					// "$button_mappings": [
@@ -297,7 +295,6 @@
 		"controls": [
 			{
 				"toggle@generic_toggle_button": {
-					"$toggle_name": "toggle_button",
 					"$button_content": "holoprint:touch_buttons.material_list_toggle_icon",
 					"$toggle_view_binding_name": "material_list_toggle"
 				}
@@ -309,7 +306,9 @@
 		"texture": "textures/ui/recipe_book_icon"
 	},
 	"generic_toggle_button@common_toggles.light_content_toggle": {
-		"size": ["100% + 2px", "100% + 2px"], // json ui can't do math with arrays :(
+		"size": ["100% + 2px", "100% + 2px"],
+		"$toggle_name": "",
+		"$toggle_focus_enabled": false,
 		"$default_border_visible": false,
 		"$hover_border_visible": false,
 		"$pressed_texture": "textures/ui/button_borderless_light",
