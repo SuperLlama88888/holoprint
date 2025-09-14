@@ -179,9 +179,9 @@ export function tanDeg(deg) {
 	return tan(deg * pi / 180);
 }
 export function rotate([x, y], angle) {
-    let c = cos(angle);
-    let s = sin(angle);
-    return [x * c - y * s, x * s + y * c];
+	let c = cos(angle);
+	let s = sin(angle);
+	return [x * c - y * s, x * s + y * c];
 }
 export function rotateDeg(p, deg) {
 	return rotate(p, deg * pi / 180);
@@ -384,7 +384,7 @@ export function flattenObject(object) {
 }
 /**
  * Applies Array.prototype.reduce on each property from all objects.
- * @template  V
+ * @template V
  * @template {Record<string, V>} T
  * @param {T[]} objects
  * @param {(previousValue: V, currentValue: V, currentIndex: number, array: V[]) => V} reducer
@@ -434,7 +434,7 @@ export function createStringEnum(keys) {
 }
 /**
  * Joins multiple regular expressions or strings. The flags of the last regular expression will be used.
- * @param  {...(RegExp | string)} values
+ * @param {...(RegExp | string)} values
  * @returns {RegExp}
  */
 export function joinRegExps(...values) {
@@ -685,7 +685,7 @@ export async function addPaddingToImage(image, padding) {
 }
 /**
  * Overlays square images together, with the first image being the base. They can be different dimensions and will be resized to not lose quality.
- * @param  {...HTMLImageElement} images
+ * @param {...HTMLImageElement} images
  * @returns {Promise<Blob>}
  */
 export async function overlaySquareImages(...images) {

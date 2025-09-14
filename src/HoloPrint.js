@@ -631,7 +631,7 @@ export function getDefaultPackName(structureFiles) {
  */
 export function findLinksInDescription(description) {
 	let links = [];
-	Array.from(description.matchAll(/(.*?)\n?\s*(https?:\/\/[^\s]+)/g)).forEach(match =>  {
+	Array.from(description.matchAll(/(.*?)\n?\s*(https?:\/\/[^\s]+)/g)).forEach(match => {
 		let label = match[1].trim();
 		let url = match[2].trim();
 		links.push([label, url]);
