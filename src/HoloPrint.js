@@ -1690,7 +1690,7 @@ function arrayEntriesToMolang(entries, indexVar) {
 		/** @type {Vec2[]} */
 		let intervals = [];
 		indices.forEach(i => {
-			if(intervals?.at(-1)?.[1] == i - 1) {
+			if(intervals.at(-1)?.[1] == i - 1) {
 				intervals.at(-1)[1] = i;
 			} else {
 				intervals.push([i, i]);

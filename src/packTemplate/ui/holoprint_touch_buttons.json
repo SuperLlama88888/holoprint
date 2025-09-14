@@ -52,7 +52,7 @@
 								"anchor_to": "top_left",
 								"offset": [0, 74],
 								"size": [60, 100],
-								"layer": 20,
+								"layer": 33,
 								"prevent_touch_input": true,
 								"controls": [
 									{
