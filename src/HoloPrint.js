@@ -75,7 +75,7 @@ export async function makePack(structureFiles, config, resourcePackStack, previe
 	let structureSizes = nbts.map(nbt => nbt["size"]);
 	let packName = config.PACK_NAME ?? getDefaultPackName(structureFiles);
 	
-	// Make the pack
+	// very hacky TypeScript magic. This makes it so that I can have types for all the data after they're fetched.
 	/** @type {[PathToData<"textureAtlasMappings", Data.TextureAtlasMappings>, PathToData<"blockShapes", Data.BlockShapes>, PathToData<"blockShapeGeos", Data.BlockShapeGeos>, PathToData<"blockStateDefinitions", Data.BlockStateDefinitions>, PathToData<"blockEigenvariants", Data.BlockEigenvariants>, PathToData<"materialListMappings", Data.MaterialListMappings>, PathToData<"itemIcons", Data.ItemIcons>]} */
 	// @ts-expect-error
 	let dataFileNames = ["textureAtlasMappings", "blockShapes", "blockShapeGeos", "blockStateDefinitions", "blockEigenvariants", "materialListMappings"];
@@ -83,49 +83,61 @@ export async function makePack(structureFiles, config, resourcePackStack, previe
 		// @ts-ignore
 		dataFileNames.push("itemIcons");
 	}
+	// utility so I don't have to type _1234 or $9876 all the time for loading files below.
+	const _ = {
+		__: 0,
+		get _() {
+			return `_${this.__++}`;
+		},
+		$$: 0,
+		get $() {
+			return `$${this.$$++}`;
+		}
+	};
 	let packTemplatePromise = loadPackTemplate({
 		manifest: "manifest.json",
 		hologramRenderControllers: "render_controllers/armor_stand.hologram.render_controllers.json",
 		hologramGeo: "models/entity/armor_stand.hologram.geo.json", // this is where we put all the ghost blocks
-		$0: "materials/entity.material",
+		[_.$]: "materials/entity.material",
 		hologramAnimationControllers: "animation_controllers/armor_stand.hologram.animation_controllers.json",
 		hologramAnimations: "animations/armor_stand.hologram.animation.json",
-		$1: "particles/bounding_box_outline.json",
+		[_.$]: "particles/bounding_box_outline.json",
 		blockValidationParticle: "particles/block_validation.json",
-		$2: "particles/saving_backup.json",
+		[_.$]: "particles/saving_backup.json",
 		singleWhitePixelTexture: "textures/particle/single_white_pixel.png",
-		_0: "textures/particle/exclamation_mark.png",
-		_1: "textures/particle/save_icon.png",
+		[_._]: "textures/particle/exclamation_mark.png",
+		[_._]: "textures/particle/save_icon.png",
 		itemTexture: config.RETEXTURE_CONTROL_ITEMS? "textures/item_texture.json" : undefined,
 		terrainTexture: config.RETEXTURE_CONTROL_ITEMS? "textures/terrain_texture.json" : undefined,
 		...(config.UI_CONTROLS_ENABLED? {
-			_3: "textures/ui/toggle_rendering.png",
-			_4: "textures/ui/change_opacity.png",
-			_18: "textures/ui/increase_opacity.png",
-			_5: "textures/ui/toggle_tint.png",
-			_6: "textures/ui/toggle_validating.png",
-			_7: "textures/ui/change_layer.png",
-			_16: "textures/ui/increase_layer.png",
-			_17: "textures/ui/decrease_layer.png",
-			_8: "textures/ui/change_layer_mode.png",
-			_9: "textures/ui/move_hologram_x.png",
-			_13: "textures/ui/move_hologram_y.png",
-			_14: "textures/ui/move_hologram_z.png",
-			_10: "textures/ui/rotate_hologram.png",
-			_11: "textures/ui/change_structure.png",
-			_12: "textures/ui/backup_hologram.png",
-			_15: "textures/ui/white_circle.png",
-			$7: "textures/ui/white_circle.json",
-			_19: "textures/ui/quick_input_keyboard_hints.png",
-			$3: "ui/_ui_defs.json",
-			$6: "ui/_global_variables.json",
-			$4: "ui/hud_screen.json",
+			[_._]: "textures/ui/toggle_rendering.png",
+			[_._]: "textures/ui/change_opacity.png",
+			[_._]: "textures/ui/increase_opacity.png",
+			[_._]: "textures/ui/toggle_tint.png",
+			[_._]: "textures/ui/toggle_validating.png",
+			[_._]: "textures/ui/change_layer.png",
+			[_._]: "textures/ui/increase_layer.png",
+			[_._]: "textures/ui/decrease_layer.png",
+			[_._]: "textures/ui/change_layer_mode.png",
+			[_._]: "textures/ui/move_hologram_x.png",
+			[_._]: "textures/ui/move_hologram_y.png",
+			[_._]: "textures/ui/move_hologram_z.png",
+			[_._]: "textures/ui/rotate_hologram.png",
+			[_._]: "textures/ui/change_structure.png",
+			[_._]: "textures/ui/backup_hologram.png",
+			[_._]: "textures/ui/menu_icon.png",
+			[_._]: "textures/ui/white_circle.png",
+			[_.$]: "textures/ui/white_circle.json",
+			[_._]: "textures/ui/quick_input_keyboard_hints.png",
+			[_.$]: "ui/_ui_defs.json",
+			[_.$]: "ui/_global_variables.json",
+			[_.$]: "ui/hud_screen.json",
 			materialListUI: "ui/holoprint_material_list.json",
-			$5: "ui/holoprint_keybinds.json",
-			$8: "ui/holoprint_touch_buttons.json",
-			$9: "ui/holoprint_common.json"
+			[_.$]: "ui/holoprint_keybinds.json",
+			[_.$]: "ui/holoprint_touch_buttons.json",
+			[_.$]: "ui/holoprint_common.json"
 		} : {}),
-		_2: "font/glyph_E2.png",
+		[_._]: "font/glyph_E2.png",
 		languagesDotJson: "texts/languages.json"
 	});
 	let resourcesPromise = loadResources({
