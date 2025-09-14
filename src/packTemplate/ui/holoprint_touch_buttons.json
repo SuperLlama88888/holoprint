@@ -242,7 +242,7 @@
 				"backup_button@control_button": {
 					"grid_position": [1, 5],
 					"$icon": "backup_hologram",
-					"$armor_stand_item_id": "$holoprint:backup_hologram_icon"
+					"$armor_stand_item_id": "$holoprint:backup_hologram_item"
 				}
 			}
 		]

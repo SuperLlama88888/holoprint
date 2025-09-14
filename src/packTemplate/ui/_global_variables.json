@@ -23,5 +23,5 @@
 	"$holoprint:rotate_anticlockwise_item": 20, // glass
 	"$holoprint:next_structure_item": 21, // lapis_ore
 	"$holoprint:previous_structure_item": 22, // lapis_block
-	"$holoprint:backup_hologram_icon": 23 // dispenser
+	"$holoprint:backup_hologram_item": 23 // dispenser
 }
