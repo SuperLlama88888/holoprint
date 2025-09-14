@@ -8,10 +8,24 @@
 				"operation": "insert_front",
 				"value": [
 					{
-						"material_list_touch_toggle@holoprint:material_list.touch_toggle": {}
+						"touch_buttons@holoprint:touch_buttons.touch_buttons": {
+							"bindings": [
+								{
+									"binding_name": "#inventory_touch_button", // #using_touch doesn't work
+									"binding_name_override": "#visible"
+								}
+							]
+						}
 					},
 					{
-						"keybinds@holoprint:keybinds.keybinds": {}
+						"keybinds@holoprint:keybinds.keybinds": {
+							"bindings": [
+								{
+									"binding_name": "(not #inventory_touch_button)",
+									"binding_name_override": "#visible"
+								}
+							]
+						}
 					}
 				]
 			}

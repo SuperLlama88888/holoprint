@@ -1,66 +1,6 @@
 {
 	"namespace": "holoprint:material_list",
 	
-	"touch_toggle": {
-		"type": "panel",
-		"controls": [
-			{
-				"touch_toggle_input_panel": {
-					"type": "input_panel",
-					"anchor_from": "top_left",
-					"anchor_to": "top_left",
-					"offset": [0, 74],
-					"size": [29.23, 20],
-					"layer": 32,
-					"prevent_touch_input": true,
-					"bindings": [
-						{
-							"binding_name": "#inventory_touch_button", // #using_touch doesn't work
-							"binding_name_override": "#visible"
-						}
-					],
-					"controls": [
-						{
-							"toggle_button@common_toggles.light_content_toggle": {
-								"$toggle_name": "toggle_button",
-								"$button_content": "holoprint:material_list.touch_toggle_image",
-								"$toggle_view_binding_name": "touch_toggle_button",
-								"$default_border_visible": false,
-								"$hover_border_visible": false,
-								"$pressed_texture": "textures/ui/button_borderless_light",
-								"$pressed_no_hover_texture": "textures/ui/button_borderless_lightpressednohover",
-								"anchor_from": "top_left",
-								"anchor_to": "top_left",
-								"bindings": [
-									{
-										"binding_name": "#hud_visible",
-										"binding_name_override": "#visible",
-										"binding_type": "global"
-									}
-								]
-							}
-						}
-					]
-				}
-			},
-			{
-				"material_list_touch@material_list": {
-					"bindings": [
-						{
-							"binding_type": "view",
-							"source_control_name": "touch_toggle_button",
-							"source_property_name": "#toggle_state",
-							"target_property_name": "#visible"
-						}
-					]
-				}
-			}
-		]
-	},
-	"touch_toggle_image": {
-		"type": "image",
-		"texture": "textures/ui/recipe_book_icon"
-	},
 	"material_list": {
 		"type": "panel",
 		"anchor_from": "top_middle",
@@ -104,13 +44,6 @@
 						}
 					]
 				}
-			}
-		],
-		"bindings": [
-			{
-				"binding_name": "#hud_visible",
-				"binding_name_override": "#visible",
-				"binding_type": "global"
 			}
 		]
 	},

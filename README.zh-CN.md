@@ -70,6 +70,7 @@
   - [基岩版 Wiki](https://wiki.bedrock.dev)：学习资源包/行为包的最佳指南！
   - [Minecraft Wiki](https://minecraft.wiki)：方块实体列表、状态数据等全面资料。
   - [基岩版 `.mcstructure` 文件解析](https://gist.github.com/tryashtar/87ad9654305e5df686acab05cc4b6205)：结构文件的NBT结构说明。（作者 [Tryashtar](https://github.com/tryashtar)）
+  - [Bugrock JSON UI Schemas](https://github.com/KalmeMarq/Bugrock-JSON-UI-Schemas) by [KalmeMarq](https://github.com/KalmeMarq): Keeping me sane when working with the UI; more up-to-date than the wiki
   - [Magic Method 文档](https://github.com/BedrockPlus/MagicMethodDocs)：原作者 [Chainsketch](https://www.youtube.com/@Chainsketch) 在资源包中的实体之间传递数据的技术文档 (编写者 [White](https://github.com/WhiteOnGitHub) 与 [chyves](https://github.com/notchyves)）
   - [微软官方文档](https://learn.microsoft.com/en-us/minecraft/creator/reference)：附加包/资源包的官方规范。
 - **JavaScript库：**

@@ -7,7 +7,7 @@ import MaterialList from "./MaterialList.js";
 import PreviewRenderer from "./PreviewRenderer.js";
 
 import * as entityScripts from "./entityScripts.molang.js";
-import { addPaddingToImage, awaitAllEntries, cacheUnaryFunc, CachingFetcher, concatenateFiles, createNumericEnum, desparseArray, floor, getFileExtension, hexColorToClampedTriplet, jsonc, JSONMap, JSONSet, lcm, loadTranslationLanguage, max, min, onEvent, overlaySquareImages, pi, removeFalsies, removeFileExtension, resizeImageToBlob, round, setImageOpacity, sha256, toBlob, toImage, translate, transposeMatrix, tuple, UserError } from "./utils.js";
+import { addPaddingToImage, awaitAllEntries, cacheUnaryFunc, CachingFetcher, concatenateFiles, createNumericEnum, desparseArray, floor, getFileExtension, hexColorToClampedTriplet, joinRegExps, jsonc, JSONMap, JSONSet, lcm, loadTranslationLanguage, max, min, onEvent, overlaySquareImages, pi, removeFalsies, removeFileExtension, resizeImageToBlob, round, setImageOpacity, sha256, toBlob, toImage, translate, transposeMatrix, tuple, UserError } from "./utils.js";
 import ResourcePackStack, { VanillaDataFetcher } from "./ResourcePackStack.js";
 import BlockUpdater from "./BlockUpdater.js";
 import SpawnAnimationMaker from "./SpawnAnimationMaker.js";
@@ -75,7 +75,7 @@ export async function makePack(structureFiles, config, resourcePackStack, previe
 	let structureSizes = nbts.map(nbt => nbt["size"]);
 	let packName = config.PACK_NAME ?? getDefaultPackName(structureFiles);
 	
-	// Make the pack
+	// very hacky TypeScript magic. This makes it so that I can have types for all the data after they're fetched.
 	/** @type {[PathToData<"textureAtlasMappings", Data.TextureAtlasMappings>, PathToData<"blockShapes", Data.BlockShapes>, PathToData<"blockShapeGeos", Data.BlockShapeGeos>, PathToData<"blockStateDefinitions", Data.BlockStateDefinitions>, PathToData<"blockEigenvariants", Data.BlockEigenvariants>, PathToData<"materialListMappings", Data.MaterialListMappings>, PathToData<"itemIcons", Data.ItemIcons>]} */
 	// @ts-expect-error
 	let dataFileNames = ["textureAtlasMappings", "blockShapes", "blockShapeGeos", "blockStateDefinitions", "blockEigenvariants", "materialListMappings"];
@@ -83,47 +83,61 @@ export async function makePack(structureFiles, config, resourcePackStack, previe
 		// @ts-ignore
 		dataFileNames.push("itemIcons");
 	}
+	// utility so I don't have to type _1234 or $9876 all the time for loading files below.
+	const _ = {
+		__: 0,
+		get _() {
+			return `_${this.__++}`;
+		},
+		$$: 0,
+		get $() {
+			return `$${this.$$++}`;
+		}
+	};
 	let packTemplatePromise = loadPackTemplate({
 		manifest: "manifest.json",
 		hologramRenderControllers: "render_controllers/armor_stand.hologram.render_controllers.json",
 		hologramGeo: "models/entity/armor_stand.hologram.geo.json", // this is where we put all the ghost blocks
-		$0: "materials/entity.material",
+		[_.$]: "materials/entity.material",
 		hologramAnimationControllers: "animation_controllers/armor_stand.hologram.animation_controllers.json",
 		hologramAnimations: "animations/armor_stand.hologram.animation.json",
-		$1: "particles/bounding_box_outline.json",
+		[_.$]: "particles/bounding_box_outline.json",
 		blockValidationParticle: "particles/block_validation.json",
-		$2: "particles/saving_backup.json",
+		[_.$]: "particles/saving_backup.json",
 		singleWhitePixelTexture: "textures/particle/single_white_pixel.png",
-		_0: "textures/particle/exclamation_mark.png",
-		_1: "textures/particle/save_icon.png",
+		[_._]: "textures/particle/exclamation_mark.png",
+		[_._]: "textures/particle/save_icon.png",
 		itemTexture: config.RETEXTURE_CONTROL_ITEMS? "textures/item_texture.json" : undefined,
 		terrainTexture: config.RETEXTURE_CONTROL_ITEMS? "textures/terrain_texture.json" : undefined,
 		...(config.UI_CONTROLS_ENABLED? {
-			_3: "textures/ui/toggle_rendering.png",
-			_4: "textures/ui/change_opacity.png",
-			_18: "textures/ui/increase_opacity.png",
-			_5: "textures/ui/toggle_tint.png",
-			_6: "textures/ui/toggle_validating.png",
-			_7: "textures/ui/change_layer.png",
-			_16: "textures/ui/increase_layer.png",
-			_17: "textures/ui/decrease_layer.png",
-			_8: "textures/ui/change_layer_mode.png",
-			_9: "textures/ui/move_hologram_x.png",
-			_13: "textures/ui/move_hologram_y.png",
-			_14: "textures/ui/move_hologram_z.png",
-			_10: "textures/ui/rotate_hologram.png",
-			_11: "textures/ui/change_structure.png",
-			_12: "textures/ui/backup_hologram.png",
-			_15: "textures/ui/white_circle.png",
-			$7: "textures/ui/white_circle.json",
-			_19: "textures/ui/quick_input_keyboard_hints.png",
-			$3: "ui/_ui_defs.json",
-			$6: "ui/_global_variables.json",
-			$4: "ui/hud_screen.json",
+			[_._]: "textures/ui/toggle_rendering.png",
+			[_._]: "textures/ui/change_opacity.png",
+			[_._]: "textures/ui/increase_opacity.png",
+			[_._]: "textures/ui/toggle_tint.png",
+			[_._]: "textures/ui/toggle_validating.png",
+			[_._]: "textures/ui/change_layer.png",
+			[_._]: "textures/ui/increase_layer.png",
+			[_._]: "textures/ui/decrease_layer.png",
+			[_._]: "textures/ui/change_layer_mode.png",
+			[_._]: "textures/ui/move_hologram_x.png",
+			[_._]: "textures/ui/move_hologram_y.png",
+			[_._]: "textures/ui/move_hologram_z.png",
+			[_._]: "textures/ui/rotate_hologram.png",
+			[_._]: "textures/ui/change_structure.png",
+			[_._]: "textures/ui/backup_hologram.png",
+			[_._]: "textures/ui/menu_icon.png",
+			[_._]: "textures/ui/white_circle.png",
+			[_.$]: "textures/ui/white_circle.json",
+			[_._]: "textures/ui/quick_input_keyboard_hints.png",
+			[_.$]: "ui/_ui_defs.json",
+			[_.$]: "ui/_global_variables.json",
+			[_.$]: "ui/hud_screen.json",
 			materialListUI: "ui/holoprint_material_list.json",
-			$5: "ui/holoprint_keybinds.json"
+			[_.$]: "ui/holoprint_keybinds.json",
+			[_.$]: "ui/holoprint_touch_buttons.json",
+			[_.$]: "ui/holoprint_common.json"
 		} : {}),
-		_2: "font/glyph_E2.png",
+		[_._]: "font/glyph_E2.png",
 		languagesDotJson: "texts/languages.json"
 	});
 	let resourcesPromise = loadResources({
@@ -617,7 +631,7 @@ export function getDefaultPackName(structureFiles) {
  */
 export function findLinksInDescription(description) {
 	let links = [];
-	Array.from(description.matchAll(/(.*?)\n?\s*(https?:\/\/[^\s]+)/g)).forEach(match =>  {
+	Array.from(description.matchAll(/(.*?)\n?\s*(https?:\/\/[^\s]+)/g)).forEach(match => {
 		let label = match[1].trim();
 		let url = match[2].trim();
 		links.push([label, url]);
@@ -1647,16 +1661,71 @@ function itemCriteriaToMolang(itemCriteria, slot = "slot.weapon.mainhand") {
  * @returns {string}
  */
 function arrayToMolang(array, indexVar) {
-	let arrayEntries = Object.entries(array); // to handle splitting, original indices need to be preserved, hence looking at index-value pairs
+	let arrayEntries = Object.entries(array).map(([i, x]) => [+i, x]); // to handle splitting, original indices need to be preserved, hence looking at index-value pairs
 	return arrayEntriesToMolang(arrayEntries, indexVar);
 }
+/**
+ * @param {[number, any][]} entries
+ * @param {string} indexVar
+ * @returns {string}
+ */
 function arrayEntriesToMolang(entries, indexVar) {
-	const splittingThreshold = 50;
+	const splittingThreshold = 10;
 	if(entries.length > splittingThreshold) { // large arrays cause Molang stack overflows, so this splits them in half in such a situation.
 		let middle = floor(entries.length / 2);
-		return `${indexVar}<${entries[middle][0]}?(${arrayEntriesToMolang(entries.slice(0, middle), indexVar)}):(${arrayEntriesToMolang(entries.slice(middle), indexVar)})`;
+		let lowerMolang = arrayEntriesToMolang(entries.slice(0, middle), indexVar);
+		let upperMolang = arrayEntriesToMolang(entries.slice(middle), indexVar);
+		let lower = parseInt(lowerMolang) == +lowerMolang? lowerMolang : `(${lowerMolang})`;
+		let upper = parseInt(upperMolang) == +upperMolang? upperMolang : `(${upperMolang})`;
+		if(lower == upper) {
+			return lower;
+		}
+		return `${indexVar}<${entries[middle][0]}?${lower}:${upper}`;
 	}
-	return entries.map(([index, value], i) => i == entries.length - 1? value : `${i > 0? "(" : ""}${indexVar}==${index}?${value}:`).join("") + ")".repeat(max(entries.length - 2, 0));
+	let uniqueValues = Array.from(new Set(entries.map(([, value]) => value)));
+	let valuesAndIndices = uniqueValues.map(x => [x, entries.filter(([, value]) => value == x).map(([i]) => i)]);
+	let lowestIndex = min(...entries.map(([i]) => i));
+	let highestIndex = max(...entries.map(([i]) => i));
+	let conditionsAndValues = valuesAndIndices.map(([value, indices]) => {
+		/** @type {Vec2[]} */
+		let intervals = [];
+		indices.forEach(i => {
+			if(intervals.at(-1)?.[1] == i - 1) {
+				intervals.at(-1)[1] = i;
+			} else {
+				intervals.push([i, i]);
+			}
+		});
+		let intervalConditions = intervals.map(([lower, upper]) => {
+			if(lower == upper) {
+				return `${indexVar}==${lower}`;
+			} else if(lower == lowestIndex && upper == highestIndex) {
+				return "true";
+			} else if(lower == lowestIndex) {
+				return `${indexVar}<${upper + 1}`;
+			} else if(upper == highestIndex) {
+				return `${indexVar}>${lower - 1}`;
+			} else {
+				let condition = `${indexVar}>${lower - 1}&&${indexVar}<${upper + 1}`;
+				return intervals.length == 1? condition : `(${condition})`; // because min_engine_version is 1.16.0, Molang || always run before &&, so it has to be put inside brackets
+			}
+		});
+		return [intervalConditions.join("||"), value];
+	});
+	
+	// Move the longest condition to the end. Because it's at the end of a ternary condition, we don't have to include the condition, saving characters (and a tiny bit of computation)
+	let longestConditionLength = max(...conditionsAndValues.map(([condition]) => condition.length));
+	let longestConditionAndValueIndex = conditionsAndValues.findIndex(([condition]) => condition.length == longestConditionLength);
+	let longestConditionAndValue = conditionsAndValues[longestConditionAndValueIndex];
+	conditionsAndValues.splice(longestConditionAndValueIndex, 1);
+	conditionsAndValues.push(longestConditionAndValue);
+	
+	return conditionsAndValues.map(([condition, value], i) => {
+		if(condition == "true" || i == conditionsAndValues.length - 1) {
+			return value;
+		}
+		return `${i > 0? "(" : ""}${condition}?${value}:`;
+	}).join("") + ")".repeat(max(conditionsAndValues.length - 2, 0));
 }
 /**
  * Creates a Molang expression that mimics 2D array access.
@@ -1676,7 +1745,7 @@ function array2DToMolang(array, indexVar1, indexVar2) {
  */
 function functionToMolang(func, vars = {}) {
 	let funcCode = func.toString();
-	let minifiedFuncBody = funcCode.slice(funcCode.indexOf("{") + 1, funcCode.lastIndexOf("}")).replaceAll(/\/\/.+/g, "").replaceAll(/(?<!return)\s/g, "");
+	let minifiedFuncBody = funcCode.slice(funcCode.indexOf("{") + 1, funcCode.lastIndexOf("}")).replaceAll(/\/\/.+/g, "").replaceAll(/(?<!return|let)\s/g, "");
 	// else if() {...} statements must be expanded to be else { if() {...} }
 	let expandedElseIfCode = "";
 	for(let i = 0; i < minifiedFuncBody.length; i++) {
@@ -1710,30 +1779,6 @@ function functionToMolang(func, vars = {}) {
 		.replaceAll(/\(([^()]+|[^()]*\([^()]+\)[^()]*)\)%(-?\d+)/g, "math.mod($1,$2)")
 		.replaceAll("return;", "return 0;"); // complex Molang expressions can't return nothing
 	
-	// Yay more fun regular expressions, this time to work with variable substitution ($[...])
-	/** @param {string} code */
-	let substituteInVariables = (code, vars) => code.replaceAll(/\$\[(\w+)(?:\[(\d+)\]|\.(\w+))?(?:(\+|-|\*|\/)(\d+))?\]/g, (_, varName, index, key, operator, operand) => {
-		if(varName in vars) {
-			let value = vars[varName];
-			index ??= key;
-			if(index != undefined) {
-				if(index in value) {
-					value = value[index];
-				} else {
-					throw new RangeError(`Index out of bounds: [${value.join(", ")}][${index}] does not exist`);
-				}
-			}
-			switch(operator) {
-				case "+": return +value + +operand; // must cast operands to numbers to avoid string concatenation
-				case "-": return value - operand;
-				case "*": return value * operand;
-				case "/": return value / operand;
-				default: return value;
-			}
-		} else {
-			throw new ReferenceError(`Variable "${varName}" was not passed to function -> Molang converter!`);
-		}
-	});
 	// I have no idea how to make this smaller. I really wish JS had a native AST conversion API
 	let conditionedCode = "";
 	let parenthesisCounter = 0;
@@ -1755,8 +1800,8 @@ function functionToMolang(func, vars = {}) {
 			i += 3;
 			continue;
 		} else if(/^for\([^)]+\)/.test(mathedCode.slice(i))) {
-			let forStatement = substituteInVariables(mathedCode.slice(i).match(/^for\([^)]+\)/)[0], vars);
-			let [, forVarName, initialValue, upperBound] = forStatement.match(/^for\(let(\w+)=(\d+);\w+<(\d+);\w+\+\+\)/);
+			let forStatement = substituteVariablesIntoMolang(mathedCode.slice(i).match(/^for\([^)]+\)/)[0], vars);
+			let [, forVarName, initialValue, upperBound] = forStatement.match(/^for\(let (\w+)=(\d+);\w+<(\d+);\w+\+\+\)/);
 			let forBlockStartI = mathedCode.slice(i).indexOf("{") + i;
 			let forBlockEndI = forBlockStartI + 1;
 			let braceCounter = 1;
@@ -1771,7 +1816,7 @@ function functionToMolang(func, vars = {}) {
 			let forBlockContent = mathedCode.slice(forBlockStartI + 1, forBlockEndI - 1);
 			let expandedForCode = "";
 			for(let forI = +initialValue; forI < +upperBound; forI++) {
-				expandedForCode += substituteInVariables(forBlockContent, {
+				expandedForCode += substituteVariablesIntoMolang(forBlockContent, {
 					...vars,
 					...{
 						[forVarName]: forI
@@ -1799,41 +1844,96 @@ function functionToMolang(func, vars = {}) {
 		}
 		conditionedCode += char;
 	}
-	let variabledCode = substituteInVariables(conditionedCode, vars);
-	for(let i = 0; i < variabledCode.length; i++) {
-		if(variabledCode.slice(i, i + 7) == "false?{") {
+	let variabledCode = substituteVariablesIntoMolang(conditionedCode, vars);
+	let tempVariabledCode = convertJSVariablesToMolangTemps(variabledCode);
+	let deadBranchRemovedCode = removeDeadMolangBranches(tempVariabledCode);
+	return deadBranchRemovedCode;
+}
+/**
+ * Substitutes variables into Molang code. Variables must be written as `$[varName]`.
+ * @param {string} code
+ * @param {Record<string, any>} vars
+*/
+function substituteVariablesIntoMolang(code, vars) {
+	// Yay more fun regular expressions, this time to work with variable substitution ($[...])
+	return code.replaceAll(/\$\[(\w+)(?:\[(\d+)\]|\.(\w+))?(?:(\+|-|\*|\/)(\d+))?\]/g, (_, varName, index, key, operator, operand) => {
+		if(varName in vars) {
+			let value = vars[varName];
+			index ??= key;
+			if(index != undefined) {
+				if(index in value) {
+					value = value[index];
+				} else {
+					throw new RangeError(`Index out of bounds: [${value.join(", ")}][${index}] does not exist`);
+				}
+			}
+			switch(operator) {
+				case "+": return +value + +operand; // must cast operands to numbers to avoid string concatenation
+				case "-": return value - operand;
+				case "*": return value * operand;
+				case "/": return value / operand;
+				default: return value;
+			}
+		} else {
+			throw new ReferenceError(`Variable "${varName}" was not passed to function -> Molang converter!`);
+		}
+	});
+}
+/**
+ * Converts JavaScript variables in Molang code (e.g. `let x = 42;`) into proper temp variables (e.g. `t.loc_1234 = 42;`).
+ * @param {string} code
+ * @returns {string}
+ */
+function convertJSVariablesToMolangTemps(code) {
+	let variableNames = Array.from(code.matchAll(/\blet (\w+)/gm)).map(([, varName]) => varName);
+	let counter = 0;
+	let uniqueVariableNames = new Set(variableNames);
+	uniqueVariableNames.forEach(varName => {
+		let tempVarName = `t._${counter++}`;
+		code = code.replaceAll(joinRegExps(/(?<!\.)\b(let )?/, varName, /\b/g), tempVarName);
+	});
+	return code;
+}
+/**
+ * Removes dead branches from Molang code, only if the condition is explicitly true or false.
+ * @param {string} code
+ * @returns {string}
+ */
+function removeDeadMolangBranches(code) {
+	for(let i = 0; i < code.length; i++) {
+		if(code.slice(i, i + 7) == "false?{") {
 			let j = i + 7;
 			let braceCounter = 1;
 			let elseBlockStart = -1;
-			while(braceCounter || variabledCode[j] != ";") {
-				if(variabledCode[j] == "{") braceCounter++;
-				else if(variabledCode[j] == "}") braceCounter--;
-				if(braceCounter == 0 && variabledCode[j] == ":") {
+			while(braceCounter || code[j] != ";") {
+				if(code[j] == "{") braceCounter++;
+				else if(code[j] == "}") braceCounter--;
+				if(braceCounter == 0 && code[j] == ":") {
 					elseBlockStart = j + 2;
 				}
 				j++;
 			}
-			let elseBlock = elseBlockStart > -1? variabledCode.slice(elseBlockStart, j - 1) : "";
-			variabledCode = variabledCode.slice(0, i) + elseBlock + variabledCode.slice(j + 1);
+			let elseBlock = elseBlockStart > -1? code.slice(elseBlockStart, j - 1) : "";
+			code = code.slice(0, i) + elseBlock + code.slice(j + 1);
 			i--;
-		} else if(variabledCode.slice(i, i + 6) == "true?{") {
+		} else if(code.slice(i, i + 6) == "true?{") {
 			let j = i + 6;
 			let braceCounter = 1;
 			let trueBlockEnd;
-			while(braceCounter || variabledCode[j] != ";") {
-				if(variabledCode[j] == "{") braceCounter++;
-				else if(variabledCode[j] == "}") braceCounter--;
-				if(braceCounter == 0 && variabledCode[j] == ":") {
+			while(braceCounter || code[j] != ";") {
+				if(code[j] == "{") braceCounter++;
+				else if(code[j] == "}") braceCounter--;
+				if(braceCounter == 0 && code[j] == ":") {
 					trueBlockEnd = j;
 				}
 				j++;
 			}
 			trueBlockEnd ??= j;
-			variabledCode = variabledCode.slice(0, i) + variabledCode.slice(i + 6, trueBlockEnd - 1) + variabledCode.slice(j + 1);
+			code = code.slice(0, i) + code.slice(i + 6, trueBlockEnd - 1) + code.slice(j + 1);
 			i--;
 		}
 	}
-	return variabledCode;
+	return code;
 }
 
 /** @import * as Data from "./data/schemas" */

@@ -1,6 +1,8 @@
 {
 	"ui_defs": [
-		"ui/holoprint_material_list.json",
-		"ui/holoprint_keybinds.json"
+		"ui/holoprint_common.json",
+		"ui/holoprint_touch_buttons.json",
+		"ui/holoprint_keybinds.json",
+		"ui/holoprint_material_list.json"
 	]
 }
