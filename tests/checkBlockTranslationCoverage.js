@@ -8,7 +8,7 @@ testOnSourceCode(async page => {
 		const HoloPrint = await import("../HoloPrint.js");
 		const jsonc = (await import("../utils.js")).jsonc;
 		
-		let rps = await ResourcePackStack.new();
+		let rps = new ResourcePackStack();
 		let [blockMetadata, itemMetadata, materialListMappings, translationFile] = await Promise.all([
 			VanillaDataFetcher.fetch("metadata/vanilladata_modules/mojang-blocks.json").then(res => res.json()),
 			VanillaDataFetcher.fetch("metadata/vanilladata_modules/mojang-items.json").then(res => res.json()),

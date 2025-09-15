@@ -56,13 +56,8 @@ const HOLOGRAM_LAYER_MODES = createNumericEnum(["SINGLE", "ALL_BELOW"]);
  * @param {(previews: PreviewRenderer[]) => void} [previewLoadedCallback] A function that will be called once the preview has finished loading
  * @returns {Promise<File>} Resource pack (`*.mcpack`)
  */
-export async function makePack(structureFiles, config, resourcePackStack, previewCont, previewLoadedCallback) {
+export async function makePack(structureFiles, config, resourcePackStack = new ResourcePackStack(), previewCont, previewLoadedCallback) {
 	console.info(`Running HoloPrint ${VERSION}`);
-	if(!resourcePackStack) {
-		console.debug("Waiting for resource pack stack initialisation...");
-		resourcePackStack = await ResourcePackStack.new();
-		console.debug("Resource pack stack initialised!");
-	}
 	let startTime = performance.now();
 	
 	config = addDefaultConfig(config ?? {});

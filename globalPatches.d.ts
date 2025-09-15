@@ -25,7 +25,7 @@ declare global {
 	}
 	interface String {
 		startsWith<S extends string, This extends string>(this: This, searchString: S, position?: 0): This extends `${S}${string}`? true : false;
-		startsWith<S extends string, This extends string>(this: This, searchString: S): This extends `${string}${S}`? true : false;
+		endsWith<S extends string, This extends string>(this: This, searchString: S): This extends `${string}${S}`? true : false;
 	}
 	interface JSON {
 		rawJSON(text: string): RawJSON;
