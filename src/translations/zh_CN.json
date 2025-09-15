@@ -51,6 +51,7 @@
   "preview.options.showSkybox": "Show skybox",
   "preview.options.highRes": "High resolution",
   "preview.options.takeScreenshot": "Screenshot",
+  "preview.options.exportGlb": "Export as GLB",
   "progress.generating": "Making pack...",
   "reset": "重置",
   "resource_packs.clear_cache": "清除资源包缓存",
