@@ -6,7 +6,7 @@ import TextureAtlas from "./TextureAtlas.js";
 import MaterialList from "./MaterialList.js";
 import PreviewRenderer from "./PreviewRenderer.js";
 
-import * as entityScripts from "./entityScripts.molang.js";
+import entityScripts from "./entityScripts.molang.js";
 import { addPaddingToImage, awaitAllEntries, cacheUnaryFunc, CachingFetcher, concatenateFiles, createNumericEnum, desparseArray, floor, getFileExtension, hexColorToClampedTriplet, joinRegExps, jsonc, JSONMap, JSONSet, lcm, loadTranslationLanguage, max, min, onEvent, overlaySquareImages, pi, removeFalsies, removeFileExtension, resizeImageToBlob, round, setImageOpacity, sha256, toBlob, toImage, translate, transposeMatrix, tuple, UserError } from "./utils.js";
 import ResourcePackStack, { VanillaDataFetcher } from "./ResourcePackStack.js";
 import BlockUpdater from "./BlockUpdater.js";
