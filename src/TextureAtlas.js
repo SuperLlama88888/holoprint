@@ -29,10 +29,11 @@ export default class TextureAtlas {
 	 * @type {[string, Blob][]}
 	 */
 	imageBlobs;
+	/** @type {number} */
 	textureWidth;
+	/** @type {number} */
 	textureHeight;
-	atlasWidth;
-	atlasHeight;
+	/** @type {number} */
 	textureFillEfficiency; // how much of the texture atlas is filled with images
 	
 	/**
@@ -385,8 +386,6 @@ export default class TextureAtlas {
 		this.textureWidth = packing.w;
 		this.textureHeight = packing.h;
 		this.textureFillEfficiency = packing.fill;
-		this.atlasWidth = this.textureWidth;
-		this.atlasHeight = this.textureHeight;
 		console.info(`Packed texture atlas with ${(this.textureFillEfficiency * 100).toFixed(2)}% space efficiency!`);
 		
 		let can = new OffscreenCanvas(this.textureWidth, this.textureHeight);

@@ -211,8 +211,8 @@ export async function makePack(structureFiles, config, resourcePackStack = new R
 	let structureGeoTemplate = hologramGeo["minecraft:geometry"][0];
 	hologramGeo["minecraft:geometry"].splice(0, 1);
 	
-	structureGeoTemplate["description"]["texture_width"] = textureAtlas.atlasWidth;
-	structureGeoTemplate["description"]["texture_height"] = textureAtlas.atlasHeight;
+	structureGeoTemplate["description"]["texture_width"] = textureAtlas.textureWidth;
+	structureGeoTemplate["description"]["texture_height"] = textureAtlas.textureHeight;
 	
 	let entityDescription = entityFile["minecraft:client_entity"]["description"];
 	
