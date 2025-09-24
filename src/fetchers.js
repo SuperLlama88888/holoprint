@@ -39,7 +39,7 @@ async function createCachingFetcher(name, owner, repo, version) {
 	if(!(await prevCache?.keys())?.length) {
 		caches.delete(prevCacheName);
 		prevCacheName = undefined;
-		prevCache = undefined
+		prevCache = undefined;
 	}
 	prevCacheName && console.debug(`${cacheName} will load old files from ${prevCacheName}`);
 	

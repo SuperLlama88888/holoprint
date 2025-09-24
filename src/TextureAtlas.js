@@ -514,8 +514,8 @@ export default class TextureAtlas {
 	#checkImageDataEquivalence(id1, id2, x1, y1, x2, y2, w, h) {
 		for(let y = 0; y < h; y++) {
 			for(let x = 0; x < w; x++) {
-				let i1 = (y1 * id1.width + x1) * 4;
-				let i2 = (y2 * id2.width + x2) * 4;
+				let i1 = ((y1 + y) * id1.width + x1 + x) * 4;
+				let i2 = ((y2 + y) * id2.width + x2 + x) * 4;
 				for(let ch = 0; ch < 4; ch++) {
 					if(id1.data[i1 + ch] != id2.data[i2 + ch]) {
 						return false;

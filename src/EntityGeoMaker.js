@@ -15,8 +15,17 @@ export default class EntityGeoMaker {
 	 * @returns {Promise<Data.Cube[]>}
 	 */
 	async entityModelToCubes(entityModelInfo) {
-		let geoFile = await this.resourcePackStack.fetchResource(entityModelInfo["geo_file"]).then(res => jsonc(res));
+		let geoFileRes = await this.resourcePackStack.fetchResource(entityModelInfo["geo_file"]);
+		if(!geoFileRes.ok) {
+			console.error(`Unable to load geometry file ${entityModelInfo["geo_file"]}`);
+			return [];
+		}
+		let geoFile = await jsonc(geoFileRes);
 		let matchingGeo = geoFile["minecraft:geometry"].find(geo => geo["description"]["identifier"] == entityModelInfo["identifier"]);
+		if(!matchingGeo) {
+			console.error(`Unable to find ${entityModelInfo["identifier"]} in geometry file ${entityModelInfo["geo_file"]}`);
+			return [];
+		}
 		let textureWidth = matchingGeo["description"]["texture_width"];
 		let textureHeight = matchingGeo["description"]["texture_height"];
 		let cubes = [];
