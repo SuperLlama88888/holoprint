@@ -20,7 +20,7 @@
 						},
 						{
 							"description": "The block shape for blocks that match this regular expression, and the path to a texture which can be accessed with #tex.",
-							"pattern": "^\\w+\\<[\\w/]*\\>$"
+							"pattern": "^\\w+<[\\w/]*>$"
 						}
 					]
 				}
@@ -40,7 +40,7 @@
 						},
 						{
 							"description": "The block shape for this block, and the path to a texture which can be accessed with #tex.",
-							"pattern": "^\\w+\\<[\\w/]*\\>$"
+							"pattern": "^\\w+<[\\w/]*>$"
 						}
 					]
 				}
