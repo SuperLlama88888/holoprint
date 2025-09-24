@@ -2608,7 +2608,7 @@
 			}
 		}
 	],
-	"iron_bars": [ // in bedrock only the right bit of the texture (with the low bar) is used, the left bit (with the high bar) is unused. this is probably due to how it connects to other blocks. https://bugs.mojang.com/browse/MCPE-89064
+	"metal_bars": [ // in bedrock only the right bit of the texture (with the low bar) is used, the left bit (with the high bar) is unused. this is probably due to how it connects to other blocks. https://bugs.mojang.com/browse/MCPE-89064
 		{
 			"pos": [7, 0, 0],
 			"size": [2, 16, 16],

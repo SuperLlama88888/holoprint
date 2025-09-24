@@ -29,7 +29,12 @@
 		"anvil$": "anvil",
 		"command_block$": "command_block",
 		"_glazed_terracotta$": "glazed_terracotta",
-		"_shulker_box$": "shulker_box"
+		"_shulker_box$": "shulker_box",
+		"(^|soul_|copper_)lantern$": "lantern",
+		"lightning_rod$": "lightning_rod",
+		"chain$": "chain",
+		"_bars$": "metal_bars",
+		"copper_golem_statue$": "copper_golem_statue"
 	},
 	"individual_blocks": {
 		"bamboo_sapling": "cross_texture",
@@ -51,6 +56,14 @@
 		
 		"chest": "chest{textures/entity/chest/normal}",
 		"trapped_chest": "chest{textures/entity/chest/trapped}",
+		"copper_chest": "chest{textures/entity/chest/copper_default}",
+		"waxed_copper_chest": "chest{textures/entity/chest/copper_default}",
+		"exposed_copper_chest": "chest{textures/entity/chest/copper_exposed}",
+		"waxed_exposed_copper_chest": "chest{textures/entity/chest/copper_exposed}",
+		"weathered_copper_chest": "chest{textures/entity/chest/copper_weathered}",
+		"waxed_weathered_copper_chest": "chest{textures/entity/chest/copper_weathered}",
+		"oxidized_copper_chest": "chest{textures/entity/chest/copper_oxidized}",
+		"waxed_oxidized_copper_chest": "chest{textures/entity/chest/copper_oxidized}",
 		"ender_chest": "chest{textures/entity/chest/ender}",
 		
 		"redstone_wire": "redstone_dust",
@@ -103,6 +116,7 @@
 		// for more info, refer to https://bugs.mojang.com/browse/MCPE-180783
 		"torch": "torch",
 		"soul_torch": "torch",
+		"copper_torch": "torch",
 		"unlit_redstone_torch": "torch",
 		"redstone_torch": "redstone_torch", // a different block shape is needed for the "glow" outline.
 		
@@ -160,18 +174,14 @@
 		"hopper": "hopper",
 		"kelp": "kelp",
 		"ladder": "ladder",
-		"lantern": "lantern",
-		"soul_lantern": "lantern",
 		"lectern": "lectern",
 		"lever": "lever",
 		"waterlily": "lilypad",
 		"campfire": "campfire",
 		"soul_campfire": "campfire",
-		"chain": "chain",
 		"daylight_detector": "daylight_detector",
 		"daylight_detector_inverted": "daylight_detector",
 		"portal": "nether_portal",
-		"iron_bars": "iron_bars",
 		"end_portal_frame": "end_portal_frame",
 		"end_portal": "end_portal",
 		"end_gateway": "end_gateway",
@@ -202,7 +212,6 @@
 		"cave_vines_head_with_berries": "cross_texture",
 		"glow_lichen": "multi_face",
 		"hanging_roots": "cross_texture",
-		"lightning_rod": "lightning_rod",
 		"pointed_dripstone": "pointed_dripstone",
 		"mangrove_propagule": "mangrove_propagule",
 		"sculk_shrieker": "sculk_shrieker",
