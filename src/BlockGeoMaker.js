@@ -11,6 +11,8 @@ export default class BlockGeoMaker {
 	config;
 	textureRefs = new JSONSet();
 	
+	#entityGeoMaker;
+	
 	#individualBlockShapes;
 	#blockShapePatterns;
 	#blockShapeGeos;
@@ -23,19 +25,22 @@ export default class BlockGeoMaker {
 	#globalBlockStateTextureVariants;
 	#blockShapeBlockStateTextureVariants = new Map();
 	#blockNameBlockStateTextureVariants = new Map();
+	/** @type {[RegExp, Data.BlockStateVariants][]} */
 	#blockNamePatternBlockStateTextureVariants = [];
 	
 	#cachedBlockShapes = new Map();
 	
 	/**
 	 * @param {HoloPrintConfig} config
+	 * @param {EntityGeoMaker} entityGeoMaker
 	 * @param {Data.BlockShapes} blockShapes
 	 * @param {Data.BlockShapeGeos} blockShapeGeos
 	 * @param {Data.BlockStateDefinitions} blockStateDefs
 	 * @param {Data.BlockEigenvariants} eigenvariants
 	 */
-	constructor(config, blockShapes, blockShapeGeos, blockStateDefs, eigenvariants) {
+	constructor(config, entityGeoMaker, blockShapes, blockShapeGeos, blockStateDefs, eigenvariants) {
 		this.config = config;
+		this.#entityGeoMaker = entityGeoMaker;
 		
 		this.#individualBlockShapes = blockShapes["individual_blocks"];
 		this.#blockShapePatterns = Object.entries(blockShapes["patterns"]).map(([rule, blockShape]) => [new RegExp(rule), blockShape]); // store regular expressions from the start to avoid recompiling them every time
@@ -76,20 +81,20 @@ export default class BlockGeoMaker {
 	/**
 	 * Makes poly mesh templates from a block palette.
 	 * @param {Block[]} blockPalette
-	 * @returns {PolyMeshTemplateFace[][]}
+	 * @returns {Promise<PolyMeshTemplateFace[][]>}
 	 */
-	makePolyMeshTemplates(blockPalette) {
-		return blockPalette.map(block => this.#makePolyMeshTemplate(block));
+	async makePolyMeshTemplates(blockPalette) {
+		return await Promise.all(blockPalette.map(block => this.#makePolyMeshTemplate(block)));
 	}
 	/**
 	 * Makes a poly mesh template (i.e. an array of poly mesh template faces) from a block. Texture UVs are unresolved, and are indices for the textureRefs property.
 	 * @param {Block} block
-	 * @returns {PolyMeshTemplateFace[]}
+	 * @returns {Promise<PolyMeshTemplateFace[]>}
 	 */
-	#makePolyMeshTemplate(block) {
+	async #makePolyMeshTemplate(block) {
 		let blockName = block["name"];
 		let blockShape = this.#getBlockShape(blockName);
-		let { faces, centerOfMass } = this.#makePolyMeshTemplateFaces(block, blockShape);
+		let { faces, centerOfMass } = await this.#makePolyMeshTemplateFaces(block, blockShape);
 		if(!faces) {
 			console.debug(`No faces are being rendered for block ${blockName}`);
 			return [];
@@ -100,12 +105,12 @@ export default class BlockGeoMaker {
 		let rotation = this.#getBlockRotation(block, blockShape);
 		if(rotation) {
 			faces.forEach(face => {
-				face["normal"] = this.#applyEulerRotation(face["normal"], rotation, [0, 0, 0]);
+				face["normal"] = BlockGeoMaker.applyEulerRotation(face["normal"], rotation, [0, 0, 0]);
 				face["vertices"].forEach(vertex => {
-					vertex["pos"] = this.#applyEulerRotation(vertex["pos"], rotation, [8, 8, 8]); // (8, 8, 8) is the block center and the pivot for all block-wide rotations
+					vertex["pos"] = BlockGeoMaker.applyEulerRotation(vertex["pos"], rotation, [8, 8, 8]); // (8, 8, 8) is the block center and the pivot for all block-wide rotations
 				});
 			});
-			centerOfMass = this.#applyEulerRotation(centerOfMass, rotation, [8, 8, 8]);
+			centerOfMass = BlockGeoMaker.applyEulerRotation(centerOfMass, rotation, [8, 8, 8]);
 		}
 		faces = this.#scaleFaces(faces, centerOfMass);
 		faces.forEach(face => {
@@ -140,12 +145,12 @@ export default class BlockGeoMaker {
 	 * Makes the poly mesh faces for a block.
 	 * @param {Block} block
 	 * @param {string} blockShape
-	 * @returns {{ faces?: (PolyMeshTemplateFace & { fullbright?: boolean })[], centerOfMass?: Vec3 }}
+	 * @returns {Promise<{ faces?: (PolyMeshTemplateFace & { fullbright?: boolean })[], centerOfMass?: Vec3 }>}
 	 */
-	#makePolyMeshTemplateFaces(block, blockShape) {
+	async #makePolyMeshTemplateFaces(block, blockShape) {
 		let specialTexture;
-		if(blockShape.includes("{")) {
-			[, blockShape, specialTexture] = blockShape.match(/^(\w+)\{(textures\/[\w\/]+)\}$/);
+		if(blockShape.includes("<")) {
+			[, blockShape, specialTexture] = blockShape.match(/^(\w+)<([\w\/]*)>$/);
 		}
 		
 		let unfilteredCubes = structuredClone(this.#blockShapeGeos[blockShape]);
@@ -162,7 +167,7 @@ export default class BlockGeoMaker {
 				let blockOverride = structuredClone(block);
 				for(let blockStateName in cube["block_states"]) {
 					if(typeof cube["block_states"][blockStateName] == "string") {
-						cube["block_states"][blockStateName] = this.#interpolateInBlockValues(block, cube["block_states"][blockStateName], cube);
+						cube["block_states"][blockStateName] = this.#interpolateInBlockValues(block, cube["block_states"][blockStateName], cube, specialTexture);
 					}
 				}
 				blockOverride["states"] = { ...blockOverride["states"], ...cube["block_states"] };
@@ -176,7 +181,7 @@ export default class BlockGeoMaker {
 				delete cube["if"];
 			}
 			if("terrain_texture" in cube) {
-				cube["terrain_texture"] = this.#interpolateInBlockValues(cube["block_override"] ?? block, cube["terrain_texture"], cube);
+				cube["terrain_texture"] = this.#interpolateInBlockValues(cube["block_override"] ?? block, cube["terrain_texture"], cube, specialTexture);
 			}
 			if("copy" in cube) {
 				if(cube["copy"] == blockShape) { // prevent recursion (sometimes)
@@ -244,7 +249,7 @@ export default class BlockGeoMaker {
 				}
 				blockToCopy["#copied_via_copy_block"] = true; // I will learn rust if mojang adds this to the structure NBT
 				let newBlockShape = this.#getBlockShape(blockToCopy["name"]);
-				let { faces: newFaces } = this.#makePolyMeshTemplateFaces(blockToCopy, newBlockShape);
+				let { faces: newFaces } = await this.#makePolyMeshTemplateFaces(blockToCopy, newBlockShape);
 				if("translate" in cube) {
 					newFaces.forEach(face => {
 						for(let i = 0; i < 4; i++) {
@@ -253,6 +258,8 @@ export default class BlockGeoMaker {
 					});
 				}
 				allFaces.push(...newFaces);
+			} else if("copy_entity_model" in cube) {
+				unfilteredCubes.push(...await this.#entityGeoMaker.entityModelToCubes(cube["copy_entity_model"]));
 			} else {
 				filteredCubes.push(cube);
 			}
@@ -260,18 +267,8 @@ export default class BlockGeoMaker {
 		if(filteredCubes.length == 0) {
 			return {};
 		}
-		// add easy property accessors. I could make a class if I wanted to
-		filteredCubes.forEach(cube => {
-			Object.defineProperties(cube, Object.fromEntries(["x", "y", "z", "w", "h", "d"].map((prop, i) => [prop, {
-				get() {
-					return (i < 3? this["pos"] : this["size"])[i % 3];
-				},
-				set(value) {
-					(i < 3? this["pos"] : this["size"])[i % 3] = value;
-				}
-			}])));
-		});
-		let cubes = this.#optimizeGeometry(filteredCubes);
+		let filteredCubesWithEasyProperties = filteredCubes.map(cube => this.#addEasyPropertyAccessors(cube));
+		let cubes = this.#optimizeGeometry(filteredCubesWithEasyProperties);
 		cubes.sort((a, b) => a.w * a.h * a.d - b.w * b.h * b.d); // make larger cubes be rendered later. this helps for blocks like slime and honey where the inner cube has to be rendered before the outer cube
 		
 		let blockName = block["name"];
@@ -325,7 +322,7 @@ export default class BlockGeoMaker {
 				if(textureFace == "none") {
 					return;
 				}
-				textureFace = this.#interpolateInBlockValues(cube["block_override"] ?? block, textureFace, cube);
+				textureFace = this.#interpolateInBlockValues(cube["block_override"] ?? block, textureFace, cube, specialTexture);
 				let textureRef = {
 					"uv": face["uv"].map((x, i) => x / textureSize[i]),
 					"uv_size": face["uv_size"].map((x, i) => x / textureSize[i]),
@@ -356,7 +353,7 @@ export default class BlockGeoMaker {
 				}
 				if("tint" in cube) {
 					let tint = cube["tint"];
-					tint = this.#interpolateInBlockValues(cube["block_override"] ?? block, tint, cube);
+					tint = this.#interpolateInBlockValues(cube["block_override"] ?? block, tint, cube, specialTexture);
 					if(tint[0] == "#") {
 						textureRef["tint"] = hexColorToClampedTriplet(tint);
 					} else {
@@ -396,10 +393,10 @@ export default class BlockGeoMaker {
 				for(let i = 0; i < 4; i++) {
 					let vertex = vertices[i];
 					if("rot" in cube) {
-						vertex["pos"] = this.#applyEulerRotation(vertex["pos"], cube["rot"], cube["pivot"] ?? [8, 8, 8]);
+						vertex["pos"] = BlockGeoMaker.applyEulerRotation(vertex["pos"], cube["rot"], cube["pivot"] ?? [8, 8, 8]);
 					}
 					cube["extra_rots"]?.reverse()?.forEach(extraRot => {
-						vertex["pos"] = this.#applyEulerRotation(vertex["pos"], extraRot["rot"], extraRot["pivot"]);
+						vertex["pos"] = BlockGeoMaker.applyEulerRotation(vertex["pos"], extraRot["rot"], extraRot["pivot"]);
 					});
 					if("translate" in cube) {
 						vertex["pos"] = addVec3(vertex["pos"], cube["translate"]);
@@ -431,7 +428,7 @@ export default class BlockGeoMaker {
 			allFaces.forEach(face => {
 				face["fullbright"] = true; // blocks with only flat textures always appear at maximum brightness. source: me
 			});
-			console.debug(`Making ${blockName} full bright!`);
+			// console.debug(`Making ${blockName} full bright!`);
 		}
 		let centerOfMass = this.#calculateCenterOfMass(cubes);
 		return {
@@ -471,21 +468,6 @@ export default class BlockGeoMaker {
 		return rotation;
 	}
 	/**
-	 * Applies Euler rotations on a position in 3D space in the order X-Y-Z.
-	 * @param {Vec3} pos
-	 * @param {Vec3} rotation Angles in degrees
-	 * @param {Vec3} pivot
-	 * @returns {Vec3}
-	 */
-	#applyEulerRotation(pos, rotation, pivot) {
-		let res = addVec3(pos, mulVec3(pivot, -1));
-		[res[1], res[2]] = rotateDeg([res[1], res[2]], -rotation[0]); // idk why but it's negative
-		[res[0], res[2]] = rotateDeg([res[0], res[2]], -rotation[1]);
-		[res[0], res[1]] = rotateDeg([res[0], res[1]], -rotation[2]);
-		res = addVec3(res, pivot);
-		return res;
-	}
-	/**
 	 * Returns the entries of a block's states and block entity data (prefixed by `entity.`; only first-level properties are supported).
 	 * @param {Block} block
 	 * @returns {[string, any][]}
@@ -494,8 +476,25 @@ export default class BlockGeoMaker {
 		return [...Object.entries(block["states"] ?? {}), ...Object.entries(block["block_entity_data"] ?? {}).map(([key, value]) => [`entity.${key}`, value])];
 	}
 	/**
+	 * Adds x/y/z/w/h/d properties to cubes for easy typing.
+	 * @param {Data.Cube} cube
+	 * @returns {CubeWithEasyProperties}
+	 */
+	#addEasyPropertyAccessors(cube) {
+		Object.defineProperties(cube, Object.fromEntries(["x", "y", "z", "w", "h", "d"].map((prop, i) => [prop, {
+			get() {
+				return (i < 3? this["pos"] : this["size"])[i % 3];
+			},
+			set(value) {
+				(i < 3? this["pos"] : this["size"])[i % 3] = value;
+			}
+		}])));
+		// @ts-expect-error
+		return cube;
+	}
+	/**
 	 * Optimises geometries by merging adjacent cubes and culling hidden faces.
-	 * @param {object[]} cubes
+	 * @param {CubeWithEasyProperties[]} cubes
 	 * @returns {object[]}
 	 */
 	#optimizeGeometry(cubes) {
@@ -553,7 +552,7 @@ export default class BlockGeoMaker {
 	}
 	/**
 	 * Returns a "merging group" for a cube. Cubes in the same merging group can be merged together. It doesn't affect face culling.
-	 * @param {object} cube
+	 * @param {Data.Cube} cube
 	 * @returns {number | string}
 	 */
 	#getMergingGroup(cube) {
@@ -561,12 +560,12 @@ export default class BlockGeoMaker {
 			return NaN; // in JS, NaN == NaN is false, disabling these cubes from being merged at all
 		} else {
 			return JSON.stringify([cube["textures"], cube["texture_size"], cube["block_override"], cube["terrain_texture"], cube["variant"], cube["ignore_eigenvariant"], cube["tint"], cube["fullbright"], cube["flip_textures_horizontally"], cube["flip_textures_vertically"], cube["arrays"]]); // these are all the properties that could exist on a cube at this point - basically, two cubes have to be identical in all of these in order to be mergeable
-		} 
+		}
 	}
 	/**
 	 * Unpurely tries to merge the second cube into the first if it is positively adjacent, and culls hidden faces if they are touching.
-	 * @param {object} cube1
-	 * @param {object} cube2
+	 * @param {CubeWithEasyProperties} cube1
+	 * @param {CubeWithEasyProperties} cube2
 	 * @param {boolean} mergeable If the cubes can be merged
 	 * @returns {boolean} If the second cube was merged into the first.
 	 */
@@ -719,51 +718,20 @@ export default class BlockGeoMaker {
 	}
 	/**
 	 * Calculates the UV for a cube.
-	 * @param {object} cube
+	 * @param {CubeWithEasyProperties} cube
 	 * @returns {CubeUv}
 	 */
 	#calculateUv(cube) {
 		if("box_uv" in cube) { // this is where a singular uv coordinate is specified, and the rest is calculated as below. used primarily in entity models.
-			let boxUvSize = cube["box_uv_size"] ?? cube["size"];
-			/** @type {CubeUv} */
-			let uv = {
-				"up": {
-					"uv": [boxUvSize[2], 0],
-					"uv_size": [boxUvSize[0], boxUvSize[2]]
-				},
-				"down": {
-					"uv": [boxUvSize[0] + boxUvSize[2], 0],
-					"uv_size": [boxUvSize[0], boxUvSize[2]]
-				},
-				"west": {
-					"uv": [0, boxUvSize[2]],
-					"uv_size": [boxUvSize[2], boxUvSize[1]]
-				},
-				"north": {
-					"uv": [boxUvSize[2], boxUvSize[2]],
-					"uv_size": [boxUvSize[0], boxUvSize[1]]
-				},
-				"east": {
-					"uv": [boxUvSize[0] + boxUvSize[2], boxUvSize[2]],
-					"uv_size": [boxUvSize[2], boxUvSize[1]]
-				},
-				"south": {
-					"uv": [boxUvSize[0] + boxUvSize[2] * 2, boxUvSize[2]],
-					"uv_size": [boxUvSize[0], boxUvSize[1]]
-				}
-			};
-			Object.values(uv).forEach(face => {
-				face["uv"] = addVec2(face["uv"], cube["box_uv"]);
-			});
-			return uv;
+			return BlockGeoMaker.calculateBoxUv(cube["box_uv"], cube["box_uv_size"] ?? cube["size"]);
 		} else {
 			// In MCBE most non-full-block textures look at where the part that is being rendered is in relation to the entire cube space it's in - like it's being projected onto a full face then cut out. Kinda hard to explain sorry, I recommend messing around with fence textures so you understand how it works.
-			let westUvOffset = [cube.z, 16 - cube.y - cube.h];
-			let eastUvOffset = [16 - cube.z - cube.d, 16 - cube.y - cube.h];
-			let downUvOffset = [16 - cube.x - cube.w, 16 - cube.z - cube.d];
-			let upUvOffset = [16 - cube.x - cube.w, cube.z];
-			let northUvOffset = [cube.x, 16 - cube.y - cube.h];
-			let southUvOffset = [16 - cube.x - cube.w, 16 - cube.y - cube.h];
+			let westUvOffset = tuple([cube.z, 16 - cube.y - cube.h]);
+			let eastUvOffset = tuple([16 - cube.z - cube.d, 16 - cube.y - cube.h]);
+			let downUvOffset = tuple([16 - cube.x - cube.w, 16 - cube.z - cube.d]);
+			let upUvOffset = tuple([16 - cube.x - cube.w, cube.z]);
+			let northUvOffset = tuple([cube.x, 16 - cube.y - cube.h]);
+			let southUvOffset = tuple([16 - cube.x - cube.w, 16 - cube.y - cube.h]);
 			return {
 				"west": {
 					"uv": cube["uv"]?.["west"] ?? cube["uv"]?.["side"] ?? cube["uv"]?.["*"] ?? westUvOffset,
@@ -794,7 +762,7 @@ export default class BlockGeoMaker {
 	}
 	/**
 	 * Gets the default vertices for a cube and a specific face side.
-	 * @param {object} cube
+	 * @param {Data.Cube} cube
 	 * @param {Data.CardinalDirection} faceName
 	 * @returns {[PolyMeshTemplateVertex, PolyMeshTemplateVertex, PolyMeshTemplateVertex, PolyMeshTemplateVertex]}
 	 */
@@ -828,7 +796,7 @@ export default class BlockGeoMaker {
 	}
 	/**
 	 * Calculates the center of mass of some cubes, assuming mass = volume. If all cubes are flat it will take surface area for mass.
-	 * @param {object[]} cubes
+	 * @param {CubeWithEasyProperties[]} cubes
 	 * @returns {Vec3}
 	 */
 	#calculateCenterOfMass(cubes) {
@@ -839,7 +807,7 @@ export default class BlockGeoMaker {
 			totalMass += mass;
 			let cubeCenter = addVec3(cube["pos"], mulVec3(cube["size"], 0.5));
 			if("rot" in cube) {
-				cubeCenter = this.#applyEulerRotation(cubeCenter, cube["rot"], cube["pivot"] ?? [8, 8, 8]);
+				cubeCenter = BlockGeoMaker.applyEulerRotation(cubeCenter, cube["rot"], cube["pivot"] ?? [8, 8, 8]);
 			}
 			center = addVec3(center, mulVec3(cubeCenter, mass));
 		});
@@ -849,7 +817,7 @@ export default class BlockGeoMaker {
 				totalMass += mass;
 				let cubeCenter = addVec3(cube["pos"], mulVec3(cube["size"], 0.5));
 				if("rot" in cube) {
-					cubeCenter = this.#applyEulerRotation(cubeCenter, cube["rot"], cube["pivot"] ?? [8, 8, 8]);
+					cubeCenter = BlockGeoMaker.applyEulerRotation(cubeCenter, cube["rot"], cube["pivot"] ?? [8, 8, 8]);
 				}
 				center = addVec3(center, mulVec3(cubeCenter, mass));
 			});
@@ -877,6 +845,12 @@ export default class BlockGeoMaker {
 			return face;
 		});
 	}
+	/**
+	 * Checks if a block matches an `if` condition.
+	 * @param {Block} block
+	 * @param {string} conditional
+	 * @returns {boolean}
+	 */
 	#checkBlockStateConditional(block, conditional) {
 		let trimmedConditional = conditional.replaceAll(/\s/g, "");
 		let booleanOperations = trimmedConditional.match(/&&|\|\|/g) ?? []; // can have multiple separated by ?? or ||
@@ -954,10 +928,11 @@ export default class BlockGeoMaker {
 	 * Substitutes values from a block into a particular expression.
 	 * @param {Block} block
 	 * @param {string} fullExpression
-	 * @param {object} cube
+	 * @param {Data.Cube} cube
+	 * @param {string} specialTexture
 	 * @returns {string}
 	 */
-	#interpolateInBlockValues(block, fullExpression, cube) {
+	#interpolateInBlockValues(block, fullExpression, cube, specialTexture) {
 		let wholeStringValue;
 		let substitutedExpression = fullExpression.replaceAll(/\${([^}]+)}/g, (bracketedExpression, expression) => {
 			if(wholeStringValue != undefined) return;
@@ -989,7 +964,7 @@ export default class BlockGeoMaker {
 				}
 				return array[arrayIndex];
 			}
-			let match = expression.replaceAll(/\s/g, "").match(/^(#block_name|#block_states|#block_entity_data)((?:\.\w+|\[-?\d+\])*)(\[(-?\d+):(-?\d*)\]|\[:(-?\d+)\])?(?:\?\?(.+))?$/);
+			let match = expression.replaceAll(/\s/g, "").match(/^(#block_name|#block_states|#block_entity_data|#tex)((?:\.\w+|\[-?\d+\])*)(\[(-?\d+):(-?\d*)\]|\[:(-?\d+)\])?(?:\?\?(.+))?$/);
 			if(!match) {
 				console.error(`Wrongly formatted expression: ${bracketedExpression}`);
 				return "";
@@ -1000,6 +975,12 @@ export default class BlockGeoMaker {
 					case "#block_name": return block["name"];
 					case "#block_states": return block["states"];
 					case "#block_entity_data": return block["block_entity_data"];
+					case "#tex": {
+						if(specialTexture == undefined) {
+							console.error(`No #tex for block ${block["name"]}!`);
+						}
+						return specialTexture;
+					}
 				}
 				console.error(`Unknown special variable: ${specialVar}`);
 			}();
@@ -1024,12 +1005,66 @@ export default class BlockGeoMaker {
 					return "";
 				}
 			}
-			console.debug(`Changed ${bracketedExpression} to ${value}!`, block);
+			// console.debug(`Changed ${bracketedExpression} to ${value}!`, block);
 			return value;
 		});
 		return wholeStringValue ?? substitutedExpression;
 	}
 	
+	/**
+	 * Applies Euler rotations on a position in 3D space in the order X-Y-Z.
+	 * @param {Vec3} pos
+	 * @param {Vec3} rotation Angles in degrees
+	 * @param {Vec3} pivot
+	 * @returns {Vec3}
+	 */
+	static applyEulerRotation(pos, rotation, pivot) {
+		let res = addVec3(pos, mulVec3(pivot, -1));
+		[res[1], res[2]] = rotateDeg([res[1], res[2]], -rotation[0]); // idk why but it's negative
+		[res[0], res[2]] = rotateDeg([res[0], res[2]], -rotation[1]);
+		[res[0], res[1]] = rotateDeg([res[0], res[1]], -rotation[2]);
+		res = addVec3(res, pivot);
+		return res;
+	}
+	/**
+	 * Calculates box UV for each face.
+	 * @param {Vec2} uv
+	 * @param {Vec3} uvSize
+	 * @returns {CubeUv}
+	 */
+	static calculateBoxUv(uv, uvSize) {
+		/** @type {CubeUv} */
+		let faces = {
+			"up": {
+				"uv": [uvSize[2], 0],
+				"uv_size": [uvSize[0], uvSize[2]]
+			},
+			"down": {
+				"uv": [uvSize[0] + uvSize[2], 0],
+				"uv_size": [uvSize[0], uvSize[2]]
+			},
+			"east": {
+				"uv": [0, uvSize[2]],
+				"uv_size": [uvSize[2], uvSize[1]]
+			},
+			"north": {
+				"uv": [uvSize[2], uvSize[2]],
+				"uv_size": [uvSize[0], uvSize[1]]
+			},
+			"west": {
+				"uv": [uvSize[0] + uvSize[2], uvSize[2]],
+				"uv_size": [uvSize[2], uvSize[1]]
+			},
+			"south": {
+				"uv": [uvSize[0] + uvSize[2] * 2, uvSize[2]],
+				"uv_size": [uvSize[0], uvSize[1]]
+			}
+		};
+		Object.values(faces).forEach(face => {
+			face["uv"] = addVec2(face["uv"], uv);
+		});
+		return faces;
+	}
 	/**
 	 * Resolves UVs in template faces.
 	 * @param {PolyMeshTemplateFace[]} faces
@@ -1079,6 +1114,11 @@ export default class BlockGeoMaker {
 	}
 }
 
-/** @import { Vec3, Block, HoloPrintConfig, PolyMeshTemplateFaceWithUvs, PolyMeshTemplateFace, Rectangle, PolyMeshTemplateVertex, CubeUv } from "./HoloPrint.js" */
+/**
+ * @typedef {Data.Cube & Record<"x" | "y" | "z" | "w" | "h" | "d", number>} CubeWithEasyProperties
+ */
+
+/** @import { Vec3, Block, HoloPrintConfig, PolyMeshTemplateFaceWithUvs, PolyMeshTemplateFace, Rectangle, PolyMeshTemplateVertex, CubeUv, Vec2 } from "./HoloPrint.js" */
 /** @import TextureAtlas from "./TextureAtlas.js" */
+/** @import EntityGeoMaker from "./EntityGeoMaker.js" */
 /** @import * as Data from "./data/schemas" */

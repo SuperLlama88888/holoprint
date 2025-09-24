@@ -169,9 +169,7 @@
 										"enum": ["west", "east", "down", "up", "north", "south", "side", "carried", "carried.west", "carried.east", "carried.down", "carried.up", "carried.north", "carried.south", "carried.side", "#tex", "none"]
 									},
 									{
-										"description": "A file path to a texture file, without the file extension.",
-										"type": "string",
-										"pattern": "^textures/.*[^/]$"
+										"$ref": "#/definitions/textureFilePath"
 									}
 								]
 							}
@@ -197,6 +195,26 @@
 						"description": "Copies an entire block. Must resolve to an object with the same structure as a block palette entry.",
 						"type": "string",
 						"minLength": 1
+					},
+					"copy_entity_model": {
+						"description": "Copies an entity's model.",
+						"type": "object",
+						"properties": {
+							"identifier": {
+								"description": "The geometry identifier of the model.",
+								"type": "string",
+								"pattern": "^geometry\\.[\\w.]+$"
+							},
+							"geo_file": {
+								"description": "A file path to the geometry file which contains the identifier.",
+								"type": "string",
+								"pattern": "^models/.*[^/]$"
+							},
+							"texture": {
+								"$ref": "#/definitions/textureFilePath"
+							}
+						},
+						"required": ["identifier", "geo_file", "texture"]
 					},
 					"block_states": {
 						"description": "Block states to be passed to the block shape copy specified in the \"copy\" property.",
@@ -285,6 +303,9 @@
 					},
 					{
 						"required": ["copy_block"]
+					},
+					{
+						"required": ["copy_entity_model"]
 					}
 				],
 				"default": {
@@ -296,5 +317,13 @@
 			"minItems": 1
 		}
 	},
-	"additionalProperties": false
+	"additionalProperties": false,
+	
+	"definitions": {
+		"textureFilePath": {
+			"description": "A file path to a texture file, without the file extension.",
+			"type": "string",
+			"pattern": "^textures/.*[^/]$"
+		}
+	}
 }

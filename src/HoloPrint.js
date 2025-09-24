@@ -13,6 +13,7 @@ import BlockUpdater from "./BlockUpdater.js";
 import SpawnAnimationMaker from "./SpawnAnimationMaker.js";
 import PolyMeshMaker from "./PolyMeshMaker.js";
 import fetchers from "./fetchers.js";
+import EntityGeoMaker from "./EntityGeoMaker.js";
 
 export const VERSION = "dev";
 export const IGNORED_BLOCKS = ["air", "piston_arm_collision", "sticky_piston_arm_collision"]; // blocks to be ignored when scanning the structure file
@@ -188,9 +189,10 @@ export async function makePack(structureFiles, config, resourcePackStack = new R
 	window.blockIndices = allStructureIndicesByLayer;
 	
 	let data = await dataPromise.all;
-	let blockGeoMaker = new BlockGeoMaker(config, data.blockShapes, data.blockShapeGeos, data.blockStateDefinitions, data.blockEigenvariants);
+	let entityGeoMaker = new EntityGeoMaker(resourcePackStack);
+	let blockGeoMaker = new BlockGeoMaker(config, entityGeoMaker, data.blockShapes, data.blockShapeGeos, data.blockStateDefinitions, data.blockEigenvariants);
 	// makePolyMeshTemplates() is an impure function and adds texture references to the textureRefs set property.
-	let unresolvedPolyMeshTemplatePalette = blockGeoMaker.makePolyMeshTemplates(blockPalette);
+	let unresolvedPolyMeshTemplatePalette = await blockGeoMaker.makePolyMeshTemplates(blockPalette);
 	console.info("Finished making block geometry templates!");
 	console.log("Block geo maker:", blockGeoMaker);
 	console.log("Poly mesh template palette:", structuredClone(unresolvedPolyMeshTemplatePalette));
@@ -951,12 +953,6 @@ async function tweakBlockPalette(structure, ignoredBlocks) {
  * @returns {{palette: Block[], indices: [Int32Array, Int32Array][]}}
  */
 function mergeMultiplePalettesAndIndices(palettesAndIndices) {
-	if(palettesAndIndices.length == 1) {
-		return {
-			palette: palettesAndIndices[0].palette,
-			indices: [palettesAndIndices[0].indices]
-		};
-	}
 	let mergedPaletteSet = new JSONSet();
 	let remappedIndices = [];
 	palettesAndIndices.forEach(({ palette, indices }) => {

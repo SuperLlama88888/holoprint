@@ -12,9 +12,17 @@
 			"type": "object",
 			"patternProperties": {
 				"^.*$": {
-					"description": "The block shape for blocks that match this regular expression.",
 					"type": "string",
-					"pattern": "^\\w+$"
+					"oneOf": [
+						{
+							"description": "The block shape for blocks that match this regular expression.",
+							"pattern": "^\\w+$"
+						},
+						{
+							"description": "The block shape for blocks that match this regular expression, and the path to a texture which can be accessed with #tex.",
+							"pattern": "^\\w+\\<[\\w/]*\\>$"
+						}
+					]
 				}
 			},
 			"additionalProperties": false
@@ -32,7 +40,7 @@
 						},
 						{
 							"description": "The block shape for this block, and the path to a texture which can be accessed with #tex.",
-							"pattern": "^\\w+\\{textures/[\\w/]+\\}$"
+							"pattern": "^\\w+\\<[\\w/]*\\>$"
 						}
 					]
 				}
