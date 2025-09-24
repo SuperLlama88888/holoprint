@@ -1,22 +1,16 @@
 // Updates a block from older MCBE versions, using schemas from pmmp/BedrockBlockUpgradeSchema. This code was made with reference to https://github.com/pmmp/PocketMine-MP/blob/5.21.0/src/data/bedrock/block/upgrade/BlockStateUpgrader.php and https://github.com/RaphiMC/ViaBedrock/blob/main/src/main/java/net/raphimc/viabedrock/api/chunk/blockstate/JsonBlockStateUpgradeSchema.java.
 
-import { AsyncFactory, CachingFetcher } from "./utils.js";
+import fetchers from "./fetchers.js";
 
 /** Updates older blocks to the latest MCBE version. */
-export default class BlockUpdater extends AsyncFactory {
+export default class BlockUpdater {
 	static LATEST_VERSION = 18168865; // 01 15 3C 21 = 1.21.60.33 (1.21.61)
-	static #UPGRADE_SCHEMA_URL = "https://cdn.jsdelivr.net/gh/SuperLlama88888/BedrockBlockUpgradeSchema";
-	static #UPGRADE_SCHEMA_VERSION = "5.1.0+bedrock-1.21.60"; // specifically, the tag name
 	
-	#fetcher;
 	/** @type {Record<string, BlockUpdateSchemaSkeleton[]>} */
 	#schemaIndex = {};
 	/** @type {Map<string, BlockUpdateSchema>} */
 	#schemas = new Map();
 	
-	async init() {
-		this.#fetcher = await CachingFetcher.new(`BlockUpgrader@${BlockUpdater.#UPGRADE_SCHEMA_VERSION}`, `${BlockUpdater.#UPGRADE_SCHEMA_URL}@${BlockUpdater.#UPGRADE_SCHEMA_VERSION}/`);
-	}
 	/**
 	 * Checks if a block needs updating to the latest Minecraft version.
 	 * @param {NBTBlock} block
@@ -34,7 +28,8 @@ export default class BlockUpdater extends AsyncFactory {
 	async update(block) {
 		let oldBlockStringified = BlockUpdater.stringifyBlock(block);
 		if(Object.keys(this.#schemaIndex).length == 0) {
-			let schemaList = await this.#fetcher.fetch("schema_list.json").then(res => res.json());
+			/** @type {BlockUpdateSchemaSkeleton[]} */
+			let schemaList = await fetchers.bedrockBlockUpgradeSchema("schema_list.json").then(res => res.json());
 			schemaList.forEach(schemaSkeleton => {
 				let schemaVersion = this.#getSchemaVersion(schemaSkeleton);
 				this.#schemaIndex[schemaVersion] ??= [];
@@ -50,7 +45,7 @@ export default class BlockUpdater extends AsyncFactory {
 		});
 		await Promise.all(schemasToApply.map(async schemaFilename => {
 			if(!this.#schemas.has(schemaFilename)) {
-				this.#schemas.set(schemaFilename, await this.#fetcher.fetch(`nbt_upgrade_schema/${schemaFilename}`).then(res => res.json()));
+				this.#schemas.set(schemaFilename, await fetchers.bedrockBlockUpgradeSchema(`nbt_upgrade_schema/${schemaFilename}`).then(res => res.json()));
 			}
 		}));
 		let updated = false;

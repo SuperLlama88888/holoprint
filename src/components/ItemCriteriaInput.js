@@ -1,16 +1,15 @@
 import { assertAs, html, htmlCodeToElement, onEvent, onEventAndNow, selectEl, selectEls } from "../utils.js";
 import * as HoloPrint from "../HoloPrint.js";
-import { VanillaDataFetcher } from "../ResourcePackStack.js";
+import fetchers from "../fetchers.js";
 
-let itemsDatalistPromise = VanillaDataFetcher.fetch("metadata/vanilladata_modules/mojang-items.json").then(res => res.json()).then(mojangItems => {
+let itemsDatalistPromise = fetchers.vanillaData("metadata/vanilladata_modules/mojang-items.json").then(res => res.json()).then(mojangItems => {
 	let itemNames = mojangItems["data_items"].map(item => item["name"].replace(/^minecraft:/, ""));
 	let datalist = document.createElement("datalist");
 	datalist.id = "itemNamesDatalist";
 	datalist.append(...itemNames.map(itemName => new Option(itemName)));
 	return datalist;
 });
-let itemTagsDatalistPromise = HoloPrint.createPmmpBedrockDataFetcher().then(async fetcher => {
-	let data = await fetcher.fetch("item_tags.json").then(res => res.json());
+let itemTagsDatalistPromise = fetchers.bedrockData("item_tags.json").then(res => res.json()).then(data => {
 	let itemTags = Object.keys(data).map(tag => tag.replace(/^minecraft:/, ""));
 	let datalist = document.createElement("datalist");
 	datalist.id = "itemTagsDatalist";

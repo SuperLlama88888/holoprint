@@ -3,17 +3,13 @@
 
 import { all as mergeObjects } from "deepmerge";
 
-import "./utils.js";
-
 import LocalResourcePack from "./LocalResourcePack.js";
-import { CachingFetcher, jsonc, removeFalsies } from "./utils.js";
-
-const defaultVanillaDataVersion = "v1.21.70.26-preview";
+import { jsonc, removeFalsies } from "./utils.js";
+import fetchers from "./fetchers.js";
 
 export default class ResourcePackStack {
 	static #JSON_FILES_TO_MERGE = ["blocks.json", "textures/terrain_texture.json", "textures/flipbook_textures.json"];
 	
-	vanillaDataVersion;
 	/** Whether or not there are any resource packs attached (apart from vanilla ofc) @type {boolean} */
 	hasResourcePacks;
 	/** @type {LocalResourcePack[]} */
@@ -22,11 +18,9 @@ export default class ResourcePackStack {
 	/**
 	 * Creates a resource pack stack to get resources.
 	 * @param {LocalResourcePack[]} [localResourcePacks] Local resource packs to apply. Front of the list is on top (i.e. applied first.)
-	 * @param {string} [vanillaDataVersion] The Minecraft version to get vanilla data from
 	 */
-	constructor(localResourcePacks = [], vanillaDataVersion = defaultVanillaDataVersion) {
+	constructor(localResourcePacks = []) {
 		this.localResourcePacks = localResourcePacks;
-		this.vanillaDataVersion = vanillaDataVersion;
 		this.hasResourcePacks = localResourcePacks.length > 0;
 	}
 	
@@ -38,7 +32,7 @@ export default class ResourcePackStack {
 	async fetchResource(resourcePath) {
 		let filePath = `resource_pack/${resourcePath}`;
 		if(ResourcePackStack.#JSON_FILES_TO_MERGE.includes(resourcePath)) {
-			let vanillaRes = await VanillaDataFetcher.fetch(filePath);
+			let vanillaRes = await fetchers.vanillaData(filePath);
 			let vanillaJson = await jsonc(vanillaRes.clone()); // clone it so it can be read later if need be (responses can only be read once)
 			let resourcePackFiles = this.localResourcePacks.map(resourcePack => resourcePack.getFile(resourcePath));
 			let resourcePackJsons = await Promise.all(removeFalsies(resourcePackFiles).map(file => jsonc(file)));
@@ -57,25 +51,6 @@ export default class ResourcePackStack {
 				return new Response(resource);
 			}
 		}
-		return await VanillaDataFetcher.fetch(filePath);
-	}
-}
-
-export class VanillaDataFetcher extends CachingFetcher {
-	static #VANILLA_RESOURCES_LINK = "https://cdn.jsdelivr.net/gh/Mojang/bedrock-samples"; // No / at the end
-	/** @type {Promise<VanillaDataFetcher>} */
-	static #instance;
-	
-	/**
-	 * Creates a vanilla data fetcher to fetch data from the Mojang/bedrock-samples repository.
-	 * @param {string} [version] The name of the GitHub tag for a specific Minecraft version.
-	 */
-	constructor(version = defaultVanillaDataVersion) {
-		super(`VanillaDataFetcher_${version}`, `${VanillaDataFetcher.#VANILLA_RESOURCES_LINK}@${version}/`);
-		this.version = version;
-	}
-	static async fetch(url) {
-		this.#instance ??= VanillaDataFetcher.new();
-		return (await this.#instance).fetch(url);
+		return await fetchers.vanillaData(filePath);
 	}
 }

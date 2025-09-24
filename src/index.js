@@ -425,6 +425,11 @@ document[onEvent]("DOMContentLoaded", () => {
 			bodyObserver.observe(el.shadowRoot, observerConfig);
 		});
 	});
+	
+	// delete old caches
+	caches.keys().then(cacheNames => {
+		cacheNames.filter(cacheName => cacheName.startsWith("ResourcePackStack_")).forEach(cacheName => caches.delete(cacheName))
+	});
 });
 window[onEvent]("load", () => { // shadow DOMs aren't populated in the DOMContentLoaded event yet
 	if(location.search == "?generateEnglishTranslations") {

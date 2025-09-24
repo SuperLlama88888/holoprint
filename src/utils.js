@@ -914,6 +914,23 @@ export class AsyncFactory {
 	}
 }
 
+/**
+ * @template {(...args: any[]) => Promise<any>} F
+ * @template {any[]} P
+ * @param {(...args: P) => Promise<F>} factory
+ * @param {P} factoryParams
+ * @returns {F}
+ */
+export function lazyLoadAsyncFunctionFactory(factory, ...factoryParams) {
+	/** @type {Promise<F>} */
+	let f;
+	// @ts-expect-error
+	return async (...args) => {
+		f ??= factory(...factoryParams);
+		return (await f)(...args);
+	};
+}
+
 function stringifyJsonBigIntSafe(value) {
 	return JSON.stringify(value, (_, x) => typeof x == "bigint"? (JSON.rawJSON ?? doNothing)(x.toString()) : x); // JSON.rawJSON offers the perfect solution but is very modern, so stringifying them is the next best option
 }
@@ -1044,78 +1061,6 @@ export class JSONMap extends Map { // very barebones
 	 */
 	set(key, value) {
 		return super.set(this.stringify(key), value);
-	}
-}
-export class CachingFetcher extends AsyncFactory {
-	static URL_PREFIX = "https://cache/";
-	static BAD_STATUS_CODES = [429];
-	
-	cacheName;
-	#baseUrl;
-	/** @type {Cache} */
-	#cache;
-	constructor(cacheName, baseUrl = "") {
-		super();
-		this.cacheName = cacheName;
-		this.#baseUrl = baseUrl;
-	}
-	async init() {
-		this.#cache = await caches.open(this.cacheName);
-	}
-	/**
-	 * Fetches a file, checking first against cache.
-	 * @param {string} url
-	 * @returns {Promise<Response>}
-	 */
-	async fetch(url) {
-		let fullUrl = this.#baseUrl + url;
-		let cacheLink = CachingFetcher.URL_PREFIX + url;
-		let res = await this.#cache.match(cacheLink);
-		if(CachingFetcher.BAD_STATUS_CODES.includes(res?.status)) {
-			await this.#cache.delete(cacheLink);
-			res = undefined;
-		}
-		if(!res) {
-			res = await this.retrieve(fullUrl);
-			let fetchAttempsLeft = 5;
-			const fetchRetryTimeout = 1000;
-			while(CachingFetcher.BAD_STATUS_CODES.includes(res.status) && fetchAttempsLeft--) {
-				console.debug(`Encountered bad HTTP status ${res.status} from ${fullUrl}, trying again in ${fetchRetryTimeout}ms`);
-				await sleep(fetchRetryTimeout);
-				res = await this.retrieve(fullUrl);
-			}
-			if(CachingFetcher.BAD_STATUS_CODES.includes(res.status)) {
-				console.error(`Couldn't avoid getting bad HTTP status code ${res.status} for ${fullUrl}`);
-			} else {
-				await this.#cache.put(cacheLink, res.clone());
-			}
-		}
-		return res;
-	}
-	/**
-	 * Actually load a file, for when it's not found in cache.
-	 * @param {string} url
-	 * @returns {Promise<Response>}
-	 */
-	async retrieve(url) {
-		const maxFetchAttempts = 3;
-		const fetchRetryTimeout = 500; // ms
-		let lastError;
-		for(let i = 0; i < maxFetchAttempts; i++) {
-			try {
-				return await fetch(url);
-			} catch(e) {
-				if(navigator.onLine && e instanceof TypeError && e.message == "Failed to fetch") { // random Chrome issue when fetching many images at the same time. observed when fetching 1600 images at the same time.
-					console.debug(`Failed to fetch resource at ${url}, trying again in ${fetchRetryTimeout}ms`);
-					lastError = e;
-					await sleep(fetchRetryTimeout);
-				} else {
-					throw e;
-				}
-			}
-		}
-		console.error(`Failed to fetch resource at ${url} after ${maxFetchAttempts} attempts...`);
-		throw lastError;
 	}
 }
 /**
