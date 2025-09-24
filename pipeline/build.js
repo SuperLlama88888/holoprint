@@ -17,6 +17,7 @@ const buildVersion = process.argv.find(arg => arg.startsWith(versionParamName))?
 const exportHoloPrintLib = process.argv.includes(exportHoloPrintLibFlagName);
 
 const cssTargets = browserslistToTargets(browserslist(">= 0.1%"));
+const importMapPattern = /<script type="importmap">([^]+?)<\/script>/;
 
 process.chdir(path.resolve(import.meta.dirname, "../"));
 fs.cpSync(srcDir, "temp", {
@@ -33,7 +34,7 @@ fs.cpSync("temp", distDir, {
 	filter: filename => !(path.extname(filename) == ".js" || (fs.statSync(filename).isDirectory() && fs.readdirSync(filename).every(file => path.extname(file) == ".js")))
 });
 
-let importMapJSON = fs.readFileSync(`${distDir}/index.html`, "utf-8").match(/<script type="importmap">([^]+?)<\/script>/)[1];
+let importMapJSON = fs.readFileSync(`${distDir}/index.html`, "utf-8").match(importMapPattern)[1];
 let externalModules = Object.keys(JSON.parse(importMapJSON)["imports"]);
 let { metafile } = esbuild.buildSync({
 	absWorkingDir: process.cwd(),
@@ -70,6 +71,16 @@ fs.readdirSync(distDir).forEach(filename => {
 			let regExp = new RegExp(`\\b${oldName.replaceAll(/[.*+?^${}()|[\]\\]/g, "\\$&")}\\b`, "g");
 			html = html.replaceAll(regExp, newName);
 		});
+		if(importMapPattern.test(html)) {
+			html = html.replace(importMapPattern, (_, importMapJSON) => addImportReplacementsToImportMap(JSON.parse(importMapJSON)));
+		} else {
+			let importMapScript = addImportReplacementsToImportMap({});
+			if(html.includes("</head>")) {
+				html = html.replace("</head>", `${importMapScript}</head>`);
+			} else {
+				html += importMapScript;
+			}
+		}
 		fs.writeFileSync(filepath, html);
 	}
 });
@@ -180,6 +191,17 @@ function processJSON(code) {
 	return { code };
 }
 
+/**
+ * @param {object} importMap
+ * @returns {string}
+ */
+function addImportReplacementsToImportMap(importMap) {
+	importMap["imports"] ??= {};
+	scriptImportReplacements.forEach(([oldName, newName]) => {
+		importMap["imports"][`./${oldName}`] = `./${newName}`;
+	});
+	return `<script type="importmap">${JSON.stringify(importMap)}</script>`;
+}
 /**
  * @param {string} str
  * @param {RegExp} regexp
