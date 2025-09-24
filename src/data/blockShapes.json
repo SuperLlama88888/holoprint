@@ -244,7 +244,9 @@
 		"tall_dry_grass": "cross_texture",
 		"cactus_flower": "cross_texture",
 		"leaf_litter": "leaf_litter",
-		"wildflowers": "pink_petals"
+		"wildflowers": "pink_petals",
+		
+		"dried_ghast": "dried_ghast"
 		
 		// "dirt": "debug_auto_uv_4" // must disable geometry merging
 	}

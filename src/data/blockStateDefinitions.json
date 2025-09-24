@@ -31,7 +31,8 @@
 			"can_summon": [0, 1], // sculk shrieker
 			"respawn_anchor_charge": [0, 1, 2, 3, 4],
 			"huge_mushroom_bits": [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15],
-			"brushed_progress": [0, 1, 2, 3] // suspicious sand/gravel
+			"brushed_progress": [0, 1, 2, 3], // suspicious sand/gravel
+			"rehydration_level": [0, 1, 2, 3] // dried ghasts
 		},
 		"block_shapes": {
 			"cake": {
