@@ -37,7 +37,8 @@
 		"exposed_copper_golem_statue$": "copper_golem_statue<copper_golem_exposed>",
 		"weathered_copper_golem_statue$": "copper_golem_statue<copper_golem_weathered>",
 		"oxidized_copper_golem_statue$": "copper_golem_statue<copper_golem_oxidized>",
-		"copper_golem_statue$": "copper_golem_statue<copper_golem>"
+		"copper_golem_statue$": "copper_golem_statue<copper_golem>",
+		"_shelf$": "shelf"
 	},
 	"individual_blocks": {
 		"bamboo_sapling": "cross_texture",

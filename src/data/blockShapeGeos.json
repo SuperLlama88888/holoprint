@@ -5398,6 +5398,102 @@
 			"rot": [0, 180, 0]
 		}
 	],
+	"shelf": [
+		{
+			"pos": [0, 0, 13],
+			"size": [16, 16, 3],
+			"textures": {
+				"north": "none"
+			},
+			"uv": {
+				"south": [16, 0],
+				"west": [29, 0],
+				"east": [16, 0],
+				"down": [16, 9],
+				"up": [16, 7]
+			},
+			"texture_size": [32, 32],
+			"uv_rot": {
+				"down": 180,
+				"up": 180
+			}
+		},
+		{
+			"pos": [0, 0, 11],
+			"size": [16, 4, 2],
+			"uv": {
+				"north": [0, 12],
+				"east": [3, 12],
+				"west": [11, 12],
+				"up": [16, 7],
+				"down": [16, 7]
+			},
+			"uv_rot": {
+				"down": 180
+			},
+			"texture_size": [32, 32]
+		},
+		{
+			"pos": [0, 12, 11],
+			"size": [16, 4, 2],
+			"uv": {
+				"north": [0, 0],
+				"east": [3, 0],
+				"west": [11, 0],
+				"up": [16, 10],
+				"down": [16, 10]
+			},
+			"uv_rot": {
+				"up": 180
+			},
+			"texture_size": [32, 32]
+		},
+		{
+			"if": "powered_bit == 0",
+			"pos": [0, 4, 13],
+			"size": [16, 8, 0],
+			"uv": {
+				"*": [0, 4]
+			},
+			"texture_size": [32, 32]
+		},
+		{
+			"if": "powered_bit == 1 && powered_shelf_type == 0",
+			"pos": [0, 4, 13],
+			"size": [16, 8, 0],
+			"uv": {
+				"*": [16, 24]
+			},
+			"texture_size": [32, 32]
+		},
+		{
+			"if": "powered_bit == 1 && powered_shelf_type == 2", // center??
+			"pos": [0, 4, 13],
+			"size": [16, 8, 0],
+			"uv": {
+				"*": [0, 24]
+			},
+			"texture_size": [32, 32]
+		},
+		{
+			"if": "powered_bit == 1 && powered_shelf_type == 1", // right??
+			"pos": [0, 4, 13],
+			"size": [16, 8, 0],
+			"uv": {
+				"*": [16, 16]
+			},
+			"texture_size": [32, 32]
+		},
+		{
+			"if": "powered_bit == 1 && powered_shelf_type == 3", // left??
+			"pos": [0, 4, 13],
+			"size": [16, 8, 0],
+			"uv": {
+				"*": [0, 16]
+			},
+			"texture_size": [32, 32]
+		}
+	],
 	"copper_golem_statue": [
 		{
 			"if": "entity.Pose == 0",
