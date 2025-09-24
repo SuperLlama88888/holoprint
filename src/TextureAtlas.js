@@ -337,7 +337,8 @@ export default class TextureAtlas {
 					crop = null;
 				}
 			}
-			let imageFragment = { imageData, sourceX, sourceY, w, h };
+			let pixelsHash = this.#hashPixels(imageData, sourceX, sourceY, w, h);
+			let imageFragment = { imageData, sourceX, sourceY, w, h, pixelsHash };
 			if(crop) {
 				imageFragment["crop"] = crop;
 			}
@@ -350,8 +351,22 @@ export default class TextureAtlas {
 	 * @returns {Promise<ImageUv[]>}
 	 */
 	async #stitchTextureAtlas(imageFragments) {
+		/** @type {Map<number, [ImageFragment, number]>} */
+		let hashBuckets = new Map();
+		/** @type {Map<number, number>} */
+		let identicalFragmentIndices = new Map();
 		imageFragments.forEach((imageFragment, i) => {
 			imageFragment["i"] = i; // Keep order as potpack shuffles them
+			if(hashBuckets.has(imageFragment.pixelsHash)) {
+				let [oldFrag, oldI] = hashBuckets.get(imageFragment.pixelsHash);
+				if(oldFrag.w == imageFragment.w && oldFrag.h == imageFragment.h && this.#checkImageDataEquivalence(oldFrag.imageData, imageFragment.imageData, oldFrag.sourceX, oldFrag.sourceY, imageFragment.sourceX, imageFragment.sourceY, imageFragment.w, imageFragment.h)) {
+					identicalFragmentIndices.set(i, oldI);
+					imageFragment["w"] = 0; // prevent potpack from giving space to them (these fragments aren't used anyway)
+					imageFragment["h"] = 0;
+					return;
+				}
+			}
+			hashBuckets.set(imageFragment.pixelsHash, [imageFragment, i]);
 			imageFragment["actualSize"] = [imageFragment["w"], imageFragment["h"]]; // since we're modifying w/h, we need to keep references to everything before.
 			imageFragment["offset"] = [0, 0];
 			// fractional dimensions don't work with js canvas, so we need to extract the full part of the texture we need, but keep the uv positions fractional
@@ -392,7 +407,12 @@ export default class TextureAtlas {
 		let ctx = can.getContext("2d");
 		
 		console.log("Packed image fragments:", imageFragments);
-		let imageUvs = packedImageFragments.map(imageFragment => {
+		let imageUvs = [];
+		packedImageFragments.forEach((imageFragment, i) => {
+			if(identicalFragmentIndices.has(i)) {
+				imageUvs.push(imageUvs[identicalFragmentIndices.get(i)]);
+				return;
+			}
 			let sourcePos = tuple([imageFragment.sourceX, imageFragment.sourceY]);
 			let destPos = tuple([imageFragment.x, imageFragment.y]);
 			let textureSize = tuple([imageFragment.w, imageFragment.h]);
@@ -406,7 +426,7 @@ export default class TextureAtlas {
 			if("crop" in imageFragment) {
 				imageUv["crop"] = imageFragment["crop"];
 			}
-			return imageUv;
+			imageUvs.push(imageUv);
 		});
 		let canImageData = can.getContext("2d").getImageData(0, 0, can.width, can.height);
 		let transparencies = this.#getImageFragmentTransparencies(canImageData, packedImageFragments);
@@ -456,6 +476,54 @@ export default class TextureAtlas {
 			}
 		}
 		return { minX, minY, maxX, maxY };
+	}
+	/**
+	 * Calculates the FRV-1a hash of a specific region of an `ImageData`.
+	 * @param {ImageData} imageData
+	 * @param {number} startX
+	 * @param {number} startY
+	 * @param {number} w
+	 * @param {number} h
+	 * @returns {number}
+	 */
+	#hashPixels(imageData, startX, startY, w, h) {
+		let hash = 2166136261;
+		for(let y = startY; y < startY + h; y++) {
+			for(let x = startX; x < startX + w; x++) {
+				let startI = (y * imageData.width + x) * 4;
+				for(let i = startI; i < startI + 4; i++) {
+					hash ^= imageData.data[i];
+					hash *= 16777619;
+					hash >>>= 0;
+				}
+			}
+		}
+		return hash;
+	}
+	/**
+	 * Checks if fragments from two `ImageData`s are exactly the same.
+	 * @param {ImageData} id1
+	 * @param {ImageData} id2
+	 * @param {number} x1
+	 * @param {number} y1
+	 * @param {number} x2
+	 * @param {number} y2
+	 * @param {number} w
+	 * @param {number} h
+	 */
+	#checkImageDataEquivalence(id1, id2, x1, y1, x2, y2, w, h) {
+		for(let y = 0; y < h; y++) {
+			for(let x = 0; x < w; x++) {
+				let i1 = (y1 * id1.width + x1) * 4;
+				let i2 = (y2 * id2.width + x2) * 4;
+				for(let ch = 0; ch < 4; ch++) {
+					if(id1.data[i1 + ch] != id2.data[i2 + ch]) {
+						return false;
+					}
+				}
+			}
+		}
+		return true;
 	}
 	/** Add an outline around each texture.
 	 * @param {OffscreenCanvas} ogCan

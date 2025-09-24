@@ -2049,6 +2049,7 @@ function removeDeadMolangBranches(code) {
  * @property {number} h Height
  * @property {number} sourceX
  * @property {number} sourceY
+ * @property {number} pixelsHash FNV-1a hash of all pixels in this fragment
  * @property {Rectangle} [crop]
  */
 /**
