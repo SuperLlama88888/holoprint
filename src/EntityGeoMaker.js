@@ -29,6 +29,7 @@ export default class EntityGeoMaker {
 					"translate": [8, 0, 8],
 					"box_uv": geoCube["uv"],
 					"box_uv_size": geoCube["size"],
+					"box_uv_flip_east_west": true,
 					"textures": {
 						"*": entityModelInfo["texture"]
 					},

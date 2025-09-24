@@ -33,6 +33,8 @@ export interface Cube {
 	box_uv?: [number, number];
 	/** Size override for box UV. */
 	box_uv_size?: [number, number, number];
+	/** If true, the east and west faces will be flipped. Requires `box_uv`. */
+	box_uv_flip_east_west?: boolean;
 	/** Forces a face to use the texture of another face, or a texture located at a given file path. */
 	textures?: Partial<Record<Face, TextureFace>>;
 	/** Defines the expected size of the texture, for use in UV. Defaults to [16, 16]. */

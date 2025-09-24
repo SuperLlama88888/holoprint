@@ -155,6 +155,10 @@
 						"minItems": 3,
 						"maxItems": 3
 					},
+					"box_uv_flip_east_west": {
+						"description": "If true, the east and west faces will be flipped. Requires `box_uv`.",
+						"type": "boolean"
+					},
 					"textures": {
 						"description": "Forces a face to use the texture of another face, or a texture located at a given file path.",
 						"type": "object",

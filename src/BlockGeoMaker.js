@@ -99,18 +99,18 @@ export default class BlockGeoMaker {
 			console.debug(`No faces are being rendered for block ${blockName}`);
 			return [];
 		}
-		if(blockShape.includes("{")) {
-			blockShape = blockShape.slice(0, blockShape.indexOf("{"));
+		if(blockShape.includes("<")) {
+			blockShape = blockShape.slice(0, blockShape.indexOf("<"));
 		}
 		let rotation = this.#getBlockRotation(block, blockShape);
 		if(rotation) {
 			faces.forEach(face => {
-				face["normal"] = BlockGeoMaker.applyEulerRotation(face["normal"], rotation, [0, 0, 0]);
+				face["normal"] = this.#applyEulerRotation(face["normal"], rotation, [0, 0, 0]);
 				face["vertices"].forEach(vertex => {
-					vertex["pos"] = BlockGeoMaker.applyEulerRotation(vertex["pos"], rotation, [8, 8, 8]); // (8, 8, 8) is the block center and the pivot for all block-wide rotations
+					vertex["pos"] = this.#applyEulerRotation(vertex["pos"], rotation, [8, 8, 8]); // (8, 8, 8) is the block center and the pivot for all block-wide rotations
 				});
 			});
-			centerOfMass = BlockGeoMaker.applyEulerRotation(centerOfMass, rotation, [8, 8, 8]);
+			centerOfMass = this.#applyEulerRotation(centerOfMass, rotation, [8, 8, 8]);
 		}
 		faces = this.#scaleFaces(faces, centerOfMass);
 		faces.forEach(face => {
@@ -393,10 +393,10 @@ export default class BlockGeoMaker {
 				for(let i = 0; i < 4; i++) {
 					let vertex = vertices[i];
 					if("rot" in cube) {
-						vertex["pos"] = BlockGeoMaker.applyEulerRotation(vertex["pos"], cube["rot"], cube["pivot"] ?? [8, 8, 8]);
+						vertex["pos"] = this.#applyEulerRotation(vertex["pos"], cube["rot"], cube["pivot"] ?? [8, 8, 8]);
 					}
 					cube["extra_rots"]?.reverse()?.forEach(extraRot => {
-						vertex["pos"] = BlockGeoMaker.applyEulerRotation(vertex["pos"], extraRot["rot"], extraRot["pivot"]);
+						vertex["pos"] = this.#applyEulerRotation(vertex["pos"], extraRot["rot"], extraRot["pivot"]);
 					});
 					if("translate" in cube) {
 						vertex["pos"] = addVec3(vertex["pos"], cube["translate"]);
@@ -466,6 +466,21 @@ export default class BlockGeoMaker {
 			}
 		});
 		return rotation;
+	}
+	/**
+	 * Applies Euler rotations on a position in 3D space in the order X-Y-Z.
+	 * @param {Vec3} pos
+	 * @param {Vec3} rotation Angles in degrees
+	 * @param {Vec3} pivot
+	 * @returns {Vec3}
+	 */
+	#applyEulerRotation(pos, rotation, pivot) {
+		let res = addVec3(pos, mulVec3(pivot, -1));
+		[res[1], res[2]] = rotateDeg([res[1], res[2]], -rotation[0]); // idk why but it's negative
+		[res[0], res[2]] = rotateDeg([res[0], res[2]], -rotation[1]);
+		[res[0], res[1]] = rotateDeg([res[0], res[1]], -rotation[2]);
+		res = addVec3(res, pivot);
+		return res;
 	}
 	/**
 	 * Returns the entries of a block's states and block entity data (prefixed by `entity.`; only first-level properties are supported).
@@ -723,7 +738,39 @@ export default class BlockGeoMaker {
 	 */
 	#calculateUv(cube) {
 		if("box_uv" in cube) { // this is where a singular uv coordinate is specified, and the rest is calculated as below. used primarily in entity models.
-			return BlockGeoMaker.calculateBoxUv(cube["box_uv"], cube["box_uv_size"] ?? cube["size"]);
+			let uvSize = cube["box_uv_size"] ?? cube["size"];
+			let flipEastWest = !!cube["box_uv_flip_east_west"];
+			/** @type {CubeUv} */
+			let uv = {
+				"up": {
+					"uv": [uvSize[2], 0],
+					"uv_size": [uvSize[0], uvSize[2]]
+				},
+				"down": {
+					"uv": [uvSize[0] + uvSize[2], 0],
+					"uv_size": [uvSize[0], uvSize[2]]
+				},
+				"west": {
+					"uv": [+flipEastWest * (uvSize[0] + uvSize[2]), uvSize[2]],
+					"uv_size": [uvSize[2], uvSize[1]]
+				},
+				"north": {
+					"uv": [uvSize[2], uvSize[2]],
+					"uv_size": [uvSize[0], uvSize[1]]
+				},
+				"east": {
+					"uv": [+!flipEastWest * (uvSize[0] + uvSize[2]), uvSize[2]],
+					"uv_size": [uvSize[2], uvSize[1]]
+				},
+				"south": {
+					"uv": [uvSize[0] + uvSize[2] * 2, uvSize[2]],
+					"uv_size": [uvSize[0], uvSize[1]]
+				}
+			};
+			Object.values(uv).forEach(face => {
+				face["uv"] = addVec2(face["uv"], cube["box_uv"]);
+			});
+			return uv;
 		} else {
 			// In MCBE most non-full-block textures look at where the part that is being rendered is in relation to the entire cube space it's in - like it's being projected onto a full face then cut out. Kinda hard to explain sorry, I recommend messing around with fence textures so you understand how it works.
 			let westUvOffset = tuple([cube.z, 16 - cube.y - cube.h]);
@@ -807,7 +854,7 @@ export default class BlockGeoMaker {
 			totalMass += mass;
 			let cubeCenter = addVec3(cube["pos"], mulVec3(cube["size"], 0.5));
 			if("rot" in cube) {
-				cubeCenter = BlockGeoMaker.applyEulerRotation(cubeCenter, cube["rot"], cube["pivot"] ?? [8, 8, 8]);
+				cubeCenter = this.#applyEulerRotation(cubeCenter, cube["rot"], cube["pivot"] ?? [8, 8, 8]);
 			}
 			center = addVec3(center, mulVec3(cubeCenter, mass));
 		});
@@ -817,7 +864,7 @@ export default class BlockGeoMaker {
 				totalMass += mass;
 				let cubeCenter = addVec3(cube["pos"], mulVec3(cube["size"], 0.5));
 				if("rot" in cube) {
-					cubeCenter = BlockGeoMaker.applyEulerRotation(cubeCenter, cube["rot"], cube["pivot"] ?? [8, 8, 8]);
+					cubeCenter = this.#applyEulerRotation(cubeCenter, cube["rot"], cube["pivot"] ?? [8, 8, 8]);
 				}
 				center = addVec3(center, mulVec3(cubeCenter, mass));
 			});
@@ -1012,60 +1059,6 @@ export default class BlockGeoMaker {
 	}
 	
 	/**
-	 * Applies Euler rotations on a position in 3D space in the order X-Y-Z.
-	 * @param {Vec3} pos
-	 * @param {Vec3} rotation Angles in degrees
-	 * @param {Vec3} pivot
-	 * @returns {Vec3}
-	 */
-	static applyEulerRotation(pos, rotation, pivot) {
-		let res = addVec3(pos, mulVec3(pivot, -1));
-		[res[1], res[2]] = rotateDeg([res[1], res[2]], -rotation[0]); // idk why but it's negative
-		[res[0], res[2]] = rotateDeg([res[0], res[2]], -rotation[1]);
-		[res[0], res[1]] = rotateDeg([res[0], res[1]], -rotation[2]);
-		res = addVec3(res, pivot);
-		return res;
-	}
-	/**
-	 * Calculates box UV for each face.
-	 * @param {Vec2} uv
-	 * @param {Vec3} uvSize
-	 * @returns {CubeUv}
-	 */
-	static calculateBoxUv(uv, uvSize) {
-		/** @type {CubeUv} */
-		let faces = {
-			"up": {
-				"uv": [uvSize[2], 0],
-				"uv_size": [uvSize[0], uvSize[2]]
-			},
-			"down": {
-				"uv": [uvSize[0] + uvSize[2], 0],
-				"uv_size": [uvSize[0], uvSize[2]]
-			},
-			"east": {
-				"uv": [0, uvSize[2]],
-				"uv_size": [uvSize[2], uvSize[1]]
-			},
-			"north": {
-				"uv": [uvSize[2], uvSize[2]],
-				"uv_size": [uvSize[0], uvSize[1]]
-			},
-			"west": {
-				"uv": [uvSize[0] + uvSize[2], uvSize[2]],
-				"uv_size": [uvSize[2], uvSize[1]]
-			},
-			"south": {
-				"uv": [uvSize[0] + uvSize[2] * 2, uvSize[2]],
-				"uv_size": [uvSize[0], uvSize[1]]
-			}
-		};
-		Object.values(faces).forEach(face => {
-			face["uv"] = addVec2(face["uv"], uv);
-		});
-		return faces;
-	}
-	/**
 	 * Resolves UVs in template faces.
 	 * @param {PolyMeshTemplateFace[]} faces
 	 * @param {TextureAtlas} textureAtlas
@@ -1118,7 +1111,7 @@ export default class BlockGeoMaker {
  * @typedef {Data.Cube & Record<"x" | "y" | "z" | "w" | "h" | "d", number>} CubeWithEasyProperties
  */
 
-/** @import { Vec3, Block, HoloPrintConfig, PolyMeshTemplateFaceWithUvs, PolyMeshTemplateFace, Rectangle, PolyMeshTemplateVertex, CubeUv, Vec2 } from "./HoloPrint.js" */
+/** @import { Vec3, Block, HoloPrintConfig, PolyMeshTemplateFaceWithUvs, PolyMeshTemplateFace, Rectangle, PolyMeshTemplateVertex, CubeUv } from "./HoloPrint.js" */
 /** @import TextureAtlas from "./TextureAtlas.js" */
 /** @import EntityGeoMaker from "./EntityGeoMaker.js" */
 /** @import * as Data from "./data/schemas" */
