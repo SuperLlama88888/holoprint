@@ -230,7 +230,7 @@ export default class PreviewRenderer extends AsyncFactory {
 		// let animator = this.#viewer.getModel().animator;
 		// let animation = this.animations["animations"]["animation.armor_stand.hologram.spawn"];
 		// Object.values(animation["bones"] ?? {}).map(bone => Object.values(bone).forEach(animationChannel => {
-		// 	animationChannel["Infinity"] = Object.values(animationChannel).at(-1); // hold last keyframe. 
+		// 	animationChannel["Infinity"] = Object.values(animationChannel).at(-1); // hold last keyframe.
 		// }));
 		// animator.addAnimation("spawn", animation);
 		// animator.play("spawn");

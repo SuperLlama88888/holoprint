@@ -198,7 +198,7 @@ export default class BlockUpdater {
 		return true;
 	}
 	/**
-	 * @param {TypedBlockStateProperty} blockStateProperty 
+	 * @param {TypedBlockStateProperty} blockStateProperty
 	 * @returns {number | string}
 	 */
 	#readBlockStateProperty(blockStateProperty) {

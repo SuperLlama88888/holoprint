@@ -738,33 +738,33 @@ export default class BlockGeoMaker {
 	 */
 	#calculateUv(cube) {
 		if("box_uv" in cube) { // this is where a singular uv coordinate is specified, and the rest is calculated as below. used primarily in entity models.
-			let uvSize = cube["box_uv_size"] ?? cube["size"];
+			let boxUvSize = cube["box_uv_size"] ?? cube["size"];
 			let flipEastWest = !!cube["box_uv_flip_east_west"];
 			/** @type {CubeUv} */
 			let uv = {
 				"up": {
-					"uv": [uvSize[2], 0],
-					"uv_size": [uvSize[0], uvSize[2]]
+					"uv": [boxUvSize[2], 0],
+					"uv_size": [boxUvSize[0], boxUvSize[2]]
 				},
 				"down": {
-					"uv": [uvSize[0] + uvSize[2], 0],
-					"uv_size": [uvSize[0], uvSize[2]]
+					"uv": [boxUvSize[0] + boxUvSize[2], 0],
+					"uv_size": [boxUvSize[0], boxUvSize[2]]
 				},
 				"west": {
-					"uv": [+flipEastWest * (uvSize[0] + uvSize[2]), uvSize[2]],
-					"uv_size": [uvSize[2], uvSize[1]]
+					"uv": [+flipEastWest * (boxUvSize[0] + boxUvSize[2]), boxUvSize[2]],
+					"uv_size": [boxUvSize[2], boxUvSize[1]]
 				},
 				"north": {
-					"uv": [uvSize[2], uvSize[2]],
-					"uv_size": [uvSize[0], uvSize[1]]
+					"uv": [boxUvSize[2], boxUvSize[2]],
+					"uv_size": [boxUvSize[0], boxUvSize[1]]
 				},
 				"east": {
-					"uv": [+!flipEastWest * (uvSize[0] + uvSize[2]), uvSize[2]],
-					"uv_size": [uvSize[2], uvSize[1]]
+					"uv": [+!flipEastWest * (boxUvSize[0] + boxUvSize[2]), boxUvSize[2]],
+					"uv_size": [boxUvSize[2], boxUvSize[1]]
 				},
 				"south": {
-					"uv": [uvSize[0] + uvSize[2] * 2, uvSize[2]],
-					"uv_size": [uvSize[0], uvSize[1]]
+					"uv": [boxUvSize[0] + boxUvSize[2] * 2, boxUvSize[2]],
+					"uv_size": [boxUvSize[0], boxUvSize[1]]
 				}
 			};
 			Object.values(uv).forEach(face => {

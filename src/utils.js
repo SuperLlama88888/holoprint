@@ -10,7 +10,7 @@ import stripJsonComments from "strip-json-comments";
  * @returns {symbol}
 */
 /**
- * Patches a method onto an object, and making a function turn into a symbol during property access, with which the patched method can be accessed. 
+ * Patches a method onto an object, and making a function turn into a symbol during property access, with which the patched method can be accessed.
  * @template {Function} F
  * @overload
  * @param {object | object[]} objects An object or multiple objects onto which the method patch will be applied
