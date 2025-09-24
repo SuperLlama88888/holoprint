@@ -229,7 +229,7 @@ export default class BlockGeoMaker {
 			} else if("copy_block" in cube) {
 				let match = cube["copy_block"].match(/^entity\.(.+)$/);
 				if(!match) {
-					console.error(`Incorrect formated copy_block property: ${match}`);
+					console.error(`Incorrect formatted copy_block property: ${match}`);
 					continue;
 				}
 				let blockEntityProperty = match[1];
