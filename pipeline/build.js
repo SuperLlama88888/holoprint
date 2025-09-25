@@ -20,15 +20,12 @@ const cssTargets = browserslistToTargets(browserslist(">= 0.1%"));
 const importMapPattern = /<script type="importmap">([^]+?)<\/script>/;
 
 process.chdir(path.resolve(import.meta.dirname, "../"));
+rmDir("temp");
 fs.cpSync(srcDir, "temp", {
 	recursive: true
 });
 await processDir("temp");
-if(fs.existsSync(distDir)) {
-	fs.rmSync(distDir, {
-		recursive: true
-	});
-}
+rmDir(distDir);
 fs.cpSync("temp", distDir, {
 	recursive: true,
 	filter: filename => !(path.extname(filename) == ".js" || (fs.statSync(filename).isDirectory() && fs.readdirSync(filename).every(file => path.extname(file) == ".js")))
@@ -53,9 +50,7 @@ let { metafile } = esbuild.buildSync({
 	sourcemap: true,
 	metafile: true
 });
-fs.rmSync("temp", {
-	recursive: true
-});
+rmDir("temp");
 console.log(esbuild.analyzeMetafileSync(metafile));
 let scriptImportReplacements = [];
 Object.entries(metafile["outputs"]).forEach(([output, { entryPoint }]) => {
@@ -189,6 +184,15 @@ async function processJS(code, filename) {
 function processJSON(code) {
 	code = minifyJSON(code);
 	return { code };
+}
+
+/** @param {string} dir */
+function rmDir(dir) {
+	if(fs.existsSync(dir)) {
+		fs.rmSync(dir, {
+			recursive: true
+		});
+	}
 }
 
 /**
