@@ -4,6 +4,7 @@
 	
 	"ignored_blocks": ["flowing_water", "flowing_lava", "bubble_column"], // these don't appear to be used anymore
 	"block_to_item_mappings": {
+		"chain": "iron_chain",
 		"unpowered_repeater": "repeater",
 		"powered_repeater": "repeater",
 		"unpowered_comparator": "comparator",
