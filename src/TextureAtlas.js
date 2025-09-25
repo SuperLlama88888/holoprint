@@ -337,8 +337,7 @@ export default class TextureAtlas {
 					crop = null;
 				}
 			}
-			let pixelsHash = this.#hashPixels(imageData, sourceX, sourceY, w, h);
-			let imageFragment = { imageData, sourceX, sourceY, w, h, pixelsHash };
+			let imageFragment = { imageData, sourceX, sourceY, w, h };
 			if(crop) {
 				imageFragment["crop"] = crop;
 			}
@@ -357,16 +356,18 @@ export default class TextureAtlas {
 		let identicalFragmentIndices = new Map();
 		imageFragments.forEach((imageFragment, i) => {
 			imageFragment["i"] = i; // Keep order as potpack shuffles them
-			if(hashBuckets.has(imageFragment.pixelsHash)) {
-				let [oldFrag, oldI] = hashBuckets.get(imageFragment.pixelsHash);
+			let pixelsHash = this.#hashPixels(imageFragment);
+			if(hashBuckets.has(pixelsHash)) {
+				let [oldFrag, oldI] = hashBuckets.get(pixelsHash);
 				if(oldFrag.w == imageFragment.w && oldFrag.h == imageFragment.h && this.#checkImageDataEquivalence(oldFrag.imageData, imageFragment.imageData, oldFrag.sourceX, oldFrag.sourceY, imageFragment.sourceX, imageFragment.sourceY, imageFragment.w, imageFragment.h)) {
 					identicalFragmentIndices.set(i, oldI);
 					imageFragment["w"] = 0; // prevent potpack from giving space to them (these fragments aren't used anyway)
 					imageFragment["h"] = 0;
 					return;
 				}
+				console.debug("Extremely rare hash collision! 0.000000023283% chance!");
 			}
-			hashBuckets.set(imageFragment.pixelsHash, [imageFragment, i]);
+			hashBuckets.set(pixelsHash, [imageFragment, i]);
 			imageFragment["actualSize"] = [imageFragment["w"], imageFragment["h"]]; // since we're modifying w/h, we need to keep references to everything before.
 			imageFragment["offset"] = [0, 0];
 			// fractional dimensions don't work with js canvas, so we need to extract the full part of the texture we need, but keep the uv positions fractional
@@ -478,18 +479,14 @@ export default class TextureAtlas {
 		return { minX, minY, maxX, maxY };
 	}
 	/**
-	 * Calculates the FRV-1a hash of a specific region of an `ImageData`.
-	 * @param {ImageData} imageData
-	 * @param {number} startX
-	 * @param {number} startY
-	 * @param {number} w
-	 * @param {number} h
+	 * Calculates the FRV-1a hash of all pixels in an image fragment.
+	 * @param {ImageFragment} imageFragment
 	 * @returns {number}
 	 */
-	#hashPixels(imageData, startX, startY, w, h) {
+	#hashPixels({ imageData, sourceX, sourceY, w, h }) {
 		let hash = 2166136261;
-		for(let y = startY; y < startY + h; y++) {
-			for(let x = startX; x < startX + w; x++) {
+		for(let y = sourceY; y < sourceY + h; y++) {
+			for(let x = sourceX; x < sourceX + w; x++) {
 				let startI = (y * imageData.width + x) * 4;
 				for(let i = startI; i < startI + 4; i++) {
 					hash ^= imageData.data[i];
