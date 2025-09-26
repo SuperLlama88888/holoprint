@@ -5,7 +5,7 @@
 		"type": "panel",
 		"anchor_from": "top_middle",
 		"anchor_to": "top_middle",
-		"offset": [0, 23],
+		"offset": "$holoprint:material_list_offset",
 		"layer": 50,
 		"controls": [
 			{
@@ -16,7 +16,7 @@
 	"content": {
 		"type": "image",
 		"size": ["40%", "this gets put in by the JS"],
-		"max_size": ["40%", "100% - 84px"],
+		"max_size": ["40%", "100% - 74px"],
 		"texture": "textures/ui/White",
 		"color": [0, 0, 0],
 		"alpha": 0.5,

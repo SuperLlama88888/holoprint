@@ -1,6 +1,7 @@
 {
-	"$holoprint:touch_button_size": [30, 20],
-	"$holoprint:double_touch_button_size": [60, 20],
+	"$holoprint:material_list_offset": [0, 23],
+	"$holoprint:touch_button_size": [22, 22],
+	"$holoprint:double_touch_button_size": [36, 22],
 	
 	"$holoprint:material_list_key": "button.scoreboard", // tab key
 	"$holoprint:change_input_mode_key": "button.hide_tooltips", // F10
