@@ -1,11 +1,14 @@
-import { abs, AsyncFactory, cosDeg, distanceSquared, downloadFile, JSONSet, max, min, pi, round, sinDeg, subVec2, tanDeg, toImageData, tuple } from "./utils.js";
+import { abs, assertAs, AsyncFactory, cosDeg, distanceSquared, downloadFile, JSONSet, max, min, pi, round, sinDeg, subVec2, tanDeg, toImageData, tuple } from "./utils.js";
 import PolyMeshMaker from "./PolyMeshMaker.js";
 
 import Stats from "stats.js"; // library not a file
 
 /** @type {typeof import("three")} */
 let THREE;
+/** @type {typeof import("three/examples/jsm/controls/OrbitControls.js").OrbitControls} */
 let OrbitControls;
+/** @type {typeof import("three/examples/jsm/exporters/GLTFExporter.js").GLTFExporter} */
+let GLTFExporter;
 
 const IN_PRODUCTION = false;
 
@@ -156,6 +159,7 @@ export default class PreviewRenderer extends AsyncFactory {
 	async init() {
 		THREE ??= await import("three");
 		OrbitControls ??= (await import("three/examples/jsm/controls/OrbitControls.js")).OrbitControls;
+		GLTFExporter ??= (await import("three/examples/jsm/exporters/GLTFExporter.js")).GLTFExporter;
 		
 		this.#center = new THREE.Vector3(-this.structureSize[0] * 8, this.structureSize[1] * 8, -this.structureSize[2] * 8);
 		this.#imageBlobData = await toImageData(this.#imageBlob);
@@ -210,6 +214,7 @@ export default class PreviewRenderer extends AsyncFactory {
 			this.#guiLocName(this.#optionsGui.add(this.options, "showSkybox").onChange(() => this.#initBackground()), "preview.options.showSkybox");
 			this.#guiLocName(this.#optionsGui.add(this.options, "highResolution").onChange(() => this.#setSize()), "preview.options.highRes");
 			this.#guiLocName(this.#optionsGui.add(this, "downloadScreenshot"), "preview.options.takeScreenshot");
+			this.#guiLocName(this.#optionsGui.add(this, "exportGlb"), "preview.options.exportGlb");
 			if(!IN_PRODUCTION) {
 				this.#optionsGui.add(this.options, "debugHelpersVisible").onChange(() => {
 					if(this.options.debugHelpersVisible) {
@@ -225,7 +230,7 @@ export default class PreviewRenderer extends AsyncFactory {
 		// let animator = this.#viewer.getModel().animator;
 		// let animation = this.animations["animations"]["animation.armor_stand.hologram.spawn"];
 		// Object.values(animation["bones"] ?? {}).map(bone => Object.values(bone).forEach(animationChannel => {
-		// 	animationChannel["Infinity"] = Object.values(animationChannel).at(-1); // hold last keyframe. 
+		// 	animationChannel["Infinity"] = Object.values(animationChannel).at(-1); // hold last keyframe.
 		// }));
 		// animator.addAnimation("spawn", animation);
 		// animator.play("spawn");
@@ -270,6 +275,21 @@ export default class PreviewRenderer extends AsyncFactory {
 		this.#renderer.domElement.toBlob(imageBlob => {
 			let imageFile = new File([imageBlob], `Screenshot ${this.packName}.png`);
 			downloadFile(imageFile);
+		});
+	}
+	/** Downloads a GLB file of the scene. */
+	exportGlb() {
+		let exporter = new GLTFExporter();
+		let exportReadyScene = this.#expandInstancedMeshes();
+		exporter.parse(exportReadyScene, glbData => {
+			TS: assertAs(glbData, ArrayBuffer);
+			let glbFile = new File([glbData], `${this.packName}.glb`);
+			downloadFile(glbFile);
+		}, e => {
+			console.error("Error exporting GLB:", e);
+		}, {
+			binary: true,
+			trs: true // decreases file size by a little, idk how
 		});
 	}
 	
@@ -522,7 +542,6 @@ export default class PreviewRenderer extends AsyncFactory {
 		let texture = new THREE.DataTexture(this.#imageBlobData.data, this.#imageBlobData.width, this.#imageBlobData.height, THREE.RGBAFormat);
 		texture.colorSpace = THREE.SRGBColorSpace;
 		texture.minFilter = THREE.LinearFilter; // helps make the texture outlines more visible and far-away textures less noisy, at the expense of occasional texture bleeding
-		texture.flipY = true;
 		texture.needsUpdate = true;
 		return texture;
 	}
@@ -542,7 +561,7 @@ export default class PreviewRenderer extends AsyncFactory {
 				let pos = polyMesh.positions[posIndex];
 				positions.push(pos[0], pos[1], 16 - pos[2]);
 				normals.push(...polyMesh.normals[normalIndex]);
-				uvs.push(...polyMesh.uvs[uvIndex]);
+				uvs.push(polyMesh.uvs[uvIndex][0], 1 - polyMesh.uvs[uvIndex][1]);
 			});
 			indices.push(i + 2, i + 1, i, i + 2, i, i + 3);
 			i += face.length;
@@ -604,6 +623,26 @@ export default class PreviewRenderer extends AsyncFactory {
 		});
 		return instancedMesh;
 	}
+	/**
+	 * Expands the scene's instanced meshes into a new scene.
+	 * @returns {THREE.Scene}
+	 */
+	#expandInstancedMeshes() {
+		let scene = new THREE.Scene();
+		this.#scene.traverse(obj => {
+			if(!(obj instanceof THREE.InstancedMesh)) {
+				return;
+			}
+			let dummy = new THREE.Object3D();
+			for(let i = 0; i < obj.count; i++) {
+				let mesh = new THREE.Mesh(obj.geometry, obj.material);
+				obj.getMatrixAt(i, dummy.matrix);
+				dummy.matrix.decompose(mesh.position, mesh.quaternion, mesh.scale);
+				scene.add(mesh);
+			}
+		});
+		return scene;
+	}
 }
 
 /** @import { I32Vec3, Vec3, Block, PreviewPointLight, PolyMeshTemplateFaceWithUvs} from "./HoloPrint.js" */
@@ -611,3 +650,4 @@ export default class PreviewRenderer extends AsyncFactory {
 /** @import { Controller } from "lil-gui" */
 /** @import * as THREE from "three" */
 /** @import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js" */
+/** @import { GLTFExporter } from "three/examples/jsm/exporters/GLTFExporter.js" */

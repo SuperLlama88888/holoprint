@@ -66,6 +66,8 @@
 - [Nextr](https://mcpedl.com/user/nextr): Control item textures (tweaked)
 - [Indyfficient](https://www.youtube.com/@Indyfficient)：通过攻击盔甲架切换结构的创意。
 - [Prowl8413](https://www.youtube.com/@Prowl8413)：开发过程中的反馈支持。
+- [Hellothere1234627284yehnsndnsnwnd](https://github.com/Hellothere1234627284yehnsndnsnwnd): Feedback and suggestions
+- [Rainbow-Editor](https://github.com/PurpleRain-PR/Rainbow-Editor) by [PurpleRain-PR](https://github.com/PurpleRain-PR): The idea of exporting a GLB from the preview
 - **参考文档：**
   - [基岩版 Wiki](https://wiki.bedrock.dev)：学习资源包/行为包的最佳指南！
   - [Minecraft Wiki](https://minecraft.wiki)：方块实体列表、状态数据等全面资料。

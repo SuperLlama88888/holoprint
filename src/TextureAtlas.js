@@ -29,10 +29,11 @@ export default class TextureAtlas {
 	 * @type {[string, Blob][]}
 	 */
 	imageBlobs;
+	/** @type {number} */
 	textureWidth;
+	/** @type {number} */
 	textureHeight;
-	atlasWidth;
-	atlasHeight;
+	/** @type {number} */
 	textureFillEfficiency; // how much of the texture atlas is filled with images
 	
 	/**
@@ -349,8 +350,24 @@ export default class TextureAtlas {
 	 * @returns {Promise<ImageUv[]>}
 	 */
 	async #stitchTextureAtlas(imageFragments) {
+		/** @type {Map<number, [ImageFragment, number]>} */
+		let hashBuckets = new Map();
+		/** @type {Map<number, number>} */
+		let identicalFragmentIndices = new Map();
 		imageFragments.forEach((imageFragment, i) => {
 			imageFragment["i"] = i; // Keep order as potpack shuffles them
+			let pixelsHash = this.#hashPixels(imageFragment);
+			if(hashBuckets.has(pixelsHash)) {
+				let [oldFrag, oldI] = hashBuckets.get(pixelsHash);
+				if(oldFrag.w == imageFragment.w && oldFrag.h == imageFragment.h && this.#checkImageDataEquivalence(oldFrag.imageData, imageFragment.imageData, oldFrag.sourceX, oldFrag.sourceY, imageFragment.sourceX, imageFragment.sourceY, imageFragment.w, imageFragment.h)) {
+					identicalFragmentIndices.set(i, oldI);
+					imageFragment["w"] = 0; // prevent potpack from giving space to them (these fragments aren't used anyway)
+					imageFragment["h"] = 0;
+					return;
+				}
+				console.debug("Extremely rare hash collision! 0.000000023283% chance!");
+			}
+			hashBuckets.set(pixelsHash, [imageFragment, i]);
 			imageFragment["actualSize"] = [imageFragment["w"], imageFragment["h"]]; // since we're modifying w/h, we need to keep references to everything before.
 			imageFragment["offset"] = [0, 0];
 			// fractional dimensions don't work with js canvas, so we need to extract the full part of the texture we need, but keep the uv positions fractional
@@ -385,15 +402,18 @@ export default class TextureAtlas {
 		this.textureWidth = packing.w;
 		this.textureHeight = packing.h;
 		this.textureFillEfficiency = packing.fill;
-		this.atlasWidth = this.textureWidth;
-		this.atlasHeight = this.textureHeight;
 		console.info(`Packed texture atlas with ${(this.textureFillEfficiency * 100).toFixed(2)}% space efficiency!`);
 		
 		let can = new OffscreenCanvas(this.textureWidth, this.textureHeight);
 		let ctx = can.getContext("2d");
 		
 		console.log("Packed image fragments:", imageFragments);
-		let imageUvs = packedImageFragments.map(imageFragment => {
+		let imageUvs = [];
+		packedImageFragments.forEach((imageFragment, i) => {
+			if(identicalFragmentIndices.has(i)) {
+				imageUvs.push(imageUvs[identicalFragmentIndices.get(i)]);
+				return;
+			}
 			let sourcePos = tuple([imageFragment.sourceX, imageFragment.sourceY]);
 			let destPos = tuple([imageFragment.x, imageFragment.y]);
 			let textureSize = tuple([imageFragment.w, imageFragment.h]);
@@ -407,7 +427,7 @@ export default class TextureAtlas {
 			if("crop" in imageFragment) {
 				imageUv["crop"] = imageFragment["crop"];
 			}
-			return imageUv;
+			imageUvs.push(imageUv);
 		});
 		let canImageData = can.getContext("2d").getImageData(0, 0, can.width, can.height);
 		let transparencies = this.#getImageFragmentTransparencies(canImageData, packedImageFragments);
@@ -457,6 +477,50 @@ export default class TextureAtlas {
 			}
 		}
 		return { minX, minY, maxX, maxY };
+	}
+	/**
+	 * Calculates the FRV-1a hash of all pixels in an image fragment.
+	 * @param {ImageFragment} imageFragment
+	 * @returns {number}
+	 */
+	#hashPixels({ imageData, sourceX, sourceY, w, h }) {
+		let hash = 2166136261;
+		for(let y = sourceY; y < sourceY + h; y++) {
+			for(let x = sourceX; x < sourceX + w; x++) {
+				let startI = (y * imageData.width + x) * 4;
+				for(let i = startI; i < startI + 4; i++) {
+					hash ^= imageData.data[i];
+					hash *= 16777619;
+					hash >>>= 0;
+				}
+			}
+		}
+		return hash;
+	}
+	/**
+	 * Checks if fragments from two `ImageData`s are exactly the same.
+	 * @param {ImageData} id1
+	 * @param {ImageData} id2
+	 * @param {number} x1
+	 * @param {number} y1
+	 * @param {number} x2
+	 * @param {number} y2
+	 * @param {number} w
+	 * @param {number} h
+	 */
+	#checkImageDataEquivalence(id1, id2, x1, y1, x2, y2, w, h) {
+		for(let y = 0; y < h; y++) {
+			for(let x = 0; x < w; x++) {
+				let i1 = ((y1 + y) * id1.width + x1 + x) * 4;
+				let i2 = ((y2 + y) * id2.width + x2 + x) * 4;
+				for(let ch = 0; ch < 4; ch++) {
+					if(id1.data[i1 + ch] != id2.data[i2 + ch]) {
+						return false;
+					}
+				}
+			}
+		}
+		return true;
 	}
 	/** Add an outline around each texture.
 	 * @param {OffscreenCanvas} ogCan

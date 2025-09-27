@@ -1,8 +1,8 @@
 let { $, v, q, t, structureSize, singleLayerMode, structureCount, HOLOGRAM_INITIAL_ACTIVATION, initialOffset, defaultTextureIndex, textureBlobsCount, totalBlocksToValidate, totalBlocksToValidateByLayer, backupSlotCount, toggleRendering, changeOpacity, toggleTint, toggleValidating, changeLayer, decreaseLayer, changeLayerMode, disablePlayerControls, backupHologram, changeStructure, moveHologram, rotateHologram, initVariables, renderingControls, broadcastActions, structureSizesMolang, coordinateLockEnabled, coordinateLockCoordsMolang } = {}; // prevent linting errors
 
-export const ACTIONS = createNumericEnum(["NEXT_STRUCTURE", "PREVIOUS_STRUCTURE", "INCREASE_LAYER", "DECREASE_LAYER", "TOGGLE_RENDERING", "INCREASE_OPACITY", "DECREASE_OPACITY", "TOGGLE_TINT", "TOGGLE_VALIDATING", "CHANGE_LAYER_MODE", "ROTATE_HOLOGRAM_CLOCKWISE", "ROTATE_HOLOGRAM_ANTICLOCKWISE", "BACKUP_HOLOGRAM", "MOVE_HOLOGRAM", "MOVE_POS_X", "MOVE_NEG_X", "MOVE_POS_Y", "MOVE_NEG_Y", "MOVE_POS_Z", "MOVE_NEG_Z"]);
+const ACTIONS = createNumericEnum(["NEXT_STRUCTURE", "PREVIOUS_STRUCTURE", "INCREASE_LAYER", "DECREASE_LAYER", "TOGGLE_RENDERING", "INCREASE_OPACITY", "DECREASE_OPACITY", "TOGGLE_TINT", "TOGGLE_VALIDATING", "CHANGE_LAYER_MODE", "ROTATE_HOLOGRAM_CLOCKWISE", "ROTATE_HOLOGRAM_ANTICLOCKWISE", "BACKUP_HOLOGRAM", "MOVE_HOLOGRAM", "MOVE_POS_X", "MOVE_NEG_X", "MOVE_POS_Y", "MOVE_NEG_Y", "MOVE_POS_Z", "MOVE_NEG_Z"]);
 
-export function armorStandInitialization() {
+function armorStandInitialization() {
 	v.hologram_activated = HOLOGRAM_INITIAL_ACTIVATION; // true/false are substituted in here for the different subpacks
 	v.hologram.offset_x = $[initialOffset[0]];
 	v.hologram.offset_y = $[initialOffset[1]];
@@ -44,7 +44,7 @@ export function armorStandInitialization() {
 	v.hologram_backup_requested_time = -601; // 600 ticks = 30s (how long the backup request lasts for)
 	v.skip_spawn_animation = false;
 }
-export function armorStandPreAnimation() {
+function armorStandPreAnimation() {
 	if(q.is_in_ui) {
 		// if the armour stand is holding an item and in the ui, it must be from our custom ui code. I doubt any other addons would interfere here...
 		// no there is not any better way to do this better
@@ -389,7 +389,7 @@ export function armorStandPreAnimation() {
 	}
 }
 
-export function playerInitVariables() {
+function playerInitVariables() {
 	v.player_action_counter ??= 0;
 	v.last_player_action_time ??= 0;
 	v.player_action ??= -1;
@@ -399,7 +399,7 @@ export function playerInitVariables() {
 	v.attack = v.attack_time > 0 && (v.last_attack_time == 0 || v.attack_time < v.last_attack_time);
 	v.last_attack_time = v.attack_time;
 }
-export function playerRenderingControls() {
+function playerRenderingControls() {
 	if(v.attack) {
 		if($[toggleRendering]) {
 			v.new_action = $[ACTIONS.TOGGLE_RENDERING];
@@ -446,7 +446,7 @@ export function playerRenderingControls() {
 		}
 	}
 }
-export function playerBroadcastActions() {
+function playerBroadcastActions() {
 	if(v.new_action != -1) {
 		v.player_action = v.new_action;
 		v.new_action = -1;
@@ -474,20 +474,32 @@ export function playerBroadcastActions() {
 		}
 	}
 }
-export function playerFirstPerson() {
+function playerFirstPerson() {
 	if(!q.is_in_ui && !v.map_face_icon) {
 		$[initVariables]
 		$[renderingControls]
 		$[broadcastActions]
 	}
 }
-export function playerThirdPerson() {
+function playerThirdPerson() {
 	if(!q.is_in_ui) {
 		$[initVariables]
 		$[renderingControls]
 		$[broadcastActions]
 	}
 }
+
+// everything has to be exported as default so that they can be imported together as a default import. this lets esbuild add the file hash to the file name when building, and it gets automatically renamed in index.js
+export default {
+	ACTIONS,
+	armorStandInitialization,
+	armorStandPreAnimation,
+	playerInitVariables,
+	playerRenderingControls,
+	playerBroadcastActions,
+	playerFirstPerson,
+	playerThirdPerson
+};
 
 /**
  * Create a pseudo-enumeration using numbers.

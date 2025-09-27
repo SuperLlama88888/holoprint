@@ -6,12 +6,14 @@ import TextureAtlas from "./TextureAtlas.js";
 import MaterialList from "./MaterialList.js";
 import PreviewRenderer from "./PreviewRenderer.js";
 
-import * as entityScripts from "./entityScripts.molang.js";
-import { addPaddingToImage, awaitAllEntries, cacheUnaryFunc, CachingFetcher, concatenateFiles, createNumericEnum, desparseArray, floor, getFileExtension, hexColorToClampedTriplet, joinRegExps, jsonc, JSONMap, JSONSet, lcm, loadTranslationLanguage, max, min, onEvent, overlaySquareImages, pi, removeFalsies, removeFileExtension, resizeImageToBlob, round, setImageOpacity, sha256, toBlob, toImage, translate, transposeMatrix, tuple, UserError } from "./utils.js";
-import ResourcePackStack, { VanillaDataFetcher } from "./ResourcePackStack.js";
+import entityScripts from "./entityScripts.molang.js";
+import { addPaddingToImage, awaitAllEntries, cacheUnaryFunc, concatenateFiles, createNumericEnum, desparseArray, floor, getFileExtension, hexColorToClampedTriplet, joinRegExps, jsonc, JSONMap, JSONSet, lcm, loadTranslationLanguage, max, min, onEvent, overlaySquareImages, pi, removeFalsies, removeFileExtension, resizeImageToBlob, round, setImageOpacity, sha256, toBlob, toImage, translate, transposeMatrix, tuple, UserError } from "./utils.js";
+import ResourcePackStack from "./ResourcePackStack.js";
 import BlockUpdater from "./BlockUpdater.js";
 import SpawnAnimationMaker from "./SpawnAnimationMaker.js";
 import PolyMeshMaker from "./PolyMeshMaker.js";
+import fetchers from "./fetchers.js";
+import EntityGeoMaker from "./EntityGeoMaker.js";
 
 export const VERSION = "dev";
 export const IGNORED_BLOCKS = ["air", "piston_arm_collision", "sticky_piston_arm_collision"]; // blocks to be ignored when scanning the structure file
@@ -56,13 +58,8 @@ const HOLOGRAM_LAYER_MODES = createNumericEnum(["SINGLE", "ALL_BELOW"]);
  * @param {(previews: PreviewRenderer[]) => void} [previewLoadedCallback] A function that will be called once the preview has finished loading
  * @returns {Promise<File>} Resource pack (`*.mcpack`)
  */
-export async function makePack(structureFiles, config, resourcePackStack, previewCont, previewLoadedCallback) {
+export async function makePack(structureFiles, config, resourcePackStack = new ResourcePackStack(), previewCont, previewLoadedCallback) {
 	console.info(`Running HoloPrint ${VERSION}`);
-	if(!resourcePackStack) {
-		console.debug("Waiting for resource pack stack initialisation...");
-		resourcePackStack = await ResourcePackStack.new();
-		console.debug("Resource pack stack initialised!");
-	}
 	let startTime = performance.now();
 	
 	config = addDefaultConfig(config ?? {});
@@ -125,7 +122,11 @@ export async function makePack(structureFiles, config, resourcePackStack, previe
 			[_._]: "textures/ui/rotate_hologram.png",
 			[_._]: "textures/ui/change_structure.png",
 			[_._]: "textures/ui/backup_hologram.png",
-			[_._]: "textures/ui/menu_icon.png",
+			[_._]: "textures/ui/menu_sliders_icon.png",
+			[_._]: "textures/ui/menu_button_unpressed.png",
+			[_._]: "textures/ui/menu_button_pressed.png",
+			[_._]: "textures/ui/material_list_button_unpressed.png",
+			[_._]: "textures/ui/material_list_button_pressed.png",
 			[_._]: "textures/ui/white_circle.png",
 			[_.$]: "textures/ui/white_circle.json",
 			[_._]: "textures/ui/quick_input_keyboard_hints.png",
@@ -150,10 +151,9 @@ export async function makePack(structureFiles, config, resourcePackStack, previe
 	}, resourcePackStack);
 	
 	let controlsHaveBeenCustomised = JSON.stringify(config.CONTROLS) != JSON.stringify(DEFAULT_PLAYER_CONTROLS);
-	let pmmpBedrockDataFetcherPromise, itemTagsPromise;
+	let itemTagsPromise;
 	if(controlsHaveBeenCustomised || config.RENAME_CONTROL_ITEMS || config.RETEXTURE_CONTROL_ITEMS) {
-		pmmpBedrockDataFetcherPromise = createPmmpBedrockDataFetcher();
-		itemTagsPromise = pmmpBedrockDataFetcherPromise.then(fetcher => fetcher.fetch("item_tags.json")).then(res => res.json());
+		itemTagsPromise = fetchers.bedrockData("item_tags.json").then(res => res.json());
 	}
 	
 	let dataPromise = loadDataFiles(dataFileNames);
@@ -173,7 +173,7 @@ export async function makePack(structureFiles, config, resourcePackStack, previe
 	let retexturingControlItemsPromise;
 	if(config.RETEXTURE_CONTROL_ITEMS) {
 		retexturingControlItemsPromise = itemTagsPromise.then(async itemTags => {
-			({ controlItemTextures, hasModifiedTerrainTexture } = await retextureControlItems(config, await dataPromise.itemIcons, itemTags, await resourcesPromise.resourceItemTexture, await resourcesPromise.blocksDotJson, await resourcesPromise.vanillaTerrainTexture, await pmmpBedrockDataFetcherPromise, resourcePackStack, await packTemplatePromise.itemTexture, await packTemplatePromise.terrainTexture));
+			({ controlItemTextures, hasModifiedTerrainTexture } = await retextureControlItems(config, await dataPromise.itemIcons, itemTags, await resourcesPromise.resourceItemTexture, await resourcesPromise.blocksDotJson, await resourcesPromise.vanillaTerrainTexture, resourcePackStack, await packTemplatePromise.itemTexture, await packTemplatePromise.terrainTexture));
 		});
 	}
 	let packIcon = config.PACK_ICON_BLOB ?? await makePackIcon(concatenateFiles(structureFiles));
@@ -193,9 +193,10 @@ export async function makePack(structureFiles, config, resourcePackStack, previe
 	window.blockIndices = allStructureIndicesByLayer;
 	
 	let data = await dataPromise.all;
-	let blockGeoMaker = new BlockGeoMaker(config, data.blockShapes, data.blockShapeGeos, data.blockStateDefinitions, data.blockEigenvariants);
+	let entityGeoMaker = new EntityGeoMaker(resourcePackStack);
+	let blockGeoMaker = new BlockGeoMaker(config, entityGeoMaker, data.blockShapes, data.blockShapeGeos, data.blockStateDefinitions, data.blockEigenvariants);
 	// makePolyMeshTemplates() is an impure function and adds texture references to the textureRefs set property.
-	let unresolvedPolyMeshTemplatePalette = blockGeoMaker.makePolyMeshTemplates(blockPalette);
+	let unresolvedPolyMeshTemplatePalette = await blockGeoMaker.makePolyMeshTemplates(blockPalette);
 	console.info("Finished making block geometry templates!");
 	console.log("Block geo maker:", blockGeoMaker);
 	console.log("Poly mesh template palette:", structuredClone(unresolvedPolyMeshTemplatePalette));
@@ -216,8 +217,8 @@ export async function makePack(structureFiles, config, resourcePackStack, previe
 	let structureGeoTemplate = hologramGeo["minecraft:geometry"][0];
 	hologramGeo["minecraft:geometry"].splice(0, 1);
 	
-	structureGeoTemplate["description"]["texture_width"] = textureAtlas.atlasWidth;
-	structureGeoTemplate["description"]["texture_height"] = textureAtlas.atlasHeight;
+	structureGeoTemplate["description"]["texture_width"] = textureAtlas.textureWidth;
+	structureGeoTemplate["description"]["texture_height"] = textureAtlas.textureHeight;
 	
 	let entityDescription = entityFile["minecraft:client_entity"]["description"];
 	
@@ -703,14 +704,6 @@ export function addDefaultConfig(config) {
 		}
 	});
 }
-/**
- * Creates a CachingFetcher to read pmmp/BedrockData.
- * @returns {Promise<CachingFetcher>}
- */
-export async function createPmmpBedrockDataFetcher() {
-	const pmmpBedrockDataVersion = "4.1.0+bedrock-1.21.70";
-	return await CachingFetcher.new(`BedrockData@${pmmpBedrockDataVersion}`, `https://cdn.jsdelivr.net/gh/pmmp/BedrockData@${pmmpBedrockDataVersion}/`);
-}
 /** Reads the NBT of a structure file, returning a JSON object. */
 export const readStructureNBT = cacheUnaryFunc(
 	/**
@@ -847,7 +840,7 @@ function loadDataFiles(fileNames) {
  * @returns {Promise<Record<keyof T, object>>}
  */
 async function loadBedrockMetadataFiles(files) {
-	let fileNamesAndContents = await Promise.all(Object.entries(files).map(async ([shortName, fileName]) => [shortName, await VanillaDataFetcher.fetch(`metadata/${fileName}`).then(res => jsonc(res))]));
+	let fileNamesAndContents = await Promise.all(Object.entries(files).map(async ([shortName, fileName]) => [shortName, await fetchers.vanillaData(`metadata/${fileName}`).then(res => jsonc(res))]));
 	return Object.fromEntries(fileNamesAndContents);
 }
 /**
@@ -888,7 +881,7 @@ async function tweakBlockPalette(structure, ignoredBlocks) {
 	let palette = structuredClone(structure["palette"]["default"]["block_palette"]);
 	
 	let blockVersions = new Set(); // version should be constant for all blocks. just wanted to test this
-	let blockUpdater = await BlockUpdater.new();
+	let blockUpdater = new BlockUpdater();
 	let updatedBlocks = 0;
 	for(let [i, block] of Object.entries(palette)) {
 		blockVersions.add(block["version"]);
@@ -964,12 +957,6 @@ async function tweakBlockPalette(structure, ignoredBlocks) {
  * @returns {{palette: Block[], indices: [Int32Array, Int32Array][]}}
  */
 function mergeMultiplePalettesAndIndices(palettesAndIndices) {
-	if(palettesAndIndices.length == 1) {
-		return {
-			palette: palettesAndIndices[0].palette,
-			indices: [palettesAndIndices[0].indices]
-		};
-	}
 	let mergedPaletteSet = new JSONSet();
 	let remappedIndices = [];
 	palettesAndIndices.forEach(({ palette, indices }) => {
@@ -1419,13 +1406,12 @@ function makeLangFiles(config, packTemplateLangFiles, packName, materialList, ex
  * @param {object} resourceItemTexture `RP/textures/item_texture.json`
  * @param {object} blocksDotJson
  * @param {object} vanillaTerrainTexture
- * @param {CachingFetcher} pmmpBedrockDataFetcher
  * @param {ResourcePackStack} resourcePackStack
  * @param {object} itemTexture
  * @param {object} terrainTexture
  * @returns {Promise<{ controlItemTextures: [string, Blob][], hasModifiedTerrainTexture: boolean }>}
  */
-async function retextureControlItems(config, itemIcons, itemTags, resourceItemTexture, blocksDotJson, vanillaTerrainTexture, pmmpBedrockDataFetcher, resourcePackStack, itemTexture, terrainTexture) {
+async function retextureControlItems(config, itemIcons, itemTags, resourceItemTexture, blocksDotJson, vanillaTerrainTexture, resourcePackStack, itemTexture, terrainTexture) {
 	let controlItemTextures = [];
 	let hasModifiedTerrainTexture = false;
 	let legacyItemMappings;
@@ -1474,7 +1460,7 @@ async function retextureControlItems(config, itemIcons, itemTags, resourceItemTe
 					return;
 				}
 			} else {
-				loadingLegacyItemMappingsPromise ??= pmmpBedrockDataFetcher.fetch("r16_to_current_item_map.json").then(res => res.json()).then(updateMappings => {
+				loadingLegacyItemMappingsPromise ??= fetchers.bedrockData("r16_to_current_item_map.json").then(res => res.json()).then(updateMappings => {
 					// these mappings are from the old ids to the new ids. we want to go the other way, because bugrock still uses some old ids in item_texture.json
 					legacyItemMappings = new Map();
 					Object.entries(updateMappings["simple"]).forEach(([oldName, newName]) => {

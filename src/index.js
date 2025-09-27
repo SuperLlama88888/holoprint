@@ -41,7 +41,7 @@ let completedPacksCont;
 /** @type {SimpleLogger} */
 let logger;
 let languageSelector;
-let defaultResourcePackStackPromise;
+let defaultResourcePackStack = new ResourcePackStack();
 
 let supabaseLogger;
 
@@ -171,7 +171,6 @@ document[onEvent]("DOMContentLoaded", () => {
 	structureFilesList[onEventAndNow]("input", updatePackNameInputPlaceholder);
 	completedPacksCont = selectEl("#completedPacksCont");
 	texturePreviewImageCont = selectEl("#texturePreviewImageCont");
-	defaultResourcePackStackPromise = ResourcePackStack.new();
 	
 	if(location.search == "?loadFile") {
 		window.launchQueue?.setConsumer(async launchParams => {
@@ -426,6 +425,11 @@ document[onEvent]("DOMContentLoaded", () => {
 			bodyObserver.observe(el.shadowRoot, observerConfig);
 		});
 	});
+	
+	// delete old caches
+	caches.keys().then(cacheNames => {
+		cacheNames.filter(cacheName => cacheName.startsWith("ResourcePackStack_")).forEach(cacheName => caches.delete(cacheName))
+	});
 });
 window[onEvent]("load", () => { // shadow DOMs aren't populated in the DOMContentLoaded event yet
 	if(location.search == "?generateEnglishTranslations") {
@@ -454,7 +458,7 @@ function updatePackNameInputPlaceholder() {
 	packNameInput.setAttribute("placeholder", HoloPrint.getDefaultPackName(Array.from(structureFilesList.files)));
 }
 async function updateTexturePreview() {
-	texturePreviewImage ??= await defaultResourcePackStackPromise.then(rps => rps.fetchResource(`textures/blocks/${random(["crafting_table_front", "diamond_ore", "blast_furnace_front_off", "brick", "cherry_planks", "chiseled_copper", "cobblestone", "wool_colored_white", "stonebrick", "stone_granite_smooth"])}.png`)).then(res => toImage(res));
+	texturePreviewImage ??= await defaultResourcePackStack.fetchResource(`textures/blocks/${random(["crafting_table_front", "diamond_ore", "blast_furnace_front_off", "brick", "cherry_planks", "chiseled_copper", "cobblestone", "wool_colored_white", "stonebrick", "stone_granite_smooth"])}.png`).then(res => toImage(res));
 	let can = new OffscreenCanvas(texturePreviewImage.width, texturePreviewImage.height);
 	let ctx = can.getContext("2d");
 	ctx.drawImage(texturePreviewImage, 0, 0);
@@ -654,7 +658,7 @@ async function makePack(structureFiles, localResourcePacks) {
 	infoButton.dataset.translate = "progress.generating";
 	completedPacksCont.prepend(infoButton);
 	
-	let resourcePackStack = await ResourcePackStack.new(localResourcePacks);
+	let resourcePackStack = new ResourcePackStack(localResourcePacks);
 	
 	let pack;
 	logger?.setOriginTime(performance.now());

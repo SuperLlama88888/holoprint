@@ -18,40 +18,28 @@
 					],
 					"controls": [
 						{
-							"expand_menu_toggle_input_panel": {
-								"type": "input_panel",
-								"anchor_from": "top_left",
-								"anchor_to": "top_left",
-								"offset": [0, 74],
-								"size": "$holoprint:touch_button_size",
-								"layer": 33,
-								"prevent_touch_input": true,
-								"controls": [
-									{
-										"expand_menu_toggle_button@generic_toggle_button": {
-											"$button_content": "holoprint:touch_buttons.expand_menu_toggle_icon",
-											"$toggle_view_binding_name": "expand_menu_toggle",
-											"$toggle_default_state": true
-											// "$button_mappings": [
-											// 	{
-											// 		"from_button_id": "button.menu_select",
-											// 		"to_button_id": "button.expand_menu",
-											// 		"mapping_type": "pressed",
-											// 		"handle_select": true
-											// 	}
-											// ]
-										}
-									}
-								]
+							"expand_menu_toggle_button@hud_toggle": {
+								"offset": [45, 1],
+								"$toggle_view_binding_name": "expand_menu_toggle",
+								"$button_unpressed_texture": "textures/ui/menu_button_unpressed",
+								"$button_pressed_texture": "textures/ui/menu_button_pressed"
+							}
+						},
+						{
+							"material_list_toggle_button@hud_toggle": {
+								"offset": [-45, 1],
+								"$toggle_view_binding_name": "material_list_toggle",
+								"$button_unpressed_texture": "textures/ui/material_list_button_unpressed",
+								"$button_pressed_texture": "textures/ui/material_list_button_pressed"
 							}
 						},
 						{
 							"input_panel": {
 								"type": "input_panel",
-								"anchor_from": "top_left",
-								"anchor_to": "top_left",
-								"offset": [0, 74],
-								"size": [60, 100],
+								"anchor_from": "top_middle",
+								"anchor_to": "top_middle",
+								"offset": [0, 28],
+								"size": [175, 22],
 								"layer": 33,
 								"prevent_touch_input": true,
 								"controls": [
@@ -73,13 +61,63 @@
 							}
 						},
 						{
-							"material_list@holoprint:material_list.material_list": {
-								"bindings": [
+							"material_list_wrapper": {
+								"type": "stack_panel",
+								"size": ["100%", "100% - 62px"],
+								"anchor_from": "top_middle",
+								"anchor_to": "top_middle",
+								"offset": "$holoprint:material_list_offset",
+								"controls": [
 									{
-										"binding_type": "view",
-										"source_control_name": "material_list_toggle",
-										"source_property_name": "#toggle_state",
-										"target_property_name": "#visible"
+										"condiditional_padding_1": { // the material list needs to move down when the menu is visible. these padding elements are visible depending on which bits of the menu are showing. because they're all in a stack_panel, when they're visible, they push the material list lower down.
+											"type": "panel",
+											"size": [0, 35],
+											"bindings": [
+												{
+													"binding_type": "view",
+													"source_control_name": "expand_menu_toggle",
+													"source_property_name": "#toggle_state",
+													"target_property_name": "#visible"
+												}
+											]
+										}
+									},
+									{
+										"condiditional_padding_2": {
+											"type": "panel",
+											"size": [0, 27],
+											"bindings": [
+												{
+													"binding_type": "view",
+													"source_control_name": "expand_menu_toggle",
+													"source_property_name": "#toggle_state",
+													"target_property_name": "#expand_menu_toggle_state"
+												},
+												{
+													"binding_type": "view",
+													"source_control_name": "show_full_menu_toggle",
+													"source_property_name": "#toggle_state",
+													"target_property_name": "#show_full_menu_toggle_state"
+												},
+												{
+													"binding_type": "view",
+													"source_property_name": "(#expand_menu_toggle_state and #show_full_menu_toggle_state)",
+													"target_property_name": "#visible"
+												}
+											]
+										}
+									},
+									{
+										"material_list@holoprint:material_list.material_list": {
+											"bindings": [
+												{
+													"binding_type": "view",
+													"source_control_name": "material_list_toggle",
+													"source_property_name": "#toggle_state",
+													"target_property_name": "#visible"
+												}
+											]
+										}
 									}
 								]
 							}
@@ -89,10 +127,35 @@
 			}
 		]
 	},
-	"expand_menu_toggle_icon": {
-		"type": "image",
-		"size": ["90%", "90%"],
-		"texture": "textures/ui/menu_icon"
+	"hud_toggle": {
+		"type": "input_panel",
+		"anchor_from": "top_middle",
+		"anchor_to": "top_middle",
+		"size": [18, 18],
+		"layer": 33,
+		"prevent_touch_input": true,
+		"controls": [
+			{
+				"toggle@generic_toggle_button": {
+					"alpha": 0.8,
+					"propagate_alpha": true,
+					"$button_content": "common.empty_panel",
+					"$use_regular_bg": false,
+					"$default_texture": "$button_unpressed_texture",
+					"$hover_texture": "$button_pressed_texture",
+					"$pressed_texture": "$button_unpressed_texture",
+					"$pressed_no_hover_texture": "$button_pressed_texture"
+					// "$button_mappings": [
+					// 	{
+					// 		"from_button_id": "button.menu_select",
+					// 		"to_button_id": "button.expand_menu",
+					// 		"mapping_type": "pressed",
+					// 		"handle_select": true
+					// 	}
+					// ]
+				}
+			}
+		]
 	},
 	// "slide_in_from_left_anim": {
 	// 	"anim_type": "offset",
@@ -105,71 +168,21 @@
 		"type": "panel",
 		"controls": [
 			{
-				"important_buttons_and_toggles": {
-					"type": "grid",
-					"grid_dimensions": [2, 5],
-					"controls": [
-						{
-							"show_full_menu_toggle_button@show_full_menu_toggle_button": {
-								"grid_position": [1, 0]
-							}
-						},
-						{
-							"material_list_toggle_button@material_list_toggle_button": {
-								"grid_position": [0, 1]
-							}
-						},
-						{
-							"toggle_rendering_button@control_button": {
-								"grid_position": [1, 1],
-								"$icon": "toggle_rendering",
-								"$armor_stand_item_id": "$holoprint:toggle_rendering_item"
-							}
-						},
-						{
-							"change_layer_buttons@double_control_button": {
-								"grid_position": [0, 2],
-								"$left_button_control_item": "$holoprint:decrease_layer_item",
-								"$right_button_control_item": "$holoprint:increase_layer_item",
-								"$icon": "change_layer"
-							}
-						},
-						{
-							"toggle_validating_button@control_button": {
-								"grid_position": [0, 3],
-								"$icon": "toggle_validating",
-								"$armor_stand_item_id": "$holoprint:toggle_validating_item"
-							}
-						},
-						{
-							"change_layer_mode_button@control_button": {
-								"grid_position": [1, 3],
-								"$icon": "change_layer_mode",
-								"$armor_stand_item_id": "$holoprint:change_layer_mode_item"
-							}
-						},
-						{
-							"change_opacity_buttons@double_control_button": {
-								"grid_position": [0, 4],
-								"$left_button_control_item": "$holoprint:decrease_opacity_item",
-								"$right_button_control_item": "$holoprint:increase_opacity_item",
-								"$icon": "change_opacity"
-							}
-						}
-					]
+				"important_buttons_toggles_and_background@important_buttons_toggles_and_background": {
+					"layer": 1
 				}
 			},
 			{
 				"less_important_buttons_and_toggles_input_panel": {
 					"type": "input_panel",
-					"anchor_from": "top_left",
-					"anchor_to": "top_left",
-					"offset": [60, 0],
-					"size": [60, 120],
+					"anchor_from": "top_middle",
+					"anchor_to": "top_middle",
+					"offset": [0, 27],
+					"size": [242, 22],
 					"prevent_touch_input": true,
 					"controls": [
 						{
-							"less_important_buttons_and_toggles@less_important_buttons_and_toggles": {
+							"less_important_buttons_toggles_and_background@less_important_buttons_toggles_and_background": {
 								// "anims": ["@holoprint:touch_buttons.slide_in_from_left_anim"],
 								// "animation_reset_name": "button.show_full_menu"
 							}
@@ -187,60 +200,159 @@
 			}
 		]
 	},
+	"important_buttons_toggles_and_background": { // there are two backgrounds here, one for when the full menu is shown. that one has the bottom clipped so it looks like it's more connected to the stuff below
+		"type": "panel",
+		"controls": [
+			{
+				"background@common.dialog_background_opaque": {
+					"size": ["100%sm + 12px", "100%sm + 12px"],
+					"bindings": [
+						{
+							"binding_type": "view",
+							"source_control_name": "show_full_menu_toggle",
+							"source_property_name": "(not #toggle_state)",
+							"target_property_name": "#visible"
+						}
+					]
+				}
+			},
+			{
+				"bottom_borderless_background@common.dialog_background_opaque": {
+					"size": ["100%sm + 12px", "100%sm + 16px"],
+					"offset": [0, 2],
+					"clip_direction": "up",
+					"clip_ratio": 0.1875,
+					"bindings": [
+						{
+							"binding_type": "view",
+							"source_control_name": "show_full_menu_toggle",
+							"source_property_name": "#toggle_state",
+							"target_property_name": "#visible"
+						}
+					]
+				}
+			},
+			{
+				"important_buttons_and_toggles@important_buttons_and_toggles": {
+					"layer": 1
+				}
+			}
+		]
+	},
+	"important_buttons_and_toggles": {
+		"type": "stack_panel",
+		"orientation": "horizontal",
+		"controls": [
+			{
+				"toggle_rendering_button@control_button": {
+					"$icon": "toggle_rendering",
+					"$armor_stand_item_id": "$holoprint:toggle_rendering_item"
+				}
+			},
+			{ "p1@padding": {} },
+			{
+				"change_layer_buttons@double_control_button": {
+					"$left_button_control_item": "$holoprint:decrease_layer_item",
+					"$right_button_control_item": "$holoprint:increase_layer_item",
+					"$icon": "change_layer"
+				}
+			},
+			{ "p2@padding": {} },
+			{
+				"change_layer_mode_button@control_button": {
+					"$icon": "change_layer_mode",
+					"$armor_stand_item_id": "$holoprint:change_layer_mode_item"
+				}
+			},
+			{ "p3@padding": {} },
+			{
+				"change_opacity_buttons@double_control_button": {
+					"$left_button_control_item": "$holoprint:decrease_opacity_item",
+					"$right_button_control_item": "$holoprint:increase_opacity_item",
+					"$icon": "change_opacity"
+				}
+			},
+			{ "p4@padding": {} },
+			{
+				"toggle_validating_button@control_button": {
+					"$icon": "toggle_validating",
+					"$armor_stand_item_id": "$holoprint:toggle_validating_item"
+				}
+			},
+			{ "p5@padding": {} },
+			{
+				"show_full_menu_toggle_button@show_full_menu_toggle_button": {}
+			}
+		]
+	},
+	"less_important_buttons_toggles_and_background": {
+		"type": "panel",
+		"controls": [
+			{
+				"background@common.dialog_background_opaque": {
+					"size": ["100%sm + 12px", "100%sm + 12px"]
+				}
+			},
+			{
+				"less_important_buttons_and_toggles@less_important_buttons_and_toggles": {
+					"layer": 1
+				}
+			}
+		]
+	},
 	"less_important_buttons_and_toggles": {
-		"type": "grid",
-		"grid_dimensions": [2, 6],
+		"type": "stack_panel",
+		"orientation": "horizontal",
 		"controls": [
 			{
 				"move_x_buttons@double_control_button": {
-					"grid_position": [0, 0],
 					"$left_button_control_item": "$holoprint:decrease_x_item",
 					"$right_button_control_item": "$holoprint:increase_x_item",
 					"$icon": "move_hologram_x"
 				}
 			},
+			{ "p1@padding": {} },
 			{
 				"move_y_buttons@double_control_button": {
-					"grid_position": [0, 1],
 					"$left_button_control_item": "$holoprint:decrease_y_item",
 					"$right_button_control_item": "$holoprint:increase_y_item",
 					"$icon": "move_hologram_y"
 				}
 			},
+			{ "p2@padding": {} },
 			{
 				"move_z_buttons@double_control_button": {
-					"grid_position": [0, 2],
 					"$left_button_control_item": "$holoprint:decrease_z_item",
 					"$right_button_control_item": "$holoprint:increase_z_item",
 					"$icon": "move_hologram_z"
 				}
 			},
+			{ "p3@padding": {} },
 			{
 				"rotate_buttons@double_control_button": {
-					"grid_position": [0, 3],
 					"$left_button_control_item": "$holoprint:rotate_anticlockwise_item",
 					"$right_button_control_item": "$holoprint:rotate_clockwise_item",
 					"$icon": "rotate_hologram"
 				}
 			},
+			{ "p4@padding": {} },
 			{
 				"change_structure_buttons@double_control_button": {
-					"grid_position": [0, 4],
 					"$left_button_control_item": "$holoprint:previous_structure_item",
 					"$right_button_control_item": "$holoprint:next_structure_item",
 					"$icon": "change_structure"
 				}
 			},
+			{ "p5@padding": {} },
 			{
 				"toggle_tint_button@control_button": {
-					"grid_position": [0, 5],
 					"$icon": "toggle_tint",
 					"$armor_stand_item_id": "$holoprint:toggle_tint_item"
 				}
 			},
+			{ "p6@padding": {} },
 			{
 				"backup_button@control_button": {
-					"grid_position": [1, 5],
 					"$icon": "backup_hologram",
 					"$armor_stand_item_id": "$holoprint:backup_hologram_item"
 				}
@@ -254,6 +366,7 @@
 			{
 				"toggle@generic_toggle_button": {
 					"$button_content": "holoprint:touch_buttons.show_full_menu_toggle_icon",
+					"$button_content_size": ["100% - 9px", "100% - 9px"],
 					"$toggle_view_binding_name": "show_full_menu_toggle"
 					// "$button_mappings": [
 					// 	{
@@ -267,43 +380,12 @@
 		]
 	},
 	"show_full_menu_toggle_icon": {
-		"type": "panel",
-		"controls": [
-			{
-				"left": {
-					"type": "image",
-					"size": ["65%", "65%"],
-					"anchor_to": "right_middle",
-					"offset": [2, 0],
-					"texture": "textures/ui/menu_icon"
-				}
-			},
-			{
-				"right": {
-					"type": "image",
-					"size": ["65%", "65%"],
-					"anchor_to": "left_middle",
-					"offset": [-2, 0],
-					"texture": "textures/ui/menu_icon"
-				}
-			}
-		]
-	},
-	"material_list_toggle_button": {
-		"type": "panel",
-		"size": "$holoprint:touch_button_size",
-		"controls": [
-			{
-				"toggle@generic_toggle_button": {
-					"$button_content": "holoprint:touch_buttons.material_list_toggle_icon",
-					"$toggle_view_binding_name": "material_list_toggle"
-				}
-			}
-		]
-	},
-	"material_list_toggle_icon": {
 		"type": "image",
-		"texture": "textures/ui/recipe_book_icon"
+		"texture": "textures/ui/menu_sliders_icon"
+	},
+	"padding": {
+		"type": "panel",
+		"size": [3, 0]
 	},
 	"generic_toggle_button@common_toggles.light_content_toggle": {
 		"size": ["100% + 2px", "100% + 2px"],
@@ -311,8 +393,17 @@
 		"$toggle_focus_enabled": false,
 		"$default_border_visible": false,
 		"$hover_border_visible": false,
-		"$pressed_texture": "textures/ui/button_borderless_light",
-		"$pressed_no_hover_texture": "textures/ui/button_borderless_lightpressednohover"
+		"$use_regular_bg|default": true,
+		"variables": [
+			{
+				"requires": "$use_regular_bg",
+				"$pressed_texture": "textures/ui/button_borderless_light"
+			},
+			{
+				"requires": "$use_regular_bg",
+				"$pressed_no_hover_texture": "textures/ui/button_borderless_lightpressednohover"
+			}
+		]
 	},
 	"control_button@generic_button": {
 		"size": "$holoprint:touch_button_size",
@@ -369,7 +460,7 @@
 		"pressed_control": "pressed",
 		"$background_clip_ratio|default": 0,
 		"$background_clip_direction|default": "left",
-		"$icon_size|default": ["100% - 2px", "100% - 2px"],
+		"$icon_size|default": ["100% - 5px", "100% - 5px"],
 		"$icon_anchor|default": "center",
 		"button_mappings": [
 			{

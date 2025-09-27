@@ -7,46 +7,76 @@ import browserslist from "browserslist";
 import { transform, browserslistToTargets } from "lightningcss";
 import minifyJSON from "jsonminify";
 
+const srcDir = "src";
+const distDir = "dist";
+
 const versionParamName = "--version=";
 const exportHoloPrintLibFlagName = "--export-holoprint-lib";
 
 const buildVersion = process.argv.find(arg => arg.startsWith(versionParamName))?.slice(versionParamName.length) ?? "testing";
 const exportHoloPrintLib = process.argv.includes(exportHoloPrintLibFlagName);
 
-if(fs.existsSync("dist")) {
-	fs.rmSync("dist", {
-		recursive: true
-	});
-}
-fs.cpSync("src", "dist", {
+const cssTargets = browserslistToTargets(browserslist(">= 0.1%"));
+const importMapPattern = /<script type="importmap">([^]+?)<\/script>/;
+
+process.chdir(path.resolve(import.meta.dirname, "../"));
+rmDir("temp");
+fs.cpSync(srcDir, "temp", {
 	recursive: true
 });
-process.chdir("dist");
+await processDir("temp");
+rmDir(distDir);
+fs.cpSync("temp", distDir, {
+	recursive: true,
+	filter: filename => !(path.extname(filename) == ".js" || (fs.statSync(filename).isDirectory() && fs.readdirSync(filename).every(file => path.extname(file) == ".js")))
+});
 
-const baseDir = ".";
-const cssTargets = browserslistToTargets(browserslist(">= 0.1%"));
-
-await processDir(baseDir);
-
-let importMapJSON = fs.readFileSync("index.html", "utf-8").match(/<script type="importmap">([^]+?)<\/script>/)[1];
+let importMapJSON = fs.readFileSync(`${distDir}/index.html`, "utf-8").match(importMapPattern)[1];
 let externalModules = Object.keys(JSON.parse(importMapJSON)["imports"]);
 let { metafile } = esbuild.buildSync({
 	absWorkingDir: process.cwd(),
-	entryPoints: ["index.js"],
+	entryPoints: ["temp/index.js"],
 	bundle: true,
-	external: ["./entityScripts.molang.js", ...externalModules],
+	external: externalModules,
 	dropLabels: ["TS"],
 	minify: true,
 	format: "esm",
-	outdir: ".",
-	allowOverwrite: true,
+	outdir: distDir,
+	entryNames: "[name]-[hash]",
+	assetNames: "[name]-[hash]",
+	loader: {
+		".molang.js": "copy" // don't process these files at all, treat them as assets
+	},
 	sourcemap: true,
 	metafile: true
 });
+rmDir("temp");
 console.log(esbuild.analyzeMetafileSync(metafile));
-Object.keys(metafile["inputs"]).forEach(filename => {
-	if(!filename.endsWith("index.js")) {
-		fs.unlinkSync(filename); // remove bundled JS files to make build smaller
+let scriptImportReplacements = [];
+Object.entries(metafile["outputs"]).forEach(([output, { entryPoint }]) => {
+	if(entryPoint) {
+		scriptImportReplacements.push([entryPoint.replace("temp/", ""), output.replace(distDir + "/", "")]);
+	}
+});
+fs.readdirSync(distDir).forEach(filename => {
+	if(path.extname(filename) == ".html") {
+		let filepath = path.join(distDir, filename);
+		let html = fs.readFileSync(filepath, "utf-8");
+		scriptImportReplacements.forEach(([oldName, newName]) => {
+			let regExp = new RegExp(`\\b${oldName.replaceAll(/[.*+?^${}()|[\]\\]/g, "\\$&")}\\b`, "g");
+			html = html.replaceAll(regExp, newName);
+		});
+		if(importMapPattern.test(html)) {
+			html = html.replace(importMapPattern, (_, importMapJSON) => addImportReplacementsToImportMap(JSON.parse(importMapJSON)));
+		} else {
+			let importMapScript = addImportReplacementsToImportMap({});
+			if(html.includes("</head>")) {
+				html = html.replace("</head>", `${importMapScript}</head>`);
+			} else {
+				html += importMapScript;
+			}
+		}
+		fs.writeFileSync(filepath, html);
 	}
 });
 
@@ -156,6 +186,26 @@ function processJSON(code) {
 	return { code };
 }
 
+/** @param {string} dir */
+function rmDir(dir) {
+	if(fs.existsSync(dir)) {
+		fs.rmSync(dir, {
+			recursive: true
+		});
+	}
+}
+
+/**
+ * @param {object} importMap
+ * @returns {string}
+ */
+function addImportReplacementsToImportMap(importMap) {
+	importMap["imports"] ??= {};
+	scriptImportReplacements.forEach(([oldName, newName]) => {
+		importMap["imports"][`./${oldName}`] = `./${newName}`;
+	});
+	return `<script type="importmap">${JSON.stringify(importMap)}</script>`;
+}
 /**
  * @param {string} str
  * @param {RegExp} regexp
