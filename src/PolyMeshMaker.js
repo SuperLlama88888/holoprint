@@ -1,4 +1,4 @@
-import { addVec3, JSONMap, min, Vec2Set, Vec3Set, vec3ToFixed } from "./utils.js";
+import { JSONMap, min, Vec2Set, Vec3Set, vec3 } from "./utils.js";
 
 const stringifyVec3 = "InternalError" in window? vec => vec[0] + "," + vec[1] + "," + vec[2] : vec => `${vec[0]},${vec[1]},${vec[2]}`;
 
@@ -48,7 +48,7 @@ export default class PolyMeshMaker {
 				blockPositions.forEach(([blockPos, layer]) => {
 					let facePolys = [];
 					for(let vertexI = 0; vertexI < 4; vertexI++) {
-						let pos = vec3ToFixed(addVec3(blockPos, face["vertices"][vertexI]["pos"]), 4);
+						let pos = vec3.toFixed(vec3.add(blockPos, face["vertices"][vertexI]["pos"]), 4);
 						let positionIndex = positions.add(pos);
 						facePolys.push([positionIndex, normalIndex, uvIndices[vertexI]]);
 					}

@@ -1,4 +1,4 @@
-import { addVec2, ceil, floor, hexColorToClampedTriplet, JSONSet, max, range, stringToImageData, subVec2, toImage, toImageData, tuple } from "./utils.js";
+import { ceil, floor, hexColorToClampedTriplet, JSONSet, max, range, stringToImageData, toImage, toImageData, tuple, vec2 } from "./utils.js";
 import TGALoader from "tga-js"; // We could use dynamic import as this isn't used all the time but it's so small it won't matter
 import potpack from "potpack";
 import ResourcePackStack from "./ResourcePackStack.js";
@@ -418,9 +418,9 @@ export default class TextureAtlas {
 			let destPos = tuple([imageFragment.x, imageFragment.y]);
 			let textureSize = tuple([imageFragment.w, imageFragment.h]);
 			// console.table({sourcePos,textureSize,destPos})
-			ctx.putImageData(imageFragment.imageData, ...subVec2(destPos, sourcePos), ...sourcePos, ...textureSize); // when drawing image data, the source position and size crop it but don't move it back to the original destination position, meaning it must be offset.
+			ctx.putImageData(imageFragment.imageData, ...vec2.sub(destPos, sourcePos), ...sourcePos, ...textureSize); // when drawing image data, the source position and size crop it but don't move it back to the original destination position, meaning it must be offset.
 			let imageUv = {
-				"uv": addVec2(destPos, imageFragment["offset"]),
+				"uv": vec2.add(destPos, imageFragment["offset"]),
 				"uv_size": imageFragment["actualSize"],
 				"transparency": NaN
 			};
