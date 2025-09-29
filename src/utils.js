@@ -10,6 +10,7 @@ export * from "./utils/misc.js";
 export * from "./utils/images.js";
 export * from "./utils/math.js";
 export * from "./utils/meta.js";
+export * from "./utils/molang.js";
 export * from "./utils/objects.js";
 export * from "./utils/strings.js";
 export * from "./utils/translations.js";
