@@ -1,3 +1,5 @@
+import { removeFalsies } from "./arrays.js";
+
 /**
  * Patches a method onto an object, returning a symbol that can be used to access that method.
  * @overload
@@ -5,9 +7,6 @@
  * @param {Function} primaryMethod The method that will be patched onto the object(s)
  * @returns {symbol}
 */
-
-import { removeFalsies } from "./arrays.js";
-
 /**
  * Patches a method onto an object, and making a function turn into a symbol during property access, with which the patched method can be accessed.
  * @template {Function} F
