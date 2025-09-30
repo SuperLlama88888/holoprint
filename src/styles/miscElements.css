@@ -61,12 +61,13 @@ fieldset.textureSettings > div {
 #texturePreviewCont {
 	text-align: center;
 	min-width: 260px;
-}
-#texturePreviewCont img {
-	margin: 5px;
-	display: inline-block;
-	border: none;
-	width: 40%;
-	max-width: 140px;
-	image-rendering: pixelated;
+	
+	img {
+		margin: 5px;
+		display: inline-block;
+		border: none;
+		width: 40%;
+		max-width: 140px;
+		image-rendering: pixelated;
+	}
 }

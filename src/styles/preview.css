@@ -36,6 +36,10 @@
 	justify-content: center;
 	font-size: 2.5vw;
 	border: 1px solid black;
+	
+	&.clickToView {
+		cursor: pointer;
+	}
 }
 @media (max-width: 768px) {
 	.previewMessage {
@@ -46,7 +50,4 @@
 	.previewMessage {
 		font-size: 5vw;
 	}
-}
-.previewMessage.clickToView {
-	cursor: pointer;
 }

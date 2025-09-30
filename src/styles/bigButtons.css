@@ -19,37 +19,38 @@
 	border-color: var(--bg-col-2);
 	transition: transform 0.15s;
 	min-width: min-content;
-}
-.packInfoButton:not(.finished) {
-	cursor: wait;
-}
-.packInfoButton.completed {
-	animation: moveButtonBackground 1s linear infinite;
+	
+	&:not(.finished) {
+		cursor: wait;
+	}
+	&.completed {
+		animation: moveButtonBackground 1s linear infinite;
+		&:hover {
+			transform: scale(1.05);
+		}
+		&:active {
+			transform: scale(1.02);
+		}
+	}
+	&.failed, &.reportIssue {
+		--bg-col-1: #ee5350;
+		--bg-col-2: #e43b37;
+	}
+	&.failed {
+		cursor: initial;
+	}
+	&.reportIssue {
+		cursor: pointer;
+		&:hover {
+			transform: scale(1.035);
+		}
+		&:active {
+			transform: scale(1.01);
+		}
+	}
 }
 @keyframes moveButtonBackground {
 	from {
 		background-position: -40px 0;
 	}
-}
-.packInfoButton.completed:hover {
-	transform: scale(1.05);
-}
-.packInfoButton.reportIssue:hover {
-	transform: scale(1.035);
-}
-.packInfoButton.completed:active {
-	transform: scale(1.02);
-}
-.packInfoButton.reportIssue:active {
-	transform: scale(1.01);
-}
-.packInfoButton.failed, .packInfoButton.reportIssue {
-	--bg-col-1: #ee5350;
-	--bg-col-2: #e43b37;
-}
-.packInfoButton.failed {
-	cursor: initial;
-}
-.packInfoButton.reportIssue {
-	cursor: pointer;
 }
