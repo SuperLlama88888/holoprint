@@ -12,5 +12,5 @@
 	font-style: normal;
 	font-weight: 400 700;
 	font-display: block;
-	src: url("./MaterialSymbols.woff2") format("woff2");
+	src: url("../assets/MaterialSymbols.woff2") format("woff2");
 }

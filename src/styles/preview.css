@@ -1,0 +1,52 @@
+.previewCont {
+	margin: auto;
+	padding: 0;
+	contain: layout;
+	text-align: center;
+	width: min(80vmin, 100%);
+	
+	& > .previewMessage, & > canvas, & ~ hr {
+		width: min(80vmin, 100%);
+	}
+	& > canvas {
+		user-select: none;
+	}
+	& > .previewMessage, & > canvas {
+		aspect-ratio: 1;
+		box-sizing: border-box;
+	}
+	.statsPanel {
+		width: 0;
+		height: 0;
+		canvas {
+			border: none;
+		}
+	}
+	@media (min-width: 451px) and (min-height: 451px) {
+		lil-gui {
+			position: absolute;
+			right: 0;
+		}
+	}
+}
+.previewMessage {
+	margin: auto;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	font-size: 2.5vw;
+	border: 1px solid black;
+}
+@media (max-width: 768px) {
+	.previewMessage {
+		font-size: 3.5vw;
+	}
+}
+@media (max-width: 450px) {
+	.previewMessage {
+		font-size: 5vw;
+	}
+}
+.previewMessage.clickToView {
+	cursor: pointer;
+}

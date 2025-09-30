@@ -1,0 +1,52 @@
+#structureFileInputCont input[type="file"] ~ div {
+	margin: 4px auto;
+	padding: 10px;
+	box-sizing: border-box;
+	width: 70%;
+	font-weight: 500;
+	text-align: center;
+	border: 3px dashed var(--border-col);
+	border-radius: 25px;
+}
+#structureFileInputCont fieldset:first-of-type input[type="file"] ~ div {
+	border: 3px solid var(--border-col);
+}
+#structureFileInputCont input[type="file"] ~ div p {
+	margin: 0;
+}
+#structureFileInputCont input[type="file"] ~ div p:first-child {
+	font-size: 1.4em;
+}
+#structureFileInputCont input[type="file"] ~ div p:last-child {
+	font-size: 0.7em;
+}
+#structureFileInputCont:not(:has(+ file-input-table[has-files])):not(:has(fieldset label ~ span:not(.hidden))) {
+	input[type="file"], ~ * {
+		display: none;
+	}
+}
+main:not(:has(file-input-table[has-files])):not(:has(.previewCont)) { /* hide lots of stuff when no files are selected */
+	#structureFileInputCont:not(:has(fieldset label ~ span:not(.hidden))) input[type="file"] {
+		display: none;
+	}
+	form ~ *, #structureFileInputCont ~ * {
+		display: none;
+	}
+}
+#structureFileInputCont:has(+ file-input-table[has-files]), #structureFileInputCont:has(fieldset label ~ span:not(.hidden)) {
+	input[type="file"] ~ div {
+		display: none;
+	}
+}
+#structureFileInputCont fieldset label ~ span {
+	display: block;
+	margin-top: 10px;
+	font-weight: 500;
+	
+	&[id$="success"i] {
+		color: var(--success-green);
+	}
+	&[id$="error"i] {
+		color: var(--error-red);
+	}
+}

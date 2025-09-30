@@ -1,0 +1,109 @@
+:root {
+	--icon-scale: 1;
+	
+	--text-col: #202526;
+	--border-col: #D899D8;
+	--input-bg: #EEDEEE;
+	--input-bg-checked: #E8C8E8;
+	--input-bg-active: #DABADA;
+	--dark-bg: #D38AD3;
+	--dark-bg-hover: #C57CC5;
+	--dark-bg-active: #B66DB7;
+	--dark-border: #9B4F9B;
+	--success-green: #3AB336;
+	--error-red: #E24436;
+}
+body {
+	background-image: linear-gradient(#FFFB, #FFFB), url("../assets/logo_background.png");
+	background-size: 100px;
+	/* animation: move-background 10s linear infinite; */
+	font-family: "Catamaran", "Trebuchet MS", sans-serif;
+	color: var(--text-col);
+	line-height: 1.2;
+}
+@keyframes move-background {
+	from {
+		background-position: 0 0;
+	}
+	to {
+		background-position: 100px 60px;
+	}
+}
+
+h1 {
+	margin: 6px 0;
+}
+form {
+	text-align: left;
+}
+file-input-table {
+	margin: 3px;
+}
+span {
+	vertical-align: middle;
+}
+label {
+	display: block;
+}
+details {
+	padding: 3px;
+	width: fit-content;
+	border: 1px solid #AAA;
+	border-radius: 5px;
+}
+summary {
+	padding: 0 3px;
+	font-weight: 500;
+	font-size: 1rem;
+}
+img:not(#languageSelectorButton), canvas {
+	display: inline-block;
+	width: 400px;
+	border: 1px solid black;
+	/* color: #4C33CC;
+	color: #2C33B3;
+	color: #4CF0A0
+	color: hsl(300, 24%, 53%);
+	color: var(--border-col);
+	color: #D7B3D7; */
+}
+
+.resetButton {
+	position: absolute;
+	right: 10px;
+	top: 0;
+}
+
+.hidden {
+	display: none !important;
+}
+.material-symbols {
+	font-family: "Material Symbols" !important;
+}
+/* This magic is taken straight from https://css-loaders.com/bars/#l1 */
+.loader {
+	margin: 10px auto auto;
+	width: 45px;
+	aspect-ratio: 1;
+	--c: no-repeat linear-gradient(var(--border-col) 0 0);
+	background: var(--c) 0% 50%, var(--c) 50% 50%, var(--c) 100% 50%;
+	background-size: 20% 100%;
+	animation: l1 1s infinite linear;
+}
+@keyframes l1 {
+	0% {
+		background-size: 20% 100%, 20% 100%, 20% 100%;
+	}
+	33% {
+		background-size: 20% 10%, 20% 100%, 20% 100%;
+	}
+	50% {
+		background-size: 20% 100%, 20% 10%, 20% 100%;
+	}
+	66% {
+		background-size: 20% 100%, 20% 100%, 20% 10%;
+	}
+	100% {
+		background-size: 20% 100%, 20% 100%, 20% 100%;
+	}
+}
