@@ -15,7 +15,7 @@
 		},
 		{
 			"description": {
-				"identifier": "geometry.armor_stand.hologram.wrong_block_overlay",
+				"identifier": "geometry.holoprint.hologram.wrong_block_overlay",
 				"texture_width": 16,
 				"texture_height": 16
 			},
@@ -43,7 +43,7 @@
 		},
 		{
 			"description": {
-				"identifier": "geometry.armor_stand.hologram.valid_structure_overlay",
+				"identifier": "geometry.holoprint.hologram.valid_structure_overlay",
 				"texture_width": 16,
 				"texture_height": 16
 			},
@@ -70,7 +70,7 @@
 		},
 		{
 			"description": {
-				"identifier": "geometry.armor_stand.hologram.particle_alignment",
+				"identifier": "geometry.holoprint.hologram.particle_alignment",
 				"texture_width": 16,
 				"texture_height": 16
 			},

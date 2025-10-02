@@ -1,7 +1,7 @@
 {
 	"format_version": "1.8.0", // both 1.8.0 and 1.10.0 are used internally
 	"render_controllers": {
-		"controller.render.armor_stand.hologram": {
+		"controller.render.holoprint.hologram": {
 			"arrays": {
 				"textures": {
 					"Array.textures": []
@@ -31,7 +31,7 @@
 			},
 			"ignore_lighting": true
 		},
-		"controller.render.armor_stand.hologram.wrong_block_overlay": {
+		"controller.render.holoprint.hologram.wrong_block_overlay": {
 			"materials": [
 				{
 					"*": "Material.hologram.wrong_block_overlay"
@@ -59,7 +59,7 @@
 			},
 			"ignore_lighting": true
 		},
-		"controller.render.armor_stand.hologram.valid_structure_overlay": {
+		"controller.render.holoprint.hologram.valid_structure_overlay": {
 			"materials": [
 				{
 					"*": "Material.hologram"
@@ -87,7 +87,7 @@
 			},
 			"ignore_lighting": true
 		},
-		"controller.render.armor_stand.hologram.particle_alignment": {
+		"controller.render.holoprint.hologram.particle_alignment": {
 			"materials": [
 				{
 					"*": "Material.hologram"

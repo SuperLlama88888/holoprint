@@ -10,7 +10,7 @@ I also wonder if we could have a "rotation lock" option which makes the hologram
 {
 	"format_version": "1.8.0",
 	"animations": {
-		"animation.armor_stand.hologram.align": {
+		"animation.holoprint.hologram.align": {
 			"loop": "hold_on_last_frame",
 			"bones": {
 				"hologram_alignment_wrapper": {
@@ -33,7 +33,7 @@ I also wonder if we could have a "rotation lock" option which makes the hologram
 				}
 			}
 		},
-		"animation.armor_stand.hologram.offset": {
+		"animation.holoprint.hologram.offset": {
 			"loop": "hold_on_last_frame",
 			"bones": {
 				"hologram_offset_wrapper": {
@@ -45,7 +45,7 @@ I also wonder if we could have a "rotation lock" option which makes the hologram
 				}
 			}
 		},
-		"animation.armor_stand.hologram.coordinate_lock": {
+		"animation.holoprint.hologram.coordinate_lock": {
 			"loop": "hold_on_last_frame",
 			"bones": {
 				"hologram_offset_wrapper": {
@@ -58,8 +58,8 @@ I also wonder if we could have a "rotation lock" option which makes the hologram
 				}
 			}
 		},
-		"animation.armor_stand.hologram.spawn": {}, // A fun spawning animation
-		"animation.armor_stand.hologram.wrong_block_overlay": {
+		"animation.holoprint.hologram.spawn": {}, // A fun spawning animation
+		"animation.holoprint.hologram.wrong_block_overlay": {
 			"loop": "hold_on_last_frame",
 			"bones": {
 				"wrong_block_overlay": {

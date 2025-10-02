@@ -93,11 +93,11 @@ export async function makePack(structureFiles, config, resourcePackStack = new R
 	};
 	let packTemplatePromise = loadPackTemplate({
 		manifest: "manifest.json",
-		hologramRenderControllers: "render_controllers/armor_stand.hologram.render_controllers.json",
-		hologramGeo: "models/entity/armor_stand.hologram.geo.json", // this is where we put all the ghost blocks
+		hologramRenderControllers: "render_controllers/holoprint.hologram.render_controllers.json",
+		hologramGeo: "models/entity/holoprint.hologram.geo.json", // this is where we put all the ghost blocks
 		[_.$]: "materials/entity.material",
-		hologramAnimationControllers: "animation_controllers/armor_stand.hologram.animation_controllers.json",
-		hologramAnimations: "animations/armor_stand.hologram.animation.json",
+		hologramAnimationControllers: "animation_controllers/holoprint.hologram.animation_controllers.json",
+		hologramAnimations: "animations/holoprint.hologram.animation.json",
 		[_.$]: "particles/bounding_box_outline.json",
 		blockValidationParticle: "particles/block_validation.json",
 		[_.$]: "particles/saving_backup.json",
@@ -234,11 +234,11 @@ export async function makePack(structureFiles, config, resourcePackStack = new R
 	allStructureIndicesByLayer.forEach((structureIndicesByLayer, structureI) => {
 		let structureSize = structureSizes[structureI];
 		let geoShortName = `hologram_${structureI}`;
-		let geoIdentifier = `geometry.armor_stand.hologram_${structureI}`;
+		let geoIdentifier = `geometry.holoprint.hologram_${structureI}`;
 		let geo = structuredClone(structureGeoTemplate);
 		geo["description"]["identifier"] = geoIdentifier;
 		entityDescription["geometry"][geoShortName] = geoIdentifier;
-		hologramRenderControllers["render_controllers"]["controller.render.armor_stand.hologram"]["arrays"]["geometries"]["Array.geometries"].push(`Geometry.${geoShortName}`);
+		hologramRenderControllers["render_controllers"]["controller.render.holoprint.hologram"]["arrays"]["geometries"]["Array.geometries"].push(`Geometry.${geoShortName}`);
 		let blocksToValidate = [];
 		let blocksToValidateByLayer = [];
 		
@@ -312,7 +312,7 @@ export async function makePack(structureFiles, config, resourcePackStack = new R
 				spawnAnimationMaker.addBone(layerName, [0, y, 0]);
 			}
 		}
-		hologramAnimations["animations"]["animation.armor_stand.hologram.spawn"] = spawnAnimationMaker.makeAnimation();
+		hologramAnimations["animations"]["animation.holoprint.hologram.spawn"] = spawnAnimationMaker.makeAnimation();
 	}
 	
 	let structureSizesMolang = [
@@ -327,23 +327,23 @@ export async function makePack(structureFiles, config, resourcePackStack = new R
 	entityDescription["materials"]["hologram.wrong_block_overlay"] = "holoprint_hologram.wrong_block_overlay";
 	entityDescription["textures"]["hologram.overlay"] = "textures/entity/overlay";
 	entityDescription["textures"]["hologram.save_icon"] = "textures/particle/save_icon";
-	entityDescription["animations"]["hologram.align"] = "animation.armor_stand.hologram.align";
+	entityDescription["animations"]["hologram.align"] = "animation.holoprint.hologram.align";
 	if(config.COORDINATE_LOCK) {
-		entityDescription["animations"]["hologram.coordinate_lock"] = "animation.armor_stand.hologram.coordinate_lock";
+		entityDescription["animations"]["hologram.coordinate_lock"] = "animation.holoprint.hologram.coordinate_lock";
 		let coordinateLockRotsMolang = arrayToMolang(coordinateLockAxes[3], "v.hologram.structure_index");
-		hologramAnimations["animations"]["animation.armor_stand.hologram.coordinate_lock"]["bones"]["hologram_offset_wrapper"]["rotation"][1] = coordinateLockRotsMolang;
-		delete hologramAnimations["animations"]["animation.armor_stand.hologram.offset"];
+		hologramAnimations["animations"]["animation.holoprint.hologram.coordinate_lock"]["bones"]["hologram_offset_wrapper"]["rotation"][1] = coordinateLockRotsMolang;
+		delete hologramAnimations["animations"]["animation.holoprint.hologram.offset"];
 	} else {
-		entityDescription["animations"]["hologram.offset"] = "animation.armor_stand.hologram.offset";
-		delete hologramAnimations["animations"]["animation.armor_stand.hologram.coordinate_lock"];
+		entityDescription["animations"]["hologram.offset"] = "animation.holoprint.hologram.offset";
+		delete hologramAnimations["animations"]["animation.holoprint.hologram.coordinate_lock"];
 	}
-	entityDescription["animations"]["hologram.spawn"] = "animation.armor_stand.hologram.spawn";
-	entityDescription["animations"]["hologram.wrong_block_overlay"] = "animation.armor_stand.hologram.wrong_block_overlay";
-	entityDescription["animations"]["controller.hologram.spawn_animation"] = "controller.animation.armor_stand.hologram.spawn_animation";
-	entityDescription["animations"]["controller.hologram.layers"] = "controller.animation.armor_stand.hologram.layers";
-	entityDescription["animations"]["controller.hologram.bounding_box"] = "controller.animation.armor_stand.hologram.bounding_box";
-	entityDescription["animations"]["controller.hologram.block_validation"] = "controller.animation.armor_stand.hologram.block_validation";
-	entityDescription["animations"]["controller.hologram.saving_backup_particles"] = "controller.animation.armor_stand.hologram.saving_backup_particles";
+	entityDescription["animations"]["hologram.spawn"] = "animation.holoprint.hologram.spawn";
+	entityDescription["animations"]["hologram.wrong_block_overlay"] = "animation.holoprint.hologram.wrong_block_overlay";
+	entityDescription["animations"]["controller.hologram.spawn_animation"] = "controller.animation.holoprint.hologram.spawn_animation";
+	entityDescription["animations"]["controller.hologram.layers"] = "controller.animation.holoprint.hologram.layers";
+	entityDescription["animations"]["controller.hologram.bounding_box"] = "controller.animation.holoprint.hologram.bounding_box";
+	entityDescription["animations"]["controller.hologram.block_validation"] = "controller.animation.holoprint.hologram.block_validation";
+	entityDescription["animations"]["controller.hologram.saving_backup_particles"] = "controller.animation.holoprint.hologram.saving_backup_particles";
 	entityDescription["scripts"]["animate"] ??= [];
 	entityDescription["scripts"]["animate"].push("hologram.align", config.COORDINATE_LOCK? "hologram.coordinate_lock" : "hologram.offset", "hologram.wrong_block_overlay", "controller.hologram.spawn_animation", "controller.hologram.layers", "controller.hologram.bounding_box", "controller.hologram.block_validation", "controller.hologram.saving_backup_particles");
 	entityDescription["scripts"]["should_update_bones_and_effects_offscreen"] = true; // makes backups work when offscreen (from my testing it helps a bit). this also makes it render when you're facing away, removing the need for visible_bounds_width/visible_bounds_height in the geometry file. (when should_update_effects_offscreen is set, it renders when facing away, but doesn't seem to have access to v. variables.)
@@ -377,28 +377,28 @@ export async function makePack(structureFiles, config, resourcePackStack = new R
 		singleLayerMode: HOLOGRAM_LAYER_MODES.SINGLE,
 		ACTIONS: entityScripts.ACTIONS
 	}));
-	entityDescription["geometry"]["hologram.wrong_block_overlay"] = "geometry.armor_stand.hologram.wrong_block_overlay";
-	entityDescription["geometry"]["hologram.valid_structure_overlay"] = "geometry.armor_stand.hologram.valid_structure_overlay";
-	entityDescription["geometry"]["hologram.particle_alignment"] = "geometry.armor_stand.hologram.particle_alignment";
+	entityDescription["geometry"]["hologram.wrong_block_overlay"] = "geometry.holoprint.hologram.wrong_block_overlay";
+	entityDescription["geometry"]["hologram.valid_structure_overlay"] = "geometry.holoprint.hologram.valid_structure_overlay";
+	entityDescription["geometry"]["hologram.particle_alignment"] = "geometry.holoprint.hologram.particle_alignment";
 	entityDescription["render_controllers"] ??= [];
 	entityDescription["render_controllers"].push({
-		"controller.render.armor_stand.hologram": "v.hologram.rendering"
+		"controller.render.holoprint.hologram": "v.hologram.rendering"
 	}, {
-		"controller.render.armor_stand.hologram.wrong_block_overlay": "v.hologram.show_wrong_block_overlay"
+		"controller.render.holoprint.hologram.wrong_block_overlay": "v.hologram.show_wrong_block_overlay"
 	}, {
-		"controller.render.armor_stand.hologram.valid_structure_overlay": "v.hologram.validating && v.wrong_blocks == 0"
-	}, "controller.render.armor_stand.hologram.particle_alignment");
+		"controller.render.holoprint.hologram.valid_structure_overlay": "v.hologram.validating && v.wrong_blocks == 0"
+	}, "controller.render.holoprint.hologram.particle_alignment");
 	entityDescription["particle_effects"] ??= {};
 	entityDescription["particle_effects"]["bounding_box_outline"] = "holoprint:bounding_box_outline";
 	entityDescription["particle_effects"]["saving_backup"] = "holoprint:saving_backup";
 	
 	textureBlobs.forEach(([textureName]) => {
 		entityDescription["textures"][textureName] = `textures/entity/${textureName}`;
-		hologramRenderControllers["render_controllers"]["controller.render.armor_stand.hologram"]["arrays"]["textures"]["Array.textures"].push(`Texture.${textureName}`);
+		hologramRenderControllers["render_controllers"]["controller.render.holoprint.hologram"]["arrays"]["textures"]["Array.textures"].push(`Texture.${textureName}`);
 	});
 	
 	let tintColorChannels = hexColorToClampedTriplet(config.TINT_COLOR);
-	hologramRenderControllers["render_controllers"]["controller.render.armor_stand.hologram"]["overlay_color"] = {
+	hologramRenderControllers["render_controllers"]["controller.render.holoprint.hologram"]["overlay_color"] = {
 		"r": +tintColorChannels[0].toFixed(4),
 		"g": +tintColorChannels[1].toFixed(4),
 		"b": +tintColorChannels[2].toFixed(4),
@@ -981,7 +981,7 @@ function mergeMultiplePalettesAndIndices(palettesAndIndices) {
  * @param {object} hologramAnimationControllers
  */
 function makeLayerAnimations(config, structureSizes, entityDescription, hologramAnimations, hologramAnimationControllers) {
-	let layerAnimationStates = hologramAnimationControllers["animation_controllers"]["controller.animation.armor_stand.hologram.layers"]["states"];
+	let layerAnimationStates = hologramAnimationControllers["animation_controllers"]["controller.animation.holoprint.hologram.layers"]["states"];
 	let topLayer = max(...structureSizes.map(structureSize => structureSize[1])) - 1;
 	layerAnimationStates["default"]["transitions"].push(
 		{
@@ -1037,8 +1037,8 @@ function makeLayerAnimations(config, structureSizes, entityDescription, hologram
 		if(Object.entries(layerAnimation["bones"]).length == 0) {
 			delete layerAnimation["bones"];
 		}
-		hologramAnimations["animations"][`animation.armor_stand.hologram.l_${y}`] = layerAnimation;
-		entityDescription["animations"][`hologram.l_${y}`] = `animation.armor_stand.hologram.l_${y}`;
+		hologramAnimations["animations"][`animation.holoprint.hologram.l_${y}`] = layerAnimation;
+		entityDescription["animations"][`hologram.l_${y}`] = `animation.holoprint.hologram.l_${y}`;
 		if(y < topLayer) { // top layer with all layers below is the default view, so the animation + animation controller state doesn't need to be made for it
 			layerAnimationStates[`${layerName}-`] = {
 				"animations": [`hologram.l_${y}-`],
@@ -1073,8 +1073,8 @@ function makeLayerAnimations(config, structureSizes, entityDescription, hologram
 			if(Object.entries(layerAnimationAllBelow["bones"]).length == 0) {
 				delete layerAnimationAllBelow["bones"];
 			}
-			hologramAnimations["animations"][`animation.armor_stand.hologram.l_${y}-`] = layerAnimationAllBelow;
-			entityDescription["animations"][`hologram.l_${y}-`] = `animation.armor_stand.hologram.l_${y}-`;
+			hologramAnimations["animations"][`animation.holoprint.hologram.l_${y}-`] = layerAnimationAllBelow;
+			entityDescription["animations"][`hologram.l_${y}-`] = `animation.holoprint.hologram.l_${y}-`;
 		}
 	}
 }
@@ -1115,8 +1115,8 @@ function addBoundingBoxParticles(hologramAnimationControllers, structureI, struc
 		});
 	});
 	let animationStateName = `visible_${structureI}`;
-	hologramAnimationControllers["animation_controllers"]["controller.animation.armor_stand.hologram.bounding_box"]["states"][animationStateName] = boundingBoxAnimation;
-	hologramAnimationControllers["animation_controllers"]["controller.animation.armor_stand.hologram.bounding_box"]["states"]["hidden"]["transitions"].push({
+	hologramAnimationControllers["animation_controllers"]["controller.animation.holoprint.hologram.bounding_box"]["states"][animationStateName] = boundingBoxAnimation;
+	hologramAnimationControllers["animation_controllers"]["controller.animation.holoprint.hologram.bounding_box"]["states"]["hidden"]["transitions"].push({
 		[animationStateName]: `v.hologram.rendering && v.hologram.structure_index == ${structureI}`
 	});
 }
@@ -1137,7 +1137,7 @@ function addBlockValidationParticles(hologramAnimationControllers, structureI, b
 		]
 	};
 	let validateAllStateName = `validate_${structureI}`;
-	let validationStates = hologramAnimationControllers["animation_controllers"]["controller.animation.armor_stand.hologram.block_validation"]["states"];
+	let validationStates = hologramAnimationControllers["animation_controllers"]["controller.animation.holoprint.hologram.block_validation"]["states"];
 	validationStates[validateAllStateName] = validateAllState;
 	let validateAllStateTransition = {
 		[validateAllStateName]: `v.hologram.validating && v.hologram.structure_index == ${structureI} && v.hologram.layer == -1`
