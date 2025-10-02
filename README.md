@@ -66,7 +66,7 @@ Special thanks to **kizoku246** for the house in these images!
 - [Nextr](https://mcpedl.com/user/nextr): Control item textures (tweaked)
 - [Indyfficient](https://www.youtube.com/@Indyfficient): The idea of changing structure by hitting the armour stand
 - [Prowl8413](https://www.youtube.com/@Prowl8413): General feedback during development
-- [Hellothere1234627284yehnsndnsnwnd](https://github.com/Hellothere1234627284yehnsndnsnwnd): Feedback and suggestions
+- [KITTUradiates](https://github.com/KITTUradiates): Feedback and suggestions
 - [Rainbow-Editor](https://github.com/PurpleRain-PR/Rainbow-Editor) by [PurpleRain-PR](https://github.com/PurpleRain-PR): The idea of exporting a GLB from the preview
 - Documentation:
   - [Bedrock Wiki](https://wiki.bedrock.dev): Best resource for learning about resource/behaviour packs!
