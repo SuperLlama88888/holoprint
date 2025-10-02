@@ -101,35 +101,35 @@ export async function makePack(structureFiles, config, resourcePackStack = new R
 		[_.$]: "particles/bounding_box_outline.json",
 		blockValidationParticle: "particles/block_validation.json",
 		[_.$]: "particles/saving_backup.json",
-		singleWhitePixelTexture: "textures/particle/single_white_pixel.png",
-		[_._]: "textures/particle/exclamation_mark.png",
-		[_._]: "textures/particle/save_icon.png",
+		singleWhitePixelTexture: "textures/holoprint/particle/single_white_pixel.png",
+		[_._]: "textures/holoprint/particle/exclamation_mark.png",
+		[_._]: "textures/holoprint/particle/save_icon.png",
 		itemTexture: config.RETEXTURE_CONTROL_ITEMS? "textures/item_texture.json" : undefined,
 		terrainTexture: config.RETEXTURE_CONTROL_ITEMS? "textures/terrain_texture.json" : undefined,
 		...(config.UI_CONTROLS_ENABLED? {
-			[_._]: "textures/ui/toggle_rendering.png",
-			[_._]: "textures/ui/change_opacity.png",
-			[_._]: "textures/ui/increase_opacity.png",
-			[_._]: "textures/ui/toggle_tint.png",
-			[_._]: "textures/ui/toggle_validating.png",
-			[_._]: "textures/ui/change_layer.png",
-			[_._]: "textures/ui/increase_layer.png",
-			[_._]: "textures/ui/decrease_layer.png",
-			[_._]: "textures/ui/change_layer_mode.png",
-			[_._]: "textures/ui/move_hologram_x.png",
-			[_._]: "textures/ui/move_hologram_y.png",
-			[_._]: "textures/ui/move_hologram_z.png",
-			[_._]: "textures/ui/rotate_hologram.png",
-			[_._]: "textures/ui/change_structure.png",
-			[_._]: "textures/ui/backup_hologram.png",
-			[_._]: "textures/ui/menu_sliders_icon.png",
-			[_._]: "textures/ui/menu_button_unpressed.png",
-			[_._]: "textures/ui/menu_button_pressed.png",
-			[_._]: "textures/ui/material_list_button_unpressed.png",
-			[_._]: "textures/ui/material_list_button_pressed.png",
-			[_._]: "textures/ui/white_circle.png",
-			[_.$]: "textures/ui/white_circle.json",
-			[_._]: "textures/ui/quick_input_keyboard_hints.png",
+			[_._]: "textures/holoprint/icons/toggle_rendering.png",
+			[_._]: "textures/holoprint/icons/change_opacity.png",
+			[_._]: "textures/holoprint/icons/increase_opacity.png",
+			[_._]: "textures/holoprint/icons/toggle_tint.png",
+			[_._]: "textures/holoprint/icons/toggle_validating.png",
+			[_._]: "textures/holoprint/icons/change_layer.png",
+			[_._]: "textures/holoprint/icons/increase_layer.png",
+			[_._]: "textures/holoprint/icons/decrease_layer.png",
+			[_._]: "textures/holoprint/icons/change_layer_mode.png",
+			[_._]: "textures/holoprint/icons/move_hologram_x.png",
+			[_._]: "textures/holoprint/icons/move_hologram_y.png",
+			[_._]: "textures/holoprint/icons/move_hologram_z.png",
+			[_._]: "textures/holoprint/icons/rotate_hologram.png",
+			[_._]: "textures/holoprint/icons/change_structure.png",
+			[_._]: "textures/holoprint/icons/backup_hologram.png",
+			[_._]: "textures/holoprint/ui/menu_sliders_icon.png",
+			[_._]: "textures/holoprint/ui/menu_button_unpressed.png",
+			[_._]: "textures/holoprint/ui/menu_button_pressed.png",
+			[_._]: "textures/holoprint/ui/material_list_button_unpressed.png",
+			[_._]: "textures/holoprint/ui/material_list_button_pressed.png",
+			[_._]: "textures/holoprint/ui/white_circle.png",
+			[_.$]: "textures/holoprint/ui/white_circle.json",
+			[_._]: "textures/holoprint/ui/quick_input_keyboard_hints.png",
 			[_.$]: "ui/_ui_defs.json",
 			[_.$]: "ui/_global_variables.json",
 			[_.$]: "ui/hud_screen.json",
@@ -325,8 +325,8 @@ export async function makePack(structureFiles, config, resourcePackStack = new R
 	
 	entityDescription["materials"]["hologram"] = "holoprint_hologram";
 	entityDescription["materials"]["hologram.wrong_block_overlay"] = "holoprint_hologram.wrong_block_overlay";
-	entityDescription["textures"]["hologram.overlay"] = "textures/entity/overlay";
-	entityDescription["textures"]["hologram.save_icon"] = "textures/particle/save_icon";
+	entityDescription["textures"]["hologram.overlay"] = "textures/holoprint/entity/overlay";
+	entityDescription["textures"]["hologram.save_icon"] = "textures/holoprint/particle/save_icon";
 	entityDescription["animations"]["hologram.align"] = "animation.holoprint.hologram.align";
 	if(config.COORDINATE_LOCK) {
 		entityDescription["animations"]["hologram.coordinate_lock"] = "animation.holoprint.hologram.coordinate_lock";
@@ -393,7 +393,7 @@ export async function makePack(structureFiles, config, resourcePackStack = new R
 	entityDescription["particle_effects"]["saving_backup"] = "holoprint:saving_backup";
 	
 	textureBlobs.forEach(([textureName]) => {
-		entityDescription["textures"][textureName] = `textures/entity/${textureName}`;
+		entityDescription["textures"][textureName] = `textures/holoprint/entity/${textureName}`;
 		hologramRenderControllers["render_controllers"]["controller.render.holoprint.hologram"]["arrays"]["textures"]["Array.textures"].push(`Texture.${textureName}`);
 	});
 	
@@ -493,9 +493,9 @@ export async function makePack(structureFiles, config, resourcePackStack = new R
 		particle["particle_effect"]["components"]["minecraft:particle_expire_if_in_blocks"] = [blockName.includes(":")? blockName : `minecraft:${blockName}`]; // add back minecraft: namespace if it's missing
 		packFiles[`particles/${particleName}.json`] = particle;
 	});
-	packFiles["textures/entity/overlay.png"] = overlayTexture;
+	packFiles["textures/holoprint/entity/overlay.png"] = overlayTexture;
 	textureBlobs.forEach(([textureName, blob]) => {
-		packFiles[`textures/entity/${textureName}.png`] = blob;
+		packFiles[`textures/holoprint/entity/${textureName}.png`] = blob;
 	});
 	if(config.RETEXTURE_CONTROL_ITEMS) {
 		if(!hasModifiedTerrainTexture) {
@@ -1417,13 +1417,14 @@ async function retextureControlItems(config, itemIcons, itemTags, resourceItemTe
 	let legacyItemMappings;
 	let loadingLegacyItemMappingsPromise;
 	let itemIconPatterns = Object.entries(itemIcons).filter(([key]) => key.startsWith("/") && key.endsWith("/")).map(([pattern, itemName]) => [new RegExp(pattern.slice(1, -1), "g"), itemName]);
+	const controlTextureBasePath = "textures/holoprint/icons";
 	await Promise.all(Object.entries(config.CONTROLS).map(async ([control, itemCriteria]) => {
-		let controlTexturePath = `textures/items/~${control.toLowerCase()}.png`; // because texture compositing works alphabetically not in array order, the ~ forces the control texture to always go on top of the actual item texture
-		let controlTexturePromise = fetch(`packTemplate/${controlTexturePath}`).then(res => toImage(res));
+		let controlTexturePromise = fetch(`packTemplate/${controlTextureBasePath}/${control.toLowerCase()}.png`).then(res => toImage(res));
 		let paddedTexturePromise = controlTexturePromise.then(controlTexture => addPaddingToImage(controlTexture, { // make it small in the top-left corner
 			right: 16,
 			bottom: 16
 		}));
+		let controlTexturePath = `${controlTextureBasePath}/~${control.toLowerCase()}`; // because texture compositing works alphabetically not in array order, the ~ forces the control texture to always go on top of the actual item texture
 		let controlItemTextureSizes = new Set();
 		let allItems = expandItemCriteria(itemCriteria, itemTags);
 		await Promise.all(allItems.map(async itemName => {
@@ -1530,13 +1531,13 @@ async function retextureControlItems(config, itemIcons, itemTags, resourceItemTe
 				let safeSize = lcm((await paddedTexturePromise).width, itemTextureSize) * config.CONTROL_ITEM_TEXTURE_SCALE; // When compositing textures, MCBE scales all textures to the maximum, so the size of the overlay control texture has to be the LCM of itself and in-game items. Hence, if in-game items have a higher resolution than expected, they will probably be scaled wrong. The control item texture scale setting will scale them more (but they get reaaaaally big and make the item texture atlas huuuge)
 				controlItemTextureSizes.add(safeSize);
 				(usingTerrainAtlas? terrainTexture : itemTexture)["texture_data"][itemName] = {
-					"textures": [originalTexturePath, `${controlTexturePath.slice(0, -4)}_${safeSize}`],
+					"textures": [originalTexturePath, `${controlTexturePath}_${safeSize}`],
 					"additive": true // texture compositing means resource packs that change the item textures will still work
 				};
 			}
 		}));
 		await Promise.all(Array.from(controlItemTextureSizes).map(async size => {
-			let resizedImagePath = `${controlTexturePath.slice(0, -4)}_${size}.png`;
+			let resizedImagePath = `${controlTexturePath}_${size}.png`;
 			let resizedTextureBlob = await resizeImageToBlob(await paddedTexturePromise, size);
 			controlItemTextures.push([resizedImagePath, resizedTextureBlob]);
 		}));

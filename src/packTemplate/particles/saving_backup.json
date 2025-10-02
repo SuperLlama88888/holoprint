@@ -5,7 +5,7 @@
 			"identifier": "holoprint:saving_backup",
 			"basic_render_parameters": {
 				"material": "particles_blend",
-				"texture": "textures/particle/save_icon"
+				"texture": "textures/holoprint/particle/save_icon"
 			}
 		},
 		"components": {

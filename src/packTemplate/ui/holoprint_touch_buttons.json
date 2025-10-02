@@ -21,16 +21,16 @@
 							"expand_menu_toggle_button@hud_toggle": {
 								"offset": [45, 1],
 								"$toggle_view_binding_name": "expand_menu_toggle",
-								"$button_unpressed_texture": "textures/ui/menu_button_unpressed",
-								"$button_pressed_texture": "textures/ui/menu_button_pressed"
+								"$button_unpressed_texture": "textures/holoprint/ui/menu_button_unpressed",
+								"$button_pressed_texture": "textures/holoprint/ui/menu_button_pressed"
 							}
 						},
 						{
 							"material_list_toggle_button@hud_toggle": {
 								"offset": [-45, 1],
 								"$toggle_view_binding_name": "material_list_toggle",
-								"$button_unpressed_texture": "textures/ui/material_list_button_unpressed",
-								"$button_pressed_texture": "textures/ui/material_list_button_pressed"
+								"$button_unpressed_texture": "textures/holoprint/ui/material_list_button_unpressed",
+								"$button_pressed_texture": "textures/holoprint/ui/material_list_button_pressed"
 							}
 						},
 						{
@@ -381,7 +381,7 @@
 	},
 	"show_full_menu_toggle_icon": {
 		"type": "image",
-		"texture": "textures/ui/menu_sliders_icon"
+		"texture": "textures/holoprint/ui/menu_sliders_icon"
 	},
 	"padding": {
 		"type": "panel",
@@ -408,7 +408,7 @@
 	"control_button@generic_button": {
 		"size": "$holoprint:touch_button_size",
 		"$content": "holoprint:common.invis_armor_stand_holding_item",
-		"$texture": "('textures/ui/' + $icon)"
+		"$texture": "('textures/holoprint/icons/' + $icon)"
 	},
 	"double_control_button": {
 		"type": "panel",
@@ -445,7 +445,7 @@
 			{
 				"icon": {
 					"type": "image",
-					"texture": "('textures/ui/' + $icon)",
+					"texture": "('textures/holoprint/icons/' + $icon)",
 					"size": ["100% - 4px", "100% - 4px"],
 					"layer": 3
 				}
