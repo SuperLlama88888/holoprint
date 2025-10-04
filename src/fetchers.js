@@ -10,6 +10,7 @@ const GITHUB_CDN = "https://cdn.jsdelivr.net/gh";
 const CHANGED_FILES_URL = `${GITHUB_CDN}/SuperLlama88888/holoprint-repository-tracker/lists`;
 const CACHE_URL_PREFIX = "https://cache/";
 const BAD_STATUS_CODES = [429, 500, 502, 503];
+const CACHE_METADATA_CHANGED_FILES_URL = "https://metadata/changedFilesTxt";
 
 /**
  * @param {Parameters<typeof createCachingFetcher>} args
@@ -36,14 +37,14 @@ async function createCachingFetcher(name, owner, repo, version) {
 	let prevCacheName = sortedOldCacheNames.at(-1); // if not found in the current cache, we look at this cache
 	let prevCacheVersion = prevCacheName?.slice(prevCacheName.replace("_", "@").indexOf("@") + 1);
 	let prevCache = prevCacheName && await caches.open(prevCacheName);
-	if(!(await prevCache?.keys())?.length) {
+	if(!(await prevCache?.keys())?.filter(req => !req.url.startsWith("https://metadata/"))?.length) {
 		caches.delete(prevCacheName);
 		prevCacheName = undefined;
 		prevCache = undefined;
 	}
 	prevCacheName && console.debug(`${cacheName} will load old files from ${prevCacheName}`);
 	
-	let changedFilesTxt = prevCacheName && await cache.match("https://metadata/changedFilesTxt").then(res => res?.text());
+	let changedFilesTxt = prevCacheName && await cache.match(CACHE_METADATA_CHANGED_FILES_URL).then(res => res?.text());
 	if(prevCacheName && !changedFilesTxt) {
 		let changedFilesUrl = `${patchUrl}/${prevCacheVersion}_to_${version}.txt`;
 		console.debug(`Loading changed files from ${changedFilesUrl}`);
@@ -55,7 +56,7 @@ async function createCachingFetcher(name, owner, repo, version) {
 				return "";
 			}
 		});
-		cache.put("https://metadata/changedFilesTxt", new Response(changedFilesTxt));
+		cache.put(CACHE_METADATA_CHANGED_FILES_URL, new Response(changedFilesTxt));
 	}
 	let changedFiles = new Set(changedFilesTxt?.split("\n"));
 	
