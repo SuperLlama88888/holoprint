@@ -147,3 +147,108 @@ export class JSONMap extends Map { // very barebones
 	}
 }
 
+/** A set for strings that works with regular expressions. */
+export class PatternSet {
+	#stringDelimiter;
+	/** @type {Set<string>} */
+	#stringValues = new Set();
+	/** @type {RegExp[]} */
+	#patterns = [];
+	/**
+	 * @param {string[]} [values]
+	 * @param {string} [stringDelimiter] If present, values will be split by this substring and treated individually.
+	 */
+	constructor(values, stringDelimiter) {
+		this.#stringDelimiter = stringDelimiter;
+		values?.forEach(value => this.add(value));
+	}
+	/** @param {string} value */
+	add(value) {
+		value.split(this.#stringDelimiter).forEach(v => {
+			if(v.startsWith("/") && v.endsWith("/")) {
+				this.#patterns.push(new RegExp(v.slice(1, -1)));
+			} else {
+				this.#stringValues.add(v);
+			}
+		});
+	}
+	/** @param {string} value */
+	has(value) {
+		return this.#stringValues.has(value) || this.#patterns.some(pattern => pattern.test(value));
+	}
+}
+/**
+ * A map for strings that works with regular expressions.
+ * @template V
+ */
+export class PatternMap {
+	#stringDelimiter;
+	/** @type {Map<string, V>} */
+	#stringEntries = new Map();
+	/** @type {[RegExp, V][]} */
+	#patterns = [];
+	/**
+	 * @param {Iterable<[string, V]>} [entries]
+	 * @param {string} [stringDelimiter] If present, keys will be split by this substring and treated individually.
+	 */
+	constructor(entries = [], stringDelimiter) {
+		this.#stringDelimiter = stringDelimiter;
+		Array.from(entries).forEach(([key, value]) => this.set(key, value));
+	}
+	/**
+	 * @param {string} key
+	 * @param {V} value
+	 */
+	set(key, value) {
+		key.split(this.#stringDelimiter).forEach(k => {
+			if(k.startsWith("/") && k.endsWith("/")) {
+				this.#patterns.push([new RegExp(k.slice(1, -1)), value]);
+			} else {
+				this.#stringEntries.set(k, value);
+			}
+		});
+	}
+	/** @param {string} key */
+	get(key) {
+		return this.#stringEntries.get(key) ?? this.#patterns.find(([pattern]) => pattern.test(key))?.[1];
+	}
+}
+/** A map for string-string entries that works for regular expressions, which can perform replacements on keys. */
+export class ReplacingPatternMap {
+	#stringDelimiter;
+	/** @type {Map<string, string>} */
+	#stringEntries = new Map();
+	/** @type {[RegExp, string][]} */
+	#patterns = [];
+	/**
+	 * @param {Iterable<[string, string]>} [entries]
+	 * @param {string} [stringDelimiter] If present, keys will be split by this substring and treated individually.
+	 */
+	constructor(entries = [], stringDelimiter) {
+		this.#stringDelimiter = stringDelimiter;
+		Array.from(entries).forEach(([key, value]) => this.set(key, value));
+	}
+	/**
+	 * @param {string} key
+	 * @param {string} value
+	 */
+	set(key, value) {
+		key.split(this.#stringDelimiter).forEach(k => {
+			if(k.startsWith("/") && k.endsWith("/")) {
+				this.#patterns.push([new RegExp(k.slice(1, -1)), value]);
+			} else {
+				this.#stringEntries.set(k, value);
+			}
+		});
+	}
+	/** @param {string} key */
+	get(key) {
+		if(this.#stringEntries.has(key)) {
+			return this.#stringEntries.get(key);
+		}
+		let matchingPatternAndReplacement = this.#patterns.find(([pattern]) => pattern.test(key));
+		if(matchingPatternAndReplacement) {
+			return key.replace(...matchingPatternAndReplacement);
+		}
+	}
+}

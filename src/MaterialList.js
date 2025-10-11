@@ -1,4 +1,4 @@
-import { floor, nanToUndefined, removeFalsies } from "./utils.js";
+import { floor, nanToUndefined, PatternMap, removeFalsies, ReplacingPatternMap, tuple } from "./utils.js";
 
 export default class MaterialList {
 	/** @type {Map<string, number>} */
@@ -11,14 +11,10 @@ export default class MaterialList {
 	
 	// I wish I could use import...with to import these from materialListMappings.json, which would have worked with esbuild, but it doesn't let me load JSONC... sad...
 	#ignoredBlocks;
-	#individualBlockToItemMappings;
-	/** @type {[RegExp, string][]} */
-	#blockToItemPatternMappings;
+	#blockToItemMappings;
 	#itemCountMultipliers;
 	#specialBlockEntityProperties;
-	#individualSerializationIdPatches;
-	/** @type {[RegExp, string][]} */
-	#serializationIdPatternPatches;
+	#serializationIdPatches;
 	#blocksMissingSerializationIds;
 	#translationPatches;
 	
@@ -33,29 +29,17 @@ export default class MaterialList {
 		this.#blockMetadata = new Map(blockMetadata["data_items"].map(block => [block["name"], block]));
 		this.#itemMetadata = new Map(itemMetadata["data_items"].map(item => [item["name"], item]));
 		this.#ignoredBlocks = materialListMappings["ignored_blocks"];
-		let blockToItemMappings = Object.entries(materialListMappings["block_to_item_mappings"]);
-		this.#individualBlockToItemMappings = new Map(blockToItemMappings.filter(([blockName]) => !blockName.startsWith("/") && !blockName.endsWith("/")));
-		this.#blockToItemPatternMappings = blockToItemMappings.filter(([pattern]) => pattern.startsWith("/") && pattern.endsWith("/")).map(([pattern, item]) => [new RegExp(pattern.slice(1, -1)), item]);
-		this.#itemCountMultipliers = Object.entries(materialListMappings["item_count_multipliers"]).map(([key, value]) => {
-			let itemNames = [];
-			let patterns = [];
-			key.split(",").forEach(itemNameOrPattern => {
-				if(itemNameOrPattern.startsWith("/") && itemNameOrPattern.endsWith("/")) {
-					patterns.push(new RegExp(itemNameOrPattern.slice(1, -1)));
-				} else {
-					itemNames.push(itemNameOrPattern);
-				}
-			});
+		this.#blockToItemMappings = new ReplacingPatternMap(Object.entries(materialListMappings["block_to_item_mappings"]));
+		this.#itemCountMultipliers = new PatternMap(Object.entries(materialListMappings["item_count_multipliers"]).map(([key, value]) => {
 			if(typeof value == "number") {
-				return [itemNames, patterns, value, ""];
+				return [key, tuple([value, ""])];
 			} else {
-				return [itemNames, patterns, value["multiplier"], value["remove"]];
+				return [key, tuple([value["multiplier"], value["remove"]])];
 			}
-		});
+		}));
 		this.#specialBlockEntityProperties = materialListMappings["special_block_entity_properties"];
 		let serializationIdPatches = Object.entries(materialListMappings["serialization_id_patches"]);
-		this.#individualSerializationIdPatches = new Map(serializationIdPatches.filter(([serializationId]) => !serializationId.startsWith("/") && !serializationId.endsWith("/")));
-		this.#serializationIdPatternPatches = serializationIdPatches.filter(([pattern]) => pattern.startsWith("/") && pattern.endsWith("/")).map(([pattern, serializationId]) => [new RegExp(pattern.slice(1, -1)), serializationId]);
+		this.#serializationIdPatches = new ReplacingPatternMap(serializationIdPatches);
 		this.#blocksMissingSerializationIds = materialListMappings["blocks_missing_serialization_ids"];
 		this.#translationPatches = materialListMappings["translation_patches"];
 		
@@ -73,23 +57,15 @@ export default class MaterialList {
 		if(this.#ignoredBlocks.includes(blockName)) {
 			return;
 		}
-		let itemName = this.#individualBlockToItemMappings.get(blockName);
-		if(!itemName) {
-			let matchingPatternAndReplacement = this.#blockToItemPatternMappings.find(([pattern]) => pattern.test(blockName));
-			if(matchingPatternAndReplacement) {
-				itemName = blockName.replace(...matchingPatternAndReplacement);
-			} else {
-				itemName = blockName;
+		let itemName = this.#blockToItemMappings.get(blockName) ?? blockName;
+		let multiplierMatch = this.#itemCountMultipliers.get(itemName);
+		if(multiplierMatch) {
+			let [multiplier, substringToRemove] = multiplierMatch;
+			count *= multiplier;
+			if(substringToRemove) {
+				itemName = itemName.replaceAll(substringToRemove, "");
 			}
 		}
-		this.#itemCountMultipliers.forEach(([itemNames, patterns, multiplier, substringToRemove]) => {
-			if(itemNames.includes(itemName) || patterns.some(pattern => pattern.test(itemName))) {
-				count *= multiplier;
-				if(substringToRemove != "") {
-					itemName = itemName.replaceAll(substringToRemove, "");
-				}
-			}
-		});
 		if(itemName in this.#specialBlockEntityProperties && typeof block != "string") {
 			let blockEntityProperty = this.#specialBlockEntityProperties[itemName]["prop"];
 			if(blockEntityProperty in (block["block_entity_data"] ?? {})) {
@@ -205,16 +181,7 @@ export default class MaterialList {
 	 * @returns {string}
 	 */
 	#serializationIdToTranslationKey(serializationId) {
-		// @ts-ignore
-		if(this.#individualSerializationIdPatches.has(serializationId)) {
-			// @ts-ignore
-			serializationId = this.#individualSerializationIdPatches.get(serializationId);
-		} else {
-			let matchingPatternAndReplacement = this.#serializationIdPatternPatches.find(([pattern]) => pattern.test(serializationId));
-			if(matchingPatternAndReplacement) {
-				serializationId = serializationId.replace(...matchingPatternAndReplacement);
-			}
-		}
+		serializationId = this.#serializationIdPatches.get(serializationId) ?? serializationId;
 		return serializationId.endsWith(".name")? serializationId : `${serializationId}.name`; // apple, breeze rod, trial keys, warped fungus on a stick, and wind charges end with .name already smh :/
 	}
 	/**

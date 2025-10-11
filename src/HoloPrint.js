@@ -7,7 +7,7 @@ import MaterialList from "./MaterialList.js";
 import PreviewRenderer from "./PreviewRenderer.js";
 
 import entityScripts from "./entityScripts.molang.js";
-import { addPaddingToImage, array2DToMolang, arrayToMolang, awaitAllEntries, weaklyCacheUnaryFunc, concatenateFiles, createNumericEnum, desparseArray, functionToMolang, getFileExtension, hexColorToClampedTriplet, itemCriteriaToMolang, jsonc, JSONMap, JSONSet, lcm, loadTranslationLanguage, max, min, onEvent, overlaySquareImages, pi, removeFalsies, removeFileExtension, resizeImageToBlob, round, setImageOpacity, sha256, toBlob, toImage, translate, transposeMatrix, tuple, UserError } from "./utils.js";
+import { addPaddingToImage, array2DToMolang, arrayToMolang, awaitAllEntries, weaklyCacheUnaryFunc, concatenateFiles, createNumericEnum, desparseArray, functionToMolang, getFileExtension, hexColorToClampedTriplet, itemCriteriaToMolang, jsonc, JSONMap, JSONSet, lcm, loadTranslationLanguage, max, min, onEvent, overlaySquareImages, pi, removeFalsies, removeFileExtension, resizeImageToBlob, round, setImageOpacity, sha256, toBlob, toImage, translate, transposeMatrix, tuple, UserError, ReplacingPatternMap } from "./utils.js";
 import ResourcePackStack from "./ResourcePackStack.js";
 import BlockUpdater from "./BlockUpdater.js";
 import SpawnAnimationMaker from "./SpawnAnimationMaker.js";
@@ -1416,7 +1416,7 @@ async function retextureControlItems(config, itemIcons, itemTags, resourceItemTe
 	let hasModifiedTerrainTexture = false;
 	let legacyItemMappings;
 	let loadingLegacyItemMappingsPromise;
-	let itemIconPatterns = Object.entries(itemIcons).filter(([key]) => key.startsWith("/") && key.endsWith("/")).map(([pattern, itemName]) => [new RegExp(pattern.slice(1, -1), "g"), itemName]);
+	let itemIconsMap = new ReplacingPatternMap(Object.entries(itemIcons));
 	const controlTextureBasePath = "textures/holoprint/icons";
 	await Promise.all(Object.entries(config.CONTROLS).map(async ([control, itemCriteria]) => {
 		let controlTexturePromise = fetch(`packTemplate/${controlTextureBasePath}/${control.toLowerCase()}.png`).then(res => toImage(res));
@@ -1428,14 +1428,7 @@ async function retextureControlItems(config, itemIcons, itemTags, resourceItemTe
 		let controlItemTextureSizes = new Set();
 		let allItems = expandItemCriteria(itemCriteria, itemTags);
 		await Promise.all(allItems.map(async itemName => {
-			if(itemName in itemIcons) {
-				itemName = itemIcons[itemName];
-			} else {
-				let matchingPatternAndReplacement = itemIconPatterns.find(([pattern]) => pattern.test(itemName));
-				if(matchingPatternAndReplacement) {
-					itemName = itemName.replaceAll(...matchingPatternAndReplacement);
-				}
-			}
+			itemName = itemIconsMap.get(itemName) ?? itemName;
 			let variant = -1;
 			if(itemName.includes(".")) {
 				let dotIndex = itemName.indexOf(".");

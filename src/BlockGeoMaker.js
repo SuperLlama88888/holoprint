@@ -2,7 +2,7 @@
 // READ: this also looks pretty comprehensive: https://github.com/MCBE-Development-Wiki/mcbe-dev-home/blob/main/docs/misc/enums/block_shape.md
 // https://github.com/bricktea/MCStructure/blob/main/docs/1.16.201/enums/B.md
 
-import { hexColorToClampedTriplet, JSONSet, max, rotateDeg, conditionallyGroup, mulMat4, tuple, vec2, vec3 } from "./utils.js";
+import { hexColorToClampedTriplet, JSONSet, max, rotateDeg, conditionallyGroup, mulMat4, tuple, vec2, vec3, PatternMap } from "./utils.js";
 
 // https://wiki.bedrock.dev/visuals/material-creations.html#overlay-color-in-render-controllers
 // https://wiki.bedrock.dev/documentation/materials.html#entity-alphatest
@@ -24,9 +24,7 @@ export default class BlockGeoMaker {
 	
 	#globalBlockStateTextureVariants;
 	#blockShapeBlockStateTextureVariants = new Map();
-	#blockNameBlockStateTextureVariants = new Map();
-	/** @type {[RegExp, Data.BlockStateVariants][]} */
-	#blockNamePatternBlockStateTextureVariants = [];
+	#blockNameBlockStateTextureVariants;
 	
 	#cachedBlockShapes = new Map();
 	
@@ -68,15 +66,7 @@ export default class BlockGeoMaker {
 				this.#blockShapeBlockStateTextureVariants.set(blockShape, textureVariantDefs);
 			});
 		});
-		Object.entries(blockStateDefs["texture_variants"]["block_names"] ?? {}).forEach(([blockNames, textureVariantDefs]) => {
-			if(blockNames.startsWith("/") && blockNames.endsWith("/")) {
-				this.#blockNamePatternBlockStateTextureVariants.push([new RegExp(blockNames.slice(1, -1)), textureVariantDefs]);
-			} else {
-				blockNames.split(",").forEach(blockName => {
-					this.#blockNameBlockStateTextureVariants.set(blockName, textureVariantDefs);
-				});
-			}
-		});
+		this.#blockNameBlockStateTextureVariants = new PatternMap(Object.entries(blockStateDefs["texture_variants"]["block_names"] ?? {}), ",");
 	}
 	/**
 	 * Makes poly mesh templates from a block palette.
@@ -697,7 +687,7 @@ export default class BlockGeoMaker {
 			});
 			return variant;
 		}
-		let blockNameSpecificVariants = this.#blockNameBlockStateTextureVariants.get(blockName) ?? this.#blockNamePatternBlockStateTextureVariants.find(([pattern]) => pattern.test(blockName))?.[1];
+		let blockNameSpecificVariants = this.#blockNameBlockStateTextureVariants.get(blockName);
 		if(blockNameSpecificVariants?.["#exclusive_add"]) {
 			let variant = 0;
 			statesAndBlockEntityData.forEach(([blockStateName, blockStateValue]) => {
