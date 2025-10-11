@@ -8,12 +8,18 @@ function parseJsonBigIntSafe(value) { // this function is unused but I'm keeping
 	return JSON.parse(value, (_, x, context) => context && Number.isInteger(x) && !Number.isSafeInteger(x)? BigInt(context.source) : x);
 }
 
-export class Vec2Set {
-	/** @type {Vec2[]} */
+/**
+ * @template A
+ * @template B
+ */
+export class CoupleSet {
+	/** @type {[A, B][]} */
 	values = [];
+	/** @type {Map<A, Map<B, number>>} */
 	#val0s = new Map();
 	/**
-	 * @param {Vec2} value
+	 * Adds a value and returns the index of it in the set.
+	 * @param {[A, B]} value
 	 * @returns {number}
 	 */
 	add(value) {
@@ -30,12 +36,19 @@ export class Vec2Set {
 		return this.values.length - 1;
 	}
 }
-export class Vec3Set {
-	/** @type {Vec3[]} */
+/**
+ * @template A
+ * @template B
+ * @template C
+ */
+export class TripleSet {
+	/** @type {[A, B, C][]} */
 	values = [];
+	/** @type {Map<A, Map<B, Map<C, number>>>} */
 	#val0s = new Map();
 	/**
-	 * @param {Vec3} value
+	 * Adds a value and returns the index of it in the set.
+	 * @param {[A, B, C]} value
 	 * @returns {number}
 	 */
 	add(value) {
@@ -57,6 +70,7 @@ export class Vec3Set {
 		return this.values.length - 1;
 	}
 }
+
 export class JSONSet extends Set {
 	stringify = stringifyJsonBigIntSafe;
 	/** @type {Map<string, number>} */
@@ -133,4 +147,3 @@ export class JSONMap extends Map { // very barebones
 	}
 }
 
-/** @import { Vec2, Vec3 } from "../HoloPrint.js" */

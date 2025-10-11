@@ -1,4 +1,4 @@
-import { JSONMap, min, Vec2Set, Vec3Set, vec3 } from "./utils.js";
+import { JSONMap, min, CoupleSet, TripleSet, vec3 } from "./utils.js";
 
 const stringifyVec3 = "InternalError" in window? vec => vec[0] + "," + vec[1] + "," + vec[2] : vec => `${vec[0]},${vec[1]},${vec[2]}`;
 
@@ -30,9 +30,12 @@ export default class PolyMeshMaker {
 	}
 	/** @returns {PolyMesh} */
 	export() {
-		let positions = new Vec3Set();
-		let normals = new Vec3Set();
-		let uvs = new Vec2Set();
+		/** @type {TripleSet<number, number, number>} */
+		let positions = new TripleSet();
+		/** @type {TripleSet<number, number, number>} */
+		let normals = new TripleSet();
+		/** @type {CoupleSet<number, number>} */
+		let uvs = new CoupleSet();
 		
 		let usedPaletteEntries = Object.entries(this.#blocks).filter(([, val]) => val.length);
 		usedPaletteEntries.sort(([, a], [, b]) => b.length - a.length); // makes more common blocks have smaller indices
