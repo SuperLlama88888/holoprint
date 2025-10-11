@@ -1,7 +1,5 @@
 // These are patches and other things for TextureAtlas.js
 {
-	"$schema": "schemas/textureAtlasMappings.schema.json",
-	
 	"blocks_dot_json_patches": { // just a few inconsistencies here. ideally this doesn't exist. can be generated with: const missingFromBlocksDotJson=async VER=>[...(new Set((await fetch(`https://raw.githubusercontent.com/Mojang/bedrock-samples/${VER}/metadata/vanilladata_modules/mojang-blocks.json`).then(r=>r.json())).data_items.map(x=>x.name.replace("minecraft:","")))).difference(new Set(Object.keys(await fetch(`https://raw.githubusercontent.com/Mojang/bedrock-samples/${VER}/resource_pack/blocks.json`).then(res=>res.json()))))].filter(blockName=>!(["hard_","element_","colored_torch_"].some(prefix=>blockName.startsWith(prefix))||["chemical_heat","compound_creator","lab_table","material_reducer","underwater_torch"].includes(blockName)))
 		"grass_block": "grass",
 		"trip_wire": "tripWire",
@@ -54,5 +52,7 @@
 			"still_water": "water"
 		}
 	},
-	"missing_flipbook_textures": []
+	"missing_flipbook_textures": [],
+	
+	"$schema": "schemas/textureAtlasMappings.schema.json"
 }
