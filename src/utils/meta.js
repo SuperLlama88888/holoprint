@@ -41,8 +41,25 @@ export const doNothing = x => x;
 export const tuple = x => x;
 /** @template T @param {T} _type @returns {T extends any[]? T[number]["prototype"][] : T["prototype"]} */
 export const cast = (x, _type) => x;
-/** @template T @param {T} _type @returns {asserts x is (T extends any[]? T[number]["prototype"][] : T["prototype"])} */
-export const assertAs = (x, _type) => x;
+/**
+ * @template {Function | Function[]} T
+ * @param {T} _type
+ * @returns {asserts x is (T extends any[]? T[number]["prototype"][] : T["prototype"])}
+*/
+export function assertAs(x, _type) {
+	if(typeof _type == "function") {
+		if(!(x instanceof _type)) {
+			throw new Error(`Assert failed: ${x} is not of type ${_type.name}\n${JSON.stringify(x)}`);
+		}
+	} else {
+		let permissibleTypes = Array.from(new Set(_type));
+		permissibleTypes.forEach(t => {
+			if(!(x instanceof t)) {
+				throw new Error(`Assert failed: ${x} is not of type ${t.name}\n${JSON.stringify(x)}`);
+			}
+		});
+	}
+};
 /** Returns the original string when used in a tagged template literal. Only used so the HTML inside can be minified when building, and so VSCode can apply syntax highlighting with the lit-plugin plugin. */
 export function html(strings, ...values) {
 	return strings.reduce((acc, str, i) => acc + str + (values[i] ?? ""), "");
