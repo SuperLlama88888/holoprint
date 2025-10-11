@@ -75,12 +75,14 @@ export function getClassFullName(c) {
 
 /**
  * @template {WeakKey} P
- * @template R
- * @param {(x: P) => R} func
- * @returns {(x: P) => R}
+ * @template {(x: P) => any} F
+ * @param {F} func
+ * @returns {F}
  */
-export function cacheUnaryFunc(func) {
+export function weaklyCacheUnaryFunc(func) {
+	/** @type {WeakMap<P, ReturnType<F>>} */
 	let cache = new WeakMap();
+	// @ts-expect-error
 	return x => {
 		if(cache.has(x)) {
 			return cache.get(x);

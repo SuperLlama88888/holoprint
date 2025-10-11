@@ -24,8 +24,8 @@ declare global {
 		bind<This, NewThis, A extends any[]>(this: This, thisArg: NewThis, ...argArray: A): This extends (this: NewThis, ...args: [...A, ...infer B]) => infer C? (...args: B) => C : never;
 	}
 	interface String {
-		startsWith<S extends string, This extends string>(this: This, searchString: S, position?: 0): This extends `${S}${string}`? true : false;
-		endsWith<S extends string, This extends string>(this: This, searchString: S): This extends `${string}${S}`? true : false;
+		startsWith<S extends string>(searchString: S, position?: 0): this is `${S}${string}`;
+		endsWith<S extends string>(searchString: S): this is `${string}${S}`;
 	}
 	interface JSON {
 		rawJSON(text: string): RawJSON;
