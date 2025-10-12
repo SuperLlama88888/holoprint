@@ -91,6 +91,31 @@ export function getClassFullName(c) {
 }
 
 /**
+ * @template {string | number | boolean} P
+ * @template R
+ * @template {(x: P) => R} F
+ * @param {F} func
+ * @param {(x: P) => boolean} conditionFunc
+ * @param {(x: R) => R} [preReturnFunc]
+ * @returns {F}
+ */
+export function conditionallyCacheUnaryFunc(func, conditionFunc, preReturnFunc = doNothing) {
+	/** @type {Map<P, R>} */
+	let cache = new Map();
+	// @ts-expect-error
+	return x => {
+		if(conditionFunc(x)) {
+			if(cache.has(x)) {
+				return preReturnFunc(cache.get(x));
+			}
+			let res = func(x);
+			cache.set(x, res);
+			return preReturnFunc(res);
+		}
+		return func(x);
+	};
+}
+/**
  * @template {WeakKey} P
  * @template {(x: P) => any} F
  * @param {F} func

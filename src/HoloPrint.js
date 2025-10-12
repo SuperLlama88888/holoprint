@@ -7,7 +7,7 @@ import MaterialList from "./MaterialList.js";
 import PreviewRenderer from "./PreviewRenderer.js";
 
 import entityScripts from "./entityScripts.molang.js";
-import { addPaddingToImage, array2DToMolang, arrayToMolang, awaitAllEntries, weaklyCacheUnaryFunc, concatenateFiles, createNumericEnum, desparseArray, functionToMolang, getFileExtension, hexColorToClampedTriplet, itemCriteriaToMolang, jsonc, JSONMap, JSONSet, lcm, loadTranslationLanguage, max, min, onEvent, overlaySquareImages, pi, removeFalsies, removeFileExtension, resizeImageToBlob, round, setImageOpacity, sha256, toBlob, toImage, translate, transposeMatrix, tuple, UserError, ReplacingPatternMap } from "./utils.js";
+import { addPaddingToImage, array2DToMolang, arrayToMolang, awaitAllEntries, weaklyCacheUnaryFunc, concatenateFiles, createNumericEnum, desparseArray, functionToMolang, getFileExtension, hexColorToClampedTriplet, itemCriteriaToMolang, jsonc, JSONMap, JSONSet, lcm, loadTranslationLanguage, max, min, onEvent, overlaySquareImages, pi, removeFalsies, removeFileExtension, resizeImageToBlob, round, setImageOpacity, sha256, toBlob, toImage, translate, transposeMatrix, tuple, UserError, ReplacingPatternMap, conditionallyCacheUnaryFunc } from "./utils.js";
 import ResourcePackStack from "./ResourcePackStack.js";
 import BlockUpdater from "./BlockUpdater.js";
 import SpawnAnimationMaker from "./SpawnAnimationMaker.js";
@@ -780,6 +780,14 @@ function getInvalidMcstructureErrorMessage(structureFile, nbt) {
 	}
 	return errorMessage;
 }
+const fetchPackTemplateFile = conditionallyCacheUnaryFunc(
+	/** @param {string} path @returns {Promise<Response>} */
+	function(path) { // typescript doesn't detect the template parameter correctly if it's an arrow function
+		return fetch(`packTemplate/${path}`);
+	},
+	path => path.startsWith("textures/holoprint/icons"), // only cache icon textures. they're fetched in two different places and I couldn't beb bothered to store them in variables somewhere.
+	resPromise => resPromise.then(res => res.clone()) // response bodies can only be consumed once, so they must be cloned
+);
 /**
  * @template {string} F
  * @template {string} [N = ""]
@@ -790,7 +798,7 @@ function getInvalidMcstructureErrorMessage(structureFile, nbt) {
  * @param {{ [K in keyof T]: T[K] }} packTemplateFiles
  */
 function loadPackTemplate(packTemplateFiles) {
-	return multiload(packTemplateFiles, path => fetch(`packTemplate/${path}`));
+	return multiload(packTemplateFiles, fetchPackTemplateFile);
 }
 /**
  * @template {Record<string, string>} T
@@ -1419,7 +1427,7 @@ async function retextureControlItems(config, itemIcons, itemTags, resourceItemTe
 	let itemIconsMap = new ReplacingPatternMap(Object.entries(itemIcons));
 	const controlTextureBasePath = "textures/holoprint/icons";
 	await Promise.all(Object.entries(config.CONTROLS).map(async ([control, itemCriteria]) => {
-		let controlTexturePromise = fetch(`packTemplate/${controlTextureBasePath}/${control.toLowerCase()}.png`).then(res => toImage(res));
+		let controlTexturePromise = fetchPackTemplateFile(`${controlTextureBasePath}/${control.toLowerCase()}.png`).then(res => toImage(res));
 		let paddedTexturePromise = controlTexturePromise.then(controlTexture => addPaddingToImage(controlTexture, { // make it small in the top-left corner
 			right: 16,
 			bottom: 16
