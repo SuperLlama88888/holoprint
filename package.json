@@ -1,0 +1,6 @@
+{
+	"scripts": {
+		"lint": "tsc 2>&1 | grep -Ev 'TS2307|TS2694'",
+		"build": "cd pipeline && [ -d \"node_modules\" ] || npm ci && npm run build"
+	}
+}
