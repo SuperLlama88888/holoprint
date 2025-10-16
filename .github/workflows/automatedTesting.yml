@@ -17,7 +17,7 @@ jobs:
       - name: Validate JSON Data
         run: |
           npm ci -w validate_json_data
-          node run test -w validate_json_data
+          npm run test -w validate_json_data
   check-block-translation-coverage:
     name: Check Block Translation Coverage
     needs: validate-json-data
@@ -30,7 +30,7 @@ jobs:
       - name: Check block translation coverage
         run: |
           npm ci -w check_block_translation_coverage
-          node run test -w check_block_translation_coverage
+          npm run test -w check_block_translation_coverage
   test-sample-structures:
     name: Test Sample Structures
     needs: [validate-json-data, check-block-translation-coverage]
