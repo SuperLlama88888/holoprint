@@ -4,11 +4,11 @@ import * as path from "path";
 
 import { test, plainTextHeaders, browserEngine } from "../headlessBrowserTestRunner.js";
 
-const packUploadDir = path.join(import.meta.dirname, "completedPacks");
+const packUploadDir = path.join(import.meta.dirname, "../completedPacks");
 if(!fs.existsSync(packUploadDir)) {
 	fs.mkdirSync(packUploadDir);
 }
-const screenshotUploadDir = path.join(import.meta.dirname, "screenshots");
+const screenshotUploadDir = path.join(import.meta.dirname, "../screenshots");
 if(!fs.existsSync(screenshotUploadDir)) {
 	fs.mkdirSync(screenshotUploadDir);
 }
