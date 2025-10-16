@@ -1,2 +1,4 @@
 **/node_modules
 dist
+tests/testSampleStructures/completedPacks
+tests/testSampleStructures/screenshots

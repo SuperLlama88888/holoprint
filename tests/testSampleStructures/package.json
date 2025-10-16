@@ -1,0 +1,12 @@
+{
+	"name": "test_sample_structures",
+	"type": "module",
+	"scripts": {
+		"test": "npm run build -w root --include-workspace-root -- -- --export-holoprint-lib && node index.js"
+	},
+	"devDependencies": {
+		"@actions/core": "^1.11.1",
+		"mime-types": "^3.0.1",
+		"puppeteer": "^24.25.0"
+	}
+}

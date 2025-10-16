@@ -2,7 +2,7 @@ import * as ghActionsCore from "@actions/core";
 import * as fs from "fs";
 import * as path from "path";
 
-import { test, plainTextHeaders, browserEngine } from "./headlessBrowserTestRunner.js";
+import { test, plainTextHeaders, browserEngine } from "../headlessBrowserTestRunner.js";
 
 const packUploadDir = path.join(import.meta.dirname, "completedPacks");
 if(!fs.existsSync(packUploadDir)) {
@@ -15,11 +15,11 @@ if(!fs.existsSync(screenshotUploadDir)) {
 
 test(async page => {
 	let testStructurePaths = [];
-	fs.readdirSync(path.join(import.meta.dirname, "sampleStructures")).forEach(filePath => {
+	fs.readdirSync(path.join(import.meta.dirname, "../sampleStructures")).forEach(filePath => {
 		if(!filePath.endsWith(".mcstructure")) {
 			ghActionsCore.error(`The tests/testStructures folder can only have .mcstructure files; found ${filePath}!`);
 		}
-		testStructurePaths.push(path.join("tests/sampleStructures", filePath));
+		testStructurePaths.push(path.join(import.meta.dirname, "../../tests/sampleStructures", filePath));
 	});
 	
 	let totalTime = 0;
@@ -30,6 +30,7 @@ test(async page => {
 		let structureFileContent = fs.readFileSync(structurePath).toString("base64");
 		try {
 			totalTime += await page.evaluate(async (structureFileName, structureFileContent, browserEngine) => {
+				/** @type {import("../../src/HoloPrint.js")} */
 				const HoloPrint = await import("../index.js"); // testing workflow makes index.js export everything from HoloPrint.js
 				
 				console.group(`Testing ${structureFileName}...`);
@@ -71,7 +72,7 @@ test(async page => {
 		ghActionsCore.endGroup();
 	}
 	let timePerPack = totalTime / packsCreated;
-	console.info(`Finished creating ${packsCreated}/${testStructurePaths.length} resource packs in ${totalTime.toFixed(0) / 1000}s (${timePerPack.toFixed(0) / 1000}s/pack)!`);
+	console.info(`Finished creating ${packsCreated}/${testStructurePaths.length} resource packs in ${+totalTime.toFixed(0) / 1000}s (${+timePerPack.toFixed(0) / 1000}s/pack)!`);
 	
 	return packsCreated == testStructurePaths.length;
 }, (req, res, page) => {

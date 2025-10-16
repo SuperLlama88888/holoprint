@@ -9,7 +9,7 @@ let ajv = new Ajv({
 });
 
 try {
-	process.chdir(path.resolve(import.meta.dirname, "../src/data"));
+	process.chdir(path.resolve(import.meta.dirname, "../../src/data"));
 	validateJsonFiles();
 } catch(e) {
 	ghActionsCore.setFailed(`Action failed with error: ${e.message}`);
