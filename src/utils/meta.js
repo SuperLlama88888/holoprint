@@ -53,11 +53,9 @@ export function assertAs(x, _type) {
 		}
 	} else {
 		let permissibleTypes = Array.from(new Set(_type));
-		permissibleTypes.forEach(t => {
-			if(!(x instanceof t)) {
-				throw new Error(`Assert failed: ${x} is not of type ${t.name}\n${JSON.stringify(x)}`);
-			}
-		});
+		if(!permissibleTypes.some(t => x instanceof t)) {
+			throw new Error(`Assert failed: ${x} is not of type ${permissibleTypes.join(" | ")}\n${JSON.stringify(x)}`);
+		}
 	}
 };
 /** Returns the original string when used in a tagged template literal. Only used so the HTML inside can be minified when building, and so VSCode can apply syntax highlighting with the lit-plugin plugin. */
