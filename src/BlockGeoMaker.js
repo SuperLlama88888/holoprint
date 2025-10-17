@@ -385,7 +385,7 @@ export default class BlockGeoMaker {
 					if("rot" in cube) {
 						vertex["pos"] = this.#applyEulerRotation(vertex["pos"], cube["rot"], cube["pivot"] ?? [8, 8, 8]);
 					}
-					cube["extra_rots"]?.reverse()?.forEach(extraRot => {
+					cube["extra_rots"]?.slice()?.reverse()?.forEach(extraRot => {
 						vertex["pos"] = this.#applyEulerRotation(vertex["pos"], extraRot["rot"], extraRot["pivot"]);
 					});
 					if("translate" in cube) {

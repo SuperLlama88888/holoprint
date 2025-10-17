@@ -1,7 +1,7 @@
 import { dispatchInputEvents } from "./dom.js";
 
 /**
- * Sets a file input's files and dispatches input an dchange events.
+ * Sets a file input's files and dispatches input and change events.
  * @param {HTMLInputElement} fileInput
  * @param {FileList | File[]} files
  */

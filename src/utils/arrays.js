@@ -95,7 +95,7 @@ export function createSymbolicEnum(keys) {
 	return Object.freeze(Object.fromEntries(keys.map(key => [key, Symbol(key)])));
 }
 /**
- * Crates a pseudo-enumeration using strings.
+ * Creates a pseudo-enumeration using strings.
  * @template {string} T
  * @param {T[]} keys
  * @returns {Readonly<Record<T, string>>}
