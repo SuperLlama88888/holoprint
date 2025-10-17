@@ -71,37 +71,44 @@ export class TripleSet {
 	}
 }
 
-export class JSONSet extends Set {
+/** @template T */
+export class JSONSet {
+	/** @type {(value: T) => string} */
 	stringify = stringifyJsonBigIntSafe;
+	/** @type {Set<string>} */
+	#set = new Set();
 	/** @type {Map<string, number>} */
 	#indices = new Map();
+	/** @type {T[]} */
 	#actualValues = [];
+	/** @param {T[]} [values] */
 	constructor(values) {
-		super();
 		values?.forEach(value => this.add(value));
 	}
-	/** Not part of regular sets! Constant time indexing. */
+	/**
+	 * Not part of regular sets! Constant time indexing.
+	 * @param {T} value
+	 */
 	indexOf(value) {
 		return this.#indices.get(this.stringify(value));
 	}
+	/** @param {T} value */
 	add(value) {
 		let stringifiedValue = this.stringify(value);
 		if(!this.#indices.has(stringifiedValue)) {
 			this.#indices.set(stringifiedValue, this.size);
 			this.#actualValues.push(structuredClone(value));
 		}
-		return super.add(stringifiedValue);
+		return this.#set.add(stringifiedValue);
 	}
-	delete(value) {
-		return super.delete(this.stringify(value));
-	}
+	/** @param {T} value */
 	has(value) {
-		return super.has(this.stringify(value))
+		return this.#set.has(this.stringify(value))
 	}
 	clear() {
 		this.#indices.clear();
 		this.#actualValues = [];
-		return super.clear();
+		this.#set.clear();
 	}
 	[Symbol.iterator]() {
 		return this.#actualValues.values();
@@ -116,6 +123,9 @@ export class JSONSet extends Set {
 	}
 	values() {
 		return this[Symbol.iterator]();
+	}
+	get size() {
+		return this.#set.size;
 	}
 }
 /**

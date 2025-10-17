@@ -261,7 +261,7 @@ export default class TextureAtlas {
 	}
 	/**
 	 * Loads images from a set of tinted texture paths.
-	 * @param {Set<TextureFragment>} textureFragments
+	 * @param {JSONSet<TextureFragment>} textureFragments
 	 * @returns {Promise<ImageFragment[]>}
 	 */
 	async #loadImages(textureFragments) {
