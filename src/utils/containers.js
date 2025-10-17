@@ -137,29 +137,42 @@ export class JSONSet {
 /**
  * @template K
  * @template V
- * @extends {Map<any, V>}
  */
-export class JSONMap extends Map { // very barebones
+export class JSONMap { // very barebones
+	/** @type {(key: K) => string} */
 	stringify = stringifyJsonBigIntSafe;
+	/** @type {Map<string, V>} */
+	#entries = new Map();
+	/**
+	 * @param {[K, V][]} [entries]
+	 * @param {(key: K) => string} [stringifyFunc]
+	 */
 	constructor(entries, stringifyFunc) {
-		super();
-		entries?.forEach(([key, value]) => this.set(key, value));
 		if(stringifyFunc) {
 			this.stringify = stringifyFunc;
 		}
+		entries?.forEach(([key, value]) => this.set(key, value));
 	}
+	/** @param {K} key */
 	get(key) {
-		return super.get(this.stringify(key));
+		return this.#entries.get(this.stringify(key));
 	}
+	/** @param {K} key */
 	has(key) {
-		return super.has(this.stringify(key));
+		return this.#entries.has(this.stringify(key));
 	}
 	/**
 	 * @param {K} key
 	 * @param {V} value
 	 */
 	set(key, value) {
-		return super.set(this.stringify(key), value);
+		return this.#entries.set(this.stringify(key), value);
+	}
+	clear() {
+		this.#entries.clear();
+	}
+	get size() {
+		return this.#entries.size;
 	}
 }
 

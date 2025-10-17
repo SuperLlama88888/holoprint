@@ -917,6 +917,7 @@ async function tweakBlockPalette(structure, ignoredBlocks) {
 	
 	// add block entities into the block palette (on layer 0)
 	let indices = structure["block_indices"];
+	/** @type {JSONMap<NBTBlock, number>} */
 	let newIndexCache = new JSONMap();
 	let entitylessBlockEntityIndices = new Set(); // contains all the block palette indices for blocks with block entities. since they don't have block entity data yet, and all block entities well be cloned and added to the end of the palette, we can remove all the entries in here from the palette.
 	let blockPositionData = structure["palette"]["default"]["block_position_data"];
