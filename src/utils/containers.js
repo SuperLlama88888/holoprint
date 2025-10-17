@@ -14,7 +14,7 @@ function parseJsonBigIntSafe(value) { // this function is unused but I'm keeping
  */
 export class CoupleSet {
 	/** @type {[A, B][]} */
-	values = [];
+	#values = [];
 	/** @type {Map<A, Map<B, number>>} */
 	#val0s = new Map();
 	/**
@@ -31,9 +31,12 @@ export class CoupleSet {
 		if(val1s.has(value[1])) {
 			return val1s.get(value[1]);
 		}
-		val1s.set(value[1], this.values.length);
-		this.values.push(value);
-		return this.values.length - 1;
+		val1s.set(value[1], this.#values.length);
+		this.#values.push(value);
+		return this.#values.length - 1;
+	}
+	get values() {
+		return this.#values;
 	}
 }
 /**
@@ -43,7 +46,7 @@ export class CoupleSet {
  */
 export class TripleSet {
 	/** @type {[A, B, C][]} */
-	values = [];
+	#values = [];
 	/** @type {Map<A, Map<B, Map<C, number>>>} */
 	#val0s = new Map();
 	/**
@@ -65,9 +68,12 @@ export class TripleSet {
 		if(val2s.has(value[2])) {
 			return val2s.get(value[2]);
 		}
-		val2s.set(value[2], this.values.length);
-		this.values.push(value);
-		return this.values.length - 1;
+		val2s.set(value[2], this.#values.length);
+		this.#values.push(value);
+		return this.#values.length - 1;
+	}
+	get values() {
+		return this.#values;
 	}
 }
 
