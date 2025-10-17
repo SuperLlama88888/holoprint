@@ -1,4 +1,4 @@
-import { abs, assertAs, AsyncFactory, cosDeg, distanceSquared, downloadFile, JSONSet, max, min, pi, round, sinDeg, subVec2, tanDeg, toImageData, tuple } from "./utils.js";
+import { abs, assertAs, AsyncFactory, cosDeg, distanceSquared, downloadFile, JSONSet, max, min, pi, round, sinDeg, tanDeg, toImageData, tuple, vec2 } from "./utils.js";
 import PolyMeshMaker from "./PolyMeshMaker.js";
 
 import Stats from "stats.js"; // library not a file
@@ -228,7 +228,7 @@ export default class PreviewRenderer extends AsyncFactory {
 		}
 		
 		// let animator = this.#viewer.getModel().animator;
-		// let animation = this.animations["animations"]["animation.armor_stand.hologram.spawn"];
+		// let animation = this.animations["animations"]["animation.holoprint.hologram.spawn"];
 		// Object.values(animation["bones"] ?? {}).map(bone => Object.values(bone).forEach(animationChannel => {
 		// 	animationChannel["Infinity"] = Object.values(animationChannel).at(-1); // hold last keyframe.
 		// }));
@@ -586,7 +586,7 @@ export default class PreviewRenderer extends AsyncFactory {
 			let ys = uvCoords.map(([, y]) => round((1 - y) * this.#imageBlobData.height));
 			let minUvCoords = tuple([min(...xs), min(...ys)]);
 			let maxUvCoords = tuple([max(...xs), max(...ys)]);
-			let unscaledUvSize = subVec2(maxUvCoords, minUvCoords);
+			let unscaledUvSize = vec2.sub(maxUvCoords, minUvCoords);
 			let uv = [minUvCoords[0], minUvCoords[1]];
 			let uvSize = [unscaledUvSize[0], unscaledUvSize[1]];
 			return { uv, uvSize };

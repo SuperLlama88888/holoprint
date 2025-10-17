@@ -1,0 +1,13 @@
+{
+	"name": "root",
+	"type": "module",
+	"scripts": {
+		"lint": "tsc 2>&1 | grep -Ev 'TS2307|TS2694'",
+		"test:all": "npm run test --workspaces --if-present",
+		"build": "npm run build -w pipeline"
+	},
+	"workspaces": [
+		"pipeline",
+		"tests/**"
+	]
+}

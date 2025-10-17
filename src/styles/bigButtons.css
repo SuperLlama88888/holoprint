@@ -1,0 +1,56 @@
+#generatePackButton, .packInfoButton {
+	margin: 4px auto;
+	padding: 10px;
+	box-sizing: border-box;
+	width: 70%;
+	display: block;
+	
+	border-width: 3px;
+	border-radius: 25px;
+	text-align: center;
+	font-size: 1.4em;
+	font-weight: 500;
+}
+.packInfoButton {
+	--bg-col-1: var(--input-bg-checked);
+	--bg-col-2: var(--border-col);
+	background-image: repeating-linear-gradient(150deg, var(--bg-col-1) 0, var(--bg-col-1) 10px, var(--bg-col-2) 10px, var(--bg-col-2) 20px);
+	background-size: 200% !important;
+	border-color: var(--bg-col-2);
+	transition: transform 0.15s;
+	min-width: min-content;
+	
+	&:not(.finished) {
+		cursor: wait;
+	}
+	&.completed {
+		animation: moveButtonBackground 1s linear infinite;
+		&:hover {
+			transform: scale(1.05);
+		}
+		&:active {
+			transform: scale(1.02);
+		}
+	}
+	&.failed, &.reportIssue {
+		--bg-col-1: #ee5350;
+		--bg-col-2: #e43b37;
+	}
+	&.failed {
+		cursor: initial;
+	}
+	&.reportIssue {
+		cursor: pointer;
+		&:hover {
+			transform: scale(1.035);
+		}
+		&:active {
+			transform: scale(1.01);
+		}
+	}
+}
+@keyframes moveButtonBackground {
+	from {
+		background-position: -40px 0;
+	}
+}

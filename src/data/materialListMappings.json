@@ -1,10 +1,7 @@
 // These are patches and remappings for MaterialList.js
 {
-	"$schema": "schemas/materialListMappings.schema.json",
-	
 	"ignored_blocks": ["flowing_water", "flowing_lava", "bubble_column"], // these don't appear to be used anymore
 	"block_to_item_mappings": {
-		"chain": "iron_chain",
 		"unpowered_repeater": "repeater",
 		"powered_repeater": "repeater",
 		"unpowered_comparator": "comparator",
@@ -108,7 +105,9 @@
 	"translation_patches": {
 		"tile.end_portal.name": "End Portal",
 		"tile.end_gateway.name": "End Gateway"
-	}
+	},
+	
+	"$schema": "schemas/materialListMappings.schema.json"
 }
 /*
 ➖🟩🟩🟩

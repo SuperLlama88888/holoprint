@@ -1,0 +1,41 @@
+fieldset.expandable {
+	display: grid;
+	grid-template-rows: 0fr;
+	transition: grid-template-rows 0.35s;
+	
+	&:has(legend input:checked) {
+		grid-template-rows: 1fr;
+	}
+	& > *:not(legend) {
+		overflow: hidden;
+	}
+	& > legend {
+		contain: layout;
+		& > label {
+			padding-left: 1em;
+			cursor: pointer;
+			& > input {
+				display: none;
+			}
+		}
+		&::before {
+			content: "";
+			margin: auto;
+			display: inline-block;
+			position: absolute;
+			left: 3px;
+			top: 3px;
+			bottom: 0;
+			width: 0.5em;
+			height: 0.5em;
+			border-right: 1px solid currentColor;
+			border-top: 1px solid currentColor;
+			transform: rotate(45deg);
+			transform-origin: 75% 25%;
+			transition: transform 0.35s;
+		}
+	}
+	&:has(legend input:checked) > legend::before {
+		transform: rotate(135deg);
+	}
+}

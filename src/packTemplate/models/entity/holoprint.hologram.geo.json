@@ -1,0 +1,91 @@
+{
+	"format_version": "1.16.0",
+	"minecraft:geometry": [
+		{
+			"description": {}, // this is a template for everything else
+			"bones": [
+				{
+					"name": "hologram_alignment_wrapper"
+				},
+				{
+					"name": "hologram_offset_wrapper",
+					"parent": "hologram_alignment_wrapper"
+				}
+			]
+		},
+		{
+			"description": {
+				"identifier": "geometry.holoprint.hologram.wrong_block_overlay",
+				"texture_width": 16,
+				"texture_height": 16
+			},
+			"bones": [
+				{
+					"name": "hologram_alignment_wrapper"
+				},
+				{
+					"name": "hologram_offset_wrapper",
+					"parent": "hologram_alignment_wrapper"
+				},
+				{
+					"name": "wrong_block_overlay",
+					"parent": "hologram_offset_wrapper",
+					"cubes": [
+						{
+							"origin": [-8, 0, -8],
+							"size": [16, 16, 16],
+							"inflate": 0.01,
+							"uv": [0, 0]
+						}
+					]
+				}
+			]
+		},
+		{
+			"description": {
+				"identifier": "geometry.holoprint.hologram.valid_structure_overlay",
+				"texture_width": 16,
+				"texture_height": 16
+			},
+			"bones": [
+				{
+					"name": "hologram_alignment_wrapper"
+				},
+				{
+					"name": "hologram_offset_wrapper",
+					"parent": "hologram_alignment_wrapper"
+				},
+				{
+					"name": "valid_structure_overlay",
+					"parent": "hologram_offset_wrapper",
+					"cubes": [
+						{
+							"origin": [0, 0, 0],
+							"size": [16, 16, 16],
+							"uv": [0, 0]
+						}
+					]
+				}
+			]
+		},
+		{
+			"description": {
+				"identifier": "geometry.holoprint.hologram.particle_alignment",
+				"texture_width": 16,
+				"texture_height": 16
+			},
+			"bones": [
+				{
+					"name": "hologram_alignment_wrapper"
+				},
+				{
+					"name": "hologram_offset_wrapper",
+					"parent": "hologram_alignment_wrapper",
+					"locators": {
+						"hologram_root": [0, 0, 0]
+					}
+				}
+			]
+		}
+	]
+}

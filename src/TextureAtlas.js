@@ -1,4 +1,4 @@
-import { addVec2, ceil, floor, hexColorToClampedTriplet, JSONSet, max, range, stringToImageData, subVec2, toImage, toImageData, tuple } from "./utils.js";
+import { ceil, floor, hexColorToClampedTriplet, JSONSet, max, range, stringToImageData, toImage, toImageData, tuple, vec2 } from "./utils.js";
 import TGALoader from "tga-js"; // We could use dynamic import as this isn't used all the time but it's so small it won't matter
 import potpack from "potpack";
 import ResourcePackStack from "./ResourcePackStack.js";
@@ -261,7 +261,7 @@ export default class TextureAtlas {
 	}
 	/**
 	 * Loads images from a set of tinted texture paths.
-	 * @param {Set<TextureFragment>} textureFragments
+	 * @param {JSONSet<TextureFragment>} textureFragments
 	 * @returns {Promise<ImageFragment[]>}
 	 */
 	async #loadImages(textureFragments) {
@@ -359,13 +359,15 @@ export default class TextureAtlas {
 			let pixelsHash = this.#hashPixels(imageFragment);
 			if(hashBuckets.has(pixelsHash)) {
 				let [oldFrag, oldI] = hashBuckets.get(pixelsHash);
-				if(oldFrag.w == imageFragment.w && oldFrag.h == imageFragment.h && this.#checkImageDataEquivalence(oldFrag.imageData, imageFragment.imageData, oldFrag.sourceX, oldFrag.sourceY, imageFragment.sourceX, imageFragment.sourceY, imageFragment.w, imageFragment.h)) {
-					identicalFragmentIndices.set(i, oldI);
-					imageFragment["w"] = 0; // prevent potpack from giving space to them (these fragments aren't used anyway)
-					imageFragment["h"] = 0;
-					return;
+				if(oldFrag.w == imageFragment.w && oldFrag.h == imageFragment.h) {
+					if(this.#checkImageDataEquivalence(oldFrag.imageData, imageFragment.imageData, oldFrag.sourceX, oldFrag.sourceY, imageFragment.sourceX, imageFragment.sourceY, imageFragment.w, imageFragment.h)) {
+						identicalFragmentIndices.set(i, oldI);
+						imageFragment["w"] = 0; // prevent potpack from giving space to them (these fragments aren't used anyway)
+						imageFragment["h"] = 0;
+						return;
+					}
+					console.debug("Extremely rare hash collision! 0.000000023283% chance!");
 				}
-				console.debug("Extremely rare hash collision! 0.000000023283% chance!");
 			}
 			hashBuckets.set(pixelsHash, [imageFragment, i]);
 			imageFragment["actualSize"] = [imageFragment["w"], imageFragment["h"]]; // since we're modifying w/h, we need to keep references to everything before.
@@ -418,9 +420,9 @@ export default class TextureAtlas {
 			let destPos = tuple([imageFragment.x, imageFragment.y]);
 			let textureSize = tuple([imageFragment.w, imageFragment.h]);
 			// console.table({sourcePos,textureSize,destPos})
-			ctx.putImageData(imageFragment.imageData, ...subVec2(destPos, sourcePos), ...sourcePos, ...textureSize); // when drawing image data, the source position and size crop it but don't move it back to the original destination position, meaning it must be offset.
+			ctx.putImageData(imageFragment.imageData, ...vec2.sub(destPos, sourcePos), ...sourcePos, ...textureSize); // when drawing image data, the source position and size crop it but don't move it back to the original destination position, meaning it must be offset.
 			let imageUv = {
-				"uv": addVec2(destPos, imageFragment["offset"]),
+				"uv": vec2.add(destPos, imageFragment["offset"]),
 				"uv_size": imageFragment["actualSize"],
 				"transparency": NaN
 			};

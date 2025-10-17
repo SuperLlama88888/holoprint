@@ -1,0 +1,30 @@
+.multiTabCont {
+	display: flex;
+	flex-wrap: wrap;
+	justify-content: space-evenly;
+	
+	& > input[type="radio"][name^="configTabs"] {
+		position: absolute; /* stay at top */
+		display: none;
+	}
+	& > label {
+		flex: 1 1 0;
+		text-align: center;
+		margin: 10px 5px 5px;
+	}
+	&:nth-child(2) > label {
+		margin: 0 5px 5px;
+	}
+	& > fieldset {
+		width: 100%;
+		order: 1;
+		contain: layout;
+	}
+	& > input[type="radio"][name^="configTabs"]:checked + label {
+		background: var(--input-bg-checked);
+		font-weight: 500;
+	}
+	& > input[type="radio"][name^="configTabs"]:not(:checked) + label + fieldset {
+		display: none;
+	}
+}

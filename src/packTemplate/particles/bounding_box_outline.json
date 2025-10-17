@@ -5,7 +5,7 @@
 			"identifier": "holoprint:bounding_box_outline",
 			"basic_render_parameters": {
 				"material": "particles_opaque",
-				"texture": "textures/particle/single_white_pixel"
+				"texture": "textures/holoprint/particle/single_white_pixel"
 			}
 		},
 		"components": {

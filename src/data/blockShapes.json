@@ -1,7 +1,5 @@
 // Originally from https://github.com/RavinMaddHatter/Structura/blob/main/data/block_definition.json which is an adapated list of an adapted list of the official blockshape entries in blocks.json from the BE 1.5 resources.
 {
-	"$schema": "schemas/blockShapes.schema.json",
-	
 	"patterns": { // Regular expressions that will be tested if no individual block key is found
 		"(?<!double.*)_slab$": "slab",
 		"double_.*slab$": "double_slab", // cut copper slabs have the "double" earlier.
@@ -262,5 +260,7 @@
 		"dried_ghast": "dried_ghast"
 		
 		// "dirt": "debug_auto_uv_4" // must disable geometry merging
-	}
+	},
+	
+	"$schema": "schemas/blockShapes.schema.json"
 }

@@ -1,7 +1,5 @@
 // These are definitions for blocks which have a constant terrain texture variant and don't look at block states for variants.
 {
-	"$schema": "schemas/blockEigenvariants.schema.json",
-	
 	"grass_block": 0, // for the tints; this makes it look like the forest or flower forest biomes
 	"grass_path": 0, // down texture uses dirt instead of flattened_dirt :/
 	"unpowered_repeater": 0,
@@ -51,5 +49,7 @@
 	"prismarine_stairs": 0,
 	"sandstone_stairs": 0,
 	"red_sandstone_stairs": 0,
-	"netherreactor": 0
+	"netherreactor": 0,
+	
+	"$schema": "schemas/blockEigenvariants.schema.json"
 }

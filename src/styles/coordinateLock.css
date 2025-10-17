@@ -1,0 +1,43 @@
+#coordinateLockCoordsCont {
+	padding: 5px;
+	border: 3px dotted #AAA;
+	border-radius: 10px;
+}
+#coordinateLockStructureCoords {
+	margin: 2px 0;
+	display: grid;
+	grid-template-columns: minmax(0, max-content) max-content max-content;
+	align-items: center;
+	gap: 2px 5px;
+	
+	> :first-child {
+		overflow: hidden;
+		text-overflow: ellipsis;
+	}
+	> :nth-child(3n) {
+		span {
+			font-size: 20px;
+			&:last-child { /* degrees sign is too small with the regular font */
+				font-family: serif;
+			}
+		}
+		input {
+			width: 38px;
+		}
+	}
+}
+#coordinateLockCoordsAdjustmentCont {
+	margin-top: 3px;
+	display: flex;
+	align-items: center;
+	gap: 5px;
+	> :first-child {
+		white-space: nowrap;
+	}
+	> :last-child {
+		flex: 1;
+		> span {
+			display: inline-block;
+		}
+	}
+}

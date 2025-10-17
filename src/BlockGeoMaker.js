@@ -2,7 +2,7 @@
 // READ: this also looks pretty comprehensive: https://github.com/MCBE-Development-Wiki/mcbe-dev-home/blob/main/docs/misc/enums/block_shape.md
 // https://github.com/bricktea/MCStructure/blob/main/docs/1.16.201/enums/B.md
 
-import { addVec3, crossProduct, hexColorToClampedTriplet, JSONSet, max, mulVec3, normalizeVec3, rotateDeg, vec3ToFixed, subVec3, conditionallyGroup, mulMat4, addVec2, tuple } from "./utils.js";
+import { hexColorToClampedTriplet, JSONSet, max, rotateDeg, conditionallyGroup, mulMat4, tuple, vec2, vec3, PatternMap } from "./utils.js";
 
 // https://wiki.bedrock.dev/visuals/material-creations.html#overlay-color-in-render-controllers
 // https://wiki.bedrock.dev/documentation/materials.html#entity-alphatest
@@ -24,9 +24,7 @@ export default class BlockGeoMaker {
 	
 	#globalBlockStateTextureVariants;
 	#blockShapeBlockStateTextureVariants = new Map();
-	#blockNameBlockStateTextureVariants = new Map();
-	/** @type {[RegExp, Data.BlockStateVariants][]} */
-	#blockNamePatternBlockStateTextureVariants = [];
+	#blockNameBlockStateTextureVariants;
 	
 	#cachedBlockShapes = new Map();
 	
@@ -68,15 +66,7 @@ export default class BlockGeoMaker {
 				this.#blockShapeBlockStateTextureVariants.set(blockShape, textureVariantDefs);
 			});
 		});
-		Object.entries(blockStateDefs["texture_variants"]["block_names"] ?? {}).forEach(([blockNames, textureVariantDefs]) => {
-			if(blockNames.startsWith("/") && blockNames.endsWith("/")) {
-				this.#blockNamePatternBlockStateTextureVariants.push([new RegExp(blockNames.slice(1, -1)), textureVariantDefs]);
-			} else {
-				blockNames.split(",").forEach(blockName => {
-					this.#blockNameBlockStateTextureVariants.set(blockName, textureVariantDefs);
-				});
-			}
-		});
+		this.#blockNameBlockStateTextureVariants = new PatternMap(Object.entries(blockStateDefs["texture_variants"]["block_names"] ?? {}), ",");
 	}
 	/**
 	 * Makes poly mesh templates from a block palette.
@@ -117,7 +107,7 @@ export default class BlockGeoMaker {
 			if(face["fullbright"]) {
 				face["normal"] = [0, 1, 0];
 			} else {
-				face["normal"] = vec3ToFixed(face["normal"], 4);
+				face["normal"] = vec3.toFixed(face["normal"], 4);
 			}
 			delete face["fullbright"];
 		});
@@ -196,7 +186,7 @@ export default class BlockGeoMaker {
 				let fieldsToCopy = Object.keys(cube).filter(field => !["copy", "rot", "pivot", "translate"].includes(field));
 				copiedCubes.forEach(copiedCube => {
 					if("translate" in cube) {
-						copiedCube["translate"] = addVec3(copiedCube["translate"] ?? [0, 0, 0], cube["translate"]);
+						copiedCube["translate"] = vec3.add(copiedCube["translate"] ?? [0, 0, 0], cube["translate"]);
 					}
 					fieldsToCopy.forEach(field => { // copy all fields from this cube onto the new ones
 						if(field == "flip_textures_horizontally" || field == "flip_textures_vertically") { // these ones are arrays but are supposed to represent sets, so we take the XOR/symmetric difference (ik there's a native method but it's very new)
@@ -253,7 +243,7 @@ export default class BlockGeoMaker {
 				if("translate" in cube) {
 					newFaces.forEach(face => {
 						for(let i = 0; i < 4; i++) {
-							face["vertices"][i]["pos"] = addVec3(face["vertices"][i]["pos"], cube["translate"]);
+							face["vertices"][i]["pos"] = vec3.add(face["vertices"][i]["pos"], cube["translate"]);
 						}
 					});
 				}
@@ -395,15 +385,15 @@ export default class BlockGeoMaker {
 					if("rot" in cube) {
 						vertex["pos"] = this.#applyEulerRotation(vertex["pos"], cube["rot"], cube["pivot"] ?? [8, 8, 8]);
 					}
-					cube["extra_rots"]?.reverse()?.forEach(extraRot => {
+					cube["extra_rots"]?.slice()?.reverse()?.forEach(extraRot => {
 						vertex["pos"] = this.#applyEulerRotation(vertex["pos"], extraRot["rot"], extraRot["pivot"]);
 					});
 					if("translate" in cube) {
-						vertex["pos"] = addVec3(vertex["pos"], cube["translate"]);
+						vertex["pos"] = vec3.add(vertex["pos"], cube["translate"]);
 					}
 					if("transform" in cube) {
 						let transformed = mulMat4(cube["transform"], vertex["pos"]);
-						let newPos = mulVec3([transformed[0], transformed[1], transformed[2]], 1 / transformed[3]);
+						let newPos = vec3.mul([transformed[0], transformed[1], transformed[2]], 1 / transformed[3]);
 						vertex["pos"] = newPos;
 					}
 				}
@@ -416,7 +406,7 @@ export default class BlockGeoMaker {
 			});
 			if(faces.length == 1 && !("culled_faces" in cube)) {
 				if(faces[0]["normal"][1] < 0) {
-					faces[0]["normal"] = mulVec3(faces[0]["normal"], -1);
+					faces[0]["normal"] = vec3.mul(faces[0]["normal"], -1);
 				}
 			} else {
 				allCubesAreFlat = false;
@@ -460,7 +450,7 @@ export default class BlockGeoMaker {
 			}
 			if(rotation) {
 				console.debug(`Multiple rotation block states for block ${block["name"]}; adding them all together!`);
-				rotation = addVec3(rotation, rotations[blockStateValue]);
+				rotation = vec3.add(rotation, rotations[blockStateValue]);
 			} else {
 				rotation = rotations[blockStateValue];
 			}
@@ -475,11 +465,11 @@ export default class BlockGeoMaker {
 	 * @returns {Vec3}
 	 */
 	#applyEulerRotation(pos, rotation, pivot) {
-		let res = addVec3(pos, mulVec3(pivot, -1));
+		let res = vec3.add(pos, vec3.mul(pivot, -1));
 		[res[1], res[2]] = rotateDeg([res[1], res[2]], -rotation[0]); // idk why but it's negative
 		[res[0], res[2]] = rotateDeg([res[0], res[2]], -rotation[1]);
 		[res[0], res[1]] = rotateDeg([res[0], res[1]], -rotation[2]);
-		res = addVec3(res, pivot);
+		res = vec3.add(res, pivot);
 		return res;
 	}
 	/**
@@ -516,7 +506,7 @@ export default class BlockGeoMaker {
 		let [unoptimizableCubes, optimizableCubes] = conditionallyGroup(cubes, cube => !("rot" in cube));
 		optimizableCubes.forEach(cube => {
 			if("translate" in cube) {
-				cube["pos"] = addVec3(cube["pos"], cube["translate"]);
+				cube["pos"] = vec3.add(cube["pos"], cube["translate"]);
 			}
 		});
 		let mergeableGroups = new Map(optimizableCubes.map(cube => [cube, this.#getMergingGroup(cube)]));
@@ -559,7 +549,7 @@ export default class BlockGeoMaker {
 		});
 		mergedCubes.forEach(cube => {
 			if("translate" in cube) {
-				cube["pos"] = subVec3(cube["pos"], cube["translate"]);
+				cube["pos"] = vec3.sub(cube["pos"], cube["translate"]);
 			}
 		});
 		
@@ -697,7 +687,7 @@ export default class BlockGeoMaker {
 			});
 			return variant;
 		}
-		let blockNameSpecificVariants = this.#blockNameBlockStateTextureVariants.get(blockName) ?? this.#blockNamePatternBlockStateTextureVariants.find(([pattern]) => pattern.test(blockName))?.[1];
+		let blockNameSpecificVariants = this.#blockNameBlockStateTextureVariants.get(blockName);
 		if(blockNameSpecificVariants?.["#exclusive_add"]) {
 			let variant = 0;
 			statesAndBlockEntityData.forEach(([blockStateName, blockStateValue]) => {
@@ -768,7 +758,7 @@ export default class BlockGeoMaker {
 				}
 			};
 			Object.values(uv).forEach(face => {
-				face["uv"] = addVec2(face["uv"], cube["box_uv"]);
+				face["uv"] = vec2.add(face["uv"], cube["box_uv"]);
 			});
 			return uv;
 		} else {
@@ -836,9 +826,9 @@ export default class BlockGeoMaker {
 	 * @returns {Vec3}
 	 */
 	#getSurfaceNormal(vertices) {
-		let dir1 = subVec3(vertices[1]["pos"], vertices[0]["pos"]);
-		let dir2 = subVec3(vertices[2]["pos"], vertices[0]["pos"]);
-		let normal = normalizeVec3(crossProduct(dir1, dir2));
+		let dir1 = vec3.sub(vertices[1]["pos"], vertices[0]["pos"]);
+		let dir2 = vec3.sub(vertices[2]["pos"], vertices[0]["pos"]);
+		let normal = vec3.normalize(vec3.crossProduct(dir1, dir2));
 		return normal;
 	}
 	/**
@@ -852,28 +842,28 @@ export default class BlockGeoMaker {
 		cubes.forEach(cube => {
 			let mass = cube.w * cube.h * cube.d; // assume uniform mass density
 			totalMass += mass;
-			let cubeCenter = addVec3(cube["pos"], mulVec3(cube["size"], 0.5));
+			let cubeCenter = vec3.add(cube["pos"], vec3.mul(cube["size"], 0.5));
 			if("rot" in cube) {
 				cubeCenter = this.#applyEulerRotation(cubeCenter, cube["rot"], cube["pivot"] ?? [8, 8, 8]);
 			}
-			center = addVec3(center, mulVec3(cubeCenter, mass));
+			center = vec3.add(center, vec3.mul(cubeCenter, mass));
 		});
 		if(totalMass == 0) { // all cubes must be flat
 			cubes.forEach(cube => {
 				let mass = max(cube.w, 1) * max(cube.h, 1) * max(cube.d, 1);
 				totalMass += mass;
-				let cubeCenter = addVec3(cube["pos"], mulVec3(cube["size"], 0.5));
+				let cubeCenter = vec3.add(cube["pos"], vec3.mul(cube["size"], 0.5));
 				if("rot" in cube) {
 					cubeCenter = this.#applyEulerRotation(cubeCenter, cube["rot"], cube["pivot"] ?? [8, 8, 8]);
 				}
-				center = addVec3(center, mulVec3(cubeCenter, mass));
+				center = vec3.add(center, vec3.mul(cubeCenter, mass));
 			});
 		}
 		if(totalMass == 0) {
 			console.error("0 mass...");
 			return [8, 8, 8];
 		}
-		center = mulVec3(center, 1 / totalMass);
+		center = vec3.mul(center, 1 / totalMass);
 		return center;
 	}
 	/**
@@ -886,8 +876,8 @@ export default class BlockGeoMaker {
 		return faces.map(face => {
 			for(let i = 0; i < 4; i++) {
 				let v = face["vertices"][i];
-				let translated = addVec3(v["pos"], mulVec3(centerOfMass, -1));
-				v["pos"] = addVec3(mulVec3(translated, this.config.SCALE), centerOfMass); // I long for the day when ECMAScript has native vector types like in GLSL. This is equivalent to (v["pos"] - centerOfMass) * scale + centerOfMass
+				let translated = vec3.add(v["pos"], vec3.mul(centerOfMass, -1));
+				v["pos"] = vec3.add(vec3.mul(translated, this.config.SCALE), centerOfMass); // I long for the day when ECMAScript has native vector types like in GLSL. This is equivalent to (v["pos"] - centerOfMass) * scale + centerOfMass
 			}
 			return face;
 		});
@@ -1096,14 +1086,14 @@ export default class BlockGeoMaker {
 		let v1pos = v1["pos"];
 		let v2pos = v2["pos"];
 		let v3pos = v3["pos"];
-		let textureXDir = subVec3(v1pos, v0pos);
-		let textureYDir = subVec3(v2pos, v0pos);
+		let textureXDir = vec3.sub(v1pos, v0pos);
+		let textureYDir = vec3.sub(v2pos, v0pos);
 		let cropXRem = 1 - crop["w"] - crop["x"]; // remaining horizontal space on the other side of the cropped region
 		let cropYRem = 1 - crop["h"] - crop["y"];
-		v0["pos"] = addVec3(v0pos, [textureXDir[0] * crop["x"] + textureYDir[0] * crop["y"], textureXDir[1] * crop["x"] + textureYDir[1] * crop["y"], textureXDir[2] * crop["x"] + textureYDir[2] * crop["y"]]);
-		v1["pos"] = addVec3(v1pos, [-textureXDir[0] * cropXRem + textureYDir[0] * crop["y"], -textureXDir[1] * cropXRem + textureYDir[1] * crop["y"], -textureXDir[2] * cropXRem + textureYDir[2] * crop["y"]]);
-		v2["pos"] = addVec3(v2pos, [textureXDir[0] * crop["x"] - textureYDir[0] * cropYRem, textureXDir[1] * crop["x"] - textureYDir[1] * cropYRem, textureXDir[2] * crop["x"] - textureYDir[2] * cropYRem]);
-		v3["pos"] = addVec3(v3pos, [-textureXDir[0] * cropXRem - textureYDir[0] * cropYRem, -textureXDir[1] * cropXRem - textureYDir[1] * cropYRem, -textureXDir[2] * cropXRem - textureYDir[2] * cropYRem]);
+		v0["pos"] = vec3.add(v0pos, [textureXDir[0] * crop["x"] + textureYDir[0] * crop["y"], textureXDir[1] * crop["x"] + textureYDir[1] * crop["y"], textureXDir[2] * crop["x"] + textureYDir[2] * crop["y"]]);
+		v1["pos"] = vec3.add(v1pos, [-textureXDir[0] * cropXRem + textureYDir[0] * crop["y"], -textureXDir[1] * cropXRem + textureYDir[1] * crop["y"], -textureXDir[2] * cropXRem + textureYDir[2] * crop["y"]]);
+		v2["pos"] = vec3.add(v2pos, [textureXDir[0] * crop["x"] - textureYDir[0] * cropYRem, textureXDir[1] * crop["x"] - textureYDir[1] * cropYRem, textureXDir[2] * crop["x"] - textureYDir[2] * cropYRem]);
+		v3["pos"] = vec3.add(v3pos, [-textureXDir[0] * cropXRem - textureYDir[0] * cropYRem, -textureXDir[1] * cropXRem - textureYDir[1] * cropYRem, -textureXDir[2] * cropXRem - textureYDir[2] * cropYRem]);
 	}
 }
 

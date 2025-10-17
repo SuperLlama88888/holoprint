@@ -4,7 +4,7 @@ import * as fs from "node:fs";
 import * as esbuild from "esbuild";
 import { minify as minifyHTML } from "html-minifier-next";
 import browserslist from "browserslist";
-import { transform, browserslistToTargets } from "lightningcss";
+import { transform, browserslistToTargets, bundle } from "lightningcss";
 import minifyJSON from "jsonminify";
 
 const srcDir = "src";
@@ -28,24 +28,25 @@ await processDir("temp");
 rmDir(distDir);
 fs.cpSync("temp", distDir, {
 	recursive: true,
-	filter: filename => !(path.extname(filename) == ".js" || (fs.statSync(filename).isDirectory() && fs.readdirSync(filename).every(file => path.extname(file) == ".js")))
+	filter: filename => shouldBeCopiedFromTempToDist(filename) && !(fs.statSync(filename).isDirectory() && fs.readdirSync(filename).every(file => !shouldBeCopiedFromTempToDist(file)))
 });
 
 let importMapJSON = fs.readFileSync(`${distDir}/index.html`, "utf-8").match(importMapPattern)[1];
 let externalModules = Object.keys(JSON.parse(importMapJSON)["imports"]);
 let { metafile } = esbuild.buildSync({
 	absWorkingDir: process.cwd(),
-	entryPoints: ["temp/index.js"],
+	entryPoints: ["temp/index.js", "temp/styles/index.css"],
 	bundle: true,
 	external: externalModules,
 	dropLabels: ["TS"],
 	minify: true,
 	format: "esm",
 	outdir: distDir,
-	entryNames: "[name]-[hash]",
-	assetNames: "[name]-[hash]",
+	entryNames: "[dir]/[name]-[hash]",
+	assetNames: "[dir]/[name]-[hash]",
 	loader: {
-		".molang.js": "copy" // don't process these files at all, treat them as assets
+		".molang.js": "copy", // don't process these files at all, treat them as assets
+		".css": "copy" // lightningcss already handles minification and bundling, so esbuild just needs to append the hashes to the file names
 	},
 	sourcemap: true,
 	metafile: true
@@ -94,7 +95,7 @@ async function processDir(dir) {
 			let processingFunction = findProcessingFunction(filepath);
 			if(processingFunction) {
 				let fileContent = fs.readFileSync(filepath, "utf-8");
-				let { code, sourceMap } = await processingFunction(fileContent, filename);
+				let { code, sourceMap } = await processingFunction(fileContent, filename, filepath);
 				fs.writeFileSync(filepath, code);
 				if(sourceMap) {
 					fs.writeFileSync(filepath + ".map", sourceMap);
@@ -105,7 +106,7 @@ async function processDir(dir) {
 }
 /**
  * @param {string} filename
- * @returns {((code: string, filename: string) => MaybePromise<{ code: string, sourceMap?: string }>) | undefined}
+ * @returns {((code: string, filename: string, filepath: string) => MaybePromise<{ code: string, sourceMap?: string }>) | undefined}
  */
 function findProcessingFunction(filename) {
 	let fileExtension = path.extname(filename);
@@ -121,10 +122,9 @@ function findProcessingFunction(filename) {
 
 /**
  * @param {string} code
- * @param {string} filename
  * @returns {Promise<{ code: string }>}
  */
-async function processHTML(code, filename) {
+async function processHTML(code) {
 	code = code.replaceAll(/<script type="(importmap|application\/ld\+json)">([^]+?)<\/script>/g, (_, scriptType, json) => `<script type="${scriptType}">${processJSON(json).code}</script>`);
 	code = await minifyHTML(code, {
 		removeComments: true,
@@ -132,31 +132,48 @@ async function processHTML(code, filename) {
 		collapseBooleanAttributes: true,
 		sortAttributes: true,
 		sortClassName: true,
-		minifyCSS: css => processCSS(css, filename, true).code,
+		minifyCSS: css => processCSS(css).code,
 		inlineCustomElements: ["vec-3-input", "slot", "span"]
 	});
 	return { code };
 }
 /**
+ * @overload
+ * @param {string} code
+ * @returns {{ code: string }}
+ */
+/**
+ * @overload
  * @param {string} code
  * @param {string} filename
- * @param {boolean} [disableSourceMap]
+ * @param {string} filepath
+ * @returns {{ code: string, sourceMap: string }}
+ */
+/**
+ * @param {string} code
+ * @param {string} [filename]
+ * @param {string} [filepath]
  * @returns {{ code: string, sourceMap?: string }}
  */
-function processCSS(code, filename, disableSourceMap = false) {
-	let { code: codeBytes, map: sourceMapBytes } = transform({
-		filename,
-		minify: true,
-		code: (new TextEncoder()).encode(code),
-		targets: cssTargets,
-		sourceMap: !disableSourceMap
-	});
-	code = (new TextDecoder()).decode(codeBytes);
-	if(sourceMapBytes) {
-		code += `\n/*# sourceMappingURL=${filename}.map */`;
+function processCSS(code, filename, filepath) {
+	if(filename) {
+		let { code: codeBytes, map: sourceMapBytes } = bundle({
+			filename: filepath,
+			minify: true,
+			targets: cssTargets,
+			sourceMap: true
+		});
+		code = `${(new TextDecoder()).decode(codeBytes)}\n/*# sourceMappingURL=${filename}.map */`;
 		let sourceMap = (new TextDecoder()).decode(sourceMapBytes);
 		return { code, sourceMap };
 	} else {
+		let { code: codeBytes } = transform({
+			filename: "Inline CSS in <style>",
+			minify: true,
+			code: (new TextEncoder()).encode(code),
+			targets: cssTargets
+		});
+		code = (new TextDecoder()).decode(codeBytes);
 		return { code };
 	}
 }
@@ -174,7 +191,7 @@ async function processJS(code, filename) {
 			code = `export * from "./HoloPrint.js";` + code;
 		}
 	}
-	code = await replaceAllAsync(code, /html`([^]+?)`/g, async (_, html) => "`" + (await processHTML(html, filename)).code + "`");
+	code = await replaceAllAsync(code, /html`([^]+?)`/g, async (_, html) => "`" + (await processHTML(html)).code + "`");
 	return { code };
 }
 /**
@@ -196,13 +213,23 @@ function rmDir(dir) {
 }
 
 /**
+ * @param {string} filename
+ * @returns {boolean}
+ */
+function shouldBeCopiedFromTempToDist(filename) {
+	const filesProcessedByEsbuild = [".js", ".css", ".css.map"];
+	return !filesProcessedByEsbuild.some(ext => filename.endsWith(ext)) || path.basename(filename) == "index.css.map"
+}
+/**
  * @param {object} importMap
  * @returns {string}
  */
 function addImportReplacementsToImportMap(importMap) {
 	importMap["imports"] ??= {};
 	scriptImportReplacements.forEach(([oldName, newName]) => {
-		importMap["imports"][`./${oldName}`] = `./${newName}`;
+		if(path.extname(oldName) == ".js") {
+			importMap["imports"][`./${oldName}`] = `./${newName}`;
+		}
 	});
 	return `<script type="importmap">${JSON.stringify(importMap)}</script>`;
 }

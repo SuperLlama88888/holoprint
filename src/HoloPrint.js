@@ -7,7 +7,7 @@ import MaterialList from "./MaterialList.js";
 import PreviewRenderer from "./PreviewRenderer.js";
 
 import entityScripts from "./entityScripts.molang.js";
-import { addPaddingToImage, awaitAllEntries, cacheUnaryFunc, concatenateFiles, createNumericEnum, desparseArray, floor, getFileExtension, hexColorToClampedTriplet, joinRegExps, jsonc, JSONMap, JSONSet, lcm, loadTranslationLanguage, max, min, onEvent, overlaySquareImages, pi, removeFalsies, removeFileExtension, resizeImageToBlob, round, setImageOpacity, sha256, toBlob, toImage, translate, transposeMatrix, tuple, UserError } from "./utils.js";
+import { addPaddingToImage, array2DToMolang, arrayToMolang, awaitAllEntries, weaklyCacheUnaryFunc, concatenateFiles, createNumericEnum, desparseArray, functionToMolang, getFileExtension, hexColorToClampedTriplet, itemCriteriaToMolang, jsonc, JSONMap, JSONSet, lcm, loadTranslationLanguage, max, min, onEvent, overlaySquareImages, pi, removeFalsies, removeFileExtension, resizeImageToBlob, round, setImageOpacity, sha256, toBlob, toImage, translate, transposeMatrix, tuple, UserError, ReplacingPatternMap, conditionallyCacheUnaryFunc } from "./utils.js";
 import ResourcePackStack from "./ResourcePackStack.js";
 import BlockUpdater from "./BlockUpdater.js";
 import SpawnAnimationMaker from "./SpawnAnimationMaker.js";
@@ -16,7 +16,7 @@ import fetchers from "./fetchers.js";
 import EntityGeoMaker from "./EntityGeoMaker.js";
 
 export const VERSION = "dev";
-export const IGNORED_BLOCKS = ["air", "piston_arm_collision", "sticky_piston_arm_collision"]; // blocks to be ignored when scanning the structure file
+export const IGNORED_BLOCKS = ["air", "piston_arm_collision", "sticky_piston_arm_collision", "light_block", "light_block_0", "light_block_1", "light_block_2", "light_block_3", "light_block_4", "light_block_5", "light_block_6", "light_block_7", "light_block_8", "light_block_9", "light_block_10", "light_block_11", "light_block_12", "light_block_13", "light_block_14", "light_block_15"]; // blocks to be ignored when scanning the structure file
 const IGNORED_BLOCK_ENTITIES = ["Beacon", "Beehive", "Bell", "BrewingStand", "ChiseledBookshelf", "CommandBlock", "Comparator", "Conduit", "EnchantTable", "EndGateway", "JigsawBlock", "Lodestone", "SculkCatalyst", "SculkShrieker", "SculkSensor", "CalibratedSculkSensor", "StructureBlock", "BrushableBlock", "TrialSpawner", "Vault"];
 export const PLAYER_CONTROL_NAMES = {
 	TOGGLE_RENDERING: "player_controls.toggle_rendering",
@@ -93,43 +93,43 @@ export async function makePack(structureFiles, config, resourcePackStack = new R
 	};
 	let packTemplatePromise = loadPackTemplate({
 		manifest: "manifest.json",
-		hologramRenderControllers: "render_controllers/armor_stand.hologram.render_controllers.json",
-		hologramGeo: "models/entity/armor_stand.hologram.geo.json", // this is where we put all the ghost blocks
+		hologramRenderControllers: "render_controllers/holoprint.hologram.render_controllers.json",
+		hologramGeo: "models/entity/holoprint.hologram.geo.json", // this is where we put all the ghost blocks
 		[_.$]: "materials/entity.material",
-		hologramAnimationControllers: "animation_controllers/armor_stand.hologram.animation_controllers.json",
-		hologramAnimations: "animations/armor_stand.hologram.animation.json",
+		hologramAnimationControllers: "animation_controllers/holoprint.hologram.animation_controllers.json",
+		hologramAnimations: "animations/holoprint.hologram.animation.json",
 		[_.$]: "particles/bounding_box_outline.json",
 		blockValidationParticle: "particles/block_validation.json",
 		[_.$]: "particles/saving_backup.json",
-		singleWhitePixelTexture: "textures/particle/single_white_pixel.png",
-		[_._]: "textures/particle/exclamation_mark.png",
-		[_._]: "textures/particle/save_icon.png",
+		singleWhitePixelTexture: "textures/holoprint/particle/single_white_pixel.png",
+		[_._]: "textures/holoprint/particle/exclamation_mark.png",
+		[_._]: "textures/holoprint/particle/save_icon.png",
 		itemTexture: config.RETEXTURE_CONTROL_ITEMS? "textures/item_texture.json" : undefined,
 		terrainTexture: config.RETEXTURE_CONTROL_ITEMS? "textures/terrain_texture.json" : undefined,
 		...(config.UI_CONTROLS_ENABLED? {
-			[_._]: "textures/ui/toggle_rendering.png",
-			[_._]: "textures/ui/change_opacity.png",
-			[_._]: "textures/ui/increase_opacity.png",
-			[_._]: "textures/ui/toggle_tint.png",
-			[_._]: "textures/ui/toggle_validating.png",
-			[_._]: "textures/ui/change_layer.png",
-			[_._]: "textures/ui/increase_layer.png",
-			[_._]: "textures/ui/decrease_layer.png",
-			[_._]: "textures/ui/change_layer_mode.png",
-			[_._]: "textures/ui/move_hologram_x.png",
-			[_._]: "textures/ui/move_hologram_y.png",
-			[_._]: "textures/ui/move_hologram_z.png",
-			[_._]: "textures/ui/rotate_hologram.png",
-			[_._]: "textures/ui/change_structure.png",
-			[_._]: "textures/ui/backup_hologram.png",
-			[_._]: "textures/ui/menu_sliders_icon.png",
-			[_._]: "textures/ui/menu_button_unpressed.png",
-			[_._]: "textures/ui/menu_button_pressed.png",
-			[_._]: "textures/ui/material_list_button_unpressed.png",
-			[_._]: "textures/ui/material_list_button_pressed.png",
-			[_._]: "textures/ui/white_circle.png",
-			[_.$]: "textures/ui/white_circle.json",
-			[_._]: "textures/ui/quick_input_keyboard_hints.png",
+			[_._]: "textures/holoprint/icons/toggle_rendering.png",
+			[_._]: "textures/holoprint/icons/change_opacity.png",
+			[_._]: "textures/holoprint/icons/increase_opacity.png",
+			[_._]: "textures/holoprint/icons/toggle_tint.png",
+			[_._]: "textures/holoprint/icons/toggle_validating.png",
+			[_._]: "textures/holoprint/icons/change_layer.png",
+			[_._]: "textures/holoprint/icons/increase_layer.png",
+			[_._]: "textures/holoprint/icons/decrease_layer.png",
+			[_._]: "textures/holoprint/icons/change_layer_mode.png",
+			[_._]: "textures/holoprint/icons/move_hologram_x.png",
+			[_._]: "textures/holoprint/icons/move_hologram_y.png",
+			[_._]: "textures/holoprint/icons/move_hologram_z.png",
+			[_._]: "textures/holoprint/icons/rotate_hologram.png",
+			[_._]: "textures/holoprint/icons/change_structure.png",
+			[_._]: "textures/holoprint/icons/backup_hologram.png",
+			[_._]: "textures/holoprint/ui/menu_sliders_icon.png",
+			[_._]: "textures/holoprint/ui/menu_button_unpressed.png",
+			[_._]: "textures/holoprint/ui/menu_button_pressed.png",
+			[_._]: "textures/holoprint/ui/material_list_button_unpressed.png",
+			[_._]: "textures/holoprint/ui/material_list_button_pressed.png",
+			[_._]: "textures/holoprint/ui/white_circle.png",
+			[_.$]: "textures/holoprint/ui/white_circle.json",
+			[_._]: "textures/holoprint/ui/quick_input_keyboard_hints.png",
 			[_.$]: "ui/_ui_defs.json",
 			[_.$]: "ui/_global_variables.json",
 			[_.$]: "ui/hud_screen.json",
@@ -234,11 +234,11 @@ export async function makePack(structureFiles, config, resourcePackStack = new R
 	allStructureIndicesByLayer.forEach((structureIndicesByLayer, structureI) => {
 		let structureSize = structureSizes[structureI];
 		let geoShortName = `hologram_${structureI}`;
-		let geoIdentifier = `geometry.armor_stand.hologram_${structureI}`;
+		let geoIdentifier = `geometry.holoprint.hologram_${structureI}`;
 		let geo = structuredClone(structureGeoTemplate);
 		geo["description"]["identifier"] = geoIdentifier;
 		entityDescription["geometry"][geoShortName] = geoIdentifier;
-		hologramRenderControllers["render_controllers"]["controller.render.armor_stand.hologram"]["arrays"]["geometries"]["Array.geometries"].push(`Geometry.${geoShortName}`);
+		hologramRenderControllers["render_controllers"]["controller.render.holoprint.hologram"]["arrays"]["geometries"]["Array.geometries"].push(`Geometry.${geoShortName}`);
 		let blocksToValidate = [];
 		let blocksToValidateByLayer = [];
 		
@@ -312,7 +312,7 @@ export async function makePack(structureFiles, config, resourcePackStack = new R
 				spawnAnimationMaker.addBone(layerName, [0, y, 0]);
 			}
 		}
-		hologramAnimations["animations"]["animation.armor_stand.hologram.spawn"] = spawnAnimationMaker.makeAnimation();
+		hologramAnimations["animations"]["animation.holoprint.hologram.spawn"] = spawnAnimationMaker.makeAnimation();
 	}
 	
 	let structureSizesMolang = [
@@ -325,25 +325,25 @@ export async function makePack(structureFiles, config, resourcePackStack = new R
 	
 	entityDescription["materials"]["hologram"] = "holoprint_hologram";
 	entityDescription["materials"]["hologram.wrong_block_overlay"] = "holoprint_hologram.wrong_block_overlay";
-	entityDescription["textures"]["hologram.overlay"] = "textures/entity/overlay";
-	entityDescription["textures"]["hologram.save_icon"] = "textures/particle/save_icon";
-	entityDescription["animations"]["hologram.align"] = "animation.armor_stand.hologram.align";
+	entityDescription["textures"]["hologram.overlay"] = "textures/holoprint/entity/overlay";
+	entityDescription["textures"]["hologram.save_icon"] = "textures/holoprint/particle/save_icon";
+	entityDescription["animations"]["hologram.align"] = "animation.holoprint.hologram.align";
 	if(config.COORDINATE_LOCK) {
-		entityDescription["animations"]["hologram.coordinate_lock"] = "animation.armor_stand.hologram.coordinate_lock";
+		entityDescription["animations"]["hologram.coordinate_lock"] = "animation.holoprint.hologram.coordinate_lock";
 		let coordinateLockRotsMolang = arrayToMolang(coordinateLockAxes[3], "v.hologram.structure_index");
-		hologramAnimations["animations"]["animation.armor_stand.hologram.coordinate_lock"]["bones"]["hologram_offset_wrapper"]["rotation"][1] = coordinateLockRotsMolang;
-		delete hologramAnimations["animations"]["animation.armor_stand.hologram.offset"];
+		hologramAnimations["animations"]["animation.holoprint.hologram.coordinate_lock"]["bones"]["hologram_offset_wrapper"]["rotation"][1] = coordinateLockRotsMolang;
+		delete hologramAnimations["animations"]["animation.holoprint.hologram.offset"];
 	} else {
-		entityDescription["animations"]["hologram.offset"] = "animation.armor_stand.hologram.offset";
-		delete hologramAnimations["animations"]["animation.armor_stand.hologram.coordinate_lock"];
+		entityDescription["animations"]["hologram.offset"] = "animation.holoprint.hologram.offset";
+		delete hologramAnimations["animations"]["animation.holoprint.hologram.coordinate_lock"];
 	}
-	entityDescription["animations"]["hologram.spawn"] = "animation.armor_stand.hologram.spawn";
-	entityDescription["animations"]["hologram.wrong_block_overlay"] = "animation.armor_stand.hologram.wrong_block_overlay";
-	entityDescription["animations"]["controller.hologram.spawn_animation"] = "controller.animation.armor_stand.hologram.spawn_animation";
-	entityDescription["animations"]["controller.hologram.layers"] = "controller.animation.armor_stand.hologram.layers";
-	entityDescription["animations"]["controller.hologram.bounding_box"] = "controller.animation.armor_stand.hologram.bounding_box";
-	entityDescription["animations"]["controller.hologram.block_validation"] = "controller.animation.armor_stand.hologram.block_validation";
-	entityDescription["animations"]["controller.hologram.saving_backup_particles"] = "controller.animation.armor_stand.hologram.saving_backup_particles";
+	entityDescription["animations"]["hologram.spawn"] = "animation.holoprint.hologram.spawn";
+	entityDescription["animations"]["hologram.wrong_block_overlay"] = "animation.holoprint.hologram.wrong_block_overlay";
+	entityDescription["animations"]["controller.hologram.spawn_animation"] = "controller.animation.holoprint.hologram.spawn_animation";
+	entityDescription["animations"]["controller.hologram.layers"] = "controller.animation.holoprint.hologram.layers";
+	entityDescription["animations"]["controller.hologram.bounding_box"] = "controller.animation.holoprint.hologram.bounding_box";
+	entityDescription["animations"]["controller.hologram.block_validation"] = "controller.animation.holoprint.hologram.block_validation";
+	entityDescription["animations"]["controller.hologram.saving_backup_particles"] = "controller.animation.holoprint.hologram.saving_backup_particles";
 	entityDescription["scripts"]["animate"] ??= [];
 	entityDescription["scripts"]["animate"].push("hologram.align", config.COORDINATE_LOCK? "hologram.coordinate_lock" : "hologram.offset", "hologram.wrong_block_overlay", "controller.hologram.spawn_animation", "controller.hologram.layers", "controller.hologram.bounding_box", "controller.hologram.block_validation", "controller.hologram.saving_backup_particles");
 	entityDescription["scripts"]["should_update_bones_and_effects_offscreen"] = true; // makes backups work when offscreen (from my testing it helps a bit). this also makes it render when you're facing away, removing the need for visible_bounds_width/visible_bounds_height in the geometry file. (when should_update_effects_offscreen is set, it renders when facing away, but doesn't seem to have access to v. variables.)
@@ -377,28 +377,28 @@ export async function makePack(structureFiles, config, resourcePackStack = new R
 		singleLayerMode: HOLOGRAM_LAYER_MODES.SINGLE,
 		ACTIONS: entityScripts.ACTIONS
 	}));
-	entityDescription["geometry"]["hologram.wrong_block_overlay"] = "geometry.armor_stand.hologram.wrong_block_overlay";
-	entityDescription["geometry"]["hologram.valid_structure_overlay"] = "geometry.armor_stand.hologram.valid_structure_overlay";
-	entityDescription["geometry"]["hologram.particle_alignment"] = "geometry.armor_stand.hologram.particle_alignment";
+	entityDescription["geometry"]["hologram.wrong_block_overlay"] = "geometry.holoprint.hologram.wrong_block_overlay";
+	entityDescription["geometry"]["hologram.valid_structure_overlay"] = "geometry.holoprint.hologram.valid_structure_overlay";
+	entityDescription["geometry"]["hologram.particle_alignment"] = "geometry.holoprint.hologram.particle_alignment";
 	entityDescription["render_controllers"] ??= [];
 	entityDescription["render_controllers"].push({
-		"controller.render.armor_stand.hologram": "v.hologram.rendering"
+		"controller.render.holoprint.hologram": "v.hologram.rendering"
 	}, {
-		"controller.render.armor_stand.hologram.wrong_block_overlay": "v.hologram.show_wrong_block_overlay"
+		"controller.render.holoprint.hologram.wrong_block_overlay": "v.hologram.show_wrong_block_overlay"
 	}, {
-		"controller.render.armor_stand.hologram.valid_structure_overlay": "v.hologram.validating && v.wrong_blocks == 0"
-	}, "controller.render.armor_stand.hologram.particle_alignment");
+		"controller.render.holoprint.hologram.valid_structure_overlay": "v.hologram.validating && v.wrong_blocks == 0"
+	}, "controller.render.holoprint.hologram.particle_alignment");
 	entityDescription["particle_effects"] ??= {};
 	entityDescription["particle_effects"]["bounding_box_outline"] = "holoprint:bounding_box_outline";
 	entityDescription["particle_effects"]["saving_backup"] = "holoprint:saving_backup";
 	
 	textureBlobs.forEach(([textureName]) => {
-		entityDescription["textures"][textureName] = `textures/entity/${textureName}`;
-		hologramRenderControllers["render_controllers"]["controller.render.armor_stand.hologram"]["arrays"]["textures"]["Array.textures"].push(`Texture.${textureName}`);
+		entityDescription["textures"][textureName] = `textures/holoprint/entity/${textureName}`;
+		hologramRenderControllers["render_controllers"]["controller.render.holoprint.hologram"]["arrays"]["textures"]["Array.textures"].push(`Texture.${textureName}`);
 	});
 	
 	let tintColorChannels = hexColorToClampedTriplet(config.TINT_COLOR);
-	hologramRenderControllers["render_controllers"]["controller.render.armor_stand.hologram"]["overlay_color"] = {
+	hologramRenderControllers["render_controllers"]["controller.render.holoprint.hologram"]["overlay_color"] = {
 		"r": +tintColorChannels[0].toFixed(4),
 		"g": +tintColorChannels[1].toFixed(4),
 		"b": +tintColorChannels[2].toFixed(4),
@@ -493,9 +493,9 @@ export async function makePack(structureFiles, config, resourcePackStack = new R
 		particle["particle_effect"]["components"]["minecraft:particle_expire_if_in_blocks"] = [blockName.includes(":")? blockName : `minecraft:${blockName}`]; // add back minecraft: namespace if it's missing
 		packFiles[`particles/${particleName}.json`] = particle;
 	});
-	packFiles["textures/entity/overlay.png"] = overlayTexture;
+	packFiles["textures/holoprint/entity/overlay.png"] = overlayTexture;
 	textureBlobs.forEach(([textureName, blob]) => {
-		packFiles[`textures/entity/${textureName}.png`] = blob;
+		packFiles[`textures/holoprint/entity/${textureName}.png`] = blob;
 	});
 	if(config.RETEXTURE_CONTROL_ITEMS) {
 		if(!hasModifiedTerrainTexture) {
@@ -704,9 +704,9 @@ export function addDefaultConfig(config) {
 		}
 	});
 }
-/** Reads the NBT of a structure file, returning a JSON object. */
-export const readStructureNBT = cacheUnaryFunc(
+export const readStructureNBT = weaklyCacheUnaryFunc(
 	/**
+	 * Reads the NBT of a structure file, returning a JSON object.
 	 * @param {File} structureFile `*.mcstructure`
 	 * @returns {Promise<MCStructure>}
 	 */
@@ -780,6 +780,14 @@ function getInvalidMcstructureErrorMessage(structureFile, nbt) {
 	}
 	return errorMessage;
 }
+const fetchPackTemplateFile = conditionallyCacheUnaryFunc(
+	/** @param {string} path @returns {Promise<Response>} */
+	function(path) { // typescript doesn't detect the template parameter correctly if it's an arrow function
+		return fetch(`packTemplate/${path}`);
+	},
+	path => path.startsWith("textures/holoprint/icons"), // only cache icon textures. they're fetched in two different places and I couldn't beb bothered to store them in variables somewhere.
+	resPromise => resPromise.then(res => res.clone()) // response bodies can only be consumed once, so they must be cloned
+);
 /**
  * @template {string} F
  * @template {string} [N = ""]
@@ -790,7 +798,7 @@ function getInvalidMcstructureErrorMessage(structureFile, nbt) {
  * @param {{ [K in keyof T]: T[K] }} packTemplateFiles
  */
 function loadPackTemplate(packTemplateFiles) {
-	return multiload(packTemplateFiles, path => fetch(`packTemplate/${path}`));
+	return multiload(packTemplateFiles, fetchPackTemplateFile);
 }
 /**
  * @template {Record<string, string>} T
@@ -909,6 +917,7 @@ async function tweakBlockPalette(structure, ignoredBlocks) {
 	
 	// add block entities into the block palette (on layer 0)
 	let indices = structure["block_indices"];
+	/** @type {JSONMap<NBTBlock, number>} */
 	let newIndexCache = new JSONMap();
 	let entitylessBlockEntityIndices = new Set(); // contains all the block palette indices for blocks with block entities. since they don't have block entity data yet, and all block entities well be cloned and added to the end of the palette, we can remove all the entries in here from the palette.
 	let blockPositionData = structure["palette"]["default"]["block_position_data"];
@@ -981,7 +990,7 @@ function mergeMultiplePalettesAndIndices(palettesAndIndices) {
  * @param {object} hologramAnimationControllers
  */
 function makeLayerAnimations(config, structureSizes, entityDescription, hologramAnimations, hologramAnimationControllers) {
-	let layerAnimationStates = hologramAnimationControllers["animation_controllers"]["controller.animation.armor_stand.hologram.layers"]["states"];
+	let layerAnimationStates = hologramAnimationControllers["animation_controllers"]["controller.animation.holoprint.hologram.layers"]["states"];
 	let topLayer = max(...structureSizes.map(structureSize => structureSize[1])) - 1;
 	layerAnimationStates["default"]["transitions"].push(
 		{
@@ -1037,8 +1046,8 @@ function makeLayerAnimations(config, structureSizes, entityDescription, hologram
 		if(Object.entries(layerAnimation["bones"]).length == 0) {
 			delete layerAnimation["bones"];
 		}
-		hologramAnimations["animations"][`animation.armor_stand.hologram.l_${y}`] = layerAnimation;
-		entityDescription["animations"][`hologram.l_${y}`] = `animation.armor_stand.hologram.l_${y}`;
+		hologramAnimations["animations"][`animation.holoprint.hologram.l_${y}`] = layerAnimation;
+		entityDescription["animations"][`hologram.l_${y}`] = `animation.holoprint.hologram.l_${y}`;
 		if(y < topLayer) { // top layer with all layers below is the default view, so the animation + animation controller state doesn't need to be made for it
 			layerAnimationStates[`${layerName}-`] = {
 				"animations": [`hologram.l_${y}-`],
@@ -1073,8 +1082,8 @@ function makeLayerAnimations(config, structureSizes, entityDescription, hologram
 			if(Object.entries(layerAnimationAllBelow["bones"]).length == 0) {
 				delete layerAnimationAllBelow["bones"];
 			}
-			hologramAnimations["animations"][`animation.armor_stand.hologram.l_${y}-`] = layerAnimationAllBelow;
-			entityDescription["animations"][`hologram.l_${y}-`] = `animation.armor_stand.hologram.l_${y}-`;
+			hologramAnimations["animations"][`animation.holoprint.hologram.l_${y}-`] = layerAnimationAllBelow;
+			entityDescription["animations"][`hologram.l_${y}-`] = `animation.holoprint.hologram.l_${y}-`;
 		}
 	}
 }
@@ -1115,8 +1124,8 @@ function addBoundingBoxParticles(hologramAnimationControllers, structureI, struc
 		});
 	});
 	let animationStateName = `visible_${structureI}`;
-	hologramAnimationControllers["animation_controllers"]["controller.animation.armor_stand.hologram.bounding_box"]["states"][animationStateName] = boundingBoxAnimation;
-	hologramAnimationControllers["animation_controllers"]["controller.animation.armor_stand.hologram.bounding_box"]["states"]["hidden"]["transitions"].push({
+	hologramAnimationControllers["animation_controllers"]["controller.animation.holoprint.hologram.bounding_box"]["states"][animationStateName] = boundingBoxAnimation;
+	hologramAnimationControllers["animation_controllers"]["controller.animation.holoprint.hologram.bounding_box"]["states"]["hidden"]["transitions"].push({
 		[animationStateName]: `v.hologram.rendering && v.hologram.structure_index == ${structureI}`
 	});
 }
@@ -1137,7 +1146,7 @@ function addBlockValidationParticles(hologramAnimationControllers, structureI, b
 		]
 	};
 	let validateAllStateName = `validate_${structureI}`;
-	let validationStates = hologramAnimationControllers["animation_controllers"]["controller.animation.armor_stand.hologram.block_validation"]["states"];
+	let validationStates = hologramAnimationControllers["animation_controllers"]["controller.animation.holoprint.hologram.block_validation"]["states"];
 	validationStates[validateAllStateName] = validateAllState;
 	let validateAllStateTransition = {
 		[validateAllStateName]: `v.hologram.validating && v.hologram.structure_index == ${structureI} && v.hologram.layer == -1`
@@ -1416,25 +1425,19 @@ async function retextureControlItems(config, itemIcons, itemTags, resourceItemTe
 	let hasModifiedTerrainTexture = false;
 	let legacyItemMappings;
 	let loadingLegacyItemMappingsPromise;
-	let itemIconPatterns = Object.entries(itemIcons).filter(([key]) => key.startsWith("/") && key.endsWith("/")).map(([pattern, itemName]) => [new RegExp(pattern.slice(1, -1), "g"), itemName]);
+	let itemIconsMap = new ReplacingPatternMap(Object.entries(itemIcons));
+	const controlTextureBasePath = "textures/holoprint/icons";
 	await Promise.all(Object.entries(config.CONTROLS).map(async ([control, itemCriteria]) => {
-		let controlTexturePath = `textures/items/~${control.toLowerCase()}.png`; // because texture compositing works alphabetically not in array order, the ~ forces the control texture to always go on top of the actual item texture
-		let controlTexturePromise = fetch(`packTemplate/${controlTexturePath}`).then(res => toImage(res));
+		let controlTexturePromise = fetchPackTemplateFile(`${controlTextureBasePath}/${control.toLowerCase()}.png`).then(res => toImage(res));
 		let paddedTexturePromise = controlTexturePromise.then(controlTexture => addPaddingToImage(controlTexture, { // make it small in the top-left corner
 			right: 16,
 			bottom: 16
 		}));
+		let controlTexturePath = `${controlTextureBasePath}/~${control.toLowerCase()}`; // because texture compositing works alphabetically not in array order, the ~ forces the control texture to always go on top of the actual item texture
 		let controlItemTextureSizes = new Set();
 		let allItems = expandItemCriteria(itemCriteria, itemTags);
 		await Promise.all(allItems.map(async itemName => {
-			if(itemName in itemIcons) {
-				itemName = itemIcons[itemName];
-			} else {
-				let matchingPatternAndReplacement = itemIconPatterns.find(([pattern]) => pattern.test(itemName));
-				if(matchingPatternAndReplacement) {
-					itemName = itemName.replaceAll(...matchingPatternAndReplacement);
-				}
-			}
+			itemName = itemIconsMap.get(itemName) ?? itemName;
 			let variant = -1;
 			if(itemName.includes(".")) {
 				let dotIndex = itemName.indexOf(".");
@@ -1530,13 +1533,13 @@ async function retextureControlItems(config, itemIcons, itemTags, resourceItemTe
 				let safeSize = lcm((await paddedTexturePromise).width, itemTextureSize) * config.CONTROL_ITEM_TEXTURE_SCALE; // When compositing textures, MCBE scales all textures to the maximum, so the size of the overlay control texture has to be the LCM of itself and in-game items. Hence, if in-game items have a higher resolution than expected, they will probably be scaled wrong. The control item texture scale setting will scale them more (but they get reaaaaally big and make the item texture atlas huuuge)
 				controlItemTextureSizes.add(safeSize);
 				(usingTerrainAtlas? terrainTexture : itemTexture)["texture_data"][itemName] = {
-					"textures": [originalTexturePath, `${controlTexturePath.slice(0, -4)}_${safeSize}`],
+					"textures": [originalTexturePath, `${controlTexturePath}_${safeSize}`],
 					"additive": true // texture compositing means resource packs that change the item textures will still work
 				};
 			}
 		}));
 		await Promise.all(Array.from(controlItemTextureSizes).map(async size => {
-			let resizedImagePath = `${controlTexturePath.slice(0, -4)}_${size}.png`;
+			let resizedImagePath = `${controlTexturePath}_${size}.png`;
 			let resizedTextureBlob = await resizeImageToBlob(await paddedTexturePromise, size);
 			controlItemTextures.push([resizedImagePath, resizedTextureBlob]);
 		}));
@@ -1627,299 +1630,6 @@ function expandItemCriteria(itemCriteria, itemTags) {
 	let minecraftTags = itemCriteria["tags"].filter(tag => !tag.includes(":")); // we can't find which items are used in custom tags
 	let namespacedItemsFromTags = removeFalsies(minecraftTags.map(tag => itemTags[`minecraft:${tag}`]).flat());
 	return [...itemCriteria["names"], ...namespacedItemsFromTags.map(itemName => itemName.replace(/^minecraft:/, ""))];
-}
-/**
- * Converts an item filter into a Molang expression representation.
- * @param {ItemCriteria} itemCriteria
- * @returns {string}
- */
-function itemCriteriaToMolang(itemCriteria, slot = "slot.weapon.mainhand") {
-	let names = itemCriteria["names"].map(name => name.includes(":")? name : `minecraft:${name}`);
-	let tags = itemCriteria["tags"].map(tag => tag.includes(":")? tag : `minecraft:${tag}`);
-	let nameQuery = names.length > 0? `q.is_item_name_any('${slot}',${names.map(name => `'${name}'`).join(",")})` : undefined;
-	let tagQuery = tags.length > 0? `q.equipped_item_any_tag('${slot}',${tags.map(tag => `'${tag}'`).join(",")})` : undefined;
-	return removeFalsies([nameQuery, tagQuery]).join("||") || "false";
-}
-/**
- * Creates a Molang expression that mimics array access. Defaults to the last element if nothing is found.
- * @param {any[]} array A continuous array
- * @param {string} indexVar
- * @returns {string}
- */
-function arrayToMolang(array, indexVar) {
-	let arrayEntries = Object.entries(array).map(([i, x]) => [+i, x]); // to handle splitting, original indices need to be preserved, hence looking at index-value pairs
-	return arrayEntriesToMolang(arrayEntries, indexVar);
-}
-/**
- * @param {[number, any][]} entries
- * @param {string} indexVar
- * @returns {string}
- */
-function arrayEntriesToMolang(entries, indexVar) {
-	const splittingThreshold = 10;
-	if(entries.length > splittingThreshold) { // large arrays cause Molang stack overflows, so this splits them in half in such a situation.
-		let middle = floor(entries.length / 2);
-		let lowerMolang = arrayEntriesToMolang(entries.slice(0, middle), indexVar);
-		let upperMolang = arrayEntriesToMolang(entries.slice(middle), indexVar);
-		let lower = parseInt(lowerMolang) == +lowerMolang? lowerMolang : `(${lowerMolang})`;
-		let upper = parseInt(upperMolang) == +upperMolang? upperMolang : `(${upperMolang})`;
-		if(lower == upper) {
-			return lower;
-		}
-		return `${indexVar}<${entries[middle][0]}?${lower}:${upper}`;
-	}
-	let uniqueValues = Array.from(new Set(entries.map(([, value]) => value)));
-	let valuesAndIndices = uniqueValues.map(x => [x, entries.filter(([, value]) => value == x).map(([i]) => i)]);
-	let lowestIndex = min(...entries.map(([i]) => i));
-	let highestIndex = max(...entries.map(([i]) => i));
-	let conditionsAndValues = valuesAndIndices.map(([value, indices]) => {
-		/** @type {Vec2[]} */
-		let intervals = [];
-		indices.forEach(i => {
-			if(intervals.at(-1)?.[1] == i - 1) {
-				intervals.at(-1)[1] = i;
-			} else {
-				intervals.push([i, i]);
-			}
-		});
-		let intervalConditions = intervals.map(([lower, upper]) => {
-			if(lower == upper) {
-				return `${indexVar}==${lower}`;
-			} else if(lower == lowestIndex && upper == highestIndex) {
-				return "true";
-			} else if(lower == lowestIndex) {
-				return `${indexVar}<${upper + 1}`;
-			} else if(upper == highestIndex) {
-				return `${indexVar}>${lower - 1}`;
-			} else {
-				let condition = `${indexVar}>${lower - 1}&&${indexVar}<${upper + 1}`;
-				return intervals.length == 1? condition : `(${condition})`; // because min_engine_version is 1.16.0, Molang || always run before &&, so it has to be put inside brackets
-			}
-		});
-		return [intervalConditions.join("||"), value];
-	});
-	
-	// Move the longest condition to the end. Because it's at the end of a ternary condition, we don't have to include the condition, saving characters (and a tiny bit of computation)
-	let longestConditionLength = max(...conditionsAndValues.map(([condition]) => condition.length));
-	let longestConditionAndValueIndex = conditionsAndValues.findIndex(([condition]) => condition.length == longestConditionLength);
-	let longestConditionAndValue = conditionsAndValues[longestConditionAndValueIndex];
-	conditionsAndValues.splice(longestConditionAndValueIndex, 1);
-	conditionsAndValues.push(longestConditionAndValue);
-	
-	return conditionsAndValues.map(([condition, value], i) => {
-		if(condition == "true" || i == conditionsAndValues.length - 1) {
-			return value;
-		}
-		return `${i > 0? "(" : ""}${condition}?${value}:`;
-	}).join("") + ")".repeat(max(conditionsAndValues.length - 2, 0));
-}
-/**
- * Creates a Molang expression that mimics 2D array access.
- * @param {any[][]} array
- * @param {string} indexVar1
- * @param {string} indexVar2
- * @returns {string}
- */
-function array2DToMolang(array, indexVar1, indexVar2) {
-	return arrayToMolang(array.map(subArray => `(${arrayToMolang(subArray, indexVar2)})`), indexVar1);
-}
-/**
- * Converts a function into minified Molang code. Variables can be referenced with $[...].
- * @param {Function} func
- * @param {Record<string, any>} [vars]
- * @returns {string} Molang code
- */
-function functionToMolang(func, vars = {}) {
-	let funcCode = func.toString();
-	let minifiedFuncBody = funcCode.slice(funcCode.indexOf("{") + 1, funcCode.lastIndexOf("}")).replaceAll(/\/\/.+/g, "").replaceAll(/(?<!return|let)\s/g, "");
-	// else if() {...} statements must be expanded to be else { if() {...} }
-	let expandedElseIfCode = "";
-	for(let i = 0; i < minifiedFuncBody.length; i++) {
-		if(minifiedFuncBody.slice(i, i + 7) == "elseif(") {
-			expandedElseIfCode += "else{if(";
-			let inIfBlock = false;
-			let braceCounter = 0;
-			i += 6;
-			let j = i;
-			for(; braceCounter > 0 || !inIfBlock; j++) {
-				if(minifiedFuncBody[j] == "{") {
-					braceCounter++;
-					inIfBlock = true;
-				} else if(minifiedFuncBody[j] == "}") {
-					braceCounter--;
-				}
-				if(braceCounter == 0 && inIfBlock && minifiedFuncBody.slice(j, j + 5) == "}else") {
-					inIfBlock = false; // keep the final else clause included
-				}
-			}
-			minifiedFuncBody = minifiedFuncBody.slice(0, j) + "}" + minifiedFuncBody.slice(j);
-			continue;
-		}
-		expandedElseIfCode += minifiedFuncBody[i];
-	}
-	let mathedCode = expandedElseIfCode
-		.replaceAll(`"`, `'`)
-		.replaceAll(/([\w\.]+)(\+|-){2};/g, "$1=$1$21;") // x++ and x-- -> x=x+1 and x=x-1
-		.replaceAll(/([\w\.\$\[\]]+)(\+|-|\*|\/|\?\?|%)=([^;]+);/g, "$1=$1$2$3;") // x += y -> x=x+y for +, -, *, /, ??, %
-		.replaceAll(/([\w\.]+)%(-?\d+)/g, "math.mod($1,$2)")
-		.replaceAll(/\(([^()]+|[^()]*\([^()]+\)[^()]*)\)%(-?\d+)/g, "math.mod($1,$2)")
-		.replaceAll("return;", "return 0;"); // complex Molang expressions can't return nothing
-	
-	// I have no idea how to make this smaller. I really wish JS had a native AST conversion API
-	let conditionedCode = "";
-	let parenthesisCounter = 0;
-	let inIfCondition = false;
-	let needsExtraBracketAtEndOfIfCondition = false; // short variable names are for slow typers :)
-	for(let i = 0; i < mathedCode.length; i++) {
-		let char = mathedCode[i];
-		if(mathedCode.slice(i, i + 3) == "if(") {
-			inIfCondition = true;
-			parenthesisCounter++;
-			needsExtraBracketAtEndOfIfCondition = /^if\([^()]+\?\?/.test(mathedCode.slice(i)); // null coalescing operator is the only operator with lower precedence than the ternary conditional operator, so if a conditional expression in if() has ?? without any brackets around it, brackets are needed around the entire conditional expression
-			if(needsExtraBracketAtEndOfIfCondition) {
-				conditionedCode += "(";
-			}
-			i += 2;
-			continue;
-		} else if(mathedCode.slice(i, i + 4) == "else") {
-			conditionedCode = conditionedCode.slice(0, -1) + ":"; // replace the ; with :
-			i += 3;
-			continue;
-		} else if(/^for\([^)]+\)/.test(mathedCode.slice(i))) {
-			let forStatement = substituteVariablesIntoMolang(mathedCode.slice(i).match(/^for\([^)]+\)/)[0], vars);
-			let [, forVarName, initialValue, upperBound] = forStatement.match(/^for\(let (\w+)=(\d+);\w+<(\d+);\w+\+\+\)/);
-			let forBlockStartI = mathedCode.slice(i).indexOf("{") + i;
-			let forBlockEndI = forBlockStartI + 1;
-			let braceCounter = 1;
-			while(braceCounter > 0) {
-				if(mathedCode[forBlockEndI] == "{") {
-					braceCounter++;
-				} else if(mathedCode[forBlockEndI] == "}") {
-					braceCounter--;
-				}
-				forBlockEndI++;
-			}
-			let forBlockContent = mathedCode.slice(forBlockStartI + 1, forBlockEndI - 1);
-			let expandedForCode = "";
-			for(let forI = +initialValue; forI < +upperBound; forI++) {
-				expandedForCode += substituteVariablesIntoMolang(forBlockContent, {
-					...vars,
-					...{
-						[forVarName]: forI
-					}
-				});
-			}
-			mathedCode = mathedCode.slice(0, i) + expandedForCode + mathedCode.slice(forBlockEndI);
-			i--;
-			continue;
-		} else if(char == "(") {
-			parenthesisCounter++;
-		} else if(char == ")") {
-			parenthesisCounter--;
-			if(parenthesisCounter == 0 && inIfCondition) {
-				inIfCondition = false;
-				if(needsExtraBracketAtEndOfIfCondition) {
-					conditionedCode += ")";
-				}
-				conditionedCode += "?";
-				continue;
-			}
-		} else if(char == "}") {
-			conditionedCode += "};";
-			continue;
-		}
-		conditionedCode += char;
-	}
-	let variabledCode = substituteVariablesIntoMolang(conditionedCode, vars);
-	let tempVariabledCode = convertJSVariablesToMolangTemps(variabledCode);
-	let deadBranchRemovedCode = removeDeadMolangBranches(tempVariabledCode);
-	return deadBranchRemovedCode;
-}
-/**
- * Substitutes variables into Molang code. Variables must be written as `$[varName]`.
- * @param {string} code
- * @param {Record<string, any>} vars
-*/
-function substituteVariablesIntoMolang(code, vars) {
-	// Yay more fun regular expressions, this time to work with variable substitution ($[...])
-	return code.replaceAll(/\$\[(\w+)(?:\[(\d+)\]|\.(\w+))?(?:(\+|-|\*|\/)(\d+))?\]/g, (_, varName, index, key, operator, operand) => {
-		if(varName in vars) {
-			let value = vars[varName];
-			index ??= key;
-			if(index != undefined) {
-				if(index in value) {
-					value = value[index];
-				} else {
-					throw new RangeError(`Index out of bounds: [${value.join(", ")}][${index}] does not exist`);
-				}
-			}
-			switch(operator) {
-				case "+": return +value + +operand; // must cast operands to numbers to avoid string concatenation
-				case "-": return value - operand;
-				case "*": return value * operand;
-				case "/": return value / operand;
-				default: return value;
-			}
-		} else {
-			throw new ReferenceError(`Variable "${varName}" was not passed to function -> Molang converter!`);
-		}
-	});
-}
-/**
- * Converts JavaScript variables in Molang code (e.g. `let x = 42;`) into proper temp variables (e.g. `t.loc_1234 = 42;`).
- * @param {string} code
- * @returns {string}
- */
-function convertJSVariablesToMolangTemps(code) {
-	let variableNames = Array.from(code.matchAll(/\blet (\w+)/gm)).map(([, varName]) => varName);
-	let counter = 0;
-	let uniqueVariableNames = new Set(variableNames);
-	uniqueVariableNames.forEach(varName => {
-		let tempVarName = `t._${counter++}`;
-		code = code.replaceAll(joinRegExps(/(?<!\.)\b(let )?/, varName, /\b/g), tempVarName);
-	});
-	return code;
-}
-/**
- * Removes dead branches from Molang code, only if the condition is explicitly true or false.
- * @param {string} code
- * @returns {string}
- */
-function removeDeadMolangBranches(code) {
-	for(let i = 0; i < code.length; i++) {
-		if(code.slice(i, i + 7) == "false?{") {
-			let j = i + 7;
-			let braceCounter = 1;
-			let elseBlockStart = -1;
-			while(braceCounter || code[j] != ";") {
-				if(code[j] == "{") braceCounter++;
-				else if(code[j] == "}") braceCounter--;
-				if(braceCounter == 0 && code[j] == ":") {
-					elseBlockStart = j + 2;
-				}
-				j++;
-			}
-			let elseBlock = elseBlockStart > -1? code.slice(elseBlockStart, j - 1) : "";
-			code = code.slice(0, i) + elseBlock + code.slice(j + 1);
-			i--;
-		} else if(code.slice(i, i + 6) == "true?{") {
-			let j = i + 6;
-			let braceCounter = 1;
-			let trueBlockEnd;
-			while(braceCounter || code[j] != ";") {
-				if(code[j] == "{") braceCounter++;
-				else if(code[j] == "}") braceCounter--;
-				if(braceCounter == 0 && code[j] == ":") {
-					trueBlockEnd = j;
-				}
-				j++;
-			}
-			trueBlockEnd ??= j;
-			code = code.slice(0, i) + code.slice(i + 6, trueBlockEnd - 1) + code.slice(j + 1);
-			i--;
-		}
-	}
-	return code;
 }
 
 /** @import * as Data from "./data/schemas" */

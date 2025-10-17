@@ -1,8 +1,6 @@
 // Contains definitions for block states that control texture variants and rotations.
 // Note: Block states that control geometry are used in blockShapeGeos.json
 {
-	"$schema": "schemas/blockStateDefinitions.schema.json",
-	
 	"texture_variants": {
 		"*": {
 			// When a block has a block state in here, it will check the value and look at the corresponding texture variant in terrain_texture.json
@@ -356,5 +354,7 @@
 				}
 			}
 		}
-	}
+	},
+	
+	"$schema": "schemas/blockStateDefinitions.schema.json"
 }

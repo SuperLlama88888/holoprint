@@ -12,12 +12,12 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4.1.1
+      - name: Setup Node
+        uses: actions/setup-node@v5
       - name: Build
         run: |
-          cd pipeline
-          npm ci
-          cd ..
-          node pipeline/build.js --version=${{ github.ref_name }} && rm -r tests
+          npm ci -w pipeline
+          npm run build -- -- --version=${{ github.ref_name }}
       - name: Upload files as artifact
         uses: actions/upload-pages-artifact@v3.0.1
         with:

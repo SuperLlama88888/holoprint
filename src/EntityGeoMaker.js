@@ -1,4 +1,4 @@
-import { addVec3, jsonc, mulVec3, subVec3, tuple } from "./utils.js";
+import { jsonc, tuple, vec3 } from "./utils.js";
 
 export default class EntityGeoMaker {
 	resourcePackStack;
@@ -47,8 +47,8 @@ export default class EntityGeoMaker {
 				if("inflate" in geoCube) {
 					let { inflate } = geoCube;
 					let inflate3 = tuple([inflate, inflate, inflate]);
-					cube["pos"] = subVec3(cube["pos"], inflate3);
-					cube["size"] = addVec3(cube["size"], mulVec3(inflate3, 2));
+					cube["pos"] = vec3.sub(cube["pos"], inflate3);
+					cube["size"] = vec3.add(cube["size"], vec3.mul(inflate3, 2));
 				}
 				if("rotation" in geoCube) {
 					cube["rot"] = geoCube["rotation"];

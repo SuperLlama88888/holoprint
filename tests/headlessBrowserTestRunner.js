@@ -12,7 +12,7 @@ export const plainTextHeaders = {
 
 /**
  * @param {(page: puppeteer.Page) => Promise<boolean>} testBody
- * @param {(req: http.IncomingMessage, res: http.ServerResponse, page: puppeteer.Page) => Promise<void>} [httpReqFunc]
+ * @param {(req: http.IncomingMessage, res: http.ServerResponse, page: puppeteer.Page) => void} [httpReqFunc]
  * @param {string} [codeDirectory]
  */
 export async function test(testBody, httpReqFunc, codeDirectory = "dist") {

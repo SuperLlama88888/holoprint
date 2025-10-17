@@ -12,10 +12,12 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4.1.1
+      - name: Setup Node
+        uses: actions/setup-node@v5
       - name: Validate JSON Data
         run: |
-          npm install @actions/core ajv strip-json-comments@3.1.1
-          node tests/validateJsonData.js
+          npm ci -w validate_json_data
+          npm run test -w validate_json_data
   check-block-translation-coverage:
     name: Check Block Translation Coverage
     needs: validate-json-data
@@ -23,10 +25,12 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4.1.1
+      - name: Setup Node
+        uses: actions/setup-node@v5
       - name: Check block translation coverage
         run: |
-          npm install @actions/core puppeteer mime-types
-          node tests/checkBlockTranslationCoverage.js
+          npm ci -w check_block_translation_coverage
+          npm run test -w check_block_translation_coverage
   test-sample-structures:
     name: Test Sample Structures
     needs: [validate-json-data, check-block-translation-coverage]
@@ -38,25 +42,21 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4.1.1
-      - name: Build
+      - name: Setup Node
+        uses: actions/setup-node@v5
+      - name: Test Sample Structures on ${{ matrix.browser }}
         run: |
-          cd pipeline
-          npm ci
-          cd ..
-          node pipeline/build.js --export-holoprint-lib
+          npm ci -w pipeline -w test_sample_structures
+          if [[ "${{ matrix.browser }}" == "Firefox" ]]; then
+            npx puppeteer browsers install firefox
+          fi
+          npm run test -w test_sample_structures -- ${{ matrix.browser }}
       - name: Upload built code
-        if: matrix.browser == 'Firefox'
+        if: always() && matrix.browser == 'Firefox'
         uses: actions/upload-artifact@v4.4.3
         with:
           name: build
           path: dist
-      - name: Test Sample Structures on ${{ matrix.browser }}
-        run: |
-          npm install @actions/core puppeteer mime-types
-          if [[ "${{ matrix.browser }}" == "Firefox" ]]; then
-            npx puppeteer browsers install firefox
-          fi
-          node tests/testSampleStructures.js ${{ matrix.browser }}
       - name: Upload completed packs as artifacts
         if: always()
         uses: actions/upload-artifact@v4.4.0
