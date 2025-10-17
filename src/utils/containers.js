@@ -103,7 +103,7 @@ export class JSONSet {
 	}
 	/** @param {T} value */
 	has(value) {
-		return this.#set.has(this.stringify(value))
+		return this.#set.has(this.stringify(value));
 	}
 	clear() {
 		this.#indices.clear();
