@@ -585,15 +585,15 @@ export async function makePack(structureFiles, config, resourcePackStack = new R
 export async function extractStructureFilesFromPack(resourcePack) {
 	let packFileReader = new BlobReader(resourcePack);
 	let packFolder = new ZipReader(packFileReader);
+	/** @type {FileEntry[]} */
+	// @ts-ignore
 	let structureFileEntries = (await packFolder.getEntries()).filter(entry => entry.filename.endsWith(".mcstructure"));
 	packFolder.close();
 	let structureBlobs = await Promise.all(structureFileEntries.map(entry => entry.getData(new BlobWriter())));
 	let packName = resourcePack.name.slice(0, resourcePack.name.indexOf("."));
-	if(structureBlobs.length == 1) {
-		return [new File([structureBlobs[0]], structureFileEntries[0].comment || `${packName}.mcstructure`)];
-	} else {
-		return await Promise.all(structureBlobs.map(async (structureBlob, i) => new File([structureBlob], structureFileEntries[i].comment || `${packName}_${i}.mcstructure`)));
-	}
+	return structureBlobs.map((structureBlob, i) => new File([structureBlob], structureFileEntries[i].comment || `${packName}${structureBlobs.length > 1? `_${i}` : ""}.mcstructure`, {
+		type: "application/mcstructure"
+	}));
 }
 /**
  * Updates a HoloPrint resource pack by remaking it.
@@ -1633,7 +1633,7 @@ function expandItemCriteria(itemCriteria, itemTags) {
 }
 
 /** @import * as Data from "./data/schemas" */
-/** @import { ZipWriterAddDataOptions } from "@zip.js/zip.js" */
+/** @import { ZipWriterAddDataOptions, FileEntry } from "@zip.js/zip.js" */
 /**
  * @typedef {object} HoloPrintConfig An object for storing HoloPrint config options.
  * @property {string[]} IGNORED_BLOCKS
