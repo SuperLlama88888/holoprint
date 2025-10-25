@@ -138,8 +138,8 @@ export function weaklyCacheUnaryFunc(func, preReturnFunc = doNothing) {
 			return preReturnFunc(cache.get(x));
 		}
 		let res = func(x);
-		cache.set(x, preReturnFunc(res));
-		return res;
+		cache.set(x, res);
+		return preReturnFunc(res);
 	};
 }
 export class AsyncFactory {

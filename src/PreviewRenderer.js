@@ -284,7 +284,7 @@ export default class PreviewRenderer extends AsyncFactory {
 		exporter.parse(exportReadyScene, glbData => {
 			TS: assertAs(glbData, ArrayBuffer);
 			let glbFile = new File([glbData], `${this.packName}.glb`, {
-				type: "application/glb"
+				type: "model/gltf-binary"
 			});
 			downloadFile(glbFile);
 		}, e => {
