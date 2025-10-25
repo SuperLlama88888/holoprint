@@ -63,6 +63,15 @@ export function html(strings, ...values) {
 	return strings.reduce((acc, str, i) => acc + str + (values[i] ?? ""), "");
 }
 
+/**
+ * @template T
+ * @param {Promise<T>} promise
+ * @param {(x: T) => T} [cloneFunc]
+ * @returns {Promise<T>}
+ */
+export function clonePromise(promise, cloneFunc = structuredClone) {
+	return promise.then(res => cloneFunc(res));
+}
 export function getStackTrace(e = new Error()) {
 	return removeFalsies(e.stack.split("\n").slice(1));
 }
@@ -117,19 +126,20 @@ export function conditionallyCacheUnaryFunc(func, conditionFunc, preReturnFunc =
  * @template {WeakKey} P
  * @template {(x: P) => any} F
  * @param {F} func
+ * @param {(x: ReturnType<F>) => ReturnType<F>} [preReturnFunc]
  * @returns {F}
  */
-export function weaklyCacheUnaryFunc(func) {
+export function weaklyCacheUnaryFunc(func, preReturnFunc = doNothing) {
 	/** @type {WeakMap<P, ReturnType<F>>} */
 	let cache = new WeakMap();
 	// @ts-expect-error
 	return x => {
 		if(cache.has(x)) {
-			return cache.get(x);
+			return preReturnFunc(cache.get(x));
 		}
 		let res = func(x);
 		cache.set(x, res);
-		return res;
+		return preReturnFunc(res);
 	};
 }
 export class AsyncFactory {

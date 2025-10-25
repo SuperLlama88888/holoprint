@@ -7,7 +7,7 @@ import MaterialList from "./MaterialList.js";
 import PreviewRenderer from "./PreviewRenderer.js";
 
 import entityScripts from "./entityScripts.molang.js";
-import { addPaddingToImage, array2DToMolang, arrayToMolang, awaitAllEntries, weaklyCacheUnaryFunc, concatenateFiles, createNumericEnum, desparseArray, functionToMolang, getFileExtension, hexColorToClampedTriplet, itemCriteriaToMolang, jsonc, JSONMap, JSONSet, lcm, loadTranslationLanguage, max, min, onEvent, overlaySquareImages, pi, removeFalsies, removeFileExtension, resizeImageToBlob, round, setImageOpacity, sha256, toBlob, toImage, translate, transposeMatrix, tuple, UserError, ReplacingPatternMap, conditionallyCacheUnaryFunc } from "./utils.js";
+import { addPaddingToImage, array2DToMolang, arrayToMolang, awaitAllEntries, weaklyCacheUnaryFunc, concatenateFiles, createNumericEnum, desparseArray, functionToMolang, getFileExtension, hexColorToClampedTriplet, itemCriteriaToMolang, jsonc, JSONMap, JSONSet, lcm, loadTranslationLanguage, max, min, onEvent, overlaySquareImages, pi, removeFalsies, removeFileExtension, resizeImageToBlob, round, setImageOpacity, sha256, toBlob, toImage, translate, transposeMatrix, tuple, UserError, ReplacingPatternMap, conditionallyCacheUnaryFunc, clonePromise } from "./utils.js";
 import ResourcePackStack from "./ResourcePackStack.js";
 import BlockUpdater from "./BlockUpdater.js";
 import SpawnAnimationMaker from "./SpawnAnimationMaker.js";
@@ -585,15 +585,15 @@ export async function makePack(structureFiles, config, resourcePackStack = new R
 export async function extractStructureFilesFromPack(resourcePack) {
 	let packFileReader = new BlobReader(resourcePack);
 	let packFolder = new ZipReader(packFileReader);
+	/** @type {FileEntry[]} */
+	// @ts-ignore
 	let structureFileEntries = (await packFolder.getEntries()).filter(entry => entry.filename.endsWith(".mcstructure"));
 	packFolder.close();
 	let structureBlobs = await Promise.all(structureFileEntries.map(entry => entry.getData(new BlobWriter())));
 	let packName = resourcePack.name.slice(0, resourcePack.name.indexOf("."));
-	if(structureBlobs.length == 1) {
-		return [new File([structureBlobs[0]], structureFileEntries[0].comment || `${packName}.mcstructure`)];
-	} else {
-		return await Promise.all(structureBlobs.map(async (structureBlob, i) => new File([structureBlob], structureFileEntries[i].comment || `${packName}_${i}.mcstructure`)));
-	}
+	return structureBlobs.map((structureBlob, i) => new File([structureBlob], structureFileEntries[i].comment || `${packName}${structureBlobs.length > 1? `_${i}` : ""}.mcstructure`, {
+		type: "application/mcstructure"
+	}));
 }
 /**
  * Updates a HoloPrint resource pack by remaking it.
@@ -727,7 +727,8 @@ export const readStructureNBT = weaklyCacheUnaryFunc(
 			console.debug(e);
 			return await readStructureNBTWithOptions(structureFile, arrayBuffer); // if the .mcstructure was generated from an external source, it's best to try with generic NBT read settings
 		}
-	}
+	},
+	clonePromise
 );
 
 /**
@@ -1633,7 +1634,7 @@ function expandItemCriteria(itemCriteria, itemTags) {
 }
 
 /** @import * as Data from "./data/schemas" */
-/** @import { ZipWriterAddDataOptions } from "@zip.js/zip.js" */
+/** @import { ZipWriterAddDataOptions, FileEntry } from "@zip.js/zip.js" */
 /**
  * @typedef {object} HoloPrintConfig An object for storing HoloPrint config options.
  * @property {string[]} IGNORED_BLOCKS
