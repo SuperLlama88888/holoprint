@@ -7,7 +7,7 @@ import MaterialList from "./MaterialList.js";
 import PreviewRenderer from "./PreviewRenderer.js";
 
 import entityScripts from "./entityScripts.molang.js";
-import { addPaddingToImage, array2DToMolang, arrayToMolang, awaitAllEntries, weaklyCacheUnaryFunc, concatenateFiles, createNumericEnum, desparseArray, functionToMolang, getFileExtension, hexColorToClampedTriplet, itemCriteriaToMolang, jsonc, JSONMap, JSONSet, lcm, loadTranslationLanguage, max, min, onEvent, overlaySquareImages, pi, removeFalsies, removeFileExtension, resizeImageToBlob, round, setImageOpacity, sha256, toBlob, toImage, translate, transposeMatrix, tuple, UserError, ReplacingPatternMap, conditionallyCacheUnaryFunc } from "./utils.js";
+import { addPaddingToImage, array2DToMolang, arrayToMolang, awaitAllEntries, weaklyCacheUnaryFunc, concatenateFiles, createNumericEnum, desparseArray, functionToMolang, getFileExtension, hexColorToClampedTriplet, itemCriteriaToMolang, jsonc, JSONMap, JSONSet, lcm, loadTranslationLanguage, max, min, onEvent, overlaySquareImages, pi, removeFalsies, removeFileExtension, resizeImageToBlob, round, setImageOpacity, sha256, toBlob, toImage, translate, transposeMatrix, tuple, UserError, ReplacingPatternMap, conditionallyCacheUnaryFunc, clonePromise } from "./utils.js";
 import ResourcePackStack from "./ResourcePackStack.js";
 import BlockUpdater from "./BlockUpdater.js";
 import SpawnAnimationMaker from "./SpawnAnimationMaker.js";
@@ -727,7 +727,8 @@ export const readStructureNBT = weaklyCacheUnaryFunc(
 			console.debug(e);
 			return await readStructureNBTWithOptions(structureFile, arrayBuffer); // if the .mcstructure was generated from an external source, it's best to try with generic NBT read settings
 		}
-	}
+	},
+	clonePromise
 );
 
 /**
