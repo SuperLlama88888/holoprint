@@ -37,6 +37,7 @@ let packNameInput;
 let coordinateLockStructureCoordsCont;
 /** @type {WeakMap<File, Vec3>} */
 let coordinateLockStructureCoords = new WeakMap();
+/** @type {HTMLDivElement} */
 let completedPacksCont;
 /** @type {SimpleLogger} */
 let logger;
@@ -660,28 +661,29 @@ async function makePack(structureFiles, localResourcePacks) {
 	
 	let resourcePackStack = new ResourcePackStack(localResourcePacks);
 	
-	let pack;
+	/** @type {Awaited<ReturnType<typeof HoloPrint.makePack>>} */
+	let res;
 	logger?.setOriginTime(performance.now());
 	
 	let generationFailedError; // generation failed or generational failure?
-	if(ACTUAL_CONSOLE_LOG) {
-		pack = await HoloPrint.makePack(structureFiles, config, resourcePackStack, previewCont);
-	} else {
-		try {
-			pack = await HoloPrint.makePack(structureFiles, config, resourcePackStack, previewCont);
-		} catch(e) {
-			console.error(`Pack creation failed!\n${e}`);
-			if(!(e instanceof UserError)) {
-				generationFailedError = e;
-			}
-			if(!(e instanceof DOMException)) { // DOMExceptions can also be thrown, which don't have stack traces and hence can't be tracked if caught. HOWEVER they extend Error...
-				console.debug(getStackTrace(e).join("\n"));
-			}
+	try {
+		res = await HoloPrint.makePack(structureFiles, config, resourcePackStack, previewCont);
+	} catch(e) {
+		if(ACTUAL_CONSOLE_LOG) {
+			throw e;
+		}
+		console.error(`Pack creation failed!\n${e}`);
+		if(!(e instanceof UserError)) {
+			generationFailedError = e;
+		}
+		if(!(e instanceof DOMException)) { // DOMExceptions can also be thrown, which don't have stack traces and hence can't be tracked if caught. HOWEVER they extend Error...
+			console.debug(getStackTrace(e).join("\n"));
 		}
 	}
 	
 	infoButton.classList.add("finished");
-	if(pack) {
+	if(res) {
+		let { pack, materialList } = res;
 		infoButton.dataset.translate = "download";
 		infoButton.classList.add("completed");
 		let hasLoggedPackCreation = false;
@@ -697,7 +699,7 @@ async function makePack(structureFiles, localResourcePacks) {
 					}
 				}();
 			}
-			downloadFile(pack, pack.name);
+			downloadFile(pack);
 		};
 	} else {
 		if(generationFailedError) {

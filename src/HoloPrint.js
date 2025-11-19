@@ -52,17 +52,16 @@ const HOLOGRAM_LAYER_MODES = createNumericEnum(["SINGLE", "ALL_BELOW"]);
 /**
  * Makes a HoloPrint resource pack from a structure file.
  * @param {File | File[]} structureFiles Either a singular structure file (`*.mcstructure`), or an array of structure files
- * @param {HoloPrintConfig} [config]
+ * @param {Partial<HoloPrintConfig>} [partialConfig]
  * @param {ResourcePackStack} [resourcePackStack]
- * @param {HTMLElement} [previewCont]
- * @param {(previews: PreviewRenderer[]) => void} [previewLoadedCallback] A function that will be called once the preview has finished loading
- * @returns {Promise<File>} Resource pack (`*.mcpack`)
+ * @param {Element} [previewCont]
+ * @returns {Promise<{ pack: File, materialList: MaterialList, previews?: Promise<PreviewRenderer[]> }>}
  */
-export async function makePack(structureFiles, config, resourcePackStack = new ResourcePackStack(), previewCont, previewLoadedCallback) {
+export async function makePack(structureFiles, partialConfig, resourcePackStack = new ResourcePackStack(), previewCont) {
 	console.info(`Running HoloPrint ${VERSION}`);
 	let startTime = performance.now();
 	
-	config = addDefaultConfig(config ?? {});
+	let config = addDefaultConfig(partialConfig ?? {});
 	if(!Array.isArray(structureFiles)) {
 		structureFiles = [structureFiles];
 	}
@@ -536,9 +535,17 @@ export async function makePack(structureFiles, config, resourcePackStack = new R
 	
 	console.info(`Finished creating pack in ${+(performance.now() - startTime).toFixed(0) / 1000}s!`);
 	
+	let pack = new File([zippedPack], `${packName}.holoprint.mcpack`, {
+		type: "application/mcpack"
+	});
+	let res = {
+		pack,
+		materialList
+	};
+	
 	if(previewCont) {
-		let showPreview = async () => {
-			let previews = await Promise.all(structureSizes.map(async (structureSize, structureI) => {
+		let showPreview = () => {
+			res.previews = Promise.all(structureSizes.map(async (structureSize, structureI) => {
 				if(structureI > 0) {
 					previewCont.parentNode.appendChild(document.createElement("hr"));
 				}
@@ -550,7 +557,6 @@ export async function makePack(structureFiles, config, resourcePackStack = new R
 					showOptions: config.SHOW_PREVIEW_WIDGETS
 				});
 			}));
-			previewLoadedCallback?.(previews);
 		};
 		if(totalBlockCount < config.PREVIEW_BLOCK_LIMIT && removeFalsies(blockPalette).length < 250) {
 			showPreview();
@@ -573,9 +579,7 @@ export async function makePack(structureFiles, config, resourcePackStack = new R
 		}
 	}
 	
-	return new File([zippedPack], `${packName}.holoprint.mcpack`, {
-		type: "application/mcpack"
-	});
+	return res;
 }
 /**
  * Retrieves the structure files from a completed HoloPrint resource pack.
@@ -601,7 +605,7 @@ export async function extractStructureFilesFromPack(resourcePack) {
  * @param {HoloPrintConfig} [config]
  * @param {ResourcePackStack} [resourcePackStack]
  * @param {HTMLElement} [previewCont]
- * @returns {Promise<File>}
+ * @returns {Promise<{ pack: File, materialList: MaterialList, previews?: Promise<PreviewRenderer[]> }>}
  */
 export async function updatePack(resourcePack, config, resourcePackStack, previewCont) {
 	let structureFiles = await extractStructureFilesFromPack(resourcePack);
@@ -1780,6 +1784,7 @@ function expandItemCriteria(itemCriteria, itemTags) {
  * @property {string} translatedName
  * @property {number} count How many of this item is required
  * @property {string} partitionedCount A formatted string representing partitions of the total count
+ * @property {string} partitionedCountWithoutTotal Same as partitionedCount, but without the "[total count] = " at the start
  * @property {number | undefined} auxId The item's aux ID
  */
 /**

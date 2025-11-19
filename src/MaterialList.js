@@ -1,4 +1,4 @@
-import { floor, nanToUndefined, PatternMap, removeFalsies, ReplacingPatternMap, tuple } from "./utils.js";
+import { floor, formatMatrixAsTable, ln, nanToUndefined, PatternMap, removeFalsies, ReplacingPatternMap, tuple } from "./utils.js";
 
 export default class MaterialList {
 	/** @type {Map<string, number>} */
@@ -131,6 +131,7 @@ export default class MaterialList {
 				translatedName,
 				count,
 				partitionedCount: this.#partitionCount(count),
+				partitionedCountWithoutTotal: this.#partitionCountWithoutTotal(count),
 				auxId
 			};
 		}).sort((a, b) => b.count - a.count || +(a.translatedName > b.translatedName));
@@ -202,9 +203,17 @@ export default class MaterialList {
 		if(count < 64) {
 			return count.toString();
 		} else {
-			let parts = [[floor(count / 1728), "\uE200"], [floor(count / 64) % 27, "s"], [count % 64, ""]].filter(([n]) => n).map(x => x.join(""));
-			return `${count} = ${parts.join(" + ")}`; // a custom shulker box emoji (taken from OreUI files) is defined in font/glyph_E2.png
+			return `${count} = ${this.#partitionCountWithoutTotal(count)}`;
 		}
+	}
+	/**
+	 * Partitions a count, same as #partitionCount but with no total count at the start
+	 * @param {number} count
+	 * @returns {string}
+	 */
+	#partitionCountWithoutTotal(count) {
+		let parts = [[floor(count / 1728), "\uE200"], [floor(count / 64) % 27, "s"], [count % 64, ""]].filter(([n]) => n).map(x => x.join("")); // a custom shulker box emoji (taken from OreUI files) is defined in font/glyph_E2.png
+		return parts.join(" + ");
 	}
 	/**
 	 * Finds the aux id for an item.
@@ -221,6 +230,30 @@ export default class MaterialList {
 	 */
 	#findBlockAuxId(blockName) {
 		return nanToUndefined(this.#blockMetadata.get(`minecraft:${blockName}`)?.["raw_id"] * 65536);
+	}
+	
+	/**
+	 * Makes a markdown table from a list of entries.
+	 * @param {MaterialListEntry[]} entries
+	 * @param {string} packName
+	 * @returns {string}
+	 */
+	static makeMarkdownTable(entries, packName) {
+		let lines = [tuple(["Item name", "Count (raw)", "Count"]), ...entries.map(({ translatedName, partitionedCountWithoutTotal, count }) => [translatedName, count, partitionedCountWithoutTotal])];
+		// check if the raw count column is redundant
+		if(entries.every(({ count }) => count < 64)) {
+			lines.forEach(line => line.splice(1, 1));
+		}
+		return `# Material list${packName? `: ${packName}` : ""}\n${formatMatrixAsTable(lines)}`;
+	}
+	/**
+	 * Makes an image from a list of entries.
+	 * @param {MaterialListEntry[]} entries
+	 * @returns {string}
+	 */
+	static makeCsv(entries) {
+		let lines = [["Item name", "Count"], ...entries.map(({ translatedName, count }) => [translatedName, count])];
+		return lines.map(line => line.join()).join("\n");
 	}
 }
 
