@@ -1,12 +1,8 @@
-// import { html } from "../utils.js";
-
-function html(strings, ...values) {
-	console.log(strings, values)
-	return strings.reduce((acc, str, i) => acc + str + (values[i] ?? ""), "");
-}
+import { html, selectEl, selectEls } from "../utils.js";
 
 export default class MaterialListTable extends HTMLElement {
 	#hasRendered = false;
+	#countsArePartitioned = false;
 	/** @type {MaterialListEntry[]} */
 	#entries = [];
 	get entries() {
@@ -14,6 +10,7 @@ export default class MaterialListTable extends HTMLElement {
 	}
 	set entries(entries) {
 		this.#entries = entries;
+		this.#countsArePartitioned = this.#entries.some(({ count }) => count >= 64);
 		this.#render();
 	}
 	
@@ -33,8 +30,24 @@ export default class MaterialListTable extends HTMLElement {
 	}
 	
 	#render() {
-		let countsArePartitioned = this.#entries.some(({ count }) => count >= 64);
-		
+		if(this.#entries.length >= 30) {
+			this.shadowRoot.innerHTML = html`
+				<style>
+					:host {
+						display: flex;
+						justify-content: center;
+						gap: 5px;
+					}
+				</style>
+				<material-list-table></material-list-table>
+				<material-list-table></material-list-table>
+			`;
+			/** @type {[MaterialListTable, MaterialListTable]} */
+			let subtables = this.shadowRoot[selectEls]("material-list-table");
+			subtables[0].entries = this.#entries.slice(0, this.#entries.length / 2 + 0.5);
+			subtables[1].entries = this.#entries.slice(this.#entries.length / 2 + 0.5);
+			return;
+		}
 		this.shadowRoot.innerHTML = html`
 			<style>
 				:host {
@@ -68,7 +81,7 @@ export default class MaterialListTable extends HTMLElement {
 				<thead>
 					<tr>
 						<th>Item name</th>
-						${countsArePartitioned? html`<th>Count</th>` : ""}
+						${this.#countsArePartitioned? html`<th>Count</th>` : ""}
 						<th>Amount</th>
 					</tr>
 				</thead>
@@ -76,7 +89,7 @@ export default class MaterialListTable extends HTMLElement {
 					${this.#entries.length? this.#entries.map(entry => html`
 						<tr>
 							<td>${entry.itemName}</td>
-							${countsArePartitioned? html`<td>${entry.count}</td>` : ""}
+							${this.#countsArePartitioned? html`<td>${entry.count}</td>` : ""}
 							<td>${entry.partitionedCountWithoutTotal}</td>
 						</tr>
 					`).join("") : html`
