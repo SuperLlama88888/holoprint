@@ -12,6 +12,7 @@ import Vec3Input from "./components/Vec3Input.js";
 import SimpleLogger from "./components/SimpleLogger.js";
 import LilGui from "./components/LilGui.js";
 import ResizingInput from "./components/ResizingInput.js";
+import MaterialListTable from "./components/MaterialListTable.js";
 
 const IN_PRODUCTION = false;
 const ACTUAL_CONSOLE_LOG = false;
@@ -216,6 +217,7 @@ document[onEvent]("DOMContentLoaded", () => {
 	customElements.define("vec-3-input", Vec3Input);
 	customElements.define("simple-logger", SimpleLogger);
 	customElements.define("lil-gui", LilGui);
+	customElements.define("material-list-table", MaterialListTable);
 	if(!ACTUAL_CONSOLE_LOG) {
 		logger = cast(selectEl("#log"), SimpleLogger);
 		logger.patchConsoleMethods();
@@ -701,6 +703,10 @@ async function makePack(structureFiles, localResourcePacks) {
 			}
 			downloadFile(pack);
 		};
+		
+		let materialListTable = document.createElement("material-list-table");
+		materialListTable.entries = materialList.export();
+		completedPacksCont.appendChild(materialListTable);
 	} else {
 		if(generationFailedError) {
 			let bugReportAnchor = document.createElement("a");

@@ -157,6 +157,7 @@ export async function makePack(structureFiles, partialConfig, resourcePackStack 
 	
 	let dataPromise = loadDataFiles(dataFileNames);
 	let { languagesDotJson, bedrockMetadata } = await awaitAllEntries({
+		/** @type {Promise<string[]>} */
 		languagesDotJson: packTemplatePromise.languagesDotJson,
 		bedrockMetadata: loadBedrockMetadataFiles({
 			blocks: "vanilladata_modules/mojang-blocks.json",

@@ -239,7 +239,7 @@ export default class MaterialList {
 	 * @returns {string}
 	 */
 	static makeMarkdownTable(entries, packName) {
-		let lines = [tuple(["Item name", "Count (raw)", "Count"]), ...entries.map(({ translatedName, partitionedCountWithoutTotal, count }) => [translatedName, count, partitionedCountWithoutTotal])];
+		let lines = [tuple(["Item name", "Count", "Amount"]), ...entries.map(({ translatedName, count, partitionedCountWithoutTotal }) => [translatedName, count, partitionedCountWithoutTotal])];
 		// check if the raw count column is redundant
 		if(entries.every(({ count }) => count < 64)) {
 			lines.forEach(line => line.splice(1, 1));

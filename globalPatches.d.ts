@@ -3,6 +3,7 @@
 import FileInputTable from "./src/components/FileInputTable";
 import ItemCriteriaInput from "./src/components/ItemCriteriaInput";
 import LilGui from "./src/components/LilGui";
+import MaterialListTable from "./src/components/MaterialListTable";
 import ResizingInput from "./src/components/ResizingInput";
 import SimpleLogger from "./src/components/SimpleLogger";
 import Vec3Input from "./src/components/Vec3Input";
@@ -38,6 +39,7 @@ declare global {
 		"vec-3-input": Vec3Input;
 		"simple-logger": SimpleLogger;
 		"lil-gui": LilGui;
+		"material-list-table": MaterialListTable;
 	}
 	interface EventTarget {
 		[onEvent]: this["addEventListener"];
