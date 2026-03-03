@@ -705,7 +705,8 @@ async function makePack(structureFiles, localResourcePacks) {
 		};
 		
 		let materialListTable = document.createElement("material-list-table");
-		materialListTable.entries = materialList.export();
+		materialListTable.materialList = materialList;
+		materialListTable.packName = pack.name.replace(/\.holoprint\.mcpack$/, "");
 		completedPacksCont.appendChild(materialListTable);
 	} else {
 		if(generationFailedError) {

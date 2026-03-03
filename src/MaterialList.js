@@ -1,12 +1,14 @@
-import { floor, formatMatrixAsTable, ln, nanToUndefined, PatternMap, removeFalsies, ReplacingPatternMap, tuple } from "./utils.js";
+import { floor, formatMatrixAsTable, nanToUndefined, PatternMap, removeFalsies, ReplacingPatternMap, tuple } from "./utils.js";
 
 export default class MaterialList {
 	/** @type {Map<string, number>} */
 	materials = new Map();
 	totalMaterialCount = 0;
+	shulkerBoxGlyphChar = "\uE200";
 	
 	#blockMetadata;
 	#itemMetadata;
+	/** @type {Map<string, string>} */
 	#translations;
 	
 	// I wish I could use import...with to import these from materialListMappings.json, which would have worked with esbuild, but it doesn't let me load JSONC... sad...
@@ -212,7 +214,7 @@ export default class MaterialList {
 	 * @returns {string}
 	 */
 	#partitionCountWithoutTotal(count) {
-		let parts = [[floor(count / 1728), "\uE200"], [floor(count / 64) % 27, "s"], [count % 64, ""]].filter(([n]) => n).map(x => x.join("")); // a custom shulker box emoji (taken from OreUI files) is defined in font/glyph_E2.png
+		let parts = [[floor(count / 1728), this.shulkerBoxGlyphChar], [floor(count / 64) % 27, "s"], [count % 64, ""]].filter(([n]) => n).map(x => x.join("")); // a custom shulker box emoji (taken from OreUI files) is defined in font/glyph_E2.png
 		return parts.join(" + ");
 	}
 	/**

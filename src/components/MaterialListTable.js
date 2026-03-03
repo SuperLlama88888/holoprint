@@ -1,16 +1,28 @@
-import { html, selectEl, selectEls } from "../utils.js";
+import { html } from "../utils.js";
 
 export default class MaterialListTable extends HTMLElement {
 	#hasRendered = false;
 	#countsArePartitioned = false;
 	/** @type {MaterialListEntry[]} */
-	#entries = [];
-	get entries() {
-		return this.#entries;
+	#entries;
+	/** @type {MaterialList} */
+	#materialList;
+	get materialList() {
+		return this.#materialList;
 	}
-	set entries(entries) {
-		this.#entries = entries;
+	set materialList(materialList) {
+		this.#materialList = materialList;
+		this.#entries = this.#materialList.export();
 		this.#countsArePartitioned = this.#entries.some(({ count }) => count >= 64);
+		this.#render();
+	}
+	/** @type {string | undefined} */
+	#packName;
+	get packName() {
+		return this.#packName;
+	}
+	set packName(packName) {
+		this.#packName = packName;
 		this.#render();
 	}
 	
@@ -30,27 +42,10 @@ export default class MaterialListTable extends HTMLElement {
 	}
 	
 	#render() {
-		if(this.#entries.length >= 30) {
-			this.shadowRoot.innerHTML = html`
-				<style>
-					:host {
-						display: flex;
-						justify-content: center;
-						gap: 5px;
-					}
-				</style>
-				<material-list-table></material-list-table>
-				<material-list-table></material-list-table>
-			`;
-			/** @type {[MaterialListTable, MaterialListTable]} */
-			let subtables = this.shadowRoot[selectEls]("material-list-table");
-			subtables[0].entries = this.#entries.slice(0, this.#entries.length / 2 + 0.5);
-			subtables[1].entries = this.#entries.slice(this.#entries.length / 2 + 0.5);
-			return;
-		}
 		this.shadowRoot.innerHTML = html`
 			<style>
 				:host {
+					margin: 15px;
 					display: flex;
 					justify-content: center;
 				}
@@ -80,6 +75,9 @@ export default class MaterialListTable extends HTMLElement {
 			<table>
 				<thead>
 					<tr>
+						<th colspan="3">${this.packName? `Material list: ${this.packName}` : "Material list"}</th>
+					</tr>
+					<tr>
 						<th>Item name</th>
 						${this.#countsArePartitioned? html`<th>Count</th>` : ""}
 						<th>Amount</th>
@@ -90,7 +88,7 @@ export default class MaterialListTable extends HTMLElement {
 						<tr>
 							<td>${entry.itemName}</td>
 							${this.#countsArePartitioned? html`<td>${entry.count}</td>` : ""}
-							<td>${entry.partitionedCountWithoutTotal}</td>
+							<td>${entry.partitionedCountWithoutTotal.replaceAll(this.#materialList.shulkerBoxGlyphChar, "sb")}</td>
 						</tr>
 					`).join("") : html`
 						<tr>
@@ -106,3 +104,4 @@ export default class MaterialListTable extends HTMLElement {
 }
 
 /** @import { MaterialListEntry } from "../HoloPrint.js" */
+/** @import MaterialList from "../MaterialList.js" */
