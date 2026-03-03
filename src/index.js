@@ -94,11 +94,12 @@ document[onEvent]("DOMContentLoaded", () => {
 			structureFilesInput.setCustomValidity("");
 		} else {
 			if(files.length == 1) { // the other input methods can't handle multiple files
-				if(files[0].name.endsWith(".mcworld") || files[0].name.endsWith(".zip")) {
+				let firstFileName = files[0].name;
+				if(firstFileName.endsWith(".mcworld") || firstFileName.endsWith(".mctemplate") || firstFileName.endsWith(".zip")) {
 					clearFileInput(structureFilesInput);
 					setFileInputFiles(worldFileInput, files);
 					return;
-				} else if(files[0].name.endsWith(".mcpack")) {
+				} else if(firstFileName.endsWith(".mcpack")) {
 					clearFileInput(structureFilesInput);
 					setFileInputFiles(oldPackInput, files);
 					return;
@@ -448,10 +449,11 @@ async function handleInputFiles(files) {
 	let {
 		"mcstructure": structureFiles = [],
 		"mcworld": worldFiles = [],
+		"mctemplate": templateFiles = [],
 		"zip": zipFiles = [],
 		"mcpack": resourcePackFiles = []
 	} = groupByFileExtension(files);
-	let allWorldFiles = [...worldFiles, ...zipFiles];
+	let allWorldFiles = [...worldFiles, ...templateFiles, ...zipFiles];
 	
 	addFilesToFileInput(structureFilesList, structureFiles);
 	setFileInputFiles(worldFileInput, allWorldFiles.slice(0, 1)); // yes I could make it do all of them, but seriously, how many people are drag-and-dropping more than 1 world file onto the page?

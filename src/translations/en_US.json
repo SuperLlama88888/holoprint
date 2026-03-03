@@ -101,7 +101,7 @@
 	"structure_files.upload": "Upload structure files (`*.mcstructure`)",
 	"structure_files.error": "Please upload only `.mcstructure` files.",
 	"extract_from_world.heading": "Extract from world",
-	"extract_from_world.upload": "Upload world file (`*.mcworld`, `*.zip`)",
+	"extract_from_world.upload": "Upload world file (`*.mcworld`, `*.mctemplate`, `*.zip`)",
 	"extract_from_world.extracting": "Extracting structures from world...",
 	"extract_from_world.success": "Successfully extracted {COUNT} structure[s]!",
 	"extract_from_world.error": "No saved structures found!",
