@@ -9,6 +9,8 @@ let THREE;
 let OrbitControls;
 /** @type {typeof import("three/examples/jsm/exporters/GLTFExporter.js").GLTFExporter} */
 let GLTFExporter;
+/** @type {typeof import("three/examples/jsm/utils/BufferGeometryUtils.js")} */
+let BufferGeometryUtils;
 
 const IN_PRODUCTION = false;
 
@@ -160,6 +162,7 @@ export default class PreviewRenderer extends AsyncFactory {
 		THREE ??= await import("three");
 		OrbitControls ??= (await import("three/examples/jsm/controls/OrbitControls.js")).OrbitControls;
 		GLTFExporter ??= (await import("three/examples/jsm/exporters/GLTFExporter.js")).GLTFExporter;
+		BufferGeometryUtils ??= (await import("three/examples/jsm/utils/BufferGeometryUtils.js"));
 		
 		this.#center = new THREE.Vector3(-this.structureSize[0] * 8, this.structureSize[1] * 8, -this.structureSize[2] * 8);
 		this.#imageBlobData = await toImageData(this.#imageBlob);
@@ -247,6 +250,11 @@ export default class PreviewRenderer extends AsyncFactory {
 			alphaTest: 0.2,
 			transparent: true
 		});
+		
+		/** @type {THREE.BufferGeometry[]} */
+		let opaqueBlockGeos = [];
+		/** @type {THREE.BufferGeometry[]} */
+		let translucentBlockGeos = [];
 		for(let i in this.#blockPositions) {
 			let polyMeshTemplate = this.polyMeshTemplatePalette[i];
 			if(!polyMeshTemplate.length) { // a template is an array of faces. no faces = nothing to be rendered for this block
@@ -256,6 +264,23 @@ export default class PreviewRenderer extends AsyncFactory {
 			let positions = this.#blockPositions[i].map(([x, y, z]) => [-16 * x - 16, 16 * y, -16 * z - 16]);
 			let isTranslucent = this.#isPolyMeshTemplateTranslucent(polyMeshTemplate);
 			let material = isTranslucent? transparentMat : regularMat;
+			
+			// Blocks that appear more than 3 times in the structure use instanced rendering, but all other blocks are merged into meshes
+			// Note: 3 was not chosen for any technical reason.
+			if(positions.length <= 3) {
+				positions.forEach(pos => {
+					let geoAtThisPosition = geo.clone();
+					let translationMatrix = (new THREE.Matrix4()).makeTranslation(...pos);
+					geoAtThisPosition.applyMatrix4(translationMatrix);
+					if(isTranslucent) {
+						translucentBlockGeos.push(geoAtThisPosition);
+					} else {
+						opaqueBlockGeos.push(geoAtThisPosition);
+					}
+				});
+				continue;
+			}
+			
 			let instancedMesh = this.#instanceBufferGeoAtPositions(geo, positions, material);
 			if(isTranslucent) {
 				instancedMesh.renderOrder = positions.length; // more common transparent blocks will be rendered after less common transparent blocks, minimising the amount of visual issues
@@ -263,7 +288,12 @@ export default class PreviewRenderer extends AsyncFactory {
 			instancedMesh.castShadow = true;
 			instancedMesh.receiveShadow = true;
 			this.#scene.add(instancedMesh);
-			this.#shouldRenderNextFrame = true;
+		}
+		if(opaqueBlockGeos.length) {
+			this.#mergeGeosAndAddToScene(opaqueBlockGeos, regularMat);
+		}
+		if(translucentBlockGeos.length) {
+			this.#mergeGeosAndAddToScene(translucentBlockGeos, transparentMat);
 		}
 		
 		this.#loop();
@@ -626,12 +656,29 @@ export default class PreviewRenderer extends AsyncFactory {
 		return instancedMesh;
 	}
 	/**
+	 * Merges multiple geometries into a single mesh then adds it to the scene. Shadows are enabled on the mesh.
+	 * @param {THREE.BufferGeometry[]} geos
+	 * @param {THREE.Material} material
+	 */
+	#mergeGeosAndAddToScene(geos, material) {
+		let mergedGeo = BufferGeometryUtils.mergeGeometries(geos, false);
+		let mesh = new THREE.Mesh(mergedGeo, material);
+		mesh.castShadow = true;
+		mesh.receiveShadow = true;
+		mesh.userData.includeInGlbExport = true;
+		this.#scene.add(mesh);
+	}
+	/**
 	 * Expands the scene's instanced meshes into a new scene.
 	 * @returns {THREE.Scene}
 	 */
 	#expandInstancedMeshes() {
 		let scene = new THREE.Scene();
 		this.#scene.traverse(obj => {
+			if(obj.userData.includeInGlbExport) {
+				scene.add(obj.clone());
+				return;
+			}
 			if(!(obj instanceof THREE.InstancedMesh)) {
 				return;
 			}
@@ -653,3 +700,4 @@ export default class PreviewRenderer extends AsyncFactory {
 /** @import * as THREE from "three" */
 /** @import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js" */
 /** @import { GLTFExporter } from "three/examples/jsm/exporters/GLTFExporter.js" */
+/** @import BufferGeometryUtils from "three/examples/jsm/utils/BufferGeometryUtils.js" */
