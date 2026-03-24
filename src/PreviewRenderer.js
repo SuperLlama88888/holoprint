@@ -37,6 +37,12 @@ export default class PreviewRenderer extends AsyncFactory {
 	static #POINT_LIGHT_DEFAULT_INTENSITY = 75;
 	static #DIRECTIONAL_LIGHT_STRENGTH = 1.57;
 	static #FLOOR_SHADOW_DARKNESS = 0.3;
+	/** @type {Partial<typeof PreviewRenderer.prototype.options>} */
+	static #WEAK_DEVICE_OPTIONS = {
+		maxPointLights: 0,
+		// shadows will also be disabled, but when the user enables them, they should be the lowest quality
+		directionalLightShadowMapResolution: 1
+	};
 	
 	cont;
 	packName;
@@ -196,6 +202,13 @@ export default class PreviewRenderer extends AsyncFactory {
 		this.#addLighting();
 		await this.#initBackground();
 		
+		if(this.#isWeakDevice()) {
+			this.options = {
+				...this.options,
+				...PreviewRenderer.#WEAK_DEVICE_OPTIONS
+			};
+			this.#directionalLight.castShadow = false;
+		}
 		if(this.options.showFps) {
 			this.cont.appendChild(this.#stats.dom);
 		}
@@ -212,6 +225,9 @@ export default class PreviewRenderer extends AsyncFactory {
 				}
 			}), "preview.options.shadowsEnabled");
 			shadowOption = this.#guiLocName(this.#optionsGui.add(this.options, "directionalLightShadowMapResolution", 1, 5, 1).onChange(() => this.#updateDirectionalLightShadowMapSize()), "preview.options.shadowQuality");
+			if(!this.#directionalLight.castShadow) {
+				shadowOption.hide();
+			}
 			this.#guiLocName(this.#optionsGui.add(this.options, "directionalLightAngle", 0, 360, 1).onChange(() => this.#setDirectionalLightPos()), "preview.options.lightAngle");
 			this.#guiLocName(this.#optionsGui.add(this.options, "directionalLightHeight", 0.1, 2, 0.01).onChange(() => this.#setDirectionalLightPos()), "preview.options.lightHeight");
 			this.#guiLocName(this.#optionsGui.add(this.options, "showSkybox").onChange(() => this.#initBackground()), "preview.options.showSkybox");
@@ -568,6 +584,14 @@ export default class PreviewRenderer extends AsyncFactory {
 		} else {
 			this.#scene.background = null;
 		}
+	}
+	/**
+	 * Checks if the GPU on the current device is not very powerful.
+	 * @returns {boolean}
+	 */
+	#isWeakDevice() {
+		let gl = this.#renderer.getContext();
+		return gl.getParameter(gl.MAX_VERTEX_UNIFORM_VECTORS) <= 1024 || gl.getParameter(gl.MAX_FRAGMENT_UNIFORM_VECTORS) <= 256; // yes
 	}
 	/** @returns {Promise<THREE.Texture>} */
 	async #createTexture() {
