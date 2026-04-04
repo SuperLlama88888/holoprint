@@ -102,7 +102,7 @@ export function getClassFullName(c) {
  * @template R
  * @template {(x: P) => R} F
  * @param {F} func
- * @param {(x: P) => boolean} conditionFunc
+ * @param {(x: Parameters<F>[0]) => boolean} conditionFunc
  * @param {(x: R) => R} [preReturnFunc]
  * @returns {F}
  */

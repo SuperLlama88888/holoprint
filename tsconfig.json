@@ -2,6 +2,7 @@
 	"compilerOptions": {
 		"checkJs": true,
 		"noEmit": true,
+		"strict": false,
 		"noUnusedLocals": true,
 		"noUnusedParameters": true,
 		"target": "esnext",
