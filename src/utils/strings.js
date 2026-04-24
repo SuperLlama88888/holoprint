@@ -1,3 +1,5 @@
+import { repeatedlyApplyEndofunction } from "./meta.js";
+
 /**
  * Measures the dimensions of a string of text.
  * @param {string} text
@@ -40,4 +42,16 @@ export function joinOr(arr, language = "en") {
 
 export function addOrdinalSuffix(num) {
 	return num + (num % 10 == 1 && num % 100 != 11? "st" : num % 10 == 2 && num % 100 != 12? "nd" : num % 10 == 3 && num % 100 != 13? "rd" : "th");
+}
+
+/**
+ * Functions identically to `replaceAll()` on a string, but performs it repeatedly until no more changes are made.
+ * @param {string} string
+ * @param {string | RegExp} searchValue
+ * @param {string} replaceValue
+ * @param {number} [maxRepetitions] The maximum number of replacement repetitions allowed before throwing an error.
+ * @returns {string}
+ */
+export function repeatedlyReplaceAll(string, searchValue, replaceValue, maxRepetitions) {
+	return repeatedlyApplyEndofunction(string, str => str.replaceAll(searchValue, replaceValue), maxRepetitions);
 }

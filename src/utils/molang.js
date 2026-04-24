@@ -1,6 +1,8 @@
 import { removeFalsies } from "./arrays.js";
 import { floor, max, min } from "./math.js";
+import { repeatedlyApplyEndofunction } from "./meta.js";
 import { joinRegExps } from "./misc.js";
+import { repeatedlyReplaceAll } from "./strings.js";
 
 /**
  * Converts an item filter into a Molang expression representation.
@@ -205,9 +207,11 @@ export function functionToMolang(func, vars = {}) {
 		}
 		conditionedCode += char;
 	}
+	// I will read this sometime in the 2030's and I'm willing to bet that it will still be stage 2: https://github.com/tc39/proposal-pipeline-operator
 	let variabledCode = substituteVariablesIntoMolang(conditionedCode, vars);
 	let tempVariabledCode = convertJSVariablesToMolangTemps(variabledCode);
-	let deadBranchRemovedCode = removeDeadMolangBranches(tempVariabledCode);
+	let booleanSimplifiedCode = simplifyBooleanExpressions(tempVariabledCode);
+	let deadBranchRemovedCode = removeDeadBranches(booleanSimplifiedCode);
 	return deadBranchRemovedCode;
 }
 /**
@@ -241,7 +245,7 @@ function substituteVariablesIntoMolang(code, vars) {
 	});
 }
 /**
- * Converts JavaScript variables in Molang code (e.g. `let x = 42;`) into proper temp variables (e.g. `t.loc_1234 = 42;`).
+ * Converts JavaScript variables in Molang code (e.g. `let x = 42;`) into proper temp variables (e.g. `t._0 = 42;`).
  * @param {string} code
  * @returns {string}
  */
@@ -256,11 +260,31 @@ function convertJSVariablesToMolangTemps(code) {
 	return code;
 }
 /**
+ * Simplifies Boolean expressions (`||` and `&&`) where one side is a constant `true` or `false` and the other side is a single literal.
+ * @param {string} code
+ * @returns {string}
+ */
+function simplifyBooleanExpressions(code) {
+	return repeatedlyApplyEndofunction(code, code => {
+		// pov: js doesn't have a pipe operator
+		code = repeatedlyReplaceAll(code, /([\w\.]+)&&false/g, "false");
+		code = repeatedlyReplaceAll(code, /([\w\.]+)&&true/g, "$1");
+		code = repeatedlyReplaceAll(code, /false&&([\w\.]+)/g, "false");
+		code = repeatedlyReplaceAll(code, /true&&([\w\.]+)/g, "$1");
+		code = repeatedlyReplaceAll(code, /([\w\.]+)\|\|false/g, "$1");
+		code = repeatedlyReplaceAll(code, /([\w\.]+)\|\|true/g, "true");
+		code = repeatedlyReplaceAll(code, /false\|\|([\w\.]+)/g, "$1");
+		code = repeatedlyReplaceAll(code, /true\|\|([\w\.]+)/g, "true");
+		code = repeatedlyReplaceAll(code, /\(([\w\.]+)\)/g, "$1"); // bracket unwrapping for nested boolean expressions... idk if I need this
+		return code;
+	});
+}
+/**
  * Removes dead branches from Molang code, only if the condition is explicitly true or false.
  * @param {string} code
  * @returns {string}
  */
-function removeDeadMolangBranches(code) {
+function removeDeadBranches(code) {
 	for(let i = 0; i < code.length; i++) {
 		if(code.slice(i, i + 7) == "false?{") {
 			let j = i + 7;
