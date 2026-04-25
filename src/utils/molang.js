@@ -267,14 +267,14 @@ function convertJSVariablesToMolangTemps(code) {
 function simplifyBooleanExpressions(code) {
 	return repeatedlyApplyEndofunction(code, code => {
 		// pov: js doesn't have a pipe operator
-		code = repeatedlyReplaceAll(code, /([\w\.]+)&&false/g, "false");
-		code = repeatedlyReplaceAll(code, /([\w\.]+)&&true/g, "$1");
-		code = repeatedlyReplaceAll(code, /false&&([\w\.]+)/g, "false");
-		code = repeatedlyReplaceAll(code, /true&&([\w\.]+)/g, "$1");
-		code = repeatedlyReplaceAll(code, /([\w\.]+)\|\|false/g, "$1");
-		code = repeatedlyReplaceAll(code, /([\w\.]+)\|\|true/g, "true");
-		code = repeatedlyReplaceAll(code, /false\|\|([\w\.]+)/g, "$1");
-		code = repeatedlyReplaceAll(code, /true\|\|([\w\.]+)/g, "true");
+		code = repeatedlyReplaceAll(code, /(!?[\w\.]+)&&false/g, "false");
+		code = repeatedlyReplaceAll(code, /(!?[\w\.]+)&&true/g, "$1");
+		code = repeatedlyReplaceAll(code, /false&&(!?[\w\.]+)/g, "false");
+		code = repeatedlyReplaceAll(code, /true&&(!?[\w\.]+)/g, "$1");
+		code = repeatedlyReplaceAll(code, /(!?[\w\.]+)\|\|false/g, "$1");
+		code = repeatedlyReplaceAll(code, /(!?[\w\.]+)\|\|true/g, "true");
+		code = repeatedlyReplaceAll(code, /false\|\|(!?[\w\.]+)/g, "$1");
+		code = repeatedlyReplaceAll(code, /true\|\|(!?[\w\.]+)/g, "true");
 		code = repeatedlyReplaceAll(code, /\(([\w\.]+)\)/g, "$1"); // bracket unwrapping for nested boolean expressions... idk if I need this
 		return code;
 	});
