@@ -1,8 +1,13 @@
-let { $, v, q, t, structureSize, singleLayerMode, structureCount, HOLOGRAM_INITIAL_ACTIVATION, initialOffset, defaultTextureIndex, textureBlobsCount, totalBlocksToValidate, totalBlocksToValidateByLayer, backupSlotCount, toggleRendering, changeOpacity, toggleTint, toggleValidating, changeLayer, decreaseLayer, changeLayerMode, disablePlayerControls, backupHologram, changeStructure, moveHologram, rotateHologram, initVariables, renderingControls, broadcastActions, structureSizesMolang, coordinateLockEnabled, coordinateLockCoordsMolang } = {}; // prevent linting errors
+let { $, v, q, t, structureSize, singleLayerMode, structureCount, HOLOGRAM_INITIAL_ACTIVATION, initialOffset, defaultTextureIndex, textureBlobsCount, totalBlocksToValidate, totalBlocksToValidateByLayer, backupSlotCount, toggleRendering, changeOpacity, toggleTint, toggleValidating, changeLayer, decreaseLayer, changeLayerMode, disablePlayerControls, backupHologram, changeStructure, moveHologram, rotateHologram, initVariables, renderingControls, broadcastActions, structureSizesMolang, coordinateLockEnabled, coordinateLockCoordsMolang, isArmorStand, hasHologram } = {}; // prevent linting errors
 
 const ACTIONS = createNumericEnum(["NEXT_STRUCTURE", "PREVIOUS_STRUCTURE", "INCREASE_LAYER", "DECREASE_LAYER", "TOGGLE_RENDERING", "INCREASE_OPACITY", "DECREASE_OPACITY", "TOGGLE_TINT", "TOGGLE_VALIDATING", "CHANGE_LAYER_MODE", "ROTATE_HOLOGRAM_CLOCKWISE", "ROTATE_HOLOGRAM_ANTICLOCKWISE", "BACKUP_HOLOGRAM", "MOVE_HOLOGRAM", "MOVE_POS_X", "MOVE_NEG_X", "MOVE_POS_Y", "MOVE_NEG_Y", "MOVE_POS_Z", "MOVE_NEG_Z"]);
 
-function armorStandInitialization() {
+function initialize() {
+	v.ui_action_counter = t.ui_action_counter ?? 0;
+	if(!$[hasHologram]) {
+		return;
+	}
+	
 	v.hologram_activated = HOLOGRAM_INITIAL_ACTIVATION; // true/false are substituted in here for the different subpacks
 	v.hologram.offset_x = $[initialOffset[0]];
 	v.hologram.offset_y = $[initialOffset[1]];
@@ -26,12 +31,14 @@ function armorStandInitialization() {
 	v.hologram.structure_index = 0;
 	v.hologram.structure_count = $[structureCount];
 	
-	// v.hologram.last_held_item = q.get_equipped_item_name ?? "";
-	v.hologram.last_held_item = ""; // this will be kept in the backup
-	v.last_pose = 0;
-	v.last_hurt_direction = q.hurt_direction;
+	if($[isArmorStand]) {
+		// v.hologram.last_held_item = q.get_equipped_item_name ?? "";
+		v.hologram.last_held_item = ""; // this will be kept in the backup
+		v.last_pose = 0;
+		v.last_hurt_direction = q.hurt_direction;
+	}
+	
 	v.player_action_counter = t.player_action_counter ?? 0;
-	v.ui_action_counter = t.ui_action_counter ?? 0;
 	v.last_ui_action_time = q.time_stamp;
 	v.was_ui_action_last_frame = false;
 	v.ui_action_hold_start_time = -1;
@@ -44,8 +51,8 @@ function armorStandInitialization() {
 	v.hologram_backup_requested_time = -601; // 600 ticks = 30s (how long the backup request lasts for)
 	v.skip_spawn_animation = false;
 }
-function armorStandPreAnimation() {
-	if(q.is_in_ui) {
+function preAnimation() {
+	if($[isArmorStand] && q.is_in_ui) {
 		// if the armour stand is holding an item and in the ui, it must be from our custom ui code. I doubt any other addons would interfere here...
 		// no there is not any better way to do this better
 		if(q.is_item_name_any("slot.weapon.offhand", "minecraft:stone", "minecraft:grass_block")) {
@@ -96,9 +103,14 @@ function armorStandPreAnimation() {
 		t.ui_action_counter = v.ui_action_counter;
 		return;
 	}
+	if(!$[hasHologram]) {
+		return;
+	}
 	
-	if(q.time_stamp - v.spawn_time < 5) {
-		v.last_pose = v.armor_stand.pose_index; // armour stands take a tick or two at the start to set their pose correctly
+	if($[isArmorStand]) {
+		if(q.time_stamp - v.spawn_time < 5) {
+			v.last_pose = v.armor_stand.pose_index; // armour stands take a tick or two at the start to set their pose correctly
+		}
 	}
 	
 	let should_set_wrong_blocks = false;
@@ -113,67 +125,77 @@ function armorStandPreAnimation() {
 		}
 		if(just_recovered_backup) {
 			v.player_has_interacted = true;
-			v.hologram_activated = true;
+			if($[isArmorStand]) {
+				v.hologram_activated = true;
+			}
 			v.skip_spawn_animation = true;
 			if(v.hologram.validating) {
 				should_set_wrong_blocks = true;
 			}
 		}
 	}
-	if(!v.hologram_activated) {
-		if(v.last_hurt_direction != q.hurt_direction) {
+	
+	let action = -1;
+	
+	if($[isArmorStand]) {
+		// activate if punched, else return
+		if(!v.hologram_activated) {
+			if(v.last_hurt_direction != q.hurt_direction) {
+				v.last_hurt_direction = q.hurt_direction;
+				v.hologram_activated = true;
+				v.hologram.rendering = true;
+			} else {
+				return;
+			}
+		}
+		
+		// process actions on the armour stand itself: giving it an item, punching, or changing pose
+		let process_action = false;
+		if(v.hologram.last_held_item != q.get_equipped_item_name) {
+			v.hologram.last_held_item = q.get_equipped_item_name;
+			process_action = true;
+		}
+		if(v.last_hurt_direction != q.hurt_direction) { // hitting the armour stand changes this: https://wiki.bedrock.dev/entities/non-mob-runtime-identifiers.html#notable-queries-3
 			v.last_hurt_direction = q.hurt_direction;
-			v.hologram_activated = true;
-			v.hologram.rendering = true;
-		} else {
-			return;
+			process_action = true;
+			if(!q.is_item_equipped) { // change structure on hit when holding nothing
+				action = $[ACTIONS.NEXT_STRUCTURE];
+			}
+		}
+		
+		if(v.last_pose != v.armor_stand.pose_index) {
+			v.last_pose = v.armor_stand.pose_index;
+			if(v.hologram.rendering) {
+				action = $[ACTIONS.INCREASE_LAYER];
+			}
+		}
+		
+		if(process_action) {
+			if($[toggleRendering]) {
+				action = $[ACTIONS.TOGGLE_RENDERING];
+			} else if($[changeOpacity]) {
+				action = $[ACTIONS.INCREASE_OPACITY];
+			} else if($[toggleTint]) {
+				action = $[ACTIONS.TOGGLE_TINT];
+			} else if($[toggleValidating]) {
+				action = $[ACTIONS.TOGGLE_VALIDATING];
+			} else if($[changeLayer]) {
+				action = $[ACTIONS.INCREASE_LAYER];
+			} else if($[decreaseLayer]) {
+				action = $[ACTIONS.DECREASE_LAYER];
+			} else if($[changeLayerMode]) {
+				action = $[ACTIONS.CHANGE_LAYER_MODE];
+			} else if($[rotateHologram]) {
+				action = $[ACTIONS.ROTATE_HOLOGRAM_CLOCKWISE];
+			} else if($[backupHologram]) {
+				action = $[ACTIONS.BACKUP_HOLOGRAM];
+			}
 		}
 	}
 	
-	let process_action = false; // this is the only place I'm using temp variables for their intended purpose
-	let action = -1;
 	let check_layer_validity = false;
 	let changed_structure = false;
-	if(v.hologram.last_held_item != q.get_equipped_item_name) {
-		v.hologram.last_held_item = q.get_equipped_item_name;
-		process_action = true;
-	}
-	if(v.last_hurt_direction != q.hurt_direction) { // hitting the armour stand changes this: https://wiki.bedrock.dev/entities/non-mob-runtime-identifiers.html#notable-queries-3
-		v.last_hurt_direction = q.hurt_direction;
-		process_action = true;
-		if(!q.is_item_equipped) { // change structure on hit when holding nothing
-			action = $[ACTIONS.NEXT_STRUCTURE];
-		}
-	}
 	
-	if(v.last_pose != v.armor_stand.pose_index) {
-		v.last_pose = v.armor_stand.pose_index;
-		if(v.hologram.rendering) {
-			action = $[ACTIONS.INCREASE_LAYER];
-		}
-	}
-	
-	if(process_action) {
-		if($[toggleRendering]) {
-			action = $[ACTIONS.TOGGLE_RENDERING];
-		} else if($[changeOpacity]) {
-			action = $[ACTIONS.INCREASE_OPACITY];
-		} else if($[toggleTint]) {
-			action = $[ACTIONS.TOGGLE_TINT];
-		} else if($[toggleValidating]) {
-			action = $[ACTIONS.TOGGLE_VALIDATING];
-		} else if($[changeLayer]) {
-			action = $[ACTIONS.INCREASE_LAYER];
-		} else if($[decreaseLayer]) {
-			action = $[ACTIONS.DECREASE_LAYER];
-		} else if($[changeLayerMode]) {
-			action = $[ACTIONS.CHANGE_LAYER_MODE];
-		} else if($[rotateHologram]) {
-			action = $[ACTIONS.ROTATE_HOLOGRAM_CLOCKWISE];
-		} else if($[backupHologram]) {
-			action = $[ACTIONS.BACKUP_HOLOGRAM];
-		}
-	}
 	t.player_action_counter ??= 0;
 	if(v.player_action_counter != t.player_action_counter && t.player_action_counter > 0 && t.player_action != -1) {
 		v.player_action_counter = t.player_action_counter;
@@ -185,7 +207,7 @@ function armorStandPreAnimation() {
 	if(t.ui_action_counter != v.ui_action_counter && t.ui_action_counter > 0) {
 		v.ui_action_counter = t.ui_action_counter;
 		if(!$[disablePlayerControls]) {
-			process_action = false;
+			let process_action = false;
 			t.delta_time = q.time_stamp - v.last_ui_action_time; // unfortunately q.time_stamp doesn't work in armour stands rendered in the ui, so we need to do the timing logic here
 			if(!v.was_ui_action_last_frame && t.delta_time >= 1) { // you can press it repeatedly up to 20 times a second
 				process_action = true;
@@ -492,8 +514,8 @@ function playerThirdPerson() {
 // everything has to be exported as default so that they can be imported together as a default import. this lets esbuild add the file hash to the file name when building, and it gets automatically renamed in index.js
 export default {
 	ACTIONS,
-	armorStandInitialization,
-	armorStandPreAnimation,
+	initialize,
+	preAnimation,
 	playerInitVariables,
 	playerRenderingControls,
 	playerBroadcastActions,

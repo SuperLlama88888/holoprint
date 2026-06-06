@@ -14,6 +14,7 @@ import SpawnAnimationMaker from "./SpawnAnimationMaker.js";
 import PolyMeshMaker from "./PolyMeshMaker.js";
 import fetchers from "./fetchers.js";
 import EntityGeoMaker from "./EntityGeoMaker.js";
+import EntityManager from "./EntityManager.js";
 
 export const VERSION = "dev";
 export const IGNORED_BLOCKS = ["air", "piston_arm_collision", "sticky_piston_arm_collision", "light_block", "light_block_0", "light_block_1", "light_block_2", "light_block_3", "light_block_4", "light_block_5", "light_block_6", "light_block_7", "light_block_8", "light_block_9", "light_block_10", "light_block_11", "light_block_12", "light_block_13", "light_block_14", "light_block_15"]; // blocks to be ignored when scanning the structure file
@@ -141,7 +142,8 @@ export async function makePack(structureFiles, partialConfig, resourcePackStack 
 		languagesDotJson: "texts/languages.json"
 	});
 	let resourcesPromise = loadResources({
-		entityFile: "entity/armor_stand.entity.json",
+		armorStandEntityFile: "entity/armor_stand.entity.json",
+		leashKnotEntityFile: "entity/leash_knot.entity.json",
 		blocksDotJson: "blocks.json",
 		vanillaTerrainTexture: "textures/terrain_texture.json",
 		flipbookTextures: "textures/flipbook_textures.json",
@@ -201,7 +203,7 @@ export async function makePack(structureFiles, partialConfig, resourcePackStack 
 	console.log("Block geo maker:", blockGeoMaker);
 	console.log("Poly mesh template palette:", structuredClone(unresolvedPolyMeshTemplatePalette));
 	
-	let { entityFile, defaultPlayerRenderControllers, blocksDotJson, vanillaTerrainTexture, flipbookTextures } = await resourcesPromise.allValues;
+	let { armorStandEntityFile, leashKnotEntityFile, defaultPlayerRenderControllers, blocksDotJson, vanillaTerrainTexture, flipbookTextures } = await resourcesPromise.allValues;
 	let textureAtlas = new TextureAtlas(config, resourcePackStack, blocksDotJson, vanillaTerrainTexture, flipbookTextures, data.textureAtlasMappings);
 	let textureRefs = Array.from(blockGeoMaker.textureRefs);
 	await textureAtlas.makeAtlas(textureRefs); // each texture reference will get added to the textureUvs array property
@@ -220,7 +222,8 @@ export async function makePack(structureFiles, partialConfig, resourcePackStack 
 	structureGeoTemplate["description"]["texture_width"] = textureAtlas.textureWidth;
 	structureGeoTemplate["description"]["texture_height"] = textureAtlas.textureHeight;
 	
-	let entityDescription = entityFile["minecraft:client_entity"]["description"];
+	let leashKnotModeArmorStandEntityFile = structuredClone(armorStandEntityFile);
+	let entityManager = new EntityManager({ armorStandEntityFile, leashKnotEntityFile });
 	
 	let totalBlockCount = 0;
 	let totalBlocksToValidateByStructure = [];
@@ -237,7 +240,7 @@ export async function makePack(structureFiles, partialConfig, resourcePackStack 
 		let geoIdentifier = `geometry.holoprint.hologram_${structureI}`;
 		let geo = structuredClone(structureGeoTemplate);
 		geo["description"]["identifier"] = geoIdentifier;
-		entityDescription["geometry"][geoShortName] = geoIdentifier;
+		entityManager.addGeometry(geoShortName, geoIdentifier);
 		hologramRenderControllers["render_controllers"]["controller.render.holoprint.hologram"]["arrays"]["geometries"]["Array.geometries"].push(`Geometry.${geoShortName}`);
 		let blocksToValidate = [];
 		let blocksToValidateByLayer = [];
@@ -303,7 +306,7 @@ export async function makePack(structureFiles, partialConfig, resourcePackStack 
 		totalBlocksToValidateByStructureByLayer.push(blocksToValidateByLayer);
 	});
 	
-	makeLayerAnimations(config, structureSizes, entityDescription, hologramAnimations, hologramAnimationControllers);
+	makeLayerAnimations(config, structureSizes, entityManager, hologramAnimations, hologramAnimationControllers);
 	if(config.SPAWN_ANIMATION_ENABLED) {
 		let spawnAnimationMaker = new SpawnAnimationMaker(config, [1, maxHeight, 1]);
 		for(let y = 0; y < maxHeight; y++) {
@@ -323,40 +326,38 @@ export async function makePack(structureFiles, partialConfig, resourcePackStack 
 	let coordinateLockAxes = config.COORDINATE_LOCK && transposeMatrix(config.COORDINATE_LOCK);
 	let coordinateLockCoordsMolang = config.COORDINATE_LOCK? coordinateLockAxes.slice(0, 3).map(axis => arrayToMolang(axis, "v.hologram.structure_index")) : ["0", "0", "0"];
 	
-	entityDescription["materials"]["hologram"] = "holoprint_hologram";
-	entityDescription["materials"]["hologram.wrong_block_overlay"] = "holoprint_hologram.wrong_block_overlay";
-	entityDescription["textures"]["hologram.overlay"] = "textures/holoprint/entity/overlay";
-	entityDescription["textures"]["hologram.save_icon"] = "textures/holoprint/particle/save_icon";
-	entityDescription["animations"]["hologram.align"] = "animation.holoprint.hologram.align";
+	entityManager.addMaterial("hologram", "holoprint_hologram");
+	entityManager.addMaterial("hologram.wrong_block_overlay", "holoprint_hologram.wrong_block_overlay");
+	entityManager.addTexture("hologram.overlay", "textures/holoprint/entity/overlay");
+	entityManager.addTexture("hologram.save_icon", "textures/holoprint/particle/save_icon");
+	entityManager.addAnimation("hologram.align", "animation.holoprint.hologram.align");
 	if(config.COORDINATE_LOCK) {
-		entityDescription["animations"]["hologram.coordinate_lock"] = "animation.holoprint.hologram.coordinate_lock";
+		entityManager.addAnimation("hologram.coordinate_lock", "animation.holoprint.hologram.coordinate_lock");
 		let coordinateLockRotsMolang = arrayToMolang(coordinateLockAxes[3], "v.hologram.structure_index");
 		hologramAnimations["animations"]["animation.holoprint.hologram.coordinate_lock"]["bones"]["hologram_offset_wrapper"]["rotation"][1] = coordinateLockRotsMolang;
 		delete hologramAnimations["animations"]["animation.holoprint.hologram.offset"];
 	} else {
-		entityDescription["animations"]["hologram.offset"] = "animation.holoprint.hologram.offset";
+		entityManager.addAnimation("hologram.offset", "animation.holoprint.hologram.offset");
 		delete hologramAnimations["animations"]["animation.holoprint.hologram.coordinate_lock"];
 	}
-	entityDescription["animations"]["hologram.spawn"] = "animation.holoprint.hologram.spawn";
-	entityDescription["animations"]["hologram.wrong_block_overlay"] = "animation.holoprint.hologram.wrong_block_overlay";
-	entityDescription["animations"]["controller.hologram.spawn_animation"] = "controller.animation.holoprint.hologram.spawn_animation";
-	entityDescription["animations"]["controller.hologram.layers"] = "controller.animation.holoprint.hologram.layers";
-	entityDescription["animations"]["controller.hologram.bounding_box"] = "controller.animation.holoprint.hologram.bounding_box";
-	entityDescription["animations"]["controller.hologram.block_validation"] = "controller.animation.holoprint.hologram.block_validation";
-	entityDescription["animations"]["controller.hologram.saving_backup_particles"] = "controller.animation.holoprint.hologram.saving_backup_particles";
-	entityDescription["scripts"]["animate"] ??= [];
-	entityDescription["scripts"]["animate"].push("hologram.align", config.COORDINATE_LOCK? "hologram.coordinate_lock" : "hologram.offset", "hologram.wrong_block_overlay", "controller.hologram.spawn_animation", "controller.hologram.layers", "controller.hologram.bounding_box", "controller.hologram.block_validation", "controller.hologram.saving_backup_particles");
-	entityDescription["scripts"]["should_update_bones_and_effects_offscreen"] = true; // makes backups work when offscreen (from my testing it helps a bit). this also makes it render when you're facing away, removing the need for visible_bounds_width/visible_bounds_height in the geometry file. (when should_update_effects_offscreen is set, it renders when facing away, but doesn't seem to have access to v. variables.)
-	entityDescription["scripts"]["initialize"] ??= [];
-	entityDescription["scripts"]["initialize"].push(functionToMolang(entityScripts.armorStandInitialization, {
+	entityManager.addAnimation("hologram.spawn", "animation.holoprint.hologram.spawn");
+	entityManager.addAnimation("hologram.wrong_block_overlay", "animation.holoprint.hologram.wrong_block_overlay");
+	entityManager.addAnimation("controller.hologram.spawn_animation", "controller.animation.holoprint.hologram.spawn_animation");
+	entityManager.addAnimation("controller.hologram.layers", "controller.animation.holoprint.hologram.layers");
+	entityManager.addAnimation("controller.hologram.bounding_box", "controller.animation.holoprint.hologram.bounding_box");
+	entityManager.addAnimation("controller.hologram.block_validation", "controller.animation.holoprint.hologram.block_validation");
+	entityManager.addAnimation("controller.hologram.saving_backup_particles", "controller.animation.holoprint.hologram.saving_backup_particles");
+	entityManager.addAnimateScript("hologram.align", config.COORDINATE_LOCK? "hologram.coordinate_lock" : "hologram.offset", "hologram.wrong_block_overlay", "controller.hologram.spawn_animation", "controller.hologram.layers", "controller.hologram.bounding_box", "controller.hologram.block_validation", "controller.hologram.saving_backup_particles");
+	entityManager.setShouldUpdateBonesAndEffectsOffscreen(true); // makes backups work when offscreen (from my testing it helps a bit). this also makes it render when you're facing away, removing the need for visible_bounds_width/visible_bounds_height in the geometry file. (when should_update_effects_offscreen is set, it renders when facing away, but doesn't seem to have access to v. variables.)
+	
+	let initializeScriptBaseConstants = {
 		structureSize: structureSizes[0],
 		initialOffset: config.INITIAL_OFFSET,
 		defaultTextureIndex,
 		singleLayerMode: HOLOGRAM_LAYER_MODES.SINGLE,
 		structureCount: structureFiles.length
-	}));
-	entityDescription["scripts"]["pre_animation"] ??= [];
-	entityDescription["scripts"]["pre_animation"].push(functionToMolang(entityScripts.armorStandPreAnimation, {
+	};
+	let preAnimationScriptBaseConstants = {
 		textureBlobsCount: textureBlobs.length,
 		totalBlocksToValidate: arrayToMolang(totalBlocksToValidateByStructure, "v.hologram.structure_index"),
 		totalBlocksToValidateByLayer: array2DToMolang(totalBlocksToValidateByStructureByLayer, "v.hologram.structure_index", "v.hologram.layer"),
@@ -376,24 +377,44 @@ export async function makePack(structureFiles, partialConfig, resourcePackStack 
 		backupHologram: itemCriteriaToMolang(config.CONTROLS.BACKUP_HOLOGRAM),
 		singleLayerMode: HOLOGRAM_LAYER_MODES.SINGLE,
 		ACTIONS: entityScripts.ACTIONS
-	}));
-	entityDescription["geometry"]["hologram.wrong_block_overlay"] = "geometry.holoprint.hologram.wrong_block_overlay";
-	entityDescription["geometry"]["hologram.valid_structure_overlay"] = "geometry.holoprint.hologram.valid_structure_overlay";
-	entityDescription["geometry"]["hologram.particle_alignment"] = "geometry.holoprint.hologram.particle_alignment";
-	entityDescription["render_controllers"] ??= [];
-	entityDescription["render_controllers"].push({
+	};
+	/** @param {object} entityFile @param {boolean} isArmorStand @param {boolean} hasHologram */
+	const addScriptsToEntity = (entityFile, isArmorStand, hasHologram) => {
+		let entityDescription = entityFile["minecraft:client_entity"]["description"];
+		entityDescription["scripts"] ??= {};
+		entityDescription["scripts"]["initialize"] ??= [];
+		entityDescription["scripts"]["initialize"].push(functionToMolang(entityScripts.initialize, {
+			...initializeScriptBaseConstants,
+			isArmorStand,
+			hasHologram
+		}));
+		entityDescription["scripts"]["pre_animation"] ??= [];
+		entityDescription["scripts"]["pre_animation"].push(functionToMolang(entityScripts.preAnimation, {
+			...preAnimationScriptBaseConstants,
+			isArmorStand,
+			hasHologram
+		}));
+	};
+	addScriptsToEntity(armorStandEntityFile, true, true);
+	addScriptsToEntity(leashKnotEntityFile, false, true);
+	addScriptsToEntity(leashKnotModeArmorStandEntityFile, true, false);
+	
+	
+	entityManager.addGeometry("hologram.wrong_block_overlay", "geometry.holoprint.hologram.wrong_block_overlay");
+	entityManager.addGeometry("hologram.valid_structure_overlay", "geometry.holoprint.hologram.valid_structure_overlay");
+	entityManager.addGeometry("hologram.particle_alignment", "geometry.holoprint.hologram.particle_alignment");
+	entityManager.addRenderController({
 		"controller.render.holoprint.hologram": "v.hologram.rendering"
 	}, {
 		"controller.render.holoprint.hologram.wrong_block_overlay": "v.hologram.show_wrong_block_overlay"
 	}, {
 		"controller.render.holoprint.hologram.valid_structure_overlay": "v.hologram.validating && v.wrong_blocks == 0"
 	}, "controller.render.holoprint.hologram.particle_alignment");
-	entityDescription["particle_effects"] ??= {};
-	entityDescription["particle_effects"]["bounding_box_outline"] = "holoprint:bounding_box_outline";
-	entityDescription["particle_effects"]["saving_backup"] = "holoprint:saving_backup";
+	entityManager.addParticleEffect("bounding_box_outline", "holoprint:bounding_box_outline");
+	entityManager.addParticleEffect("saving_backup", "holoprint:saving_backup");
 	
 	textureBlobs.forEach(([textureName]) => {
-		entityDescription["textures"][textureName] = `textures/holoprint/entity/${textureName}`;
+		entityManager.addTexture(textureName, `textures/holoprint/entity/${textureName}`);
 		hologramRenderControllers["render_controllers"]["controller.render.holoprint.hologram"]["arrays"]["textures"]["Array.textures"].push(`Texture.${textureName}`);
 	});
 	
@@ -410,7 +431,7 @@ export async function makePack(structureFiles, partialConfig, resourcePackStack 
 	// add the particles' short names, and then reference them in the animation controller
 	uniqueBlocksToValidate.forEach(blockName => {
 		let particleName = `validate_${blockName.replace(":", ".")}`;
-		entityDescription["particle_effects"][particleName] = `holoprint:${particleName}`;
+		entityManager.addParticleEffect(particleName, `holoprint:${particleName}`);
 	});
 	
 	let playerRenderControllers = defaultPlayerRenderControllers && addPlayerControlsToRenderControllers(config, defaultPlayerRenderControllers);
@@ -479,9 +500,13 @@ export async function makePack(structureFiles, partialConfig, resourcePackStack 
 		});
 	}
 	packFiles["pack_icon.png"] = packIcon;
-	let entityFileJson = JSON.stringify(entityFile);
-	packFiles["entity/armor_stand.entity.json"] = entityFileJson.replaceAll("HOLOGRAM_INITIAL_ACTIVATION", "true");
-	packFiles["subpacks/punch_to_activate/entity/armor_stand.entity.json"] = entityFileJson.replaceAll("HOLOGRAM_INITIAL_ACTIVATION", "false");
+	let regularArmorStandEntityJson = JSON.stringify(armorStandEntityFile);
+	packFiles["subpacks/default/entity/armor_stand.entity.json"] = regularArmorStandEntityJson.replaceAll("HOLOGRAM_INITIAL_ACTIVATION", "true");
+	packFiles["subpacks/punch_to_activate/entity/armor_stand.entity.json"] = regularArmorStandEntityJson.replaceAll("HOLOGRAM_INITIAL_ACTIVATION", "false");
+	let leashKnotEntityJson = JSON.stringify(leashKnotEntityFile).replaceAll("HOLOGRAM_INITIAL_ACTIVATION", "true");
+	packFiles["subpacks/leash_knot_mode/entity/leash_knot.entity.json"] = leashKnotEntityJson;
+	let leashKnotModeArmorStandEntityJson = JSON.stringify(leashKnotModeArmorStandEntityFile);
+	packFiles["subpacks/leash_knot_mode/entity/armor_stand.entity.json"] = leashKnotModeArmorStandEntityJson;
 	if(config.PLAYER_CONTROLS_ENABLED) {
 		packFiles["render_controllers/player.render_controllers.json"] = playerRenderControllers;
 	}
@@ -991,11 +1016,11 @@ function mergeMultiplePalettesAndIndices(palettesAndIndices) {
  * Makes the layer animations and animation controllers. Mutates the original arguments.
  * @param {HoloPrintConfig} config
  * @param {I32Vec3[]} structureSizes
- * @param {object} entityDescription
+ * @param {EntityManager} entityManager
  * @param {object} hologramAnimations
  * @param {object} hologramAnimationControllers
  */
-function makeLayerAnimations(config, structureSizes, entityDescription, hologramAnimations, hologramAnimationControllers) {
+function makeLayerAnimations(config, structureSizes, entityManager, hologramAnimations, hologramAnimationControllers) {
 	let layerAnimationStates = hologramAnimationControllers["animation_controllers"]["controller.animation.holoprint.hologram.layers"]["states"];
 	let topLayer = max(...structureSizes.map(structureSize => structureSize[1])) - 1;
 	layerAnimationStates["default"]["transitions"].push(
@@ -1052,8 +1077,9 @@ function makeLayerAnimations(config, structureSizes, entityDescription, hologram
 		if(Object.entries(layerAnimation["bones"]).length == 0) {
 			delete layerAnimation["bones"];
 		}
-		hologramAnimations["animations"][`animation.holoprint.hologram.l_${y}`] = layerAnimation;
-		entityDescription["animations"][`hologram.l_${y}`] = `animation.holoprint.hologram.l_${y}`;
+		let animationFullName = `animation.holoprint.hologram.l_${y}`;
+		hologramAnimations["animations"][animationFullName] = layerAnimation;
+		entityManager.addAnimation(`hologram.l_${y}`, animationFullName);
 		if(y < topLayer) { // top layer with all layers below is the default view, so the animation + animation controller state doesn't need to be made for it
 			layerAnimationStates[`${layerName}-`] = {
 				"animations": [`hologram.l_${y}-`],
@@ -1089,7 +1115,7 @@ function makeLayerAnimations(config, structureSizes, entityDescription, hologram
 				delete layerAnimationAllBelow["bones"];
 			}
 			hologramAnimations["animations"][`animation.holoprint.hologram.l_${y}-`] = layerAnimationAllBelow;
-			entityDescription["animations"][`hologram.l_${y}-`] = `animation.holoprint.hologram.l_${y}-`;
+			entityManager.addAnimation(`hologram.l_${y}-`, `animation.holoprint.hologram.l_${y}-`);
 		}
 	}
 }

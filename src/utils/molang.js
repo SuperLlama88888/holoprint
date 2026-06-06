@@ -140,7 +140,7 @@ export function functionToMolang(func, vars = {}) {
 		.replaceAll(/([\w\.\$\[\]]+)(\+|-|\*|\/|\?\?|%)=([^;]+);/g, "$1=$1$2$3;") // x += y -> x=x+y for +, -, *, /, ??, %
 		.replaceAll(/([\w\.]+)%(-?\d+)/g, "math.mod($1,$2)")
 		.replaceAll(/\(([^()]+|[^()]*\([^()]+\)[^()]*)\)%(-?\d+)/g, "math.mod($1,$2)")
-		.replaceAll("return;", "return 0;"); // complex Molang expressions can't return nothing
+		.replaceAll(/\breturn;/g, "return 0;"); // complex Molang expressions can't return nothing
 	
 	// I have no idea how to make this smaller. I really wish JS had a native AST conversion API
 	let conditionedCode = "";
@@ -211,7 +211,7 @@ export function functionToMolang(func, vars = {}) {
 	let variabledCode = substituteVariablesIntoMolang(conditionedCode, vars);
 	let tempVariabledCode = convertJSVariablesToMolangTemps(variabledCode);
 	let booleanSimplifiedCode = simplifyBooleanExpressions(tempVariabledCode);
-	let deadBranchRemovedCode = removeDeadBranches(booleanSimplifiedCode);
+	let deadBranchRemovedCode = removeDeadCode(booleanSimplifiedCode);
 	return deadBranchRemovedCode;
 }
 /**
@@ -221,7 +221,7 @@ export function functionToMolang(func, vars = {}) {
 */
 function substituteVariablesIntoMolang(code, vars) {
 	// Yay more fun regular expressions, this time to work with variable substitution ($[...])
-	return code.replaceAll(/\$\[(\w+)(?:\[(\d+)\]|\.(\w+))?(?:(\+|-|\*|\/)(\d+))?\]/g, (_, varName, index, key, operator, operand) => {
+	return code.replaceAll(/\$\[(\w+)(?:\[(\d+)\]|\.(\w+))?(?:(\+|-|\*|\/)(\d+))?\]/g, (_, varName, index, key, operator, operand, offset) => {
 		if(varName in vars) {
 			let value = vars[varName];
 			index ??= key;
@@ -240,7 +240,7 @@ function substituteVariablesIntoMolang(code, vars) {
 				default: return value;
 			}
 		} else {
-			throw new ReferenceError(`Variable "${varName}" was not passed to function -> Molang converter!`);
+			throw new ReferenceError(`Variable "${varName}" was not passed to function -> Molang converter! At position: ${offset}\n${code.slice(offset - 10, offset + 10)}`);
 		}
 	});
 }
@@ -267,24 +267,26 @@ function convertJSVariablesToMolangTemps(code) {
 function simplifyBooleanExpressions(code) {
 	return repeatedlyApplyEndofunction(code, code => {
 		// pov: js doesn't have a pipe operator
-		code = repeatedlyReplaceAll(code, /(!?[\w\.]+)&&false/g, "false");
-		code = repeatedlyReplaceAll(code, /(!?[\w\.]+)&&true/g, "$1");
-		code = repeatedlyReplaceAll(code, /false&&(!?[\w\.]+)/g, "false");
-		code = repeatedlyReplaceAll(code, /true&&(!?[\w\.]+)/g, "$1");
-		code = repeatedlyReplaceAll(code, /(!?[\w\.]+)\|\|false/g, "$1");
-		code = repeatedlyReplaceAll(code, /(!?[\w\.]+)\|\|true/g, "true");
-		code = repeatedlyReplaceAll(code, /false\|\|(!?[\w\.]+)/g, "$1");
-		code = repeatedlyReplaceAll(code, /true\|\|(!?[\w\.]+)/g, "true");
-		code = repeatedlyReplaceAll(code, /\(([\w\.]+)\)/g, "$1"); // bracket unwrapping for nested boolean expressions... idk if I need this
+		code = repeatedlyReplaceAll(code, /(!?[\w\.]+)&&false\b/g, "false");
+		code = repeatedlyReplaceAll(code, /(!?[\w\.]+)&&true\b/g, "$1");
+		code = repeatedlyReplaceAll(code, /\bfalse&&(!?[\w\.]+)/g, "false");
+		code = repeatedlyReplaceAll(code, /\btrue&&(!?[\w\.]+)/g, "$1");
+		code = repeatedlyReplaceAll(code, /(!?[\w\.]+)\|\|false\b/g, "$1");
+		code = repeatedlyReplaceAll(code, /(!?[\w\.]+)\|\|true\b/g, "true");
+		code = repeatedlyReplaceAll(code, /\bfalse\|\|(!?[\w\.]+)/g, "$1");
+		code = repeatedlyReplaceAll(code, /\btrue\|\|(!?[\w\.]+)/g, "true");
+		code = repeatedlyReplaceAll(code, /!false\b/g, "true");
+		code = repeatedlyReplaceAll(code, /!true\b/g, "false");
+		code = repeatedlyReplaceAll(code, /\(((true)|(false))\)/g, "$1"); // bracket unwrapping for nested boolean expressions... idk if I need this
 		return code;
 	});
 }
 /**
- * Removes dead branches from Molang code, only if the condition is explicitly true or false.
+ * Removes dead branches from Molang code, only if the condition is explicitly true or false. Also removes dead code after "return" statements.
  * @param {string} code
  * @returns {string}
  */
-function removeDeadBranches(code) {
+function removeDeadCode(code) {
 	for(let i = 0; i < code.length; i++) {
 		if(code.slice(i, i + 7) == "false?{") {
 			let j = i + 7;
@@ -316,9 +318,40 @@ function removeDeadBranches(code) {
 			trueBlockEnd ??= j;
 			code = code.slice(0, i) + code.slice(i + 6, trueBlockEnd - 1) + code.slice(j + 1);
 			i--;
+		} else if(/^return [^;{}]+;/.test(code.slice(i))) {
+			// remove dead code after a return statement in the same block
+			let startI = code.slice(i).indexOf(";") + i + 1;
+			try {
+				let endI = findClosingBraceIndex(code, startI - 1);
+				code = code.slice(0, startI) + code.slice(endI);
+			} catch {
+				// no closing brace - remove everything after the return statement
+				code = code.slice(0, startI);
+			}
+			i = startI;
 		}
 	}
 	return code;
+}
+
+/**
+ * Finds the index of the closing brace of a block, taking into account blocks nested within it.
+ * @param {string} code
+ * @param {number} startIndex The index of the starting brace.
+ * @returns {number} The index of the closing brace.
+ */
+function findClosingBraceIndex(code, startIndex) {
+	let i = startIndex + 1;
+	let braceCounter = 1;
+	while(braceCounter) {
+		if(i >= code.length) {
+			throw new Error("Could not find closing brace!");
+		}
+		if(code[i] == "{") braceCounter++;
+		else if(code[i] == "}") braceCounter--;
+		i++;
+	}
+	return i - 1;
 }
 
 /** @import { ItemCriteria, Vec2 } from "../HoloPrint.js" */
