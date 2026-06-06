@@ -101,7 +101,7 @@ export function array2DToMolang(array, indexVar1, indexVar2) {
 }
 
 /**
- * Converts a function into minified Molang code. Variables can be referenced with $[...].
+ * Converts a function into minified Molang code. Variables can be referenced with `$[...]`.
  * @param {Function} func
  * @param {Record<string, any>} [vars]
  * @returns {string} Molang code
@@ -220,7 +220,7 @@ export function functionToMolang(func, vars = {}) {
  * @param {Record<string, any>} vars
 */
 function substituteVariablesIntoMolang(code, vars) {
-	// Yay more fun regular expressions, this time to work with variable substitution ($[...])
+	// Yay more fun regular expressions, this time to work with variable substitution: `$[...]`
 	return code.replaceAll(/\$\[(\w+)(?:\[(\d+)\]|\.(\w+))?(?:(\+|-|\*|\/)(\d+))?\]/g, (_, varName, index, key, operator, operand, offset) => {
 		if(varName in vars) {
 			let value = vars[varName];
