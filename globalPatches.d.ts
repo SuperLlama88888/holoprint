@@ -9,11 +9,16 @@ import SimpleLogger from "./src/components/SimpleLogger";
 import Vec3Input from "./src/components/Vec3Input";
 import { onEvent, onEvents, onEventAndNow } from "./src/utils";
 
+type IsNumberLiteral<T> = T extends number? number extends T? false : true : false;
+
 declare global {
 	interface Array<T> {
 		// the bits at the end indicate that if the array has extra properties, only the numeric ones (the indices) will be in the return object
 		map<U extends any[], This extends readonly unknown[]>(this: This, callbackfn: (value: T, index: number, array: This) => [...U]): { [K in keyof This]: K extends number | `${number}`? U : never };
 		map<U, This extends readonly unknown[]>(this: This, callbackfn: (value: T, index: number, array: This) => U): { [K in keyof This]: K extends number | `${number}`? U : never };
+	}
+	interface Float32ArrayConstructor {
+		new<T extends number[]>(elements: [...T]): Float32Array & (IsNumberLiteral<T["length"]> extends true? { length: T["length"] } : {})
 	}
 	interface ObjectConstructor {
 		entries<K extends string, T>(o: Record<K, T>): [K, T][];
@@ -58,6 +63,9 @@ declare global {
 	interface LaunchParams {
 		readonly files: ReadonlyArray<FileSystemFileHandle>;
 		readonly targetURL: string;
+	}
+	interface WebGL2RenderingContextButSmarter<T extends HTMLCanvasElement | OffscreenCanvas = HTMLCanvasElement | OffscreenCanvas> extends WebGL2RenderingContext {
+		canvas: T; // without this line, I would run into issues where it doesn't know that I am indeed using an OffscreenCanvas and therefore it would give a red squiggly line for trying to use methods that don't exist on regular canvases. LIKE HELLO TYPESCRIPT??
 	}
 }
 declare module "https://esm.sh/three@0.177.0/examples/jsm/controls/OrbitControls.js" {

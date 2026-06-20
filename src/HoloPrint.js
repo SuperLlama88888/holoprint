@@ -15,6 +15,7 @@ import PolyMeshMaker from "./PolyMeshMaker.js";
 import fetchers from "./fetchers.js";
 import EntityGeoMaker from "./EntityGeoMaker.js";
 import EntityManager from "./EntityManager.js";
+import LayerByLayerDiagramMaker from "./LayerByLayerDiagramMaker.js";
 
 export const VERSION = "dev";
 export const IGNORED_BLOCKS = ["air", "piston_arm_collision", "sticky_piston_arm_collision", "light_block", "light_block_0", "light_block_1", "light_block_2", "light_block_3", "light_block_4", "light_block_5", "light_block_6", "light_block_7", "light_block_8", "light_block_9", "light_block_10", "light_block_11", "light_block_12", "light_block_13", "light_block_14", "light_block_15"]; // blocks to be ignored when scanning the structure file
@@ -208,11 +209,15 @@ export async function makePack(structureFiles, partialConfig, resourcePackStack 
 	let textureRefs = Array.from(blockGeoMaker.textureRefs);
 	await textureAtlas.makeAtlas(textureRefs); // each texture reference will get added to the textureUvs array property
 	let textureBlobs = textureAtlas.imageBlobs;
+	let fullOpacityTextureBlob = textureBlobs.at(-1)[1];
 	let defaultTextureIndex = max(textureBlobs.length - 3, 0); // default to 80% opacity
 	
 	console.log("Texture UVs:", textureAtlas.uvs);
 	let polyMeshTemplatePalette = unresolvedPolyMeshTemplatePalette.map(polyMeshTemplate => BlockGeoMaker.resolveTemplateFaceUvs(polyMeshTemplate, textureAtlas));
 	console.log("Poly mesh template palette with resolved UVs:", polyMeshTemplatePalette);
+	
+	let layerByLayerDiagramsByStructure = await makeLayerByLayerDiagrams(config, fullOpacityTextureBlob, polyMeshTemplatePalette, allStructureIndicesByLayer, structureSizes);
+	Promise.all(layerByLayerDiagramsByStructure.flat().map(x => toImage(x))).then(images => images.forEach(image => document.body.appendChild(image)));
 	
 	let { manifest, hologramRenderControllers, hologramGeo, hologramAnimationControllers, hologramAnimations, blockValidationParticle, singleWhitePixelTexture, materialListUI } = await packTemplatePromise.allValues;
 	
@@ -577,7 +582,7 @@ export async function makePack(structureFiles, partialConfig, resourcePackStack 
 				}
 				let cont = structureI == 0? previewCont : previewCont.parentNode.appendChild(previewCont.cloneNode());
 				let name = structureSizes.length == 1? packName : getDefaultPackName([structureFiles[structureI]]);
-				return await PreviewRenderer.new(cont, name, textureAtlas, structureSize, blockPalette, polyMeshTemplatePalette, allStructureIndicesByLayer[structureI], {
+				return await PreviewRenderer.new(cont, name, fullOpacityTextureBlob, structureSize, blockPalette, polyMeshTemplatePalette, allStructureIndicesByLayer[structureI], {
 					showSkybox: config.SHOW_PREVIEW_SKYBOX,
 					showFps: config.SHOW_PREVIEW_WIDGETS,
 					showOptions: config.SHOW_PREVIEW_WIDGETS
@@ -715,6 +720,7 @@ export function addDefaultConfig(config) {
 			INITIAL_OFFSET: tuple([0, 0, 0]),
 			COORDINATE_LOCK: undefined,
 			BACKUP_SLOT_COUNT: 10,
+			LAYER_BY_LAYER_DIAGRAM_BLOCK_RESOLUTION: 64,
 			PACK_NAME: undefined,
 			PACK_ICON_BLOB: undefined,
 			AUTHORS: [],
@@ -1011,6 +1017,23 @@ function mergeMultiplePalettesAndIndices(palettesAndIndices) {
 		palette: Array.from(mergedPaletteSet),
 		indices: remappedIndices
 	};
+}
+/**
+ * Makes the layer-by-layer diagrams for a structure. Returns a 2d array of blobs, where the first dimension is the structure index and the second dimension is the layer index (i.e. the y-coordinate).
+ * @param {HoloPrintConfig} config
+ * @param {Blob} textureBlob
+ * @param {PolyMeshTemplateFaceWithUvs[][]} polyMeshTemplatePalette
+ * @param {[Int32Array, Int32Array][]} allStructureIndicesByLayer
+ * @param {I32Vec3[]} structureSizes
+ * @returns {Promise<Blob[][]>}
+ */
+async function makeLayerByLayerDiagrams(config, textureBlob, polyMeshTemplatePalette, allStructureIndicesByLayer, structureSizes) {
+	let layerByLayerDiagramMaker = new LayerByLayerDiagramMaker(config, await toImage(textureBlob));
+	let blockIconPalette = layerByLayerDiagramMaker.makeBlockIconPalette(polyMeshTemplatePalette);
+	let diagrams = await Promise.all(allStructureIndicesByLayer.map((structureIndices, i) => layerByLayerDiagramMaker.makeDiagramsForStructure(blockIconPalette, structureIndices, structureSizes[i])));
+	// The new "using" statement is not yet widely supported, so I need to manually write this. Maybe in 5 years...
+	layerByLayerDiagramMaker.disposeBlockIconPalette(blockIconPalette);
+	return diagrams;
 }
 /**
  * Makes the layer animations and animation controllers. Mutates the original arguments.
@@ -1691,6 +1714,7 @@ function expandItemCriteria(itemCriteria, itemTags) {
  * @property {Vec3} INITIAL_OFFSET
  * @property {Vec4[] | undefined} COORDINATE_LOCK If present, each structure's hologram will be locked to these coordinates. The last component is rotation.
  * @property {number} BACKUP_SLOT_COUNT
+ * @property {number} LAYER_BY_LAYER_DIAGRAM_BLOCK_RESOLUTION The resolution, in pixels, of each block in the layer-by-layer diagram.
  * @property {string | undefined} PACK_NAME The name of the completed pack; will default to the structure file names
  * @property {Blob} PACK_ICON_BLOB Blob for `pack_icon.png`
  * @property {string[]} AUTHORS
@@ -1939,4 +1963,7 @@ function expandItemCriteria(itemCriteria, itemTags) {
  */
 /**
  * @typedef {Int32Array & { length: 3 }} I32Vec3
+ */
+/**
+ * @typedef {Float32Array & { length: 8 }} F32Vec8
  */

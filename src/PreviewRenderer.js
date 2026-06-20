@@ -46,7 +46,6 @@ export default class PreviewRenderer extends AsyncFactory {
 	
 	cont;
 	packName;
-	textureAtlas;
 	structureSize;
 	blockPalette;
 	polyMeshTemplatePalette;
@@ -103,18 +102,17 @@ export default class PreviewRenderer extends AsyncFactory {
 	 * Create a preview renderer for a completed geometry file.
 	 * @param {Node} cont
 	 * @param {string} packName
-	 * @param {TextureAtlas} textureAtlas
+	 * @param {Blob} imageBlob
 	 * @param {I32Vec3} structureSize
 	 * @param {Block[]} blockPalette
 	 * @param {PolyMeshTemplateFaceWithUvs[][]} polyMeshTemplatePalette
 	 * @param {[Int32Array, Int32Array]} blockIndices
 	 * @param {Partial<typeof this.options>} [options]
 	 */
-	constructor(cont, packName, textureAtlas, structureSize, blockPalette, polyMeshTemplatePalette, blockIndices, options = {}) {
+	constructor(cont, packName, imageBlob, structureSize, blockPalette, polyMeshTemplatePalette, blockIndices, options = {}) {
 		super();
 		this.cont = cont;
 		this.packName = packName;
-		this.textureAtlas = textureAtlas;
 		this.structureSize = structureSize;
 		this.blockPalette = blockPalette;
 		this.polyMeshTemplatePalette = polyMeshTemplatePalette;
@@ -123,7 +121,7 @@ export default class PreviewRenderer extends AsyncFactory {
 		
 		this.#can = document.createElement("canvas");
 		this.#polyMeshMaker = new PolyMeshMaker(polyMeshTemplatePalette);
-		this.#imageBlob = this.textureAtlas.imageBlobs.at(-1)[1];
+		this.#imageBlob = imageBlob;
 		this.#maxDim = max(...this.structureSize);
 		this.#maxDimPixels = this.#maxDim * 16;
 		
@@ -719,7 +717,6 @@ export default class PreviewRenderer extends AsyncFactory {
 }
 
 /** @import { I32Vec3, Vec3, Block, PreviewPointLight, PolyMeshTemplateFaceWithUvs} from "./HoloPrint.js" */
-/** @import TextureAtlas from "./TextureAtlas.js" */
 /** @import { Controller } from "lil-gui" */
 /** @import * as THREE from "three" */
 /** @import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js" */

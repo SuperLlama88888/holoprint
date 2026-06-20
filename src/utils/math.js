@@ -18,6 +18,13 @@ export function rotateDeg(p, deg) {
 	return rotate(p, deg * pi / 180);
 }
 /**
+ * @param {number[]} nums
+ * @returns {number}
+ */
+export function average(nums) {
+	return nums.reduce((a, b) => a + b) / nums.length;
+}
+/**
  * @param {number} a
  * @param {number} b
  * @returns {number}

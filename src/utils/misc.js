@@ -33,3 +33,16 @@ export async function clearCacheStorage(cacheStorage) {
 	let cacheNames = await cacheStorage.keys();
 	await Promise.all(cacheNames.map(cacheName => cacheStorage.delete(cacheName)));
 }
+
+/**
+ * Calls `getContext()` on the input OffscreenCanvas, but with typed options because they are `any` for OffscreenCanvases even though they have proper type support for regular canvases. :facepalm: Also if using WebGL/WebGL2, the context will know what type of canvas it has.
+ * @template {"2d" | "webgl" | "webgl2"} T
+ * @param {OffscreenCanvas} canvas
+ * @param {T} contextId
+ * @param {T extends "2d"? CanvasRenderingContext2DSettings : WebGLContextAttributes} [options]
+ * @returns {T extends "2d"? OffscreenCanvasRenderingContext2D : WebGL2RenderingContextButSmarter<OffscreenCanvas>}
+ */
+export function getOffscreenCanvasContext(canvas, contextId, options) {
+	// @ts-expect-error
+	return canvas.getContext(contextId, options ?? {});
+}
