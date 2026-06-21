@@ -3,6 +3,7 @@
 export * from "./utils/arrays.js";
 export * from "./utils/containers.js";
 export * from "./utils/conversions.js";
+export * from "./utils/coordinates.js";
 export * from "./utils/dom.js";
 export * from "./utils/fileInputs.js";
 export * from "./utils/files.js";

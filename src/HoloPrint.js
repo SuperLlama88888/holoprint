@@ -7,7 +7,7 @@ import MaterialList from "./MaterialList.js";
 import PreviewRenderer from "./PreviewRenderer.js";
 
 import entityScripts from "./entityScripts.molang.js";
-import { addPaddingToImage, array2DToMolang, arrayToMolang, awaitAllEntries, weaklyCacheUnaryFunc, concatenateFiles, createNumericEnum, desparseArray, functionToMolang, getFileExtension, hexColorToClampedTriplet, itemCriteriaToMolang, jsonc, JSONMap, JSONSet, lcm, loadTranslationLanguage, max, min, onEvent, overlaySquareImages, pi, removeFalsies, removeFileExtension, resizeImageToBlob, round, setImageOpacity, sha256, toBlob, toImage, translate, transposeMatrix, tuple, UserError, ReplacingPatternMap, conditionallyCacheUnaryFunc, clonePromise } from "./utils.js";
+import { addPaddingToImage, array2DToMolang, arrayToMolang, awaitAllEntries, weaklyCacheUnaryFunc, concatenateFiles, createNumericEnum, desparseArray, functionToMolang, getFileExtension, hexColorToClampedTriplet, itemCriteriaToMolang, jsonc, JSONMap, JSONSet, lcm, loadTranslationLanguage, max, min, onEvent, overlaySquareImages, pi, removeFalsies, removeFileExtension, resizeImageToBlob, round, setImageOpacity, sha256, toBlob, toImage, translate, transposeMatrix, tuple, UserError, ReplacingPatternMap, conditionallyCacheUnaryFunc, clonePromise, getStructureIndexFromCoordinates, getGeoSpaceBlockPos } from "./utils.js";
 import ResourcePackStack from "./ResourcePackStack.js";
 import BlockUpdater from "./BlockUpdater.js";
 import SpawnAnimationMaker from "./SpawnAnimationMaker.js";
@@ -231,9 +231,6 @@ export async function makePack(structureFiles, partialConfig, resourcePackStack 
 	let entityManager = new EntityManager({ armorStandEntityFile, leashKnotEntityFile });
 	
 	let totalBlockCount = 0;
-	let totalBlocksToValidateByStructure = [];
-	let totalBlocksToValidateByStructureByLayer = [];
-	let uniqueBlocksToValidate = new Set();
 	let maxHeight = max(...structureSizes.map(structureSize => structureSize[1]));
 	let layerIsEmpty = (new Array(maxHeight)).fill(true);
 	
@@ -247,15 +244,12 @@ export async function makePack(structureFiles, partialConfig, resourcePackStack 
 		geo["description"]["identifier"] = geoIdentifier;
 		entityManager.addGeometry(geoShortName, geoIdentifier);
 		hologramRenderControllers["render_controllers"]["controller.render.holoprint.hologram"]["arrays"]["geometries"]["Array.geometries"].push(`Geometry.${geoShortName}`);
-		let blocksToValidate = [];
-		let blocksToValidateByLayer = [];
 		
 		for(let y = 0; y < structureSize[1]; y++) {
-			let blocksToValidateCurrentLayer = 0; // "layer" in here refers to y-coordinate, NOT structure layer
 			for(let x = 0; x < structureSize[0]; x++) {
 				for(let z = 0; z < structureSize[2]; z++) {
-					let blockI = (x * structureSize[1] + y) * structureSize[2] + z;
-					let firstBoneForThisCoordinate = true; // second-layer blocks (e.g. water in waterlogged blocks) will be at the same position
+					let coords = tuple([x, y, z]);
+					let blockI = getStructureIndexFromCoordinates(coords, structureSize);
 					for(let layerI = 0; layerI < 2; layerI++) {
 						let blockPaletteIndices = structureIndicesByLayer[layerI];
 						let paletteI = blockPaletteIndices[blockI];
@@ -266,27 +260,13 @@ export async function makePack(structureFiles, partialConfig, resourcePackStack 
 							continue;
 						}
 						
-						let blockCoordinateName = `b_${x}_${y}_${z}`;
-						let geoSpaceBlockPos = tuple([-16 * x - 8, 16 * y, 16 * z - 8]); // I got these values from trial and error with blockbench (which makes the x negative I think. it's weird.)
+						let geoSpaceBlockPos = getGeoSpaceBlockPos(coords);
 						polyMeshMaker.add(paletteI, geoSpaceBlockPos, layerI);
-						if(firstBoneForThisCoordinate) { // we only need 1 locator for each block position, even though there may be 2 bones in this position because of the 2nd layer
-							hologramGeo["minecraft:geometry"][2]["bones"][1]["locators"][blockCoordinateName] ??= geoSpaceBlockPos.map(x => x + 8); // 2nd geometry is for particle alignment
-						}
 						
 						let block = blockPalette[paletteI];
 						if(!config.IGNORED_MATERIAL_LIST_BLOCKS.includes(block["name"])) {
 							materialList.add(block);
 						}
-						if(layerI == 0) { // particle_expire_if_in_blocks only works on the first layer :(
-							blocksToValidate.push({
-								"locator": blockCoordinateName,
-								"block": block["name"],
-								"pos": [x, y, z]
-							});
-							blocksToValidateCurrentLayer++;
-							uniqueBlocksToValidate.add(block["name"]);
-						}
-						firstBoneForThisCoordinate = false;
 						totalBlockCount++;
 						layerIsEmpty[y] = false;
 					}
@@ -301,15 +281,13 @@ export async function makePack(structureFiles, partialConfig, resourcePackStack 
 			};
 			geo["bones"].push(layerBone);
 			polyMeshMaker.clear();
-			blocksToValidateByLayer.push(blocksToValidateCurrentLayer);
 		}
 		hologramGeo["minecraft:geometry"].push(geo);
 		
 		addBoundingBoxParticles(hologramAnimationControllers, structureI, structureSize);
-		addBlockValidationParticles(hologramAnimationControllers, structureI, blocksToValidate, structureSize);
-		totalBlocksToValidateByStructure.push(blocksToValidate.length);
-		totalBlocksToValidateByStructureByLayer.push(blocksToValidateByLayer);
 	});
+	
+	let { uniqueBlocksToValidate, totalBlocksToValidateByStructure, totalBlocksToValidateByStructureByLayer } = handleBlockValidation(config, allStructureIndicesByLayer, structureSizes, blockPalette, hologramAnimationControllers, (coords, locatorName) => addCoordinateLocatorToHologramGeo(hologramGeo, coords, locatorName));
 	
 	makeLayerAnimations(config, structureSizes, entityManager, hologramAnimations, hologramAnimationControllers);
 	if(config.SPAWN_ANIMATION_ENABLED) {
@@ -720,6 +698,7 @@ export function addDefaultConfig(config) {
 			INITIAL_OFFSET: tuple([0, 0, 0]),
 			COORDINATE_LOCK: undefined,
 			BACKUP_SLOT_COUNT: 10,
+			VALIDATE_AIR_BLOCKS: false,
 			LAYER_BY_LAYER_DIAGRAM_BLOCK_RESOLUTION: 64,
 			PACK_NAME: undefined,
 			PACK_ICON_BLOB: undefined,
@@ -1185,10 +1164,80 @@ function addBoundingBoxParticles(hologramAnimationControllers, structureI, struc
 	});
 }
 /**
+ * Handles everything to do with block validation except creating the particle files from the template: Finding all blocks to be validated, getting all the unique blocks to be validated (which need particle files), and counting all the blocks to be validated per structure and per layer per structure for the Molang validation stuff.
+ * @param {HoloPrintConfig} config
+ * @param {[Int32Array, Int32Array][]} allStructureIndicesByLayer
+ * @param {I32Vec3[]} structureSizes
+ * @param {Block[]} blockPalette
+ * @param {object} hologramAnimationControllers
+ * @param {(coords: Vec3, locatorName: string) => void} addLocator
+ * @returns {{ uniqueBlocksToValidate: Set<string>, totalBlocksToValidateByStructure: number[], totalBlocksToValidateByStructureByLayer: number[][] }}
+ */
+function handleBlockValidation(config, allStructureIndicesByLayer, structureSizes, blockPalette, hologramAnimationControllers, addLocator) {
+	/** @type {number[]} */
+	let totalBlocksToValidateByStructure = [];
+	/** @type {number[][]} */
+	let totalBlocksToValidateByStructureByLayer = [];
+	/** @type {Set<string>} */
+	let uniqueBlocksToValidate = new Set();
+	
+	allStructureIndicesByLayer.forEach((structureIndicesByLayer, structureI) => {
+		let structureSize = structureSizes[structureI];
+		/** @type {BlockToValidate[]} */
+		let blocksToValidate = [];
+		let blocksToValidateByLayer = [];
+		
+		for(let y = 0; y < structureSize[1]; y++) {
+			let blocksToValidateCurrentLayer = 0; // "layer" in here refers to y-coordinate, NOT structure layer
+			for(let x = 0; x < structureSize[0]; x++) {
+				for(let z = 0; z < structureSize[2]; z++) {
+					let coords = tuple([x, y, z]);
+					// particle_expire_if_in_blocks only works on the first layer :(
+					let blockI = getStructureIndexFromCoordinates(coords, structureSize);
+					let blockPaletteIndices = structureIndicesByLayer[0];
+					let paletteI = blockPaletteIndices[blockI];
+					let block = blockPalette[paletteI];
+					if(!block && !config.VALIDATE_AIR_BLOCKS) {
+						continue;
+					}
+					
+					let blockName = block?.["name"] ?? "air";
+					let blockCoordinateLocatorName = `b_${x}_${y}_${z}`;
+					blocksToValidate.push({
+						"locator": blockCoordinateLocatorName,
+						"block": blockName,
+						"pos": coords
+					});
+					blocksToValidateCurrentLayer++;
+					uniqueBlocksToValidate.add(blockName);
+					
+					addLocator(coords, blockCoordinateLocatorName);
+				}
+			}
+			blocksToValidateByLayer.push(blocksToValidateCurrentLayer);
+		}
+		
+		addBlockValidationParticles(hologramAnimationControllers, structureI, blocksToValidate, structureSize);
+		totalBlocksToValidateByStructure.push(blocksToValidate.length);
+		totalBlocksToValidateByStructureByLayer.push(blocksToValidateByLayer);
+	});
+	return { uniqueBlocksToValidate, totalBlocksToValidateByStructure, totalBlocksToValidateByStructureByLayer };
+}
+/**
+ * Adds a locator at a position to the hologram geo for aligning validation particles.
+ * @param {object} hologramGeo
+ * @param {Vec3} coords
+ * @param {string} locatorName
+ */
+function addCoordinateLocatorToHologramGeo(hologramGeo, coords, locatorName) {
+	let geoSpaceCoords = getGeoSpaceBlockPos(coords)
+	hologramGeo["minecraft:geometry"][2]["bones"][1]["locators"][locatorName] ??= geoSpaceCoords.map(x => x + 8); // 2nd geometry is for particle alignment
+}
+/**
  * Adds block validation particles for a single structure to the hologram animation controllers in-place.
  * @param {Record<string, any>} hologramAnimationControllers
  * @param {number} structureI
- * @param {Record<string, any>[]} blocksToValidate
+ * @param {BlockToValidate[]} blocksToValidate
  * @param {I32Vec3} structureSize
  */
 function addBlockValidationParticles(hologramAnimationControllers, structureI, blocksToValidate, structureSize) {
@@ -1714,6 +1763,7 @@ function expandItemCriteria(itemCriteria, itemTags) {
  * @property {Vec3} INITIAL_OFFSET
  * @property {Vec4[] | undefined} COORDINATE_LOCK If present, each structure's hologram will be locked to these coordinates. The last component is rotation.
  * @property {number} BACKUP_SLOT_COUNT
+ * @property {boolean} VALIDATE_AIR_BLOCKS
  * @property {number} LAYER_BY_LAYER_DIAGRAM_BLOCK_RESOLUTION The resolution, in pixels, of each block in the layer-by-layer diagram.
  * @property {string | undefined} PACK_NAME The name of the completed pack; will default to the structure file names
  * @property {Blob} PACK_ICON_BLOB Blob for `pack_icon.png`
@@ -1755,6 +1805,12 @@ function expandItemCriteria(itemCriteria, itemTags) {
  * @property {string} name The block's ID
  * @property {Record<string, number | string>} [states] Block states
  * @property {object} [block_entity_data] Block entity data
+ */
+/**
+ * @typedef {object} BlockToValidate
+ * @property {string} locator
+ * @property {string} block
+ * @property {Vec3} pos
  */
 /**
  * @typedef {Record<Data.CardinalDirection, { uv: Vec2, uv_size: Vec2 }>} CubeUv

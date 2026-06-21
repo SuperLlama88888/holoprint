@@ -648,6 +648,7 @@ async function makePack(structureFiles, localResourcePacks) {
 			return tuple([...input.xyz, +input.nextElementSibling.querySelector("input").value]);
 		}) : undefined,
 		BACKUP_SLOT_COUNT: +formData.get("backupSlotCount"),
+		VALIDATE_AIR_BLOCKS: !!formData.get("validateAirBlocks"),
 		PACK_NAME: formData.get("packName").toString() || undefined,
 		PACK_ICON_BLOB: packIconEntry instanceof File && packIconEntry.size? packIconEntry : undefined,
 		AUTHORS: authors,
