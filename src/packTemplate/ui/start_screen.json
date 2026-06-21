@@ -1,0 +1,21 @@
+{
+	"namespace": "start",
+	
+	"start_screen_content": {
+		"modifications": [
+			{
+				"array_name": "controls",
+				"operation": "insert_back",
+				"value": [
+					{
+						"open_holoprint_info_screen_button@holoprint:info_screen.open_button": {
+							"anchor_from": "bottom_left",
+							"anchor_to": "bottom_left",
+							"offset": [12, -12]
+						}
+					}
+				]
+			}
+		]
+	}
+}

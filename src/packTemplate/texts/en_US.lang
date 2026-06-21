@@ -11,6 +11,10 @@ pack.description.retextured_control_items_disabled=Retextured control items disa
 pack.description.renamed_control_items_disabled=Renamed control items disabled
 
 holoprint.material_list.heading=Material List: {PACK_NAME}
+holoprint.info_screen.heading=HoloPrint Info
+holoprint.info_screen.line=Project controls, build notes, and the material list are shown below.
+holoprint.info_screen.button=HoloPrint Info
+holoprint.info_screen.close=X
 holoprint.controls.increase_layer=Increase layer
 holoprint.controls.increase_opacity=Increase opacity
 holoprint.controls.move_hologram_x=Move hologram X

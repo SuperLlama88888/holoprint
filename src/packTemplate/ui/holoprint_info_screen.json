@@ -1,0 +1,219 @@
+{
+	"namespace": "holoprint:info_screen",
+	/*
+	"info_screen": {
+		"type": "panel",
+		"size": ["100%", "100%"],
+		"layer": 200,
+		// "bindings": [
+		// 	{
+		// 		"binding_type": "view",
+		// 		"source_control_name": "holoprint_info_toggle",
+		// 		"source_property_name": "#toggle_state",
+		// 		"target_property_name": "#visible"
+		// 	}
+		// ],
+		"controls": [
+			{
+				"backdrop": {
+					"type": "image",
+					"texture": "textures/ui/White",
+					"size": ["100%", "100%"],
+					"color": [0, 0, 0],
+					"alpha": 0.68
+				}
+			},
+			{
+				"card": {
+					"type": "image",
+					"texture": "textures/ui/White",
+					"size": ["74%", "80%"],
+					"anchor_from": "center",
+					"anchor_to": "center",
+					"color": [0, 0, 0],
+					"alpha": 0.9,
+					"controls": [
+						{
+							"title_bar": {
+								"type": "image",
+								"size": ["100%", 26],
+								"texture": "textures/ui/White",
+								"color": [0.19, 0.54, 0.43],
+								"controls": [
+									{
+										"title": {
+											"type": "label",
+											"size": ["100% - 40px", 12],
+											"anchor_from": "left_middle",
+											"anchor_to": "left_middle",
+											"offset": [12, 0],
+											"text": "holoprint.info_screen.heading",
+											"font_scale_factor": 1.1,
+											"color": [0.92, 1, 0.98]
+										}
+									},
+									{
+										"close_button@holoprint:info_screen.info_close_button": {
+											"anchor_from": "right_middle",
+											"anchor_to": "right_middle",
+											"offset": [-8, 0]
+										}
+									}
+								]
+							}
+						},
+						{
+							"info_line": {
+								"type": "label",
+								"size": ["100% - 24px", 18],
+								"offset": [12, 8],
+								"text": "holoprint.info_screen.line",
+								"font_scale_factor": 0.8,
+								"color": [0.9, 0.95, 0.93]
+							}
+						},
+						{
+							"material_block": {
+								"type": "panel",
+								"size": ["100% - 24px", "100% - 58px"],
+								"offset": [12, 32],
+								"controls": [
+									{
+										"material_list@holoprint:material_list.content": {
+											"size": ["100%", "100%"]
+										}
+									}
+								]
+							}
+						}
+					]
+				}
+			}
+		]
+	},*/
+	
+	"esbe_panel": {
+		"type": "stack_panel",
+		"orientation": "vertical",
+		"controls": [
+			{
+				"i": {
+					"type": "image",
+					"texture": "info",
+					"size": [
+						"100%-16px",
+						"27%x"
+					]
+				}
+			},
+			{
+				"c": {
+					"type": "label",
+					"font_scale_factor": 1.5,
+					"text": "esbe.v",
+					"color": [
+						0.4,
+						0.8,
+						0.67
+					]
+				}
+			},
+			{
+				"0": {
+					"type": "label",
+					"text": "esbe.c0"
+				}
+			},
+			{
+				"1": {
+					"type": "label",
+					"text": "esbe.c1"
+				}
+			},
+			{
+				"2": {
+					"type": "label",
+					"text": "esbe.c2"
+				}
+			},
+			{
+				"3": {
+					"type": "label",
+					"text": "esbe.c3"
+				}
+			},
+			{
+				"4": {
+					"type": "label",
+					"text": "esbe.c4"
+				}
+			},
+			{
+				"5": {
+					"type": "label",
+					"text": "esbe.c5"
+				}
+			},
+			{
+				"6": {
+					"type": "label",
+					"text": "esbe.c6"
+				}
+			},
+			{
+				"7": {
+					"type": "label",
+					"text": "esbe.c7"
+				}
+			}
+		]
+	},
+	"esbe_scr@common.scrolling_panel": {
+		"$show_background": false,
+		"$scrolling_content": "holoprint:info_screen.esbe_panel"
+	},
+	"esbe_fsc@common.fullscreen_header": {
+		"$back_button_has_title": true,
+		"$button_text": "ESBE info",
+		"$child_control": "holoprint:info_screen.esbe_scr"
+	},
+	"esbe_main@common.base_screen": {
+		"button_mappings": [
+			{
+				"from_button_id": "button.menu_cancel",
+				"to_button_id": "button.menu_exit",
+				"mapping_type": "global"
+			}
+		],
+		"$screen_bg_content": "persona.persona_screen_background_content",
+		"$screen_content": "holoprint:info_screen.esbe_fsc"
+	},
+	
+	"open_button@common_buttons.light_content_button": {
+		"size": [24, 24],
+		"$pressed_button_name": "button.menu_buy_game", // what does this do
+		"$button_content": "holoprint:info_screen.logo",
+		"$default_button_alpha": 0.5,
+		"$default_hover_alpha": 0.5
+	},
+	"logo": {
+		"type": "image",
+		"texture": "textures/holoprint/ui/logo_192",
+		"size": [20, 20]
+	}
+	
+	// "info_close_button@holoprint:touch_buttons.generic_toggle_button": {
+	// 	"size": [20, 20],
+	// 	"$toggle_name": "holoprint_info_toggle",
+	// 	"$button_content": "holoprint:info_screen.close_button_content",
+	// 	"$use_regular_bg": true
+	// },
+	
+	// "close_button_content": {
+	// 	"type": "label",
+	// 	"size": ["100%", 10],
+	// 	"text": "holoprint.info_screen.close",
+	// 	"font_scale_factor": 0.7,
+	// 	"text_alignment": "center"
+	// }
+}

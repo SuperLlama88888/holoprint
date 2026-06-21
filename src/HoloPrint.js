@@ -131,13 +131,17 @@ export async function makePack(structureFiles, partialConfig, resourcePackStack 
 			[_._]: "textures/holoprint/ui/white_circle.png",
 			[_.$]: "textures/holoprint/ui/white_circle.json",
 			[_._]: "textures/holoprint/ui/quick_input_keyboard_hints.png",
+			[_._]: "textures/holoprint/ui/logo_192.png",
 			[_.$]: "ui/_ui_defs.json",
 			[_.$]: "ui/_global_variables.json",
 			[_.$]: "ui/hud_screen.json",
 			materialListUI: "ui/holoprint_material_list.json",
 			[_.$]: "ui/holoprint_keybinds.json",
 			[_.$]: "ui/holoprint_touch_buttons.json",
-			[_.$]: "ui/holoprint_common.json"
+			[_.$]: "ui/holoprint_common.json",
+			[_.$]: "ui/holoprint_info_screen.json",
+			[_.$]: "ui/pause_screen.json",
+			[_.$]: "ui/start_screen.json"
 		} : {}),
 		[_._]: "font/glyph_E2.png",
 		languagesDotJson: "texts/languages.json"
