@@ -42,6 +42,18 @@ export default class MaterialListTable extends HTMLElement {
 	}
 	
 	#render() {
+		let tableHeading = this.packName? `Material list: ${this.packName}` : "Material list";
+		let countColumnName = this.#countsArePartitioned? html`<th>Count</th>` : "";
+		let tableColumnNames = html`
+			<th>Item name</th>
+			${countColumnName}
+			<th>Amount</th>
+		`;
+		let tableBody = this.#entries.length? this.#entries.map(entry => this.#makeRowForEntry(entry)).join("") : html`
+			<tr>
+				<td colspan="3"><i>There are no items in the material list.</i></td>
+			</tr>
+		`;
 		this.shadowRoot.innerHTML = html`
 			<style>
 				:host {
@@ -75,31 +87,34 @@ export default class MaterialListTable extends HTMLElement {
 			<table>
 				<thead>
 					<tr>
-						<th colspan="3">${this.packName? `Material list: ${this.packName}` : "Material list"}</th>
+						<th colspan="3">${tableHeading}</th>
 					</tr>
 					<tr>
-						<th>Item name</th>
-						${this.#countsArePartitioned? html`<th>Count</th>` : ""}
-						<th>Amount</th>
+						${tableColumnNames}
 					</tr>
 				</thead>
 				<tbody>
-					${this.#entries.length? this.#entries.map(entry => html`
-						<tr>
-							<td>${entry.itemName}</td>
-							${this.#countsArePartitioned? html`<td>${entry.count}</td>` : ""}
-							<td>${entry.partitionedCountWithoutTotal.replaceAll(this.#materialList.shulkerBoxGlyphChar, "sb")}</td>
-						</tr>
-					`).join("") : html`
-						<tr>
-							<td colspan="3"><i>There are no items in the material list.</i></td>
-						</tr>
-					`}
+					${tableBody}
 				</tbody>
 			</table>
 		`;
 		
 		this.#hasRendered = true;
+	}
+	/**
+	 * @param {MaterialListEntry} entry
+	 * @returns {string}
+	 */
+	#makeRowForEntry(entry) {
+		let rawCountCell = this.#countsArePartitioned? html`<td>${entry.count}</td>` : "";
+		const partitionedCount = entry.partitionedCountWithoutTotal.replaceAll(this.#materialList.shulkerBoxGlyphChar, "sb");
+		return html`
+			<tr>
+				<td>${entry.itemName}</td>
+				${rawCountCell}
+				<td>${partitionedCount}</td>
+			</tr>
+		`
 	}
 }
 
