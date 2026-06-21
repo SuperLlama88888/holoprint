@@ -1,7 +1,7 @@
-import { lazyLoadAsyncFunctionFactory, max, sleep } from "./utils.js";
+import { lazyLoadAsyncFunctionFactory, max, sleep, tuple } from "./utils.js";
 
 export default {
-	vanillaData: createLazyCachingFetcher("VanillaDataFetcher", "Mojang", "bedrock-samples", "v1.26.20.22-preview"),
+	vanillaData: createLazyCachingFetcher("VanillaDataFetcher", "Mojang", "bedrock-samples", "v1.26.40.26-preview"),
 	bedrockData: createLazyCachingFetcher("BedrockData", "pmmp", "BedrockData", "6.5.0+bedrock-1.26.10"),
 	bedrockBlockUpgradeSchema: createLazyCachingFetcher("BlockUpgrader", "SuperLlama88888", "BedrockBlockUpgradeSchema", "5.2.0+bedrock-1.21.110")
 };
@@ -45,16 +45,19 @@ async function createCachingFetcher(name, owner, repo, version) {
 	prevCacheName && console.debug(`${cacheName} will load old files from ${prevCacheName}`);
 	
 	let changedFilesTxt = prevCacheName && await cache.match(CACHE_METADATA_CHANGED_FILES_URL).then(res => res?.text());
+	/** @type {boolean} */
+	let successfullyFetchedChangedFilesList;
 	if(prevCacheName && !changedFilesTxt) {
 		let changedFilesUrl = `${patchUrl}/${prevCacheVersion}_to_${version}.txt`;
 		console.debug(`Loading changed files from ${changedFilesUrl}`);
-		changedFilesTxt = await fetch(changedFilesUrl).then(res => {
+		[changedFilesTxt, successfullyFetchedChangedFilesList] = await fetch(changedFilesUrl).then(async res => {
 			if(res?.ok) {
-				return res.text();
-			} else {
-				console.error(`Failed to load changed files list from ${changedFilesUrl}`);
-				return "";
+				return tuple([await res.text(), true]);
 			}
+			throw `Response was not OK: ${res.status} ${res.statusText}`;
+		}).catch(e => {
+			console.error(`Failed to load changed files list from ${changedFilesUrl}: ${e}`);
+			return tuple(["", false]);
 		});
 		cache.put(CACHE_METADATA_CHANGED_FILES_URL, new Response(changedFilesTxt));
 	}
@@ -75,7 +78,7 @@ async function createCachingFetcher(name, owner, repo, version) {
 			prevCache?.delete(cacheLink);
 			return res;
 		}
-		if(changedFiles.has(filename)) {
+		if(changedFiles.has(filename) || !successfullyFetchedChangedFilesList) {
 			prevCache?.delete(cacheLink);
 		} else {
 			let prevRes = await prevCache?.match(cacheLink);

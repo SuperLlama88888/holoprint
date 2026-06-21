@@ -2674,10 +2674,41 @@
 			}
 		}
 	],
-	"pointed_dripstone": [
+	"stalagmite_or_stalagtite": [
 		{
+			"if": "dripstone_thickness == tip",
 			"copy": "cross_texture",
-			"terrain_texture": "pointed_dripstone_${#block_states.dripstone_thickness}"
+			"textures": {
+				"*": "north"
+			}
+		},
+		{
+			"if": "dripstone_thickness == frustum",
+			"copy": "cross_texture",
+			"textures": {
+				"*": "down"
+			}
+		},
+		{
+			"if": "dripstone_thickness == middle",
+			"copy": "cross_texture",
+			"textures": {
+				"*": "south"
+			}
+		},
+		{
+			"if": "dripstone_thickness == base",
+			"copy": "cross_texture",
+			"textures": {
+				"*": "east"
+			}
+		},
+		{
+			"if": "dripstone_thickness == merge",
+			"copy": "cross_texture",
+			"textures": {
+				"*": "west"
+			}
 		}
 	],
 	"decorated_pot": [

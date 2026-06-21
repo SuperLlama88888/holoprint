@@ -36,7 +36,7 @@
 			"cake": {
 				"bite_counter": [0, 1, 1, 1, 1, 1, 1]
 			},
-			"pointed_dripstone": {
+			"stalagmite_or_stalagtite": {
 				"hanging": [1, 0]
 			},
 			"mangrove_propagule": {
