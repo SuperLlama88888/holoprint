@@ -1,0 +1,8 @@
+{
+	"namespace": "tabbed_upsell",
+	
+	// In MC versions before 1.21.90.25, "upsell" is misspelled (misspelt?) as "upseel". For compatibility with older versions I've left the typo version in as well.
+	// relevant commit: https://github.com/Mojang/bedrock-samples/commit/9a001762f04d3d7099a3fdab18a3b7eae38bfb09#diff-67925ccd2a17c754d3a55c8fb53ad3445ceb992a8e0ece24d454053116b69301 
+	"tabbed_upseel_screen_panel@holoprint:info_screen.info_screen": {},
+	"tabbed_upsell_screen_panel@holoprint:info_screen.info_screen": {}
+}

@@ -1,87 +1,265 @@
 {
 	"namespace": "holoprint:info_screen",
-	/*
-	"info_screen": {
-		"type": "panel",
+	
+	"info_screen@common.base_screen": {
+		"button_mappings": [
+			{
+				"from_button_id": "button.menu_cancel",
+				"to_button_id": "button.menu_exit",
+				"mapping_type": "global"
+			}
+		],
+		// "$screen_bg_content": "persona_common.persona_screen_background_content",
+		"$is_full_screen_layout": true,
+		"$screen_content": "holoprint:info_screen.header"
+	},
+	"header@common.fullscreen_header": {
+		"$back_button_has_title": true,
+		"$button_text": "holoprint.info_screen.heading",
+		"$child_control": "holoprint:info_screen.main"
+	},
+	
+	"main": {
+		"type": "stack_panel",
+		"orientation": "horizontal",
 		"size": ["100%", "100%"],
-		"layer": 200,
-		// "bindings": [
-		// 	{
-		// 		"binding_type": "view",
-		// 		"source_control_name": "holoprint_info_toggle",
-		// 		"source_property_name": "#toggle_state",
-		// 		"target_property_name": "#visible"
-		// 	}
-		// ],
 		"controls": [
 			{
-				"backdrop": {
-					"type": "image",
-					"texture": "textures/ui/White",
-					"size": ["100%", "100%"],
-					"color": [0, 0, 0],
-					"alpha": 0.68
-				}
-			},
-			{
-				"card": {
-					"type": "image",
-					"texture": "textures/ui/White",
-					"size": ["74%", "80%"],
-					"anchor_from": "center",
-					"anchor_to": "center",
-					"color": [0, 0, 0],
-					"alpha": 0.9,
+				"tab_selector_panel": {
+					"type": "panel",
+					"size": ["34%", "100%"],
 					"controls": [
 						{
-							"title_bar": {
-								"type": "image",
-								"size": ["100%", 26],
-								"texture": "textures/ui/White",
-								"color": [0.19, 0.54, 0.43],
+							"tab_selector": {
+								"type": "stack_panel",
+								"orientation": "vertical",
+								"size": ["100%", "100%"],
 								"controls": [
 									{
-										"title": {
-											"type": "label",
-											"size": ["100% - 40px", 12],
-											"anchor_from": "left_middle",
-											"anchor_to": "left_middle",
-											"offset": [12, 0],
-											"text": "holoprint.info_screen.heading",
-											"font_scale_factor": 1.1,
-											"color": [0.92, 1, 0.98]
+										"info_tab_button@holoprint:info_screen.tab_toggle": {
+											"$toggle_group_forced_index": 0,
+											"$tab_view_binding_name": "info_tab_button_toggle",
+											"$button_text": "holoprint.info_screen.info.heading"
 										}
 									},
 									{
-										"close_button@holoprint:info_screen.info_close_button": {
-											"anchor_from": "right_middle",
-											"anchor_to": "right_middle",
-											"offset": [-8, 0]
+										"material_list_tab_button@holoprint:info_screen.tab_toggle": {
+											"$toggle_group_forced_index": 1,
+											"$tab_view_binding_name": "material_list_tab_button_toggle",
+											"$button_text": "holoprint.info_screen.material_list.heading"
+										}
+									},
+									{
+										"layer_diagrams_tab_button@holoprint:info_screen.tab_toggle": {
+											"$toggle_group_forced_index": 2,
+											"$tab_view_binding_name": "layer_diagrams_tab_button_toggle",
+											"$button_text": "holoprint.info_screen.layer_diagrams.heading"
 										}
 									}
 								]
 							}
-						},
+						}
+					]
+				}
+			},
+			{
+				"tab_divider": {
+					"type": "image",
+					"texture": "textures/ui/HowToPlayDivider",
+					"size": [4, "100% - 18px"],
+					"offset": [0, 9],
+					"alpha": 0.6
+				}
+			},
+			{
+				"tab_content_pane": {
+					"type": "panel",
+					"size": ["66% - 4px", "100%"],
+					"controls": [
 						{
-							"info_line": {
-								"type": "label",
-								"size": ["100% - 24px", 18],
-								"offset": [12, 8],
-								"text": "holoprint.info_screen.line",
-								"font_scale_factor": 0.8,
-								"color": [0.9, 0.95, 0.93]
+							"info_page@page": {
+								"$tab_button_name": "info_tab_button_toggle",
+								"$scrolling_content": "holoprint:info_screen.info_page_content"
 							}
 						},
 						{
-							"material_block": {
-								"type": "panel",
-								"size": ["100% - 24px", "100% - 58px"],
-								"offset": [12, 32],
-								"controls": [
+							"material_list_page@page": {
+								"$tab_button_name": "material_list_tab_button_toggle",
+								"$scrolling_content": "holoprint:info_screen.material_list_page_content"
+							}
+						},
+						{
+							"layer_diagrams_page@page": {
+								"$tab_button_name": "layer_diagrams_tab_button_toggle",
+								"$scrolling_content": "holoprint:info_screen.layer_diagrams_page_content"
+							}
+						}
+					]
+				}
+			}
+		]
+	},
+	"tab_toggle@common_tabs.tab_left": {
+		"size": ["100%", 30],
+		"$toggle_focus_enabled": false,
+		"$toggle_binding_type": "global",
+		"$toggle_state_binding_name": "#toggle_state",
+		"$radio_toggle_group": true,
+		"$toggle_name": "holoprint_info_screen_tabs",
+		"$tab_content": "holoprint:info_screen.tab_button_content",
+		"$content_alpha": 1
+	},
+	"tab_button_content": {
+		"type": "panel",
+		"layer": 2,
+		"controls": [
+			{
+				"tab_button_text": {
+					"type": "label",
+					"anchor_from": "left_middle",
+					"anchor_to": "left_middle",
+					"size": ["100% - 10px", "default"],
+					"max_size": ["100% - 14px", "100% - 4px"],
+					"offset": [10, 0],
+					"text": "$button_text",
+					"layer": 3,
+					"color": "$text_color",
+					"alpha": "$content_alpha",
+					"font_scale_factor": 0.9
+				}
+			}
+		]
+	},
+	
+	"info_page_content": {
+		"type": "stack_panel",
+		"orientation": "vertical",
+		"controls": [
+			{
+				"banner": {
+					"type": "image",
+					"texture": "textures/holoprint/ui/banner",
+					"size": [144, 42]
+				}
+			},
+			{
+				"heading@page_heading": {
+					"text": "holoprint.info_screen.info.heading"
+				}
+			},
+			{
+				"text_1@page_paragraph": {
+					"text": "Thanks for using HoloPrint"
+				}
+			},
+			{
+				"text_2@page_paragraph": {
+					"text": "Thanks for using HoloPrint"
+				}
+			}
+		]
+	},
+	"material_list_page_content": {
+		"type": "stack_panel",
+		"orientation": "vertical",
+		"controls": [
+			{
+				"heading@page_heading": {
+					"text": "holoprint.material_list.heading"
+				}
+			},
+			{
+				"material_list_wrapper": {
+					"type": "image",
+					"size": ["100%", "100%"],
+					"texture": "textures/holoprint/ui/white_circle",
+					"color": [0, 0, 0],
+					"alpha": 0.5,
+					"controls": [
+						{
+							"material_list@holoprint:material_list.material_list": {
+								// "size": ["100%"]
+							}
+						}
+					]
+				}
+			}
+		]
+	},
+	"layer_diagrams_page_content": {
+		"type": "stack_panel",
+		"orientation": "vertical",
+		"controls": [
+			{
+				"heading@page_heading": {
+					"text": "holoprint.info_screen.layer_diagrams.heading"
+				}
+			},
+			{
+				"display@page_paragraph": {
+					"text": "#text",
+					"property_bag": {
+						"#text": "Error! Please report this on GitHub!"
+					},
+					"bindings": [
+						{
+							"binding_type": "view",
+							"source_control_name": "layer_diagram_layer_slider",
+							"source_property_name": "(#slider_value_as_int + 1)",
+							"target_property_name": "#layer"
+						},
+						{
+							"binding_type": "view",
+							"source_property_name": "('Layer: ' + #layer)",
+							"target_property_name": "#text"
+						}
+					]
+				}
+			},
+			{
+				// Having a wrapper panel centers the slider. However it must alo have its 
+				"layer_diagram_layer_slider_wrapper": {
+					"type": "panel",
+					"size": ["100%", 10],
+					"controls": [
+						{
+							"layer_diagram_layer_slider@holoprint:common.slider_with_int_cast": {
+								"size": ["100% - 10px", "100%"],
+								"$option_label": "Change layer",
+								"$slider_name": "layer_diagram_layer_slider", // this is irrelevant
+								"$slider_steps": -1 // the JS subs this in
+							}
+						}
+					]
+				}
+			},
+			{
+				"layer_diagram_wrapper": {
+					"type": "image",
+					"size": [100, 100],
+					"texture": "textures/holoprint/ui/white_circle",
+					// "color": [0, 0, 0],
+					"alpha": 0.5,
+					"controls": [
+						{
+							"layer_diagram": {
+								"type": "image",
+								"size": ["90%", "90%"],
+								// I tried substituting strings into #texture directly, but for WHATEVER REASON, Bugrock doesn't load the texture (even with force_texture_reload).
+								// This solution allows us to deduplicate layer diagrams and actually works! I found it from TheAndromedarius' post on the Bedrock Add-Ons Discord server: https://discord.com/channels/523663022053392405/1399880155522007232/1399986881382318221
+								"texture": "#texture",
+								"property_bag": {},
+								"bindings": [
 									{
-										"material_list@holoprint:material_list.content": {
-											"size": ["100%", "100%"]
-										}
+										"binding_type": "view",
+										"source_control_name": "layer_diagram_layer_slider",
+										"source_property_name": "#slider_value_as_int",
+										"target_property_name": "#layer"
+									},
+									{
+										"binding_type": "view",
+										"source_property_name": "('#structure_0_layer_' + #layer)",
+										"target_property_name": "#texture"
 									}
 								]
 							}
@@ -90,130 +268,46 @@
 				}
 			}
 		]
-	},*/
-	
-	"esbe_panel": {
-		"type": "stack_panel",
-		"orientation": "vertical",
+	},
+
+	"page": {
+		"type": "input_panel",
+		"bindings": [
+			{
+				"binding_type": "view",
+				"source_control_name": "$tab_button_name",
+				"source_property_name": "#toggle_state",
+				"target_property_name": "#visible"
+			}
+		],
 		"controls": [
 			{
-				"i": {
-					"type": "image",
-					"texture": "info",
-					"size": [
-						"100%-16px",
-						"27%x"
-					]
-				}
-			},
-			{
-				"c": {
-					"type": "label",
-					"font_scale_factor": 1.5,
-					"text": "esbe.v",
-					"color": [
-						0.4,
-						0.8,
-						0.67
-					]
-				}
-			},
-			{
-				"0": {
-					"type": "label",
-					"text": "esbe.c0"
-				}
-			},
-			{
-				"1": {
-					"type": "label",
-					"text": "esbe.c1"
-				}
-			},
-			{
-				"2": {
-					"type": "label",
-					"text": "esbe.c2"
-				}
-			},
-			{
-				"3": {
-					"type": "label",
-					"text": "esbe.c3"
-				}
-			},
-			{
-				"4": {
-					"type": "label",
-					"text": "esbe.c4"
-				}
-			},
-			{
-				"5": {
-					"type": "label",
-					"text": "esbe.c5"
-				}
-			},
-			{
-				"6": {
-					"type": "label",
-					"text": "esbe.c6"
-				}
-			},
-			{
-				"7": {
-					"type": "label",
-					"text": "esbe.c7"
+				"content@common.scrolling_panel": {
+					"size": ["95%", "95%"],
+					"$show_background": false
 				}
 			}
 		]
 	},
-	"esbe_scr@common.scrolling_panel": {
-		"$show_background": false,
-		"$scrolling_content": "holoprint:info_screen.esbe_panel"
+	"page_heading": {
+		"type": "label",
+		"size": ["100%", 20],
+		"font_type": "MinecraftTen",
+		"font_scale_factor": 1.2
 	},
-	"esbe_fsc@common.fullscreen_header": {
-		"$back_button_has_title": true,
-		"$button_text": "ESBE info",
-		"$child_control": "holoprint:info_screen.esbe_scr"
-	},
-	"esbe_main@common.base_screen": {
-		"button_mappings": [
-			{
-				"from_button_id": "button.menu_cancel",
-				"to_button_id": "button.menu_exit",
-				"mapping_type": "global"
-			}
-		],
-		"$screen_bg_content": "persona.persona_screen_background_content",
-		"$screen_content": "holoprint:info_screen.esbe_fsc"
+	"page_paragraph": {
+		"type": "label",
+		"size": ["100%", 15]
 	},
 	
 	"open_button@common_buttons.light_content_button": {
 		"size": [24, 24],
-		"$pressed_button_name": "button.menu_buy_game", // what does this do
-		"$button_content": "holoprint:info_screen.logo",
-		"$default_button_alpha": 0.5,
-		"$default_hover_alpha": 0.5
+		"$pressed_button_name": "button.menu_buy_game", // since resource packs can't add their own screens, this will redirect to either the "tabbed upsell" screen or the "Windows 10 trial conversion" screen which have both been modified to display the HoloPrint info screen instead.
+		"$button_content": "holoprint:info_screen.logo"
 	},
 	"logo": {
 		"type": "image",
 		"texture": "textures/holoprint/ui/logo_192",
-		"size": [20, 20]
+		"size": [18, 18]
 	}
-	
-	// "info_close_button@holoprint:touch_buttons.generic_toggle_button": {
-	// 	"size": [20, 20],
-	// 	"$toggle_name": "holoprint_info_toggle",
-	// 	"$button_content": "holoprint:info_screen.close_button_content",
-	// 	"$use_regular_bg": true
-	// },
-	
-	// "close_button_content": {
-	// 	"type": "label",
-	// 	"size": ["100%", 10],
-	// 	"text": "holoprint.info_screen.close",
-	// 	"font_scale_factor": 0.7,
-	// 	"text_alignment": "center"
-	// }
 }

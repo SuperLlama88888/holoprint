@@ -132,6 +132,7 @@ export async function makePack(structureFiles, partialConfig, resourcePackStack 
 			[_.$]: "textures/holoprint/ui/white_circle.json",
 			[_._]: "textures/holoprint/ui/quick_input_keyboard_hints.png",
 			[_._]: "textures/holoprint/ui/logo_192.png",
+			[_._]: "textures/holoprint/ui/banner.png",
 			[_.$]: "ui/_ui_defs.json",
 			[_.$]: "ui/_global_variables.json",
 			[_.$]: "ui/hud_screen.json",
@@ -139,9 +140,11 @@ export async function makePack(structureFiles, partialConfig, resourcePackStack 
 			[_.$]: "ui/holoprint_keybinds.json",
 			[_.$]: "ui/holoprint_touch_buttons.json",
 			[_.$]: "ui/holoprint_common.json",
-			[_.$]: "ui/holoprint_info_screen.json",
+			infoScreenUI: "ui/holoprint_info_screen.json",
 			[_.$]: "ui/pause_screen.json",
-			[_.$]: "ui/start_screen.json"
+			[_.$]: "ui/start_screen.json",
+			[_.$]: "ui/tabbed_upsell_screen.json",
+			[_.$]: "ui/win10_trial_conversion_screen.json"
 		} : {}),
 		[_._]: "font/glyph_E2.png",
 		languagesDotJson: "texts/languages.json"
@@ -221,9 +224,8 @@ export async function makePack(structureFiles, partialConfig, resourcePackStack 
 	console.log("Poly mesh template palette with resolved UVs:", polyMeshTemplatePalette);
 	
 	let layerByLayerDiagramsByStructure = await makeLayerByLayerDiagrams(config, fullOpacityTextureBlob, polyMeshTemplatePalette, allStructureIndicesByLayer, structureSizes);
-	Promise.all(layerByLayerDiagramsByStructure.flat().map(x => toImage(x))).then(images => images.forEach(image => document.body.appendChild(image)));
 	
-	let { manifest, hologramRenderControllers, hologramGeo, hologramAnimationControllers, hologramAnimations, blockValidationParticle, singleWhitePixelTexture, materialListUI } = await packTemplatePromise.allValues;
+	let { manifest, hologramRenderControllers, hologramGeo, hologramAnimationControllers, hologramAnimations, blockValidationParticle, singleWhitePixelTexture, materialListUI, infoScreenUI } = await packTemplatePromise.allValues;
 	
 	let structureGeoTemplate = hologramGeo["minecraft:geometry"][0];
 	hologramGeo["minecraft:geometry"].splice(0, 1);
@@ -508,6 +510,16 @@ export async function makePack(structureFiles, partialConfig, resourcePackStack 
 	packFiles["textures/holoprint/entity/overlay.png"] = overlayTexture;
 	textureBlobs.forEach(([textureName, blob]) => {
 		packFiles[`textures/holoprint/entity/${textureName}.png`] = blob;
+	});
+	getUIElementFromPath(infoScreenUI, "layer_diagrams_page_content", "layer_diagram_layer_slider_wrapper", "layer_diagram_layer_slider")["$slider_steps"] = structureSizes[0][1];
+	layerByLayerDiagramsByStructure.forEach((diagramsByLayer, structureI) => {
+		let layerDiagramElementPropertyBag = getUIElementFromPath(infoScreenUI, "layer_diagrams_page_content", "layer_diagram_wrapper", "layer_diagram")["property_bag"];
+		diagramsByLayer.forEach((diagramBlob, layerI) => {
+			let structureAndLayerPrefix = `structure_${structureI}_layer_${layerI}`;
+			let textureName = `textures/holoprint/ui/${structureAndLayerPrefix}_diagram`;
+			packFiles[`${textureName}.png`] = diagramBlob;
+			layerDiagramElementPropertyBag[`#${structureAndLayerPrefix}`] = textureName;
+		});
 	});
 	if(config.RETEXTURE_CONTROL_ITEMS) {
 		if(!hasModifiedTerrainTexture) {
@@ -1392,7 +1404,30 @@ function addMaterialListUI(finalisedMaterialList, materialListUI, blockMetadata)
 		materialListUI["content"]["max_size"][0] = "50%";
 	}
 	materialListUI["content"]["size"][1] = finalisedMaterialList.length * 12 + 12; // 12px for each item + 12px for the heading
-	materialListUI["entry"]["controls"][0]["content"]["controls"][3]["item_name"]["size"][0] += `${round(longestCountLength * 4.2 + 10)}px`;
+	// materialListUI["entry"]["controls"][0]["content"]["controls"][3]["item_name"]["size"][0] += `${round(longestCountLength * 4.2 + 10)}px`;
+	getUIElementFromPath(materialListUI, "entry", "content", "item_name")["size"][0] += `${round(longestCountLength * 4.2 + 10)}px`;
+}
+/**
+ * Gets the element at a specified path from a JSON UI object.
+ * @param {string} rootUiObject
+ * @param {...string} elementPath
+ * @returns {object}
+ */
+function getUIElementFromPath(rootUiObject, ...elementPath) {
+	let el = rootUiObject;
+	elementPath.forEach((childName, i) => {
+		if(i == 0) {
+			el = el?.[childName];
+		} else {
+			let childObj = el?.["controls"]?.find(elObj => Object.keys(elObj)[0].split("@")[0] == childName);
+			if(childObj) {
+				el = Object.values(childObj)[0];
+			} else {
+				el = undefined;
+			}
+		}
+	});
+	return el;
 }
 /**
  * Translates control items by making a fake material list.
