@@ -1,4 +1,4 @@
-import { ceil, floor, hexColorToClampedTriplet, JSONSet, max, range, stringToImageData, toImage, toImageData, tuple, vec2 } from "./utils.js";
+import { ceil, floor, fnv1a, getPixelBytesInSquare, hexColorToClampedTriplet, JSONSet, max, range, stringToImageData, toImage, toImageData, tuple, vec2 } from "./utils.js";
 import TGALoader from "tga-js"; // We could use dynamic import as this isn't used all the time but it's so small it won't matter
 import potpack from "potpack";
 import ResourcePackStack from "./ResourcePackStack.js";
@@ -481,23 +481,12 @@ export default class TextureAtlas {
 		return { minX, minY, maxX, maxY };
 	}
 	/**
-	 * Calculates the FRV-1a hash of all pixels in an image fragment.
+	 * Calculates the FNV-1a hash of all pixels in an image fragment.
 	 * @param {ImageFragment} imageFragment
 	 * @returns {number}
 	 */
 	#hashPixels({ imageData, sourceX, sourceY, w, h }) {
-		let hash = 2166136261;
-		for(let y = sourceY; y < sourceY + h; y++) {
-			for(let x = sourceX; x < sourceX + w; x++) {
-				let startI = (y * imageData.width + x) * 4;
-				for(let i = startI; i < startI + 4; i++) {
-					hash ^= imageData.data[i];
-					hash *= 16777619;
-					hash >>>= 0;
-				}
-			}
-		}
-		return hash;
+		return fnv1a(getPixelBytesInSquare(imageData, sourceX, sourceY, w, h));
 	}
 	/**
 	 * Checks if fragments from two `ImageData`s are exactly the same.

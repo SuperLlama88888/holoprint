@@ -1,4 +1,4 @@
-import { average, getOffscreenCanvasContext, tuple } from "./utils.js";
+import { areArraysEqual, average, fnv1a, getOffscreenCanvasContext, getStructureIndexFromCoordinates, HashMap } from "./utils.js";
 import WebGL2QuadRenderer from "./WebGL2QuadRenderer.js"; // dependency injection coming soon^tm
 
 export default class LayerByLayerDiagramMaker {
@@ -26,27 +26,47 @@ export default class LayerByLayerDiagramMaker {
 		return polyMeshTemplatePalette.map(faces => this.#getIconForBlockFromFaces(faces));
 	}
 	/**
-	 * Makes all the diagrams for a structure, returning them as `Blob`s of images.
+	 * Makes all the diagrams for an array of structures, returning them as `Blob`s of images and an array of indices for each layer per structure.
 	 * @param {ImageBitmap[]} blockIconPalette
-	 * @param {[Int32Array, Int32Array]} structureIndicesByLayer
-	 * @param {I32Vec3} structureSize
-	 * @returns {Promise<Blob[]>}
+	 * @param {[Int32Array, Int32Array][]} structureIndicesByLayerByStructure
+	 * @param {I32Vec3[]} structureSizes
+	 * @returns {Promise<{ diagrams: Blob[], indices: number[][] }>}
 	 */
-	async makeDiagramsForStructure(blockIconPalette, structureIndicesByLayer, structureSize) {
-		let diagramPromises = [];
-		for(let y = 0; y < structureSize[1]; y++) {
-			let indices = [];
-			for(let x = 0; x < structureSize[0]; x++) {
-				let indicesForRow = [];
-				for(let z = 0; z < structureSize[2]; z++) {
-					let blockI = (x * structureSize[1] + y) * structureSize[2] + z;
-					indicesForRow.push(tuple([structureIndicesByLayer[0][blockI], structureIndicesByLayer[1][blockI]]));
+	async makeDiagramsForStructures(blockIconPalette, structureIndicesByLayerByStructure, structureSizes) {
+		/** @type {Promise<Blob>[]} */
+		let diagramBlobPromises = [];
+		/** @type {HashMap<number[], number, number>} */
+		let diagramIndicesHashMap = new HashMap(indices => fnv1a(indices), areArraysEqual);
+		/** @type {number[][]} */
+		let diagramBlobIndices = [];
+		structureSizes.forEach((structureSize, structureI) => {
+			let structureIndicesByLayer = structureIndicesByLayerByStructure[structureI];
+			/** @type {number[]} */
+			let diagramBlobIndicesForStructure = [];
+			for(let y = 0; y < structureSize[1]; y++) {
+				/** @type {number[]} */
+				let indices = [];
+				for(let x = 0; x < structureSize[0]; x++) {
+					for(let z = 0; z < structureSize[2]; z++) {
+						let blockI = getStructureIndexFromCoordinates([x, y, z], structureSize);
+						indices.push(structureIndicesByLayer[0][blockI], structureIndicesByLayer[1][blockI]);
+					}
 				}
-				indices.push(indicesForRow);
+				let index = diagramIndicesHashMap.get(indices);
+				if(index == undefined) {
+					index = diagramBlobPromises.length;
+					diagramIndicesHashMap.set(indices, index);
+					diagramBlobPromises.push(this.#makeDiagramForLayer(blockIconPalette, indices, structureSize));
+				}
+				diagramBlobIndicesForStructure.push(index);
 			}
-			diagramPromises.push(this.#makeDiagramForLayer(blockIconPalette, indices));
-		}
-		return await Promise.all(diagramPromises);
+			diagramBlobIndices.push(diagramBlobIndicesForStructure);
+		});
+		let diagramBlobs = await Promise.all(diagramBlobPromises);
+		return {
+			diagrams: diagramBlobs,
+			indices: diagramBlobIndices
+		};
 	}
 	/**
 	 * Disposes all the `ImageBitmap`s in a block icon palette.
@@ -67,7 +87,7 @@ export default class LayerByLayerDiagramMaker {
 			depth: average(face.vertices.map(v => v.pos[1]))
 		})).sort((a, b) => a.depth - b.depth);
 		
-		// Convert data structural representation into flat inputs acceptable by the WebGL Engine
+		// Convert face vertex data into flat inputs acceptable by the WebGL engine
 		let quadRenderData = sortedFaces.map(({ face }) => ({
 			positions: new Float32Array([
 				1 - face.vertices[0].pos[0] / 16, face.vertices[0].pos[2] / 16,
@@ -88,27 +108,31 @@ export default class LayerByLayerDiagramMaker {
 	/**
 	 * Stitches standard `ImageBitmap` icons together using the standard 2d canvas.
 	 * @param {ImageBitmap[]} blockIconPalette
-	 * @param {Vec2[][]} blockIndices
+	 * @param {number[]} blockIndices
+	 * @param {I32Vec3} structureSize
 	 * @returns {Promise<Blob>}
 	 */
-	async #makeDiagramForLayer(blockIconPalette, blockIndices) {
-		let can = new OffscreenCanvas(this.size * blockIndices.length, this.size * blockIndices[0].length);
+	async #makeDiagramForLayer(blockIconPalette, blockIndices, structureSize) {
+		let can = new OffscreenCanvas(this.size * structureSize[0], this.size * structureSize[2]);
 		let ctx = getOffscreenCanvasContext(can, "2d", {
 			willReadFrequently: true
 		});
 		
-		blockIndices.forEach((indices, x) => {
-			indices.forEach((indicesPerLayer, z) => {
+		for(let x = 0; x < structureSize[0]; x++) {
+			for(let z = 0; z < structureSize[2]; z++) {
+				// draw second layer first, so the first layer (the main layer) draws on top
 				for(let layer = 1; layer >= 0; layer--) {
-					let i = indicesPerLayer[layer];
-					if(i in blockIconPalette) {
-						ctx.drawImage(blockIconPalette[i], x * this.size, z * this.size);
+					let indexIndex = (x * structureSize[2] + z) * 2 + layer;
+					let blockIconIndex = blockIndices[indexIndex];
+					if(blockIconIndex in blockIconPalette) {
+						ctx.drawImage(blockIconPalette[blockIconIndex], x * this.size, z * this.size);
 					}
+					// not in blockIconPalette means it's an excluded block, e.g. air
 				}
-			});
-		});
+			}
+		}
 		return await can.convertToBlob();
 	}
 }
 
-/** @import { HoloPrintConfig, I32Vec3, PolyMeshTemplateFaceWithUvs, Vec2 } from "./HoloPrint.js" */
+/** @import { HoloPrintConfig, I32Vec3, PolyMeshTemplateFaceWithUvs } from "./HoloPrint.js" */

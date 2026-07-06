@@ -1,3 +1,4 @@
+import { sum } from "./math.js";
 import { doNothing, tuple } from "./meta.js";
 
 function stringifyJsonBigIntSafe(value) {
@@ -173,6 +174,74 @@ export class JSONMap { // very barebones
 	}
 	get size() {
 		return this.#entries.size;
+	}
+}
+
+/**
+ * @template K
+ * @template V
+ * @template H
+ */
+export class HashMap {
+	/** @readonly */
+	#hashFunction;
+	/** @readonly */
+	#equalityFunction;
+	
+	/** @type {Map<H, [K, V][]>} */
+	#map = new Map();
+	/**
+	 * @param {(value: K) => H} hashFunction
+	 * @param {(a: K, b: K) => boolean} equalityPredicate
+	 */
+	constructor(hashFunction, equalityPredicate) {
+		this.#hashFunction = hashFunction;
+		this.#equalityFunction = equalityPredicate;
+	}
+	/**
+	 * @param {K} k
+	 * @param {V} v
+	 */
+	set(k, v) {
+		let hash = this.#hashFunction(k);
+		if(this.#map.has(hash)) {
+			let bucket = this.#map.get(hash);
+			let existingEntryIndex = bucket.findIndex(([otherK]) => this.#equalityFunction(k, otherK));
+			if(existingEntryIndex != -1) {
+				bucket[existingEntryIndex][1] = v;
+			} else {
+				bucket.push([k, v]);
+			}
+		} else {
+			this.#map.set(hash, [[k, v]]);
+		}
+	}
+	/**
+	 * @param {K} k
+	 * @returns {V | undefined}
+	 */
+	get(k) {
+		let hash = this.#hashFunction(k);
+		if(!this.#map.has(hash)) {
+			return undefined;
+		}
+		let bucket = this.#map.get(hash);
+		return bucket.find(([otherK]) => this.#equalityFunction(k, otherK))?.[1];
+	}
+	/**
+	 * @param {K} k
+	 * @returns {boolean}
+	 */
+	has(k) {
+		let hash = this.#hashFunction(k);
+		if(!this.#map.has(hash)) {
+			return false;
+		}
+		let bucket = this.#map.get(hash);
+		return bucket.some(([otherK]) => this.#equalityFunction(k, otherK));
+	}
+	get size() {
+		return sum(Array.from(this.#map.values()).map(bucket => bucket.length));
 	}
 }
 

@@ -81,4 +81,24 @@ export async function resizeImageToBlob(image, width, height = width) {
 	return await can.convertToBlob();
 }
 
+/**
+ * Returns a generator of all the individual RGBA channels in a square inside an `ImageData`.
+ * @param {ImageData} imageData
+ * @param {number} sourceX
+ * @param {number} sourceY
+ * @param {number} w
+ * @param {number} h
+ * @returns {Generator<number, void, void>}
+ */
+export function* getPixelBytesInSquare(imageData, sourceX, sourceY, w, h) {
+	for(let y = sourceY; y < sourceY + h; y++) {
+		for(let x = sourceX; x < sourceX + w; x++) {
+			let startI = (y * imageData.width + x) * 4;
+			for(let i = startI; i < startI + 4; i++) {
+				yield imageData.data[i];
+			}
+		}
+	}
+}
+
 /** @import { Vec3 } from "../HoloPrint.js" */

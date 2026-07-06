@@ -511,14 +511,15 @@ export async function makePack(structureFiles, partialConfig, resourcePackStack 
 	textureBlobs.forEach(([textureName, blob]) => {
 		packFiles[`textures/holoprint/entity/${textureName}.png`] = blob;
 	});
-	getUIElementFromPath(infoScreenUI, "layer_diagrams_page_content", "layer_diagram_layer_slider_wrapper", "layer_diagram_layer_slider")["$slider_steps"] = structureSizes[0][1];
-	layerByLayerDiagramsByStructure.forEach((diagramsByLayer, structureI) => {
-		let layerDiagramElementPropertyBag = getUIElementFromPath(infoScreenUI, "layer_diagrams_page_content", "layer_diagram_wrapper", "layer_diagram")["property_bag"];
-		diagramsByLayer.forEach((diagramBlob, layerI) => {
-			let structureAndLayerPrefix = `structure_${structureI}_layer_${layerI}`;
-			let textureName = `textures/holoprint/ui/${structureAndLayerPrefix}_diagram`;
-			packFiles[`${textureName}.png`] = diagramBlob;
-			layerDiagramElementPropertyBag[`#${structureAndLayerPrefix}`] = textureName;
+	getUIElementFromPath(infoScreenUI, "layer_diagrams_page_content", "layer_diagram_layer_slider_wrapper", "layer_diagram_layer_slider")["$slider_steps"] = structureSizes[0][1] + 1;
+	layerByLayerDiagramsByStructure.diagrams.forEach((diagramBlob, diagramIndex) => {
+		packFiles[`${getLayerDiagramTextureName(diagramIndex)}.png`] = diagramBlob;
+	});
+	let layerDiagramElementPropertyBag = getUIElementFromPath(infoScreenUI, "layer_diagrams_page_content", "layer_diagram_wrapper", "layer_diagram")["property_bag"];
+	layerByLayerDiagramsByStructure.indices.forEach((indicesByLayer, structureI) => {
+		indicesByLayer.forEach((diagramIndex, layerI) => {
+			let structureAndLayerPrefix = `structure_${structureI}_layer_${layerI + 1}`; // add 1 here because 0 on the slider is reserved for showing the full structure's material list, i.e. not showing any layer diagram. It would be possible to subtract 1 in the JSON UI, but that would have a tiny performance impact.
+			layerDiagramElementPropertyBag[`#${structureAndLayerPrefix}`] = getLayerDiagramTextureName(diagramIndex);
 		});
 	});
 	if(config.RETEXTURE_CONTROL_ITEMS) {
@@ -1020,15 +1021,22 @@ function mergeMultiplePalettesAndIndices(palettesAndIndices) {
  * @param {PolyMeshTemplateFaceWithUvs[][]} polyMeshTemplatePalette
  * @param {[Int32Array, Int32Array][]} allStructureIndicesByLayer
  * @param {I32Vec3[]} structureSizes
- * @returns {Promise<Blob[][]>}
+ * @returns {Promise<{ diagrams: Blob[], indices: number[][] }>}
  */
 async function makeLayerByLayerDiagrams(config, textureBlob, polyMeshTemplatePalette, allStructureIndicesByLayer, structureSizes) {
 	let layerByLayerDiagramMaker = new LayerByLayerDiagramMaker(config, await toImage(textureBlob));
 	let blockIconPalette = layerByLayerDiagramMaker.makeBlockIconPalette(polyMeshTemplatePalette);
-	let diagrams = await Promise.all(allStructureIndicesByLayer.map((structureIndices, i) => layerByLayerDiagramMaker.makeDiagramsForStructure(blockIconPalette, structureIndices, structureSizes[i])));
-	// The new "using" statement is not yet widely supported, so I need to manually write this. Maybe in 5 years...
+	let diagramsAndIndices = await layerByLayerDiagramMaker.makeDiagramsForStructures(blockIconPalette, allStructureIndicesByLayer, structureSizes);
+	// The new "using" statement is not yet widely supported, so I need to manually write this. esbuild can transpile it but it's soooo bloated. Maybe in 5 years...
 	layerByLayerDiagramMaker.disposeBlockIconPalette(blockIconPalette);
-	return diagrams;
+	return diagramsAndIndices;
+}
+/**
+ * @param {number} index
+ * @returns {string}
+ */
+function getLayerDiagramTextureName(index) {
+	return `textures/holoprint/ui/layer_diagram_${index}`;
 }
 /**
  * Makes the layer animations and animation controllers. Mutates the original arguments.

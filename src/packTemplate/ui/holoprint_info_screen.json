@@ -196,6 +196,24 @@
 				}
 			},
 			{
+				"full_structure_notice@page_paragraph": {
+					"text": "Full structure",
+					"bindings": [
+						{
+							"binding_type": "view",
+							"source_control_name": "layer_diagram_layer_slider",
+							"source_property_name": "#slider_value_as_int",
+							"target_property_name": "#layer"
+						},
+						{
+							"binding_type": "view",
+							"source_property_name": "(#layer = 0)",
+							"target_property_name": "#visible"
+						}
+					]
+				}
+			},
+			{
 				"display@page_paragraph": {
 					"text": "#text",
 					"property_bag": {
@@ -205,8 +223,13 @@
 						{
 							"binding_type": "view",
 							"source_control_name": "layer_diagram_layer_slider",
-							"source_property_name": "(#slider_value_as_int + 1)",
+							"source_property_name": "#slider_value_as_int",
 							"target_property_name": "#layer"
+						},
+						{
+							"binding_type": "view",
+							"source_property_name": "(#layer > 0)",
+							"target_property_name": "#visible"
 						},
 						{
 							"binding_type": "view",
@@ -240,6 +263,20 @@
 					"texture": "textures/holoprint/ui/white_circle",
 					// "color": [0, 0, 0],
 					"alpha": 0.5,
+					"bindings": [
+						{
+							"binding_type": "view",
+							"source_control_name": "layer_diagram_layer_slider",
+							"source_property_name": "#slider_value_as_int",
+							"target_property_name": "#layer"
+						},
+						{
+							// Layer "0" means looking at the entire structure, so the diagram doesn't show.
+							"binding_type": "view",
+							"source_property_name": "(#layer > 0)",
+							"target_property_name": "#visible"
+						}
+					],
 					"controls": [
 						{
 							"layer_diagram": {

@@ -21,8 +21,15 @@ export function rotateDeg(p, deg) {
  * @param {number[]} nums
  * @returns {number}
  */
+export function sum(nums) {
+	return nums.reduce((a, b) => a + b);
+}
+/**
+ * @param {number[]} nums
+ * @returns {number}
+ */
 export function average(nums) {
-	return nums.reduce((a, b) => a + b) / nums.length;
+	return sum(nums) / nums.length;
 }
 /**
  * @param {number} a

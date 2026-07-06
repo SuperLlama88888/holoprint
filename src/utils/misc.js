@@ -26,6 +26,20 @@ export async function sha256text(text) {
 }
 
 /**
+ * Computes the FNV-1a hash from an iterator of numbers.
+ * @param {Iterable<number>} nums
+ * @returns {number}
+ */
+export function fnv1a(nums) {
+	let hash = 2166136261;
+	for(let num of nums) {
+		hash ^= num;
+		hash = Math.imul(hash, 16777619);
+	}
+	return hash >>> 0;
+}
+
+/**
  * Clears all caches.
  * @param {CacheStorage} cacheStorage
  */
