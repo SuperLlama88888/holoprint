@@ -1,4 +1,4 @@
-import { floor, formatMatrixAsTable, nanToUndefined, PatternMap, removeFalsies, ReplacingPatternMap, tuple } from "./utils.js";
+import { floor, nanToUndefined, PatternMap, removeFalsies, ReplacingPatternMap, tuple } from "./utils.js";
 
 export default class MaterialList {
 	/** @type {Map<string, number>} */
@@ -232,30 +232,6 @@ export default class MaterialList {
 	 */
 	#findBlockAuxId(blockName) {
 		return nanToUndefined(this.#blockMetadata.get(`minecraft:${blockName}`)?.["raw_id"] * 65536);
-	}
-	
-	/**
-	 * Makes a markdown table from a list of entries.
-	 * @param {MaterialListEntry[]} entries
-	 * @param {string} packName
-	 * @returns {string}
-	 */
-	static makeMarkdownTable(entries, packName) {
-		let lines = [tuple(["Item name", "Count", "Amount"]), ...entries.map(({ translatedName, count, partitionedCountWithoutTotal }) => [translatedName, count, partitionedCountWithoutTotal])];
-		// check if the raw count column is redundant
-		if(entries.every(({ count }) => count < 64)) {
-			lines.forEach(line => line.splice(1, 1));
-		}
-		return `# Material list${packName? `: ${packName}` : ""}\n${formatMatrixAsTable(lines)}`;
-	}
-	/**
-	 * Makes an image from a list of entries.
-	 * @param {MaterialListEntry[]} entries
-	 * @returns {string}
-	 */
-	static makeCsv(entries) {
-		let lines = [["Item name", "Count"], ...entries.map(({ translatedName, count }) => [translatedName, count])];
-		return lines.map(line => line.join()).join("\n");
 	}
 }
 

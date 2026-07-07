@@ -88,14 +88,5 @@ export function mulMat4([[a, b, c, d], [e, f, g, h], [i, j, k, l], [m, n, o, p]]
 		m * x + n * y + o * z + p * w
 	];
 }
-/**
- * @param {{ toString: () => string }[][]} mat
- * @returns {string}
- */
-export function formatMatrixAsTable(mat) {
-	let maxColumnWidths = transposeMatrix(mat).map(col => max(...col.map(x => x.toString().length)));
-	let formattedLines = mat.map(row => `|${row.map((x, i) => ` ${x.toString().padEnd(maxColumnWidths[i])} |`).join("")}`);
-	return [formattedLines[0], `|${maxColumnWidths.map(n => `${"-".repeat(n + 2)}|`).join("")}`, ...formattedLines.slice(1)].join("\n");
-}
 
 /** @import { Mat4, Matrix, TupleMatrix, Vec3, Vec4 } from "../HoloPrint.js" */
