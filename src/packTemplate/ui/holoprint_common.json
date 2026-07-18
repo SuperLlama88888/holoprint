@@ -24,7 +24,7 @@
 				"binding_name": "#this_is_also_irrelevant_but_must_be_present"
 			},
 			{
-				// This binding makes casts #slider_value to an integer. Found it posted by ya-rifat in the Bedrock Add-Ons Discord server: https://discord.com/channels/523663022053392405/1416833222322553023/1421342281226522674
+				// This binding casts #slider_value to an integer. Found it posted by ya-rifat in the Bedrock Add-Ons Discord server: https://discord.com/channels/523663022053392405/1416833222322553023/1421342281226522674
 				"binding_type": "view",
 				"source_property_name": "(#slider_value_as_int + (#slider_value > #slider_value_as_int) - (#slider_value < #slider_value_as_int))",
 				"target_property_name": "#slider_value_as_int"

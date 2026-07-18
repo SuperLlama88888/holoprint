@@ -441,6 +441,8 @@ export async function makePack(structureFiles, partialConfig, resourcePackStack 
 		highestItemCount = max(...exportedMaterialListEnglish.map(({ count }) => count));
 	}
 	
+	addInfoScreenUIPages(infoScreenUI, structureSizes, layerByLayerDiagramsByStructure);
+	
 	manifest["header"]["name"] = packName;
 	manifest["header"]["uuid"] = crypto.randomUUID();
 	let packVersion = VERSION.match(/^v(\d+)\.(\d+)\.(\d+)$/)?.slice(1)?.map(x => +x) ?? [1, 0, 0];
@@ -511,16 +513,8 @@ export async function makePack(structureFiles, partialConfig, resourcePackStack 
 	textureBlobs.forEach(([textureName, blob]) => {
 		packFiles[`textures/holoprint/entity/${textureName}.png`] = blob;
 	});
-	getUIElementFromPath(infoScreenUI, "layer_diagrams_page_content", "layer_diagram_layer_slider_wrapper", "layer_diagram_layer_slider")["$slider_steps"] = structureSizes[0][1] + 1;
 	layerByLayerDiagramsByStructure.diagrams.forEach((diagramBlob, diagramIndex) => {
 		packFiles[`${getLayerDiagramTextureName(diagramIndex)}.png`] = diagramBlob;
-	});
-	let layerDiagramElementPropertyBag = getUIElementFromPath(infoScreenUI, "layer_diagrams_page_content", "layer_diagram_wrapper", "layer_diagram")["property_bag"];
-	layerByLayerDiagramsByStructure.indices.forEach((indicesByLayer, structureI) => {
-		indicesByLayer.forEach((diagramIndex, layerI) => {
-			let structureAndLayerPrefix = `structure_${structureI}_layer_${layerI + 1}`; // add 1 here because 0 on the slider is reserved for showing the full structure's material list, i.e. not showing any layer diagram. It would be possible to subtract 1 in the JSON UI, but that would have a tiny performance impact.
-			layerDiagramElementPropertyBag[`#${structureAndLayerPrefix}`] = getLayerDiagramTextureName(diagramIndex);
-		});
 	});
 	if(config.RETEXTURE_CONTROL_ITEMS) {
 		if(!hasModifiedTerrainTexture) {
@@ -1015,13 +1009,18 @@ function mergeMultiplePalettesAndIndices(palettesAndIndices) {
 	};
 }
 /**
+ * @typedef {object} LayerByLayerDiagramsAndIndices
+ * @property {Blob[]} diagrams
+ * @property {number[][]} indices
+ */
+/**
  * Makes the layer-by-layer diagrams for a structure. Returns a 2d array of blobs, where the first dimension is the structure index and the second dimension is the layer index (i.e. the y-coordinate).
  * @param {HoloPrintConfig} config
  * @param {Blob} textureBlob
  * @param {PolyMeshTemplateFaceWithUvs[][]} polyMeshTemplatePalette
  * @param {[Int32Array, Int32Array][]} allStructureIndicesByLayer
  * @param {I32Vec3[]} structureSizes
- * @returns {Promise<{ diagrams: Blob[], indices: number[][] }>}
+ * @returns {Promise<LayerByLayerDiagramsAndIndices>}
  */
 async function makeLayerByLayerDiagrams(config, textureBlob, polyMeshTemplatePalette, allStructureIndicesByLayer, structureSizes) {
 	let layerByLayerDiagramMaker = new LayerByLayerDiagramMaker(config, await toImage(textureBlob));
@@ -1414,6 +1413,45 @@ function addMaterialListUI(finalisedMaterialList, materialListUI, blockMetadata)
 	}
 	fullPackMaterialList["$size"][1] = finalisedMaterialList.length * 12 + 12; // 12px for each item + 12px for the heading
 	getUIElementFromPath(materialListUI, "entry", "content", "item_name")["size"][0] += `${round(longestCountLength * 4.2 + 10)}px`;
+}
+/**
+ * 
+ * @param {object} infoScreenUI
+ * @param {I32Vec3[]} structureSizes
+ * @param {LayerByLayerDiagramsAndIndices} layerByLayerDiagramsByStructure
+ */
+function addInfoScreenUIPages(infoScreenUI, structureSizes, layerByLayerDiagramsByStructure) {
+	let tabSelector = getUIElementFromPath(infoScreenUI, "main", "tab_selector_panel", "tab_selector");
+	let tabContentPane = getUIElementFromPath(infoScreenUI, "main", "tab_content_pane");
+	structureSizes.forEach((structureSize, structureI) => {
+		let structureName = `structure_${structureI}`;
+		let tabButtonToggleName = `${structureName}_tab_button_toggle`;
+		let pageContentElementName = `${structureName}_page_content`;
+		let headingTranslationKey = `holoprint.info_screen.${structureName}.heading`;
+		
+		tabSelector["controls"].push({
+			[`${structureName}_tab_button@holoprint:info_screen.tab_toggle`]: {
+				"$toggle_group_forced_index": structureI + 1, // is this needed?
+				"$tab_view_binding_name": tabButtonToggleName,
+				"$button_text": headingTranslationKey
+			}
+		});
+		tabContentPane["controls"].push({
+			[`${structureName}_page@page`]: {
+				"$tab_button_name": tabButtonToggleName,
+				"$scrolling_content": `holoprint:info_screen.${pageContentElementName}`
+			}
+		});
+		let layerByLayerDiagramIndices = layerByLayerDiagramsByStructure.indices[structureI];
+		// add 1 here because 0 on the slider is reserved for showing the full structure's material list, i.e. not showing any layer diagram.
+		let layerDiagramTextureBindings = layerByLayerDiagramIndices.map((diagramIndex, layerI) => [`#layer_${layerI + 1}`, getLayerDiagramTextureName(diagramIndex)]);
+		infoScreenUI[`${pageContentElementName}@structure_page_content_base`] = {
+			"$heading": headingTranslationKey,
+			"$structure_height_plus_1": structureSize[1] + 1, // I'm adding the 1 here for +0.000001 fps
+			"$layer_diagram_property_bag": Object.fromEntries(layerDiagramTextureBindings),
+			"$layer_slider_name": `${structureName}_layer_slider`
+		};
+	});
 }
 /**
  * Gets the element at a specified path from a JSON UI object.

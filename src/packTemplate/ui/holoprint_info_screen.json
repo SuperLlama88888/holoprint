@@ -41,20 +41,6 @@
 											"$tab_view_binding_name": "info_tab_button_toggle",
 											"$button_text": "holoprint.info_screen.info.heading"
 										}
-									},
-									{
-										"material_list_tab_button@holoprint:info_screen.tab_toggle": {
-											"$toggle_group_forced_index": 1,
-											"$tab_view_binding_name": "material_list_tab_button_toggle",
-											"$button_text": "holoprint.info_screen.material_list.heading"
-										}
-									},
-									{
-										"layer_diagrams_tab_button@holoprint:info_screen.tab_toggle": {
-											"$toggle_group_forced_index": 2,
-											"$tab_view_binding_name": "layer_diagrams_tab_button_toggle",
-											"$button_text": "holoprint.info_screen.layer_diagrams.heading"
-										}
 									}
 								]
 							}
@@ -80,18 +66,6 @@
 							"info_page@page": {
 								"$tab_button_name": "info_tab_button_toggle",
 								"$scrolling_content": "holoprint:info_screen.info_page_content"
-							}
-						},
-						{
-							"material_list_page@page": {
-								"$tab_button_name": "material_list_tab_button_toggle",
-								"$scrolling_content": "holoprint:info_screen.material_list_page_content"
-							}
-						},
-						{
-							"layer_diagrams_page@page": {
-								"$tab_button_name": "layer_diagrams_tab_button_toggle",
-								"$scrolling_content": "holoprint:info_screen.layer_diagrams_page_content"
 							}
 						}
 					]
@@ -159,49 +133,26 @@
 			}
 		]
 	},
-	"material_list_page_content": {
+	"structure_page_content_base": {
+		"$heading|default": "Error: $heading not set",
+		"$structure_height_plus_1": "Error: $structure_height_plus_1 not set",
+		"$layer_diagram_property_bag|default": "Error: $layer_diagram_property_bag not set", // The JS will add bindings holding paths to textures, it's best to look at a generated pack to understand this better.
+		"$layer_slider_name|default": "Error: $layer_slider_name not set",
 		"type": "stack_panel",
 		"orientation": "vertical",
 		"controls": [
 			{
 				"heading@page_heading": {
-					"text": "holoprint.material_list.heading"
-				}
-			},
-			{
-				"material_list_wrapper": {
-					"type": "image",
-					"size": ["100%", "100%"],
-					"texture": "textures/holoprint/ui/white_circle",
-					"color": [0, 0, 0],
-					"alpha": 0.5,
-					"controls": [
-						{
-							"material_list@holoprint:material_list.full_pack_material_list": {
-								// "size": ["100%"]
-							}
-						}
-					]
-				}
-			}
-		]
-	},
-	"layer_diagrams_page_content": {
-		"type": "stack_panel",
-		"orientation": "vertical",
-		"controls": [
-			{
-				"heading@page_heading": {
-					"text": "holoprint.info_screen.layer_diagrams.heading"
+					"text": "$heading"
 				}
 			},
 			{
 				"full_structure_notice@page_paragraph": {
-					"text": "Full structure",
+					"text": "holoprint.info_screen.full_structure",
 					"bindings": [
 						{
 							"binding_type": "view",
-							"source_control_name": "layer_diagram_layer_slider",
+							"source_control_name": "$layer_slider_name",
 							"source_property_name": "#slider_value_as_int",
 							"target_property_name": "#layer"
 						},
@@ -222,7 +173,7 @@
 					"bindings": [
 						{
 							"binding_type": "view",
-							"source_control_name": "layer_diagram_layer_slider",
+							"source_control_name": "$layer_slider_name",
 							"source_property_name": "#slider_value_as_int",
 							"target_property_name": "#layer"
 						},
@@ -233,24 +184,24 @@
 						},
 						{
 							"binding_type": "view",
-							"source_property_name": "('Layer: ' + #layer)",
+							"source_property_name": "('holoprint.info_screen.layer_' + #layer)",
 							"target_property_name": "#text"
 						}
 					]
 				}
 			},
 			{
-				// Having a wrapper panel centers the slider. However it must alo have its 
+				// Having a wrapper panel centers the slider. However it must alo have its size set.
 				"layer_diagram_layer_slider_wrapper": {
 					"type": "panel",
 					"size": ["100%", 10],
 					"controls": [
 						{
-							"layer_diagram_layer_slider@holoprint:common.slider_with_int_cast": {
+							"$layer_slider_name@holoprint:common.slider_with_int_cast": {
 								"size": ["100% - 10px", "100%"],
 								"$option_label": "Change layer",
-								"$slider_name": "layer_diagram_layer_slider", // this is irrelevant
-								"$slider_steps": -1 // the JS subs this in
+								"$slider_name": "as_irrelevant_as_uncle_ekbar",
+								"$slider_steps": "$structure_height_plus_1"
 							}
 						}
 					]
@@ -266,7 +217,7 @@
 					"bindings": [
 						{
 							"binding_type": "view",
-							"source_control_name": "layer_diagram_layer_slider",
+							"source_control_name": "$layer_slider_name",
 							"source_property_name": "#slider_value_as_int",
 							"target_property_name": "#layer"
 						},
@@ -285,17 +236,17 @@
 								// I tried substituting strings into #texture directly, but for WHATEVER REASON, Bugrock doesn't load the texture (even with force_texture_reload).
 								// This solution also has a nice side effect of allowing us to deduplicate layer diagrams! I found it from TheAndromedarius' post on the Bedrock Add-Ons Discord server: https://discord.com/channels/523663022053392405/1399880155522007232/1399986881382318221
 								"texture": "#texture",
-								"property_bag": {}, // The JS will add bindings holding paths to textures, it's best to look at a generated pack to understand this better.s
+								"property_bag": "$layer_diagram_property_bag",
 								"bindings": [
 									{
 										"binding_type": "view",
-										"source_control_name": "layer_diagram_layer_slider",
+										"source_control_name": "$layer_slider_name",
 										"source_property_name": "#slider_value_as_int",
 										"target_property_name": "#layer"
 									},
 									{
 										"binding_type": "view",
-										"source_property_name": "('#structure_0_layer_' + #layer)",
+										"source_property_name": "('#layer_' + #layer)",
 										"target_property_name": "#texture"
 									}
 								]
