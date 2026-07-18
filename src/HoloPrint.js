@@ -1397,7 +1397,8 @@ function patchRenderControllers(renderControllers, patches) {
  */
 function addMaterialListUI(finalisedMaterialList, materialListUI, blockMetadata) {
 	let missingItemAux = blockMetadata["data_items"].find(block => block.name == "minecraft:reserved6")?.["raw_id"] ?? 0;
-	materialListUI["entries"]["controls"].push(...finalisedMaterialList.map(({ translationKey, partitionedCount, auxId }, i) => ({
+	let fullPackMaterialList = getUIElementFromPath(materialListUI, "full_pack_material_list");
+	fullPackMaterialList["$entries"].push(...finalisedMaterialList.map(({ translationKey, partitionedCount, auxId }, i) => ({
 		[`entry_${i}@holoprint:material_list.entry`]: {
 			"$item_translation_key": translationKey,
 			"$item_count": partitionedCount,
@@ -1408,11 +1409,10 @@ function addMaterialListUI(finalisedMaterialList, materialListUI, blockMetadata)
 	let longestItemNameLength = max(...finalisedMaterialList.map(({ translatedName }) => translatedName.length));
 	let longestCountLength = max(...finalisedMaterialList.map(({ partitionedCount }) => partitionedCount.length));
 	if(longestItemNameLength + longestCountLength >= 43) {
-		materialListUI["content"]["size"][0] = "50%"; // up from 40%
-		materialListUI["content"]["max_size"][0] = "50%";
+		fullPackMaterialList["$size"][0] = "50%"; // up from 40%
+		fullPackMaterialList["$max_size"][0] = "50%";
 	}
-	materialListUI["content"]["size"][1] = finalisedMaterialList.length * 12 + 12; // 12px for each item + 12px for the heading
-	// materialListUI["entry"]["controls"][0]["content"]["controls"][3]["item_name"]["size"][0] += `${round(longestCountLength * 4.2 + 10)}px`;
+	fullPackMaterialList["$size"][1] = finalisedMaterialList.length * 12 + 12; // 12px for each item + 12px for the heading
 	getUIElementFromPath(materialListUI, "entry", "content", "item_name")["size"][0] += `${round(longestCountLength * 4.2 + 10)}px`;
 }
 /**
@@ -1425,7 +1425,7 @@ function getUIElementFromPath(rootUiObject, ...elementPath) {
 	let el = rootUiObject;
 	elementPath.forEach((childName, i) => {
 		if(i == 0) {
-			el = el?.[childName];
+			el = Object.entries(el).find(([key]) => key.split("@")[0] == childName)?.[1];
 		} else {
 			let childObj = el?.["controls"]?.find(elObj => Object.keys(elObj)[0].split("@")[0] == childName);
 			if(childObj) {

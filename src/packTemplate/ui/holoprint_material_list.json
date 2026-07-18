@@ -1,7 +1,15 @@
 {
 	"namespace": "holoprint:material_list",
 	
-	"material_list": {
+	"full_pack_material_list@material_list_base": {
+		"$size": ["40%", "this gets put in by the JS"],
+		"$max_size": ["40%", "100% - 74px"], // the JS will set the width to 50% if needed, so this can't
+		"$entries": [] // this is inserted also by the JS
+	},
+	"material_list_base": {
+		"$size|default": "Error: $size not set",
+		"$max_size|default": "Error: $max_size not set",
+		"$entries|default": "Error: $entries not set",
 		"type": "panel",
 		"anchor_from": "top_middle",
 		"anchor_to": "top_middle",
@@ -15,8 +23,8 @@
 	},
 	"content": {
 		"type": "image",
-		"size": ["40%", "this gets put in by the JS"],
-		"max_size": ["40%", "100% - 74px"],
+		"size": "$size",
+		"max_size": "$max_size",
 		"texture": "textures/ui/White",
 		"color": [0, 0, 0],
 		"alpha": 0.5,
@@ -83,7 +91,7 @@
 		"orientation": "vertical",
 		"anchor_to": "top_left",
 		"anchor_from": "top_left",
-		"controls": []
+		"controls": "$entries"
 	},
 	"entry": {
 		"type": "image",

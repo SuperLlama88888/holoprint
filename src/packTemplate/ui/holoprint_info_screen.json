@@ -177,7 +177,7 @@
 					"alpha": 0.5,
 					"controls": [
 						{
-							"material_list@holoprint:material_list.material_list": {
+							"material_list@holoprint:material_list.full_pack_material_list": {
 								// "size": ["100%"]
 							}
 						}
@@ -283,9 +283,9 @@
 								"type": "image",
 								"size": ["90%", "90%"],
 								// I tried substituting strings into #texture directly, but for WHATEVER REASON, Bugrock doesn't load the texture (even with force_texture_reload).
-								// This solution allows us to deduplicate layer diagrams and actually works! I found it from TheAndromedarius' post on the Bedrock Add-Ons Discord server: https://discord.com/channels/523663022053392405/1399880155522007232/1399986881382318221
+								// This solution also has a nice side effect of allowing us to deduplicate layer diagrams! I found it from TheAndromedarius' post on the Bedrock Add-Ons Discord server: https://discord.com/channels/523663022053392405/1399880155522007232/1399986881382318221
 								"texture": "#texture",
-								"property_bag": {},
+								"property_bag": {}, // The JS will add bindings holding paths to textures, it's best to look at a generated pack to understand this better.s
 								"bindings": [
 									{
 										"binding_type": "view",
