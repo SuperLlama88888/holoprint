@@ -20,3 +20,5 @@ holoprint.controls.increase_opacity=Increase opacity
 holoprint.controls.move_hologram_x=Move hologram X
 holoprint.controls.move_hologram_y=Move hologram Y
 holoprint.controls.move_hologram_z=Move hologram Z
+
+holoprint.info_screen.info.about=You are using a §uHoloPrint§r resource pack generated on §o{PACK_GENERATION_TIME}§r.\n§uHoloPrint§r is developed by §l§6SuperLlama88888§r and is a fully open-source project.

@@ -437,11 +437,12 @@ export async function makePack(structureFiles, partialConfig, resourcePackStack 
 	// console.log(partitionedBlockCounts);
 	let highestItemCount;
 	if(config.UI_CONTROLS_ENABLED) {
-		addMaterialListUI(exportedMaterialListEnglish, materialListUI, bedrockMetadata.blocks);
+		addMaterialListUI(exportedMaterialListEnglish, materialListUI);
 		highestItemCount = max(...exportedMaterialListEnglish.map(({ count }) => count));
 	}
 	
-	addInfoScreenUIPages(infoScreenUI, structureSizes, layerByLayerDiagramsByStructure);
+	let materialListsByLayerByStructure = makeMaterialListsForEachStructureAndEachLayer(config, allStructureIndicesByLayer, structureSizes, blockPalette, bedrockMetadata.blocks, bedrockMetadata.items, data.materialListMappings, resourceLangFiles["en_US"]);
+	addInfoScreenUIPages(infoScreenUI, structureSizes, layerByLayerDiagramsByStructure, materialListsByLayerByStructure);
 	
 	manifest["header"]["name"] = packName;
 	manifest["header"]["uuid"] = crypto.randomUUID();
@@ -1206,6 +1207,8 @@ function handleBlockValidation(config, allStructureIndicesByLayer, structureSize
 	
 	allStructureIndicesByLayer.forEach((structureIndicesByLayer, structureI) => {
 		let structureSize = structureSizes[structureI];
+		// particle_expire_if_in_blocks only works on the first layer :(
+		let blockPaletteIndices = structureIndicesByLayer[0];
 		/** @type {BlockToValidate[]} */
 		let blocksToValidate = [];
 		let blocksToValidateByLayer = [];
@@ -1215,9 +1218,7 @@ function handleBlockValidation(config, allStructureIndicesByLayer, structureSize
 			for(let x = 0; x < structureSize[0]; x++) {
 				for(let z = 0; z < structureSize[2]; z++) {
 					let coords = tuple([x, y, z]);
-					// particle_expire_if_in_blocks only works on the first layer :(
 					let blockI = getStructureIndexFromCoordinates(coords, structureSize);
-					let blockPaletteIndices = structureIndicesByLayer[0];
 					let paletteI = blockPaletteIndices[blockI];
 					let block = blockPalette[paletteI];
 					if(!block && !config.VALIDATE_AIR_BLOCKS) {
@@ -1389,29 +1390,58 @@ function patchRenderControllers(renderControllers, patches) {
 	};
 }
 /**
+ * Makes material lists for each structure and layer. Returns a 2d array of material lists, indexed by structure then layer, where layer 0 is the full structure, and subsequent layers are the actual layers (1-indexed).
+ * @param {HoloPrintConfig} config
+ * @param {[Int32Array, Int32Array][]} allStructureIndicesByLayer
+ * @param {I32Vec3[]} structureSizes
+ * @param {Block[]} blockPalette
+ * @param {object} blockMetadata
+ * @param {object} itemMetadata
+ * @param {Data.MaterialListMappings} materialListMappings
+ * @param {string} langFile
+ * @returns {MaterialList[][]}
+ */
+function makeMaterialListsForEachStructureAndEachLayer(config, allStructureIndicesByLayer, structureSizes, blockPalette, blockMetadata, itemMetadata, materialListMappings, langFile) {
+	return allStructureIndicesByLayer.map((structureIndicesByLayer, structureI) => {
+		let structureSize = structureSizes[structureI];
+		let materialListsForThisStructure = (new Array(structureSize[1] + 1)).fill().map(() => new MaterialList(blockMetadata, itemMetadata, materialListMappings, langFile));
+		for(let y = 0; y < structureSize[1]; y++) {
+			for(let x = 0; x < structureSize[0]; x++) {
+				for(let z = 0; z < structureSize[2]; z++) {
+					for(let layerI = 0; layerI < 2; layerI++) { // WHY is this so verbose?!?!?!?!?
+						let blockPaletteIndices = structureIndicesByLayer[layerI];
+						let coords = tuple([x, y, z]);
+						let blockI = getStructureIndexFromCoordinates(coords, structureSize);
+						let paletteI = blockPaletteIndices[blockI];
+						let block = blockPalette[paletteI];
+						if(!block || config.IGNORED_MATERIAL_LIST_BLOCKS.includes(block["name"])) {
+							continue;
+						}
+						materialListsForThisStructure[0].add(block);
+						materialListsForThisStructure[y + 1].add(block);
+					}
+				}
+			}
+		}
+		return materialListsForThisStructure;
+	});
+}
+/**
  * Adds the material list to the `holoprint_material_list.json` UI file.
  * @param {MaterialListEntry[]} finalisedMaterialList
  * @param {object} materialListUI
- * @param {object} blockMetadata
  */
-function addMaterialListUI(finalisedMaterialList, materialListUI, blockMetadata) {
-	let missingItemAux = blockMetadata["data_items"].find(block => block.name == "minecraft:reserved6")?.["raw_id"] ?? 0;
+function addMaterialListUI(finalisedMaterialList, materialListUI) {
 	let fullPackMaterialList = getUIElementFromPath(materialListUI, "full_pack_material_list");
-	fullPackMaterialList["$entries"].push(...finalisedMaterialList.map(({ translationKey, partitionedCount, auxId }, i) => ({
-		[`entry_${i}@holoprint:material_list.entry`]: {
-			"$item_translation_key": translationKey,
-			"$item_count": partitionedCount,
-			"$item_id_aux": auxId ?? missingItemAux,
-			"$background_opacity": i & 1? 0.2 : undefined
-		}
-	})));
+	let exportedJsonUi = MaterialList.convertEntriesToJsonUi(finalisedMaterialList);
+	fullPackMaterialList["$entries"].push(...exportedJsonUi.entries);
 	let longestItemNameLength = max(...finalisedMaterialList.map(({ translatedName }) => translatedName.length));
 	let longestCountLength = max(...finalisedMaterialList.map(({ partitionedCount }) => partitionedCount.length));
 	if(longestItemNameLength + longestCountLength >= 43) {
 		fullPackMaterialList["$size"][0] = "50%"; // up from 40%
 		fullPackMaterialList["$max_size"][0] = "50%";
 	}
-	fullPackMaterialList["$size"][1] = finalisedMaterialList.length * 12 + 12; // 12px for each item + 12px for the heading
+	fullPackMaterialList["$size"][1] = exportedJsonUi.visibleHeight;
 	getUIElementFromPath(materialListUI, "entry", "content", "item_name")["size"][0] += `${round(longestCountLength * 4.2 + 10)}px`;
 }
 /**
@@ -1419,8 +1449,9 @@ function addMaterialListUI(finalisedMaterialList, materialListUI, blockMetadata)
  * @param {object} infoScreenUI
  * @param {I32Vec3[]} structureSizes
  * @param {LayerByLayerDiagramsAndIndices} layerByLayerDiagramsByStructure
+ * @param {MaterialList[][]} materialListsByLayerByStructure
  */
-function addInfoScreenUIPages(infoScreenUI, structureSizes, layerByLayerDiagramsByStructure) {
+function addInfoScreenUIPages(infoScreenUI, structureSizes, layerByLayerDiagramsByStructure, materialListsByLayerByStructure) {
 	let tabSelector = getUIElementFromPath(infoScreenUI, "main", "tab_selector_panel", "tab_selector");
 	let tabContentPane = getUIElementFromPath(infoScreenUI, "main", "tab_content_pane");
 	structureSizes.forEach((structureSize, structureI) => {
@@ -1428,15 +1459,16 @@ function addInfoScreenUIPages(infoScreenUI, structureSizes, layerByLayerDiagrams
 		let tabButtonToggleName = `${structureName}_tab_button_toggle`;
 		let pageContentElementName = `${structureName}_page_content`;
 		let headingTranslationKey = `holoprint.info_screen.${structureName}.heading`;
+		let structureSizeInfoTranslationKey = `holoprint.info_screen.${structureName}.size`;
 		
-		tabSelector["controls"].push({
+		tabSelector["controls"].splice(-1, 0, {
 			[`${structureName}_tab_button@holoprint:info_screen.tab_toggle`]: {
-				"$toggle_group_forced_index": structureI + 1, // is this needed?
+				"$toggle_group_forced_index": structureI,
 				"$tab_view_binding_name": tabButtonToggleName,
 				"$button_text": headingTranslationKey
 			}
 		});
-		tabContentPane["controls"].push({
+		tabContentPane["controls"].splice(0, -1, {
 			[`${structureName}_page@page`]: {
 				"$tab_button_name": tabButtonToggleName,
 				"$scrolling_content": `holoprint:info_screen.${pageContentElementName}`
@@ -1445,13 +1477,29 @@ function addInfoScreenUIPages(infoScreenUI, structureSizes, layerByLayerDiagrams
 		let layerByLayerDiagramIndices = layerByLayerDiagramsByStructure.indices[structureI];
 		// add 1 here because 0 on the slider is reserved for showing the full structure's material list, i.e. not showing any layer diagram.
 		let layerDiagramTextureBindings = layerByLayerDiagramIndices.map((diagramIndex, layerI) => [`#layer_${layerI + 1}`, getLayerDiagramTextureName(diagramIndex)]);
+		let materialListsByLayer = materialListsByLayerByStructure[structureI];
+		let materialListsByLayerElements = materialListsByLayer.map((materialList, layerI) => {
+			let exportedJsonUi = materialList.exportToJsonUi();
+			return {
+				[`layer_${layerI}@structure_layer_material_list`]: {
+					"$layer": layerI,
+					"$entries": exportedJsonUi.entries,
+					"$size": ["100%", exportedJsonUi.visibleHeight]
+				}
+			};
+		});
 		infoScreenUI[`${pageContentElementName}@structure_page_content_base`] = {
 			"$heading": headingTranslationKey,
 			"$structure_height_plus_1": structureSize[1] + 1, // I'm adding the 1 here for +0.000001 fps
 			"$layer_diagram_property_bag": Object.fromEntries(layerDiagramTextureBindings),
-			"$layer_slider_name": `${structureName}_layer_slider`
+			"$layer_slider_name": `${structureName}_layer_slider`,
+			"$structure_index": structureI,
+			"$structure_size_info": structureSizeInfoTranslationKey,
+			"$material_lists": materialListsByLayerElements,
 		};
 	});
+	
+	getUIElementFromPath(infoScreenUI, "main", "tab_selector_panel", "tab_selector", "info_tab_button")["$toggle_group_forced_index"] = structureSizes.length;
 }
 /**
  * Gets the element at a specified path from a JSON UI object.
@@ -1978,6 +2026,11 @@ function expandItemCriteria(itemCriteria, itemTags) {
  * @property {string} partitionedCount A formatted string representing partitions of the total count
  * @property {string} partitionedCountWithoutTotal Same as partitionedCount, but without the "[total count] = " at the start
  * @property {number | undefined} auxId The item's aux ID
+ */
+/**
+ * @typedef {object} ExportedMaterialListJsonUi
+ * @property {Record<string, object>[]} entries
+ * @property {number} visibleHeight
  */
 /**
  * @typedef {object} SpawnAnimationBone Information about a bone in the spawn animation.

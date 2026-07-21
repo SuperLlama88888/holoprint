@@ -7,9 +7,10 @@
 		"$entries": [] // this is inserted also by the JS
 	},
 	"material_list_base": {
-		"$size|default": "Error: $size not set",
-		"$max_size|default": "Error: $max_size not set",
+		"$size|default": ["default", "default"],
+		"$max_size|default": ["default", "default"],
 		"$entries|default": "Error: $entries not set",
+		"$heading|default": "holoprint.material_list.heading",
 		"type": "panel",
 		"anchor_from": "top_middle",
 		"anchor_to": "top_middle",
@@ -79,7 +80,7 @@
 				"pack_name": {
 					"type": "label",
 					"size": ["100% - 18px", 10],
-					"text": "holoprint.material_list.heading",
+					"text": "$heading",
 					"anchor_from": "right_middle",
 					"anchor_to": "right_middle"
 				}

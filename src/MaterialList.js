@@ -19,6 +19,8 @@ export default class MaterialList {
 	#serializationIdPatches;
 	#blocksMissingSerializationIds;
 	#translationPatches;
+	/** @type {number} */
+	#missingItemAux;
 	
 	/**
 	 * Creates a material list manager to count a list of items.
@@ -44,6 +46,8 @@ export default class MaterialList {
 		this.#serializationIdPatches = new ReplacingPatternMap(serializationIdPatches);
 		this.#blocksMissingSerializationIds = materialListMappings["blocks_missing_serialization_ids"];
 		this.#translationPatches = materialListMappings["translation_patches"];
+		
+		this.#missingItemAux = blockMetadata["data_items"].find(block => block.name == "minecraft:reserved6")?.["raw_id"] ?? 0;
 		
 		if(translations) {
 			this.setLanguage(translations);
@@ -139,6 +143,14 @@ export default class MaterialList {
 		}).sort((a, b) => b.count - a.count || +(a.translatedName > b.translatedName));
 	}
 	/**
+	 * Exports the material list to JSON UI elements.
+	 * @returns {ExportedMaterialListJsonUi}
+	 */
+	exportToJsonUi() {
+		let entries = this.export();
+		return MaterialList.convertEntriesToJsonUi(entries, this.#missingItemAux);
+	}
+	/**
 	 * Sets the language of the material list for exporting.
 	 * @param {string} translations The text contents of a `.lang` file
 	 */
@@ -161,6 +173,31 @@ export default class MaterialList {
 	clear() {
 		this.materials.clear();
 		this.totalMaterialCount = 0;
+	}
+	
+	/**
+	 * Converts exported material list entries to JSON UI elements.
+	 * @param {MaterialListEntry[]} entries
+	 * @param {number} [missingItemAux] The aux ID to be used if an item's aux ID cannot be found. Defaults to `0`.
+	 * @returns {ExportedMaterialListJsonUi}
+	 */
+	static convertEntriesToJsonUi(entries, missingItemAux) {
+		return {
+			entries: entries.map(({ translationKey, partitionedCount, auxId }, i) => {
+				let entry = {
+					"$item_translation_key": translationKey,
+					"$item_count": partitionedCount,
+					"$item_id_aux": auxId ?? missingItemAux
+				};
+				if(i & 1) {
+					entry["$background_opacity"] = 0.2;
+				}
+				return {
+					[`entry_${i}@holoprint:material_list.entry`]: entry
+				};
+			}),
+			visibleHeight: entries.length * 12 + 12 // 12px for each item + 12px for the heading
+		};
 	}
 	/**
 	 * Finds an item serialization id.
@@ -235,5 +272,5 @@ export default class MaterialList {
 	}
 }
 
-/** @import { MaterialListEntry, Block } from "./HoloPrint.js" */
+/** @import { MaterialListEntry, Block, ExportedMaterialListJsonUi } from "./HoloPrint.js" */
 /** @import * as Data from "./data/schemas" */

@@ -37,7 +37,7 @@
 								"controls": [
 									{
 										"info_tab_button@holoprint:info_screen.tab_toggle": {
-											"$toggle_group_forced_index": 0,
+											// JS will add $toggle_group_forced_index (depends on the total number of structures in the pack)
 											"$tab_view_binding_name": "info_tab_button_toggle",
 											"$button_text": "holoprint.info_screen.info.heading"
 										}
@@ -110,10 +110,19 @@
 		"orientation": "vertical",
 		"controls": [
 			{
-				"banner": {
-					"type": "image",
-					"texture": "textures/holoprint/ui/banner",
-					"size": [144, 42]
+				// wrapper element so the banner image is centered horizontally
+				"banner_wrapper": {
+					"type": "panel",
+					"size": ["100%", 42],
+					"controls": [
+						{
+							"banner": {
+								"type": "image",
+								"texture": "textures/holoprint/ui/banner",
+								"size": [144, 42]
+							}
+						}
+					]
 				}
 			},
 			{
@@ -122,8 +131,8 @@
 				}
 			},
 			{
-				"text_1@page_paragraph": {
-					"text": "Thanks for using HoloPrint"
+				"about@page_paragraph": {
+					"$text": "holoprint.info_screen.info.about"
 				}
 			},
 			{
@@ -138,6 +147,10 @@
 		"$structure_height_plus_1": "Error: $structure_height_plus_1 not set",
 		"$layer_diagram_property_bag|default": "Error: $layer_diagram_property_bag not set", // The JS will add bindings holding paths to textures, it's best to look at a generated pack to understand this better.
 		"$layer_slider_name|default": "Error: $layer_slider_name not set",
+		"$structure_index|default": "Error: $structure_index not set",
+		"$structure_size_info|default": "Error: $structure_size_info not set",
+		"$layer_slider_name": "('structure_' + $structure_index + '_layer_slider')",
+		"$material_lists|default": "Error: $material_lists not set",
 		"type": "stack_panel",
 		"orientation": "vertical",
 		"controls": [
@@ -147,8 +160,13 @@
 				}
 			},
 			{
+				"structure_size_info@page_paragraph": {
+					"$text": "$structure_size_info"
+				}
+			},
+			{
 				"full_structure_notice@page_paragraph": {
-					"text": "holoprint.info_screen.full_structure",
+					"$text": "holoprint.info_screen.full_structure",
 					"bindings": [
 						{
 							"binding_type": "view",
@@ -166,10 +184,6 @@
 			},
 			{
 				"display@page_paragraph": {
-					"text": "#text",
-					"property_bag": {
-						"#text": "Error! Please report this on GitHub!"
-					},
 					"bindings": [
 						{
 							"binding_type": "view",
@@ -181,6 +195,19 @@
 							"binding_type": "view",
 							"source_property_name": "(#layer > 0)",
 							"target_property_name": "#visible"
+						}
+					],
+					// bindings aren't inherited so the text binding must live on the label element, rather than on the parent element
+					"$text": "#text",
+					"$text_property_bag": {
+						"#text": "Error! Please report this on GitHub!"
+					},
+					"$text_bindings": [
+						{
+							"binding_type": "view",
+							"source_control_name": "$layer_slider_name",
+							"source_property_name": "#slider_value_as_int",
+							"target_property_name": "#layer"
 						},
 						{
 							"binding_type": "view",
@@ -191,7 +218,7 @@
 				}
 			},
 			{
-				// Having a wrapper panel centers the slider. However it must alo have its size set.
+				// Having a wrapper panel centers the slider. However it must also have its size set.
 				"layer_diagram_layer_slider_wrapper": {
 					"type": "panel",
 					"size": ["100%", 10],
@@ -254,6 +281,38 @@
 						}
 					]
 				}
+			},
+			{
+				"material_lists_wrapper": {
+					"type": "panel",
+					"controls": "$material_lists"
+				}
+			}
+		]
+	},
+	"structure_layer_material_list": {
+		// A wrapper element must be used here because the $heading variable relies on $layer, which will be defined directly on this element. Only children can access it. (Bindings are fine!)
+		"$structure_index|default": "Error: $structure_index not set",
+		"$layer|default": "Error: $layer not set",
+		"type": "panel",
+		"controls": [
+			{
+				"material_list@holoprint:material_list.material_list_base": {
+					"$heading": "('holoprint.material_list.structure_' + $structure_index + '_layer_' + $layer)"
+				}
+			}
+		],
+		"bindings": [
+			{
+				"binding_type": "view",
+				"source_control_name": "$layer_slider_name",
+				"source_property_name": "#slider_value_as_int",
+				"target_property_name": "#layer"
+			},
+			{
+				"binding_type": "view",
+				"source_property_name": "(#layer = $layer)",
+				"target_property_name": "#visible"
 			}
 		]
 	},
@@ -284,8 +343,27 @@
 		"font_scale_factor": 1.2
 	},
 	"page_paragraph": {
-		"type": "label",
-		"size": ["100%", 15]
+		"$text_property_bag|default": {},
+		"$text_bindings|default": [],
+		"type": "stack_panel",
+		"orientation": "vertical",
+		"controls": [
+			{
+				"text": {
+					"type": "label",
+					"text": "$text",
+					"max_size": ["100%", 99999999], // must have this so that the text displays normally - i.e. wraps instead of overflows and only takes up as much height as it needs
+					"property_bag": "$text_property_bag",
+					"bindings": "$text_bindings"
+				}
+			},
+			{
+				"padding": {
+					"type": "panel",
+					"size": ["100%", 5]
+				}
+			}
+		]
 	},
 	
 	"open_button@common_buttons.light_content_button": {
