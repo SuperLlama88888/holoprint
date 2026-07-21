@@ -206,7 +206,8 @@ export async function makePack(structureFiles, partialConfig, resourcePackStack 
 	let entityGeoMaker = new EntityGeoMaker(resourcePackStack);
 	let blockGeoMaker = new BlockGeoMaker(config, entityGeoMaker, data.blockShapes, data.blockShapeGeos, data.blockStateDefinitions, data.blockEigenvariants);
 	// makePolyMeshTemplates() is an impure function and adds texture references to the textureRefs set property.
-	let unresolvedPolyMeshTemplatePalette = await blockGeoMaker.makePolyMeshTemplates(blockPalette);
+	// this is done as a struct of arrays rather than an array of structs, because the UVs are resolved later and carrying the centers of mass along would be a bit awkward.
+	let { templates: unresolvedPolyMeshTemplatePalette, centersOfMass } = await blockGeoMaker.makePolyMeshTemplates(blockPalette);
 	console.info("Finished making block geometry templates!");
 	console.log("Block geo maker:", blockGeoMaker);
 	console.log("Poly mesh template palette:", structuredClone(unresolvedPolyMeshTemplatePalette));
@@ -220,10 +221,11 @@ export async function makePack(structureFiles, partialConfig, resourcePackStack 
 	let defaultTextureIndex = max(textureBlobs.length - 3, 0); // default to 80% opacity
 	
 	console.log("Texture UVs:", textureAtlas.uvs);
-	let polyMeshTemplatePalette = unresolvedPolyMeshTemplatePalette.map(polyMeshTemplate => BlockGeoMaker.resolveTemplateFaceUvs(polyMeshTemplate, textureAtlas));
+	let unscaledPolyMeshTemplatePalette = unresolvedPolyMeshTemplatePalette.map(polyMeshTemplate => BlockGeoMaker.resolveTemplateFaceUvs(polyMeshTemplate, textureAtlas));
+	let polyMeshTemplatePalette = blockGeoMaker.scalePolyMeshTemplates(unscaledPolyMeshTemplatePalette, centersOfMass);
 	console.log("Poly mesh template palette with resolved UVs:", polyMeshTemplatePalette);
 	
-	let layerByLayerDiagramsByStructure = await makeLayerByLayerDiagrams(config, fullOpacityTextureBlob, polyMeshTemplatePalette, allStructureIndicesByLayer, structureSizes);
+	let layerByLayerDiagramsByStructure = await makeLayerByLayerDiagrams(config, fullOpacityTextureBlob, unscaledPolyMeshTemplatePalette, allStructureIndicesByLayer, structureSizes);
 	
 	let { manifest, hologramRenderControllers, hologramGeo, hologramAnimationControllers, hologramAnimations, blockValidationParticle, singleWhitePixelTexture, materialListUI, infoScreenUI } = await packTemplatePromise.allValues;
 	
