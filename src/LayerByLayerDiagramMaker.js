@@ -14,7 +14,7 @@ export default class LayerByLayerDiagramMaker {
 	constructor(config, texture) {
 		this.size = config.LAYER_BY_LAYER_DIAGRAM_BLOCK_RESOLUTION;
 		// Instantiate our dedicated extracted rendering engine
-		this.#renderer = new WebGL2QuadRenderer(this.size, texture);
+		this.#renderer = new WebGL2QuadRenderer(this.size * 3, texture);
 	}
 	
 	/**
@@ -90,10 +90,10 @@ export default class LayerByLayerDiagramMaker {
 		// Convert face vertex data into flat inputs acceptable by the WebGL engine
 		let quadRenderData = sortedFaces.map(({ face }) => ({
 			positions: new Float32Array([
-				1 - face.vertices[0].pos[0] / 16, face.vertices[0].pos[2] / 16,
-				1 - face.vertices[1].pos[0] / 16, face.vertices[1].pos[2] / 16,
-				1 - face.vertices[2].pos[0] / 16, face.vertices[2].pos[2] / 16,
-				1 - face.vertices[3].pos[0] / 16, face.vertices[3].pos[2] / 16
+				(32 - face.vertices[0].pos[0]) / 48, (face.vertices[0].pos[2] + 16) / 48,
+				(32 - face.vertices[1].pos[0]) / 48, (face.vertices[1].pos[2] + 16) / 48,
+				(32 - face.vertices[2].pos[0]) / 48, (face.vertices[2].pos[2] + 16) / 48,
+				(32 - face.vertices[3].pos[0]) / 48, (face.vertices[3].pos[2] + 16) / 48
 			]),
 			uvs: new Float32Array([
 				face.vertices[0].uv[0], 1 - face.vertices[0].uv[1],
@@ -125,7 +125,7 @@ export default class LayerByLayerDiagramMaker {
 					let indexIndex = (x * structureSize[2] + z) * 2 + layer;
 					let blockIconIndex = blockIndices[indexIndex];
 					if(blockIconIndex in blockIconPalette) {
-						ctx.drawImage(blockIconPalette[blockIconIndex], x * this.size, z * this.size);
+						ctx.drawImage(blockIconPalette[blockIconIndex], (x - 1) * this.size, (z - 1) * this.size);
 					}
 					// not in blockIconPalette means it's an excluded block, e.g. air
 				}
