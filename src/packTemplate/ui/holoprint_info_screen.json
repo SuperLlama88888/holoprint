@@ -145,7 +145,7 @@
 	"structure_page_content_base": {
 		"$heading|default": "Error: $heading not set",
 		"$structure_height_plus_1": "Error: $structure_height_plus_1 not set",
-		"$layer_diagram_property_bag|default": "Error: $layer_diagram_property_bag not set", // The JS will add bindings holding paths to textures, it's best to look at a generated pack to understand this better.
+		"$diagram_property_bag|default": "Error: $diagram_property_bag not set", // The JS will add bindings holding paths to textures, it's best to look at a generated pack to understand this better.
 		"$layer_slider_name|default": "Error: $layer_slider_name not set",
 		"$structure_index|default": "Error: $structure_index not set",
 		"$structure_size_info|default": "Error: $structure_size_info not set",
@@ -219,7 +219,7 @@
 			},
 			{
 				// Having a wrapper panel centers the slider. However it must also have its size set.
-				"layer_diagram_layer_slider_wrapper": {
+				"layer_slider_wrapper": {
 					"type": "panel",
 					"size": ["100%", 10],
 					"controls": [
@@ -227,7 +227,6 @@
 							"$layer_slider_name@holoprint:common.slider_with_int_cast": {
 								"size": ["100% - 10px", "100%"],
 								"$option_label": "Change layer",
-								"$slider_name": "as_irrelevant_as_uncle_ekbar",
 								"$slider_steps": "$structure_height_plus_1"
 							}
 						}
@@ -235,35 +234,21 @@
 				}
 			},
 			{
-				"layer_diagram_wrapper": {
+				"diagram_wrapper": {
 					"type": "image",
 					"size": [100, 100],
 					"texture": "textures/holoprint/ui/white_circle",
 					// "color": [0, 0, 0],
 					"alpha": 0.5,
-					"bindings": [
-						{
-							"binding_type": "view",
-							"source_control_name": "$layer_slider_name",
-							"source_property_name": "#slider_value_as_int",
-							"target_property_name": "#layer"
-						},
-						{
-							// Layer "0" means looking at the entire structure, so the diagram doesn't show.
-							"binding_type": "view",
-							"source_property_name": "(#layer > 0)",
-							"target_property_name": "#visible"
-						}
-					],
 					"controls": [
 						{
-							"layer_diagram": {
+							"diagram": {
 								"type": "image",
 								"size": ["90%", "90%"],
 								// I tried substituting strings into #texture directly, but for WHATEVER REASON, Bugrock doesn't load the texture (even with force_texture_reload).
 								// This solution also has a nice side effect of allowing us to deduplicate layer diagrams! I found it from TheAndromedarius' post on the Bedrock Add-Ons Discord server: https://discord.com/channels/523663022053392405/1399880155522007232/1399986881382318221
 								"texture": "#texture",
-								"property_bag": "$layer_diagram_property_bag",
+								"property_bag": "$diagram_property_bag",
 								"bindings": [
 									{
 										"binding_type": "view",

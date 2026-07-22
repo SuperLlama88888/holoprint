@@ -13,6 +13,7 @@
 	},
 	
 	"slider_with_int_cast@common.slider": {
+		"$slider_name": "as_irrelevant_as_uncle_ekbar",
 		"property_bag": {
 			"#slider_value_as_int": 0,
 			"#slider_steps": "$slider_steps" // For QOL. I think that the property bag value is needed for the actual slider logic, and the variable is used by common.slider to display all the notches. 

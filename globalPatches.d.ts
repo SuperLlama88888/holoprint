@@ -17,7 +17,8 @@ declare global {
 		map<U, This extends readonly unknown[]>(this: This, callbackfn: (value: T, index: number, array: This) => U): { [K in keyof This]: K extends number | `${number}`? U : never };
 	}
 	interface Float32ArrayConstructor {
-		new<T extends number[]>(elements: [...T]): Float32Array & (IsNumberLiteral<T["length"]> extends true? { length: T["length"] } : {})
+		new<T extends number[]>(elements: [...T]): Float32Array & (IsNumberLiteral<T["length"]> extends true? { length: T["length"] } : {});
+		new<T extends number>(length: T): Float32Array & { length: T };
 	}
 	interface ObjectConstructor {
 		entries<K extends string, T>(o: Record<K, T>): [K, T][];

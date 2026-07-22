@@ -15,7 +15,7 @@ import PolyMeshMaker from "./PolyMeshMaker.js";
 import fetchers from "./fetchers.js";
 import EntityGeoMaker from "./EntityGeoMaker.js";
 import EntityManager from "./EntityManager.js";
-import LayerByLayerDiagramMaker from "./LayerByLayerDiagramMaker.js";
+import StructureDiagramMaker from "./LayerByLayerDiagramMaker.js";
 
 export const VERSION = "dev";
 export const IGNORED_BLOCKS = ["air", "piston_arm_collision", "sticky_piston_arm_collision", "light_block", "light_block_0", "light_block_1", "light_block_2", "light_block_3", "light_block_4", "light_block_5", "light_block_6", "light_block_7", "light_block_8", "light_block_9", "light_block_10", "light_block_11", "light_block_12", "light_block_13", "light_block_14", "light_block_15"]; // blocks to be ignored when scanning the structure file
@@ -225,7 +225,7 @@ export async function makePack(structureFiles, partialConfig, resourcePackStack 
 	let polyMeshTemplatePalette = blockGeoMaker.scalePolyMeshTemplates(unscaledPolyMeshTemplatePalette, centersOfMass);
 	console.log("Poly mesh template palette with resolved UVs:", polyMeshTemplatePalette);
 	
-	let layerByLayerDiagramsByStructure = await makeLayerByLayerDiagrams(config, fullOpacityTextureBlob, unscaledPolyMeshTemplatePalette, allStructureIndicesByLayer, structureSizes);
+	let structureDiagramsAndIndices = await makeStructureDiagrams(config, fullOpacityTextureBlob, unscaledPolyMeshTemplatePalette, allStructureIndicesByLayer, structureSizes);
 	
 	let { manifest, hologramRenderControllers, hologramGeo, hologramAnimationControllers, hologramAnimations, blockValidationParticle, singleWhitePixelTexture, materialListUI, infoScreenUI } = await packTemplatePromise.allValues;
 	
@@ -444,7 +444,7 @@ export async function makePack(structureFiles, partialConfig, resourcePackStack 
 	}
 	
 	let materialListsByLayerByStructure = makeMaterialListsForEachStructureAndEachLayer(config, allStructureIndicesByLayer, structureSizes, blockPalette, bedrockMetadata.blocks, bedrockMetadata.items, data.materialListMappings, resourceLangFiles["en_US"]);
-	addInfoScreenUIPages(infoScreenUI, structureSizes, layerByLayerDiagramsByStructure, materialListsByLayerByStructure);
+	addInfoScreenUIPages(infoScreenUI, structureSizes, structureDiagramsAndIndices, materialListsByLayerByStructure);
 	
 	manifest["header"]["name"] = packName;
 	manifest["header"]["uuid"] = crypto.randomUUID();
@@ -516,7 +516,7 @@ export async function makePack(structureFiles, partialConfig, resourcePackStack 
 	textureBlobs.forEach(([textureName, blob]) => {
 		packFiles[`textures/holoprint/entity/${textureName}.png`] = blob;
 	});
-	layerByLayerDiagramsByStructure.diagrams.forEach((diagramBlob, diagramIndex) => {
+	structureDiagramsAndIndices.diagrams.forEach((diagramBlob, diagramIndex) => {
 		packFiles[`${getLayerDiagramTextureName(diagramIndex)}.png`] = diagramBlob;
 	});
 	if(config.RETEXTURE_CONTROL_ITEMS) {
@@ -1012,25 +1012,27 @@ function mergeMultiplePalettesAndIndices(palettesAndIndices) {
 	};
 }
 /**
- * @typedef {object} LayerByLayerDiagramsAndIndices
+ * @typedef {object} StructureDiagramsAndIndices
  * @property {Blob[]} diagrams
  * @property {number[][]} indices
  */
 /**
- * Makes the layer-by-layer diagrams for a structure. Returns a 2d array of blobs, where the first dimension is the structure index and the second dimension is the layer index (i.e. the y-coordinate).
+ * Makes the layer-by-layer diagrams and the isometric diagram for structures.
  * @param {HoloPrintConfig} config
  * @param {Blob} textureBlob
  * @param {PolyMeshTemplateFaceWithUvs[][]} polyMeshTemplatePalette
  * @param {[Int32Array, Int32Array][]} allStructureIndicesByLayer
  * @param {I32Vec3[]} structureSizes
- * @returns {Promise<LayerByLayerDiagramsAndIndices>}
+ * @returns {Promise<StructureDiagramsAndIndices>}
  */
-async function makeLayerByLayerDiagrams(config, textureBlob, polyMeshTemplatePalette, allStructureIndicesByLayer, structureSizes) {
-	let layerByLayerDiagramMaker = new LayerByLayerDiagramMaker(config, await toImage(textureBlob));
-	let blockIconPalette = layerByLayerDiagramMaker.makeBlockIconPalette(polyMeshTemplatePalette);
-	let diagramsAndIndices = await layerByLayerDiagramMaker.makeDiagramsForStructures(blockIconPalette, allStructureIndicesByLayer, structureSizes);
+async function makeStructureDiagrams(config, textureBlob, polyMeshTemplatePalette, allStructureIndicesByLayer, structureSizes) {
+	let structureDiagramMaker = new StructureDiagramMaker(config, await toImage(textureBlob));
+	let blockIconPalette = structureDiagramMaker.makeBirdsEyeViewBlockIconPalette(polyMeshTemplatePalette);
+	let isometricBlockIconPalette = structureDiagramMaker.makeIsometricViewBlockIconPalette(polyMeshTemplatePalette);
+	let diagramsAndIndices = await structureDiagramMaker.makeDiagramsForStructures(blockIconPalette, isometricBlockIconPalette, allStructureIndicesByLayer, structureSizes);
 	// The new "using" statement is not yet widely supported, so I need to manually write this. esbuild can transpile it but it's soooo bloated. Maybe in 5 years...
-	layerByLayerDiagramMaker.disposeBlockIconPalette(blockIconPalette);
+	structureDiagramMaker.disposeBlockIconPalette(blockIconPalette);
+	structureDiagramMaker.disposeBlockIconPalette(isometricBlockIconPalette);
 	return diagramsAndIndices;
 }
 /**
@@ -1450,10 +1452,10 @@ function addMaterialListUI(finalisedMaterialList, materialListUI) {
  * 
  * @param {object} infoScreenUI
  * @param {I32Vec3[]} structureSizes
- * @param {LayerByLayerDiagramsAndIndices} layerByLayerDiagramsByStructure
+ * @param {StructureDiagramsAndIndices} structureDiagrams
  * @param {MaterialList[][]} materialListsByLayerByStructure
  */
-function addInfoScreenUIPages(infoScreenUI, structureSizes, layerByLayerDiagramsByStructure, materialListsByLayerByStructure) {
+function addInfoScreenUIPages(infoScreenUI, structureSizes, structureDiagrams, materialListsByLayerByStructure) {
 	let tabSelector = getUIElementFromPath(infoScreenUI, "main", "tab_selector_panel", "tab_selector");
 	let tabContentPane = getUIElementFromPath(infoScreenUI, "main", "tab_content_pane");
 	structureSizes.forEach((structureSize, structureI) => {
@@ -1476,9 +1478,8 @@ function addInfoScreenUIPages(infoScreenUI, structureSizes, layerByLayerDiagrams
 				"$scrolling_content": `holoprint:info_screen.${pageContentElementName}`
 			}
 		});
-		let layerByLayerDiagramIndices = layerByLayerDiagramsByStructure.indices[structureI];
-		// add 1 here because 0 on the slider is reserved for showing the full structure's material list, i.e. not showing any layer diagram.
-		let layerDiagramTextureBindings = layerByLayerDiagramIndices.map((diagramIndex, layerI) => [`#layer_${layerI + 1}`, getLayerDiagramTextureName(diagramIndex)]);
+		let structureDiagramIndices = structureDiagrams.indices[structureI];
+		let structureDiagramTextureBindings = structureDiagramIndices.map((diagramIndex, layerI) => [`#layer_${layerI}`, getLayerDiagramTextureName(diagramIndex)]);
 		let materialListsByLayer = materialListsByLayerByStructure[structureI];
 		let materialListsByLayerElements = materialListsByLayer.map((materialList, layerI) => {
 			let exportedJsonUi = materialList.exportToJsonUi();
@@ -1492,8 +1493,8 @@ function addInfoScreenUIPages(infoScreenUI, structureSizes, layerByLayerDiagrams
 		});
 		infoScreenUI[`${pageContentElementName}@structure_page_content_base`] = {
 			"$heading": headingTranslationKey,
-			"$structure_height_plus_1": structureSize[1] + 1, // I'm adding the 1 here for +0.000001 fps
-			"$layer_diagram_property_bag": Object.fromEntries(layerDiagramTextureBindings),
+			"$structure_height_plus_1": structureSize[1] + 1, // I'm adding the 1 here rather than inside the JSON UI for +0.000001 fps
+			"$diagram_property_bag": Object.fromEntries(structureDiagramTextureBindings),
 			"$layer_slider_name": `${structureName}_layer_slider`,
 			"$structure_index": structureI,
 			"$structure_size_info": structureSizeInfoTranslationKey,
