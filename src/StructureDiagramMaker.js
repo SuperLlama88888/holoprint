@@ -1,4 +1,4 @@
-import { areArraysEqual, average, ceil, fnv1a, getOffscreenCanvasContext, getStructureIndexFromCoordinates, HashMap, sqrt } from "./utils.js";
+import { areArraysEqual, average, ceil, fnv1a, getOffscreenCanvasContext, getStructureIndexFromCoordinates, HashMap, sqrt, stringToImageData, toBlob, tuple } from "./utils.js";
 import WebGL2QuadRenderer from "./WebGL2QuadRenderer.js"; // dependency injection coming soon^tm
 
 /** Padding in pixels to be added around the edges of isometric diagrams. */
@@ -156,7 +156,7 @@ export default class StructureDiagramMaker {
 		return this.#renderer.render(quadRenderData);
 	}
 	/**
-	 * Stitches standard `ImageBitmap` icons together using the standard 2d canvas.
+	 * Stitches block icons together using the standard 2d canvas.
 	 * @param {ImageBitmap[]} blockIconPalette
 	 * @param {number[]} blockIndices
 	 * @param {I32Vec3} structureSize
@@ -168,21 +168,27 @@ export default class StructureDiagramMaker {
 			willReadFrequently: true
 		});
 		
-		for(let x = 0; x < structureSize[0]; x++) {
-			for(let z = 0; z < structureSize[2]; z++) {
-				// draw second layer first, so the first layer (the main layer) draws on top
-				for(let layer = 1; layer >= 0; layer--) {
-					let indexIndex = (x * structureSize[2] + z) * 2 + layer;
-					let blockIconIndex = blockIndices[indexIndex];
-					if(blockIconIndex in blockIconPalette) {
-						// Offset by -1 * size so the 3x3 block icon (size * 3) is centered over grid cell (x, z)
-						ctx.drawImage(blockIconPalette[blockIconIndex], (x - 1) * this.size, (z - 1) * this.size);
+		try {
+			for(let x = 0; x < structureSize[0]; x++) {
+				for(let z = 0; z < structureSize[2]; z++) {
+					// draw second layer first, so the first layer (the main layer) draws on top
+					for(let layer = 1; layer >= 0; layer--) {
+						let indexIndex = (x * structureSize[2] + z) * 2 + layer;
+						let blockIconIndex = blockIndices[indexIndex];
+						if(blockIconIndex in blockIconPalette) {
+							// Offset by -1 * size so the 3x3 block icon (size * 3) is centered over grid cell (x, z)
+							ctx.drawImage(blockIconPalette[blockIconIndex], (x - 1) * this.size, (z - 1) * this.size);
+						}
+						// not in blockIconPalette means it's an excluded block, e.g. air
 					}
-					// not in blockIconPalette means it's an excluded block, e.g. air
 				}
 			}
+			return await can.convertToBlob();
+		} catch(e) {
+			let errorMessage = `Failed to draw image: ${e}`;
+			console.error(errorMessage, e.stack);
+			return await toBlob(stringToImageData(errorMessage));
 		}
-		return await can.convertToBlob();
 	}
 	/**
 	 * Stitches 3D isometric block icons together with depth sorting to make a 3D isometric diagram for the full structure.
@@ -205,7 +211,6 @@ export default class StructureDiagramMaker {
 		let offsetX = structureSize[2] * this.#isoXStep + ISOMETRIC_DIAGRAM_PADDING;
 		let offsetY = structureSize[1] * this.#isoYYStep + ISOMETRIC_DIAGRAM_PADDING;
 		
-		/** @type {{ x: number, y: number, z: number, blockIconIndex: number, depth: number }[]} */
 		let blockDrawList = [];
 		for(let y = 0; y < structureSize[1]; y++) {
 			for(let x = 0; x < structureSize[0]; x++) {
@@ -214,9 +219,16 @@ export default class StructureDiagramMaker {
 					for(let layer = 1; layer >= 0; layer--) {
 						let blockIconIndex = structureIndicesByLayer[layer][blockI];
 						if(blockIconIndex in isometricBlockIconPalette) {
-							// goofy maths for calculating depth (it works, trust trust)
+							// goofy maths for calculating depth and isometric coordinates (it works, trust trust)
 							let depth = ((x + z) * structureSize[1] + y) * 2 - layer;
-							blockDrawList.push({ x, y, z, blockIconIndex, depth });
+							let isometricX = (x - z) * this.#isoXStep + offsetX;
+							let isometricY = (x + z) * this.#isoXYZStep - y * this.#isoYYStep + offsetY;
+							let blockIcon = isometricBlockIconPalette[blockIconIndex];
+							blockDrawList.push({
+								pos: tuple([isometricX, isometricY]),
+								blockIcon,
+								depth
+							});
 						}
 					}
 				}
@@ -224,14 +236,17 @@ export default class StructureDiagramMaker {
 		}
 		
 		blockDrawList.sort((a, b) => a.depth - b.depth);
-		blockDrawList.forEach(({ x, y, z, blockIconIndex }) => {
-			// Projected 2D screen coordinates of grid cell (x, y, z) in true 30° isometric projection
-			let isometricX = (x - z) * this.#isoXStep + offsetX;
-			let isometricY = (x + z) * this.#isoXYZStep - y * this.#isoYYStep + offsetY;
-			ctx.drawImage(isometricBlockIconPalette[blockIconIndex], isometricX - this.#isoBlockIconOffset, isometricY - this.#isoBlockIconOffset);
-		});
-		
-		return await can.convertToBlob();
+		try {
+			// TODO: fix insane performance issue on Chrome here!
+			blockDrawList.forEach(({ pos, blockIcon }) => {
+				ctx.drawImage(blockIcon, pos[0] - this.#isoBlockIconOffset, pos[1] - this.#isoBlockIconOffset);
+			});
+			return await can.convertToBlob();
+		} catch(e) {
+			let errorMessage = `Failed to draw image: ${e}`;
+			console.error(errorMessage);
+			return await toBlob(stringToImageData(errorMessage));
+		}
 	}
 }
 
