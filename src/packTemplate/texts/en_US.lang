@@ -21,4 +21,5 @@ holoprint.controls.move_hologram_x=Move hologram X
 holoprint.controls.move_hologram_y=Move hologram Y
 holoprint.controls.move_hologram_z=Move hologram Z
 
-holoprint.info_screen.info.about=You are using a §uHoloPrint§r resource pack generated on §o{PACK_GENERATION_TIME}§r.\n§uHoloPrint§r is developed by §l§6SuperLlama88888§r and is a fully open-source project.
+holoprint.info_screen.info.heading=About HoloPrint	## putting the formatting codes here looks bad, maybe once I make the ui nicer?
+holoprint.info_screen.info.about=You are using a §uHoloPrint§r resource pack generated on §o{PACK_GENERATION_TIME}§r.\n\n§uHoloPrint§r is developed by §l§6SuperLlama88888§r and is a fully open-source project.\n\nThe source code can be found at: §ohttps://github.com/SuperLlama88888/holoprint§r\n\nFor more info, visit the wiki at: §ohttps://holoprint-mc.github.io/wiki§r

@@ -476,7 +476,7 @@ export async function makePack(structureFiles, partialConfig, resourcePackStack 
 	}
 	
 	let packTemplateLangFiles = await packTemplateLangFilesPromise;
-	let langFiles = makeLangFiles(config, packTemplateLangFiles, packName, materialList, exportedMaterialLists, controlsHaveBeenCustomised, inGameControls, controlItemTranslations);
+	let langFiles = makeLangFiles(config, packTemplateLangFiles, packName, materialList, exportedMaterialLists, controlsHaveBeenCustomised, inGameControls, controlItemTranslations, structureSizes);
 	
 	await retexturingControlItemsPromise;
 	
@@ -1449,6 +1449,20 @@ function addMaterialListUI(finalisedMaterialList, materialListUI) {
 	getUIElementFromPath(materialListUI, "entry", "content", "item_name")["size"][0] += `${round(longestCountLength * 4.2 + 10)}px`;
 }
 /**
+ * @param {number} structureI
+ * @returns {string}
+ */
+function getInfoScreenPageHeadingTranslationKey(structureI) {
+	return `holoprint.info_screen.structure_${structureI}.heading`;
+}
+/**
+ * @param {number} structureI
+ * @returns {string}
+ */
+function getInfoScreenStructureSizeLabelTranslationKey(structureI) {
+	return `holoprint.info_screen.structure_${structureI}.size`;
+}
+/**
  * 
  * @param {object} infoScreenUI
  * @param {I32Vec3[]} structureSizes
@@ -1462,8 +1476,8 @@ function addInfoScreenUIPages(infoScreenUI, structureSizes, structureDiagrams, m
 		let structureName = `structure_${structureI}`;
 		let tabButtonToggleName = `${structureName}_tab_button_toggle`;
 		let pageContentElementName = `${structureName}_page_content`;
-		let headingTranslationKey = `holoprint.info_screen.${structureName}.heading`;
-		let structureSizeInfoTranslationKey = `holoprint.info_screen.${structureName}.size`;
+		let headingTranslationKey = getInfoScreenPageHeadingTranslationKey(structureI);
+		let structureSizeInfoTranslationKey = getInfoScreenStructureSizeLabelTranslationKey(structureI);
 		
 		tabSelector["controls"].splice(-1, 0, {
 			[`${structureName}_tab_button@holoprint:info_screen.tab_toggle`]: {
@@ -1586,9 +1600,10 @@ function translateControlItems(config, blockMetadata, itemMetadata, materialList
  * @param {boolean} controlsHaveBeenCustomised
  * @param {Record<string, string>} inGameControls
  * @param {Record<string, string>} controlItemTranslations
+ * @param {I32Vec3[]} structureSizes
  * @returns {[string, string][]}
  */
-function makeLangFiles(config, packTemplateLangFiles, packName, materialList, exportedMaterialLists, controlsHaveBeenCustomised, inGameControls, controlItemTranslations) {
+function makeLangFiles(config, packTemplateLangFiles, packName, materialList, exportedMaterialLists, controlsHaveBeenCustomised, inGameControls, controlItemTranslations, structureSizes) {
 	const disabledFeatureTranslations = { // these look at the .lang RP files
 		"SPAWN_ANIMATION_ENABLED": "spawn_animation_disabled",
 		"PLAYER_CONTROLS_ENABLED": "player_controls_disabled",
@@ -1643,6 +1658,20 @@ function makeLangFiles(config, packTemplateLangFiles, packName, materialList, ex
 		if(config.RENAME_CONTROL_ITEMS) {
 			langFile += controlItemTranslations[language];
 		}
+		
+		structureSizes.forEach((structureSize, structureI) => {
+			// TODO: fix translations. just fix it entirely. throw all this garbage out
+			let structureName = `Structure ${structureI + 1}`; // todo: use file names?
+			langFile += `\nholoprint.info_screen.structure_${structureI}.heading=${structureName}`;
+			const barSeparator = " §8|§r ";
+			let sizeInfo = `Size: ${structureSize.join("x")}${barSeparator}`;
+			langFile += `\nholoprint.info_screen.structure_${structureI}_layer_0=${sizeInfo}Full structure`;
+			langFile += `\nholoprint.material_list.structure_${structureI}_layer_0=Material list${barSeparator}${structureName}`;
+			for(let layer = 1; layer < structureSize[1] + 1; layer++) {
+				langFile += `\nholoprint.info_screen.structure_${structureI}_layer_${layer}=${sizeInfo}Layer ${layer}`; // AHHHH IK THIS CAUSES DUPLICATED. I NEED TO GET THIS UPDATE OUT TONIGHTTTTT
+				langFile += `\nholoprint.material_list.structure_${structureI}_layer_${layer}=Material list${barSeparator}${structureName}${barSeparator}Layer ${layer}`;
+			}
+		});
 		
 		return [language, langFile];
 	});

@@ -134,11 +134,6 @@
 				"about@page_paragraph": {
 					"$text": "holoprint.info_screen.info.about"
 				}
-			},
-			{
-				"text_2@page_paragraph": {
-					"text": "Thanks for using HoloPrint"
-				}
 			}
 		]
 	},
@@ -160,41 +155,13 @@
 				}
 			},
 			{
-				"structure_size_info@page_paragraph": {
-					"$text": "$structure_size_info"
-				}
-			},
-			{
-				"full_structure_notice@page_paragraph": {
-					"$text": "holoprint.info_screen.full_structure",
+				"size_and_layer_label@page_paragraph": {
 					"bindings": [
 						{
 							"binding_type": "view",
 							"source_control_name": "$layer_slider_name",
 							"source_property_name": "#slider_value_as_int",
 							"target_property_name": "#layer"
-						},
-						{
-							"binding_type": "view",
-							"source_property_name": "(#layer = 0)",
-							"target_property_name": "#visible"
-						}
-					]
-				}
-			},
-			{
-				"display@page_paragraph": {
-					"bindings": [
-						{
-							"binding_type": "view",
-							"source_control_name": "$layer_slider_name",
-							"source_property_name": "#slider_value_as_int",
-							"target_property_name": "#layer"
-						},
-						{
-							"binding_type": "view",
-							"source_property_name": "(#layer > 0)",
-							"target_property_name": "#visible"
 						}
 					],
 					// bindings aren't inherited so the text binding must live on the label element, rather than on the parent element
@@ -211,7 +178,7 @@
 						},
 						{
 							"binding_type": "view",
-							"source_property_name": "('holoprint.info_screen.layer_' + #layer)",
+							"source_property_name": "('holoprint.info_screen.structure_' + $structure_index + '_layer_' + #layer)",
 							"target_property_name": "#text"
 						}
 					]
@@ -234,32 +201,45 @@
 				}
 			},
 			{
+				"padding": {
+					"type": "panel",
+					"size": ["100%", 10]
+				}
+			},
+			{
 				"diagram_wrapper": {
-					"type": "image",
-					"size": [100, 100],
-					"texture": "textures/holoprint/ui/white_circle",
-					// "color": [0, 0, 0],
-					"alpha": 0.5,
+					"type": "panel",
+					"size": ["100%", "40%x"],
 					"controls": [
 						{
-							"diagram": {
+							"diagram_background": {
 								"type": "image",
-								"size": ["90%", "90%"],
-								// I tried substituting strings into #texture directly, but for WHATEVER REASON, Bugrock doesn't load the texture (even with force_texture_reload).
-								// This solution also has a nice side effect of allowing us to deduplicate layer diagrams! I found it from TheAndromedarius' post on the Bedrock Add-Ons Discord server: https://discord.com/channels/523663022053392405/1399880155522007232/1399986881382318221
-								"texture": "#texture",
-								"property_bag": "$diagram_property_bag",
-								"bindings": [
+								"texture": "textures/holoprint/ui/white_circle",
+								"alpha": 0.5,
+								"size": ["40%", "100%x"],
+								"controls": [
 									{
-										"binding_type": "view",
-										"source_control_name": "$layer_slider_name",
-										"source_property_name": "#slider_value_as_int",
-										"target_property_name": "#layer"
-									},
-									{
-										"binding_type": "view",
-										"source_property_name": "('#layer_' + #layer)",
-										"target_property_name": "#texture"
+										"diagram": {
+											"type": "image",
+											"size": ["90%", "90%"],
+											// I tried substituting strings into #texture directly, but for WHATEVER REASON, Bugrock doesn't load the texture (even with force_texture_reload).
+											// This solution also has a nice side effect of allowing us to deduplicate layer diagrams! I found it from TheAndromedarius' post on the Bedrock Add-Ons Discord server: https://discord.com/channels/523663022053392405/1399880155522007232/1399986881382318221
+											"texture": "#texture",
+											"property_bag": "$diagram_property_bag",
+											"bindings": [
+												{
+													"binding_type": "view",
+													"source_control_name": "$layer_slider_name",
+													"source_property_name": "#slider_value_as_int",
+													"target_property_name": "#layer"
+												},
+												{
+													"binding_type": "view",
+													"source_property_name": "('#layer_' + #layer)",
+													"target_property_name": "#texture"
+												}
+											]
+										}
 									}
 								]
 							}
