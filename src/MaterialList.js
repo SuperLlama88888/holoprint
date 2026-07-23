@@ -47,7 +47,8 @@ export default class MaterialList {
 		this.#blocksMissingSerializationIds = materialListMappings["blocks_missing_serialization_ids"];
 		this.#translationPatches = materialListMappings["translation_patches"];
 		
-		this.#missingItemAux = blockMetadata["data_items"].find(block => block.name == "minecraft:reserved6")?.["raw_id"] ?? 0;
+		let missingItemId = blockMetadata["data_items"].find(block => block.name == "minecraft:reserved6")?.["raw_id"] ?? 0;
+		this.#missingItemAux = missingItemId * 65536;
 		
 		if(translations) {
 			this.setLanguage(translations);

@@ -46,7 +46,7 @@ async function createCachingFetcher(name, owner, repo, version) {
 	
 	let changedFilesTxt = prevCacheName && await cache.match(CACHE_METADATA_CHANGED_FILES_URL).then(res => res?.text());
 	/** @type {boolean} */
-	let successfullyFetchedChangedFilesList;
+	let successfullyFetchedChangedFilesList = !!changedFilesTxt;
 	if(prevCacheName && !changedFilesTxt) {
 		let changedFilesUrl = `${patchUrl}/${prevCacheVersion}_to_${version}.txt`;
 		console.debug(`Loading changed files from ${changedFilesUrl}`);
