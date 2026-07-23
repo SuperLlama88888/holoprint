@@ -51,7 +51,7 @@ async function createCachingFetcher(name, owner, repo, version) {
 		let changedFilesUrl = `${patchUrl}/${prevCacheVersion}_to_${version}.txt`;
 		console.debug(`Loading changed files from ${changedFilesUrl}`);
 		[changedFilesTxt, successfullyFetchedChangedFilesList] = await fetch(changedFilesUrl).then(async res => {
-			if(res?.ok) {
+			if(res.ok) {
 				return tuple([await res.text(), true]);
 			}
 			throw `Response was not OK: ${res.status} ${res.statusText}`;
