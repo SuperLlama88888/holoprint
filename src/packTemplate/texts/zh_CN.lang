@@ -16,7 +16,3 @@ holoprint.controls.increase_opacity=Increase opacity
 holoprint.controls.move_hologram_x=Move hologram X
 holoprint.controls.move_hologram_y=Move hologram Y
 holoprint.controls.move_hologram_z=Move hologram Z
-holoprint.info_screen.heading=HoloPrint ä¿¡æ¯
-holoprint.info_screen.line=ä¸‹æ–¹ä¼šæ˜¾ç¤ºé¡¹ç›®æŽ§åˆ¶ã€æž„å»ºè¯´æ˜Žï¼Œä»¥åŠææ–™æ¸…å•ã€‚
-holoprint.info_screen.button=HoloPrint ä¿¡æ¯
-holoprint.info_screen.close=X

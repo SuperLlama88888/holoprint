@@ -181,7 +181,7 @@ export default class MaterialList {
 	 * @param {number} [missingItemAux] The aux ID to be used if an item's aux ID cannot be found. Defaults to `0`.
 	 * @returns {ExportedMaterialListJsonUi}
 	 */
-	static convertEntriesToJsonUi(entries, missingItemAux) {
+	static convertEntriesToJsonUi(entries, missingItemAux = 0) {
 		return {
 			entries: entries.map(({ translationKey, partitionedCount, auxId }, i) => {
 				let entry = {

@@ -139,7 +139,7 @@
 	},
 	"structure_page_content_base": {
 		"$heading|default": "Error: $heading not set",
-		"$structure_height_plus_1": "Error: $structure_height_plus_1 not set",
+		"$structure_height_plus_1|default": "Error: $structure_height_plus_1 not set",
 		"$diagram_property_bag|default": "Error: $diagram_property_bag not set", // The JS will add bindings holding paths to textures, it's best to look at a generated pack to understand this better.
 		"$layer_slider_name|default": "Error: $layer_slider_name not set",
 		"$structure_index|default": "Error: $structure_index not set",
