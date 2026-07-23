@@ -52,6 +52,7 @@ export default class EntityManager {
 	 * @overload
 	 * @param {string} arrayName Name of a top-level array in the client entity JSON.
 	 * @returns {(...elements: any[]) => void}
+	 */
 	/**
 	 * Creates a function to push items to an array across all entities.
 	 * @overload
