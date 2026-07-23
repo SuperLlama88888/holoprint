@@ -2674,7 +2674,7 @@
 			}
 		}
 	],
-	"stalagmite_or_stalagtite": [
+	"stalagmite_or_stalactite": [
 		{
 			"if": "dripstone_thickness == tip",
 			"copy": "cross_texture",
