@@ -1433,6 +1433,7 @@ function makeMaterialListsForEachStructureAndEachLayer(config, allStructureIndic
  */
 function addMaterialListUI(finalisedMaterialList, materialListUI) {
 	let fullPackMaterialList = getUIElementFromPath(materialListUI, "full_pack_material_list");
+	// TODO: make this use missing item aux id properly, which requires decoupling translations from material list exporting
 	let exportedJsonUi = MaterialList.convertEntriesToJsonUi(finalisedMaterialList);
 	fullPackMaterialList["$entries"] = exportedJsonUi.entries;
 	if(exportedJsonUi.longestItemNameLength + exportedJsonUi.longestCountLength >= 43) {
