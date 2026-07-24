@@ -102,10 +102,11 @@ export default class StructureDiagramMaker {
 						indices.push(structureIndicesByLayer[0][blockI], structureIndicesByLayer[1][blockI]);
 					}
 				}
-				let index = diagramIndicesHashMap.get(indices);
+				let layerKey = [structureSize[0], structureSize[2], ...indices];
+				let index = diagramIndicesHashMap.get(layerKey);
 				if(index == undefined) {
 					index = diagramBlobPromises.length;
-					diagramIndicesHashMap.set(indices, index);
+					diagramIndicesHashMap.set(layerKey, index);
 					diagramBlobPromises.push(this.#makeDiagramForLayer(blockIconPalette, indices, structureSize));
 				}
 				diagramBlobIndicesForStructure.push(index);
@@ -207,9 +208,7 @@ export default class StructureDiagramMaker {
 	 */
 	async #makeDiagramForLayer(blockIconPalette, blockIndices, structureSize) {
 		let can = new OffscreenCanvas(this.size * structureSize[0], this.size * structureSize[2]);
-		let ctx = getOffscreenCanvasContext(can, "2d", {
-			willReadFrequently: true
-		});
+		let ctx = getOffscreenCanvasContext(can, "2d");
 		
 		try {
 			for(let x = 0; x < structureSize[0]; x++) {
@@ -246,9 +245,7 @@ export default class StructureDiagramMaker {
 		let canHeight = ceil((structureSize[0] + structureSize[2] - 2) * this.#isoXYZStep + (structureSize[1] + 1) * this.#isoYYStep + 2 * ISOMETRIC_DIAGRAM_PADDING);
 
 		let can = new OffscreenCanvas(canWidth, canHeight);
-		let ctx = getOffscreenCanvasContext(can, "2d", {
-			willReadFrequently: true
-		});
+		let ctx = getOffscreenCanvasContext(can, "2d");
 		
 		// Grid origin offsets to align minimum projected X and Y boundaries at `ISOMETRIC_DIAGRAM_PADDING`
 		let offsetX = structureSize[2] * this.#isoXStep + ISOMETRIC_DIAGRAM_PADDING;

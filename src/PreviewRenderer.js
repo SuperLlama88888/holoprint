@@ -176,6 +176,15 @@ export default class PreviewRenderer extends AsyncFactory {
 			alpha: true,
 			antialias: true,
 		});
+		
+		if(this.#isWeakDevice()) {
+			console.info("Switching to faster preview options");
+			this.options = {
+				...this.options,
+				...PreviewRenderer.#WEAK_DEVICE_OPTIONS
+			};
+		}
+		
 		this.#renderer.setPixelRatio(window.devicePixelRatio);
 		this.#renderer.shadowMap.enabled = true;
 		this.#renderer.shadowMap.type = THREE.PCFShadowMap;
@@ -200,13 +209,6 @@ export default class PreviewRenderer extends AsyncFactory {
 		this.#addLighting();
 		await this.#initBackground();
 		
-		if(this.#isWeakDevice()) {
-			this.options = {
-				...this.options,
-				...PreviewRenderer.#WEAK_DEVICE_OPTIONS
-			};
-			this.#directionalLight.castShadow = false;
-		}
 		if(this.options.showFps) {
 			this.cont.appendChild(this.#stats.dom);
 		}

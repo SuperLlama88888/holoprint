@@ -50,6 +50,13 @@ export default class WebGL2QuadRenderer {
 		gl.attachShader(this.#program, vertexShader);
 		gl.attachShader(this.#program, fragmentShader);
 		gl.linkProgram(this.#program);
+		if(!gl.getProgramParameter(this.#program, gl.LINK_STATUS)) {
+			let errorInfo = this.#gl.getProgramInfoLog(this.#program);
+			gl.deleteShader(vertexShader);
+			gl.deleteShader(fragmentShader);
+			gl.deleteProgram(this.#program);
+			throw new Error(`Failed to link program: ${errorInfo}`);
+		}
 
 		this.#positionBuffer = gl.createBuffer();
 		this.#uvBuffer = gl.createBuffer();
@@ -115,8 +122,10 @@ export default class WebGL2QuadRenderer {
 		this.#gl.shaderSource(shader, source);
 		this.#gl.compileShader(shader);
 		if(!this.#gl.getShaderParameter(shader, this.#gl.COMPILE_STATUS)) {
-			console.error(this.#gl.getShaderInfoLog(shader));
+			let errorInfo = this.#gl.getShaderInfoLog(shader);
 			this.#gl.deleteShader(shader);
+			console.error(errorInfo, source);
+			throw new Error(`Failed to create shader ${type}: ${errorInfo}`);
 		}
 		return shader;
 	};
