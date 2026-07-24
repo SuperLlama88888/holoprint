@@ -26,9 +26,13 @@ export default class WebGL2QuadRenderer {
 		if(typeof WebGL2RenderingContext == "undefined") {
 			return false;
 		}
-		let can = new OffscreenCanvas(1, 1);
+		// idk
+		let can = new OffscreenCanvas(100, 100);
 		try {
-			can.getContext("webgl2");
+			getOffscreenCanvasContext(can, "webgl2", { 
+				preserveDrawingBuffer: true,
+				antialias: false 
+			});
 		} catch {
 			return false;
 		}
