@@ -127,6 +127,14 @@ export default class WebGL2QuadRenderer {
 		
 		return gl.canvas.transferToImageBitmap();
 	}
+	/** Frees all GPU resources associated with the renderer. */
+	dispose() {
+		this.#gl.deleteBuffer(this.#positionBuffer);
+		this.#gl.deleteBuffer(this.#uvBuffer);
+		this.#gl.deleteBuffer(this.#indexBuffer);
+		this.#gl.deleteTexture(this.#glTexture);
+		this.#gl.deleteProgram(this.#program);
+	}
 	
 	/**
 	 * Creates and compiles a WebGL shader because nothing is easy in WebGL :(

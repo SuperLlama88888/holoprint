@@ -115,8 +115,8 @@ export default class StructureDiagramMaker {
 		});
 		
 		// The new "using" statement is not yet widely supported, so I need to manually write this. esbuild can transpile it but it's soooo bloated. Maybe in 5 years...
-		this.disposeBlockIconPalette(blockIconPalette);
-		this.disposeBlockIconPalette(isometricBlockIconPalette);
+		this.#disposeBlockIconPalette(blockIconPalette);
+		this.#disposeBlockIconPalette(isometricBlockIconPalette);
 		
 		let diagramBlobs = await Promise.all(diagramBlobPromises);
 		return {
@@ -124,11 +124,14 @@ export default class StructureDiagramMaker {
 			indices: diagramBlobIndices
 		};
 	}
+	dispose() {
+		this.#renderer.dispose();
+	}
 	/**
 	 * Disposes all the `ImageBitmap`s in a block icon palette.
 	 * @param {ImageBitmap[]} blockIconPalette
 	 */
-	disposeBlockIconPalette(blockIconPalette) {
+	#disposeBlockIconPalette(blockIconPalette) {
 		blockIconPalette.forEach(imageBitmap => imageBitmap.close());
 	}
 	

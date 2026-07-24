@@ -1028,6 +1028,7 @@ function mergeMultiplePalettesAndIndices(palettesAndIndices) {
 async function makeStructureDiagrams(config, textureBlob, polyMeshTemplatePalette, allStructureIndicesByLayer, structureSizes) {
 	let structureDiagramMaker = new StructureDiagramMaker(config, await toImage(textureBlob));
 	let diagramsAndIndices = await structureDiagramMaker.makeDiagramsForStructures(polyMeshTemplatePalette, allStructureIndicesByLayer, structureSizes);
+	structureDiagramMaker.dispose();
 	return diagramsAndIndices;
 }
 /**
