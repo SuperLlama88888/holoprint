@@ -207,7 +207,7 @@ export default class MaterialList {
 			visibleHeight: elements.length * 12 + 12, // 12px for each item + 12px for the heading
 			longestItemNameLength,
 			longestCountLength,
-			itemCountColumnWidth: round(longestCountLength * 4.2 + 10)
+			itemNameColumnSize: [`100% - ${23 + round(longestCountLength * 4.2)}px`, "100% - 2px"]
 		};
 	}
 	/**

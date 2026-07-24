@@ -7,7 +7,7 @@ import MaterialList from "./MaterialList.js";
 import PreviewRenderer from "./PreviewRenderer.js";
 
 import entityScripts from "./entityScripts.molang.js";
-import { addPaddingToImage, array2DToMolang, arrayToMolang, awaitAllEntries, weaklyCacheUnaryFunc, concatenateFiles, createNumericEnum, desparseArray, functionToMolang, getFileExtension, hexColorToClampedTriplet, itemCriteriaToMolang, jsonc, JSONMap, JSONSet, lcm, loadTranslationLanguage, max, min, onEvent, overlaySquareImages, pi, removeFalsies, removeFileExtension, resizeImageToBlob, round, setImageOpacity, sha256, toBlob, toImage, translate, transposeMatrix, tuple, UserError, ReplacingPatternMap, conditionallyCacheUnaryFunc, clonePromise, getStructureIndexFromCoordinates, getGeoSpaceBlockPos } from "./utils.js";
+import { addPaddingToImage, array2DToMolang, arrayToMolang, awaitAllEntries, weaklyCacheUnaryFunc, concatenateFiles, createNumericEnum, desparseArray, functionToMolang, getFileExtension, hexColorToClampedTriplet, itemCriteriaToMolang, jsonc, JSONMap, JSONSet, lcm, loadTranslationLanguage, max, min, onEvent, overlaySquareImages, pi, removeFalsies, removeFileExtension, resizeImageToBlob, setImageOpacity, sha256, toBlob, toImage, translate, transposeMatrix, tuple, UserError, ReplacingPatternMap, conditionallyCacheUnaryFunc, clonePromise, getStructureIndexFromCoordinates, getGeoSpaceBlockPos } from "./utils.js";
 import ResourcePackStack from "./ResourcePackStack.js";
 import BlockUpdater from "./BlockUpdater.js";
 import SpawnAnimationMaker from "./SpawnAnimationMaker.js";
@@ -1444,7 +1444,7 @@ function addMaterialListUI(finalisedMaterialList, materialListUI) {
 		fullPackMaterialList["$max_size"][0] = "50%";
 	}
 	fullPackMaterialList["$size"][1] = exportedJsonUi.visibleHeight;
-	fullPackMaterialList["$item_count_column_width"] = exportedJsonUi.itemCountColumnWidth;
+	fullPackMaterialList["$item_count_column_width"] = exportedJsonUi.itemNameColumnSize;
 }
 /**
  * @param {number} structureI
@@ -1500,7 +1500,7 @@ function addInfoScreenUIPages(infoScreenUI, structureSizes, structureDiagrams, m
 					"$layer": layerI,
 					"$entries": exportedJsonUi.entries,
 					"$size": ["100%", exportedJsonUi.visibleHeight],
-					"$item_count_column_width": exportedJsonUi.itemCountColumnWidth
+					"$item_name_column_size": exportedJsonUi.itemNameColumnSize
 				}
 			};
 		});
@@ -2064,7 +2064,7 @@ function expandItemCriteria(itemCriteria, itemTags) {
  * @property {number} visibleHeight
  * @property {number} longestItemNameLength
  * @property {number} longestCountLength
- * @property {number} itemCountColumnWidth
+ * @property {[string | number, string | number]} itemNameColumnSize
  */
 /**
  * @typedef {object} SpawnAnimationBone Information about a bone in the spawn animation.
