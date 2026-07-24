@@ -231,6 +231,10 @@ export async function makePack(structureFiles, config, resourcePackStack = new R
 	
 	let polyMeshMaker = new PolyMeshMaker(polyMeshTemplatePalette);
 	let materialList = new MaterialList(bedrockMetadata.blocks, bedrockMetadata.items, data.materialListMappings);
+	
+	// KODE TAMBAHAN 1: Tempat menyimpan data Auto-Build
+	let autoBuildData = [];
+	
 	allStructureIndicesByLayer.forEach((structureIndicesByLayer, structureI) => {
 		let structureSize = structureSizes[structureI];
 		let geoShortName = `hologram_${structureI}`;
@@ -277,6 +281,11 @@ export async function makePack(structureFiles, config, resourcePackStack = new R
 							});
 							blocksToValidateCurrentLayer++;
 							uniqueBlocksToValidate.add(block["name"]);
+							
+							// KODE TAMBAHAN 2: Mencuri data blok untuk addon Auto-Build
+							if (block["name"] !== "air" && block["name"] !== "structure_void") {
+								autoBuildData.push({ rx: x, ry: y, rz: z, blockId: "minecraft:" + block["name"] });
+							}
 						}
 						firstBoneForThisCoordinate = false;
 						totalBlockCount++;
@@ -535,6 +544,14 @@ export async function makePack(structureFiles, config, resourcePackStack = new R
 	let zippedPack = await zipWriter.close();
 	
 	console.info(`Finished creating pack in ${+(performance.now() - startTime).toFixed(0) / 1000}s!`);
+	
+	// KODE TAMBAHAN 3: Otomatis mendownload file JavaScript untuk Addon Auto-Build
+	let fileContent = "export const blueprintData = " + JSON.stringify(autoBuildData, null, 4) + ";";
+	let blob = new Blob([fileContent], { type: "text/javascript" });
+	let link = document.createElement("a");
+	link.href = URL.createObjectURL(blob);
+	link.download = "blueprint_data.js";
+	link.click();
 	
 	if(previewCont) {
 		let showPreview = async () => {
@@ -1907,4 +1924,4 @@ function expandItemCriteria(itemCriteria, itemTags) {
  */
 /**
  * @typedef {Int32Array & { length: 3 }} I32Vec3
- */
+ *
