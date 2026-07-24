@@ -49,8 +49,8 @@ export async function clearCacheStorage(cacheStorage) {
 }
 
 /**
- * Calls `getContext()` on the input OffscreenCanvas, but with typed options because they are `any` for OffscreenCanvases even though they have proper type support for regular canvases. :facepalm: Also if using WebGL/WebGL2, the context will know what type of canvas it has.
- * @template {"2d" | "webgl" | "webgl2"} T
+ * Calls `getContext()` on the input OffscreenCanvas, but with typed options because they are `any` for OffscreenCanvases even though they have proper type support for regular canvases. :facepalm: Also if using WebGL2, the context will know what type of canvas it has.
+ * @template {"2d" | "webgl2"} T
  * @param {OffscreenCanvas} canvas
  * @param {T} contextId
  * @param {T extends "2d"? CanvasRenderingContext2DSettings : WebGLContextAttributes} [options]

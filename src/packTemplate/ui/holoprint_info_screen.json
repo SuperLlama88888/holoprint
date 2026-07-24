@@ -193,7 +193,7 @@
 						{
 							"$layer_slider_name@holoprint:common.slider_with_int_cast": {
 								"size": ["100% - 10px", "100%"],
-								"$option_label": "Change layer",
+								"$option_label": "holoprint.info_screen.change_structure_layer",
 								"$slider_steps": "$structure_height_plus_1"
 							}
 						}

@@ -14,7 +14,7 @@ export function arrayMin(arr) {
  * @param {(a: T, b: T) => boolean} [equalityPredicate]
  */
 export function areArraysEqual(arr1, arr2, equalityPredicate = (a, b) => a == b) {
-	return arr1.length == arr2.length && arr1.every((x, i) => equalityPredicate(x, arr2[i]));
+	return arr1.length == arr2.length && Array.from(arr1).every((x, i) => equalityPredicate(x, arr2[i]));
 }
 export function random(arr) {
 	return arr[~~(Math.random() * arr.length)];

@@ -109,7 +109,7 @@ export function repeatedlyApplyEndofunction(value, func, maxRepetitions = 100) {
 	/** @type {T} */
 	let oldValue;
 	let repetitions = 0;
-	while(value !== oldValue) {
+	while(!Object.is(value, oldValue)) {
 		oldValue = value;
 		value = func(value);
 		if(repetitions++ == maxRepetitions) {
