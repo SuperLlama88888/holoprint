@@ -1,4 +1,4 @@
-import { floor, nanToUndefined, PatternMap, removeFalsies, ReplacingPatternMap, tuple } from "./utils.js";
+import { floor, max, nanToUndefined, PatternMap, removeFalsies, ReplacingPatternMap, round, tuple } from "./utils.js";
 
 export default class MaterialList {
 	/** @type {Map<string, number>} */
@@ -200,9 +200,14 @@ export default class MaterialList {
 				"empty_notice@holoprint:material_list.empty_notice": {}
 			}
 		];
+		let longestItemNameLength = max(...entries.map(({ translatedName }) => translatedName.length));
+		let longestCountLength = max(...entries.map(({ partitionedCount }) => partitionedCount.length));
 		return {
 			entries: elements,
-			visibleHeight: elements.length * 12 + 12 // 12px for each item + 12px for the heading
+			visibleHeight: elements.length * 12 + 12, // 12px for each item + 12px for the heading
+			longestItemNameLength,
+			longestCountLength,
+			itemCountColumnWidth: round(longestCountLength * 4.2 + 10)
 		};
 	}
 	/**

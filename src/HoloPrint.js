@@ -1438,15 +1438,13 @@ function makeMaterialListsForEachStructureAndEachLayer(config, allStructureIndic
 function addMaterialListUI(finalisedMaterialList, materialListUI) {
 	let fullPackMaterialList = getUIElementFromPath(materialListUI, "full_pack_material_list");
 	let exportedJsonUi = MaterialList.convertEntriesToJsonUi(finalisedMaterialList);
-	fullPackMaterialList["$entries"].push(...exportedJsonUi.entries);
-	let longestItemNameLength = max(...finalisedMaterialList.map(({ translatedName }) => translatedName.length));
-	let longestCountLength = max(...finalisedMaterialList.map(({ partitionedCount }) => partitionedCount.length));
-	if(longestItemNameLength + longestCountLength >= 43) {
+	fullPackMaterialList["$entries"] = exportedJsonUi.entries;
+	if(exportedJsonUi.longestItemNameLength + exportedJsonUi.longestCountLength >= 43) {
 		fullPackMaterialList["$size"][0] = "50%"; // up from 40%
 		fullPackMaterialList["$max_size"][0] = "50%";
 	}
 	fullPackMaterialList["$size"][1] = exportedJsonUi.visibleHeight;
-	getUIElementFromPath(materialListUI, "entry", "content", "item_name")["size"][0] += `${round(longestCountLength * 4.2 + 10)}px`;
+	fullPackMaterialList["$item_count_column_width"] = exportedJsonUi.itemCountColumnWidth;
 }
 /**
  * @param {number} structureI
@@ -1501,7 +1499,8 @@ function addInfoScreenUIPages(infoScreenUI, structureSizes, structureDiagrams, m
 				[`layer_${layerI}@structure_layer_material_list`]: {
 					"$layer": layerI,
 					"$entries": exportedJsonUi.entries,
-					"$size": ["100%", exportedJsonUi.visibleHeight]
+					"$size": ["100%", exportedJsonUi.visibleHeight],
+					"$item_count_column_width": exportedJsonUi.itemCountColumnWidth
 				}
 			};
 		});
@@ -2063,6 +2062,9 @@ function expandItemCriteria(itemCriteria, itemTags) {
  * @typedef {object} ExportedMaterialListJsonUi
  * @property {Record<string, object>[]} entries
  * @property {number} visibleHeight
+ * @property {number} longestItemNameLength
+ * @property {number} longestCountLength
+ * @property {number} itemCountColumnWidth
  */
 /**
  * @typedef {object} SpawnAnimationBone Information about a bone in the spawn animation.

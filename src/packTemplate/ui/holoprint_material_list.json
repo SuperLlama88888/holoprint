@@ -3,14 +3,14 @@
 	
 	"full_pack_material_list@material_list_base": {
 		"$size": ["40%", "this gets put in by the JS"],
-		"$max_size": ["40%", "100% - 74px"], // the JS will set the width to 50% if needed, so this can't
-		"$entries": [] // this is inserted also by the JS
+		"$max_size": ["40%", "100% - 74px"]
 	},
 	"material_list_base": {
 		"$size|default": ["default", "default"],
 		"$max_size|default": ["default", "default"],
 		"$entries|default": "Error: $entries not set",
 		"$heading|default": "holoprint.material_list.heading",
+		"$item_count_column_width|default": "Error: $item_count_column_width not set",
 		"type": "panel",
 		"anchor_from": "top_middle",
 		"anchor_to": "top_middle",
@@ -132,7 +132,7 @@
 							"item_name": {
 								"type": "label",
 								"text": "$item_translation_key",
-								"size": ["100% - 13px - ", 10], // space left for item count is put in by the JS
+								"size": ["100% - 13px - $item_count_column_width", 10],
 								"font_scale_factor": 0.8
 							}
 						},
