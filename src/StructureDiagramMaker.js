@@ -31,8 +31,12 @@ export default class StructureDiagramMaker {
 		this.#isoBlockIconOffset = this.size * 1.5;
 		
 		if(WebGL2QuadRenderer.isSupported()) {
-			// multiply by 3 because a 2d icon has the surrounding 3x3 blocks in case the block takes up multiple block spaces (i.e. beds, horizontal pistons)
-			this.#renderer = new WebGL2QuadRenderer(this.size * 3, texture);
+			try {
+				// multiply by 3 because a 2d icon has the surrounding 3x3 blocks in case the block takes up multiple block spaces (i.e. beds, horizontal pistons)
+				this.#renderer = new WebGL2QuadRenderer(this.size * 3, texture);
+			} catch(e) {
+				console.error(`Failed to initialise WebGL2QuadRenderer despite being 'supported' - ${e}`);
+			}
 		} else {
 			console.error("Cannot make structure diagrams - WebGL2 is not supported!");
 		}
