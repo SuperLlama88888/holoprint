@@ -1444,7 +1444,7 @@ function addMaterialListUI(finalisedMaterialList, materialListUI) {
 		fullPackMaterialList["$max_size"][0] = "50%";
 	}
 	fullPackMaterialList["$size"][1] = exportedJsonUi.visibleHeight;
-	fullPackMaterialList["$item_count_column_width"] = exportedJsonUi.itemNameColumnSize;
+	fullPackMaterialList["$item_name_column_size"] = exportedJsonUi.itemNameColumnSize;
 }
 /**
  * @param {number} structureI
