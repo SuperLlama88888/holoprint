@@ -56,13 +56,12 @@ export default class StructureDiagramMaker {
 	}
 	/**
 	 * Makes all the diagrams (3D isometric at index 0, 2D layers at index 1+) for an array of structures.
-	 * @param {ImageBitmap[]} blockIconPalette
-	 * @param {ImageBitmap[]} isometricBlockIconPalette
+	 * @param {PolyMeshTemplateFaceWithUvs[][]} polyMeshTemplatePalette
 	 * @param {[Int32Array, Int32Array][]} structureIndicesByLayerByStructure
 	 * @param {I32Vec3[]} structureSizes
 	 * @returns {Promise<{ diagrams: Blob[], indices: number[][] }>}
 	 */
-	async makeDiagramsForStructures(blockIconPalette, isometricBlockIconPalette, structureIndicesByLayerByStructure, structureSizes) {
+	async makeDiagramsForStructures(polyMeshTemplatePalette, structureIndicesByLayerByStructure, structureSizes) {
 		if(!this.#renderer) {
 			let errorImage = await toBlob(stringToImageData("Couldn't create diagrams"));
 			let indices = structureSizes.map(structureSize => (new Array(structureSize[1] + 1)).fill(0));
@@ -71,6 +70,10 @@ export default class StructureDiagramMaker {
 				indices
 			};
 		}
+		
+		let blockIconPalette = this.makeBirdsEyeViewBlockIconPalette(polyMeshTemplatePalette);
+		let isometricBlockIconPalette = this.makeIsometricViewBlockIconPalette(polyMeshTemplatePalette);
+		
 		/** @type {Promise<Blob>[]} */
 		let diagramBlobPromises = [];
 		/** @type {HashMap<number[], number, number>} */
@@ -105,6 +108,11 @@ export default class StructureDiagramMaker {
 			}
 			diagramBlobIndices.push(diagramBlobIndicesForStructure);
 		});
+		
+		// The new "using" statement is not yet widely supported, so I need to manually write this. esbuild can transpile it but it's soooo bloated. Maybe in 5 years...
+		this.disposeBlockIconPalette(blockIconPalette);
+		this.disposeBlockIconPalette(isometricBlockIconPalette);
+		
 		let diagramBlobs = await Promise.all(diagramBlobPromises);
 		return {
 			diagrams: diagramBlobs,

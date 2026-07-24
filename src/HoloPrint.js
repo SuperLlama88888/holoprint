@@ -1027,12 +1027,7 @@ function mergeMultiplePalettesAndIndices(palettesAndIndices) {
  */
 async function makeStructureDiagrams(config, textureBlob, polyMeshTemplatePalette, allStructureIndicesByLayer, structureSizes) {
 	let structureDiagramMaker = new StructureDiagramMaker(config, await toImage(textureBlob));
-	let blockIconPalette = structureDiagramMaker.makeBirdsEyeViewBlockIconPalette(polyMeshTemplatePalette);
-	let isometricBlockIconPalette = structureDiagramMaker.makeIsometricViewBlockIconPalette(polyMeshTemplatePalette);
-	let diagramsAndIndices = await structureDiagramMaker.makeDiagramsForStructures(blockIconPalette, isometricBlockIconPalette, allStructureIndicesByLayer, structureSizes);
-	// The new "using" statement is not yet widely supported, so I need to manually write this. esbuild can transpile it but it's soooo bloated. Maybe in 5 years...
-	structureDiagramMaker.disposeBlockIconPalette(blockIconPalette);
-	structureDiagramMaker.disposeBlockIconPalette(isometricBlockIconPalette);
+	let diagramsAndIndices = await structureDiagramMaker.makeDiagramsForStructures(polyMeshTemplatePalette, allStructureIndicesByLayer, structureSizes);
 	return diagramsAndIndices;
 }
 /**
