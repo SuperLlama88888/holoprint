@@ -22,7 +22,7 @@ export function rotateDeg(p, deg) {
  * @returns {number}
  */
 export function sum(nums) {
-	return nums.length? nums.reduce((a, b) => a + b) : 0;
+	return nums.reduce((a, b) => a + b, 0);
 }
 /**
  * @param {number[]} nums
