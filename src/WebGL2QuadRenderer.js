@@ -7,7 +7,6 @@ import { getOffscreenCanvasContext } from "./utils.js";
 
 /** A lightweight WebGL 2 utility to render arbitrary quads directly to an `ImageBitmap`. */
 export default class WebGL2QuadRenderer {
-	static #VERTEX_INDICES = new Uint16Array([0, 1, 2, 0, 2, 3]);
 	
 	/** @readonly */
 	size;
@@ -57,10 +56,11 @@ export default class WebGL2QuadRenderer {
 		gl.attachShader(this.#program, vertexShader);
 		gl.attachShader(this.#program, fragmentShader);
 		gl.linkProgram(this.#program);
+		// deleting them here doesn't actually delete them, it just indicates that they can be deleted if the program is deleted
+		gl.deleteShader(vertexShader);
+		gl.deleteShader(fragmentShader);
 		if(!gl.getProgramParameter(this.#program, gl.LINK_STATUS)) {
 			let errorInfo = this.#gl.getProgramInfoLog(this.#program);
-			gl.deleteShader(vertexShader);
-			gl.deleteShader(fragmentShader);
 			gl.deleteProgram(this.#program);
 			throw new Error(`Failed to link program: ${errorInfo}`);
 		}
@@ -107,7 +107,13 @@ export default class WebGL2QuadRenderer {
 			positions.set(quadPositions, i * 8);
 			uvs.set(quadUvs, i * 8);
 			let vertexOffset = i * 4;
-			indices.set(WebGL2QuadRenderer.#VERTEX_INDICES.map(index => index + vertexOffset), i * 6);
+			let indexOffset = i * 6;
+			indices[indexOffset] = vertexOffset;
+			indices[indexOffset + 1] = vertexOffset + 1;
+			indices[indexOffset + 2] = vertexOffset + 2;
+			indices[indexOffset + 3] = vertexOffset;
+			indices[indexOffset + 4] = vertexOffset + 2;
+			indices[indexOffset + 5] = vertexOffset + 3;
 		});
 		
 		gl.bindBuffer(gl.ARRAY_BUFFER, this.#positionBuffer);
