@@ -125,7 +125,7 @@ export default class StructureDiagramMaker {
 		};
 	}
 	dispose() {
-		this.#renderer.dispose();
+		this.#renderer?.dispose();
 	}
 	/**
 	 * Disposes all the `ImageBitmap`s in a block icon palette.
