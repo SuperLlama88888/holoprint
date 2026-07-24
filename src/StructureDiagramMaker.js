@@ -7,8 +7,8 @@ const ISOMETRIC_DIAGRAM_PADDING = 8;
 export default class StructureDiagramMaker {
 	/** @readonly */
 	size;
-	/** @readonly */
-	#renderer;
+	/** @readonly @type {WebGL2QuadRenderer | null} */
+	#renderer = null;
 	/** @readonly */
 	#isoXStep;
 	/** @readonly */
@@ -30,8 +30,12 @@ export default class StructureDiagramMaker {
 		this.#isoYYStep = this.size / sqrt(3);
 		this.#isoBlockIconOffset = this.size * 1.5;
 		
-		// multiply by 3 because a 2d icon has the surrounding 3x3 blocks in case the block takes up multiple block spaces (i.e. beds, horizontal pistons)
-		this.#renderer = new WebGL2QuadRenderer(this.size * 3, texture);
+		if(WebGL2QuadRenderer.isSupported()) {
+			// multiply by 3 because a 2d icon has the surrounding 3x3 blocks in case the block takes up multiple block spaces (i.e. beds, horizontal pistons)
+			this.#renderer = new WebGL2QuadRenderer(this.size * 3, texture);
+		} else {
+			console.error("Cannot make structure diagrams - WebGL2 is not supported!");
+		}
 	}
 	
 	/**
@@ -59,6 +63,14 @@ export default class StructureDiagramMaker {
 	 * @returns {Promise<{ diagrams: Blob[], indices: number[][] }>}
 	 */
 	async makeDiagramsForStructures(blockIconPalette, isometricBlockIconPalette, structureIndicesByLayerByStructure, structureSizes) {
+		if(!this.#renderer) {
+			let errorImage = await toBlob(stringToImageData("Couldn't create diagrams"));
+			let indices = structureSizes.map(structureSize => (new Array(structureSize[1] + 1)).fill(0));
+			return {
+				diagrams: [errorImage],
+				indices
+			};
+		}
 		/** @type {Promise<Blob>[]} */
 		let diagramBlobPromises = [];
 		/** @type {HashMap<number[], number, number>} */
@@ -73,7 +85,7 @@ export default class StructureDiagramMaker {
 			diagramBlobIndicesForStructure.push(diagramBlobPromises.length);
 			diagramBlobPromises.push(this.#makeIsometricDiagramForStructure(isometricBlockIconPalette, structureIndicesByLayer, structureSize));
 			
-			// layer-by-layer diagrams  are cached based on the hash of the palette indices on each layer. (Can't believe I had to implement a hash map myself in the big 26)
+			// layer-by-layer diagrams are cached based on the hash of the palette indices on each layer. (Can't believe I had to implement a hash map myself in the big 26)
 			for(let y = 0; y < structureSize[1]; y++) {
 				/** @type {number[]} */
 				let indices = [];
