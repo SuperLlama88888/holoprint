@@ -1,4 +1,4 @@
-import { areArraysEqual, average, ceil, fnv1a, getOffscreenCanvasContext, getStructureIndexFromCoordinates, HashMap, sqrt, stringToImageData, toBlob, tuple } from "./utils.js";
+import { areArraysEqual, average, ceil, fnv1a, getOffscreenCanvasContext, getStructureIndexFromCoordinates, HashMap, sqrt, stringToImageData, toBlob, tuple, vec2 } from "./utils.js";
 import WebGL2QuadRenderer from "./WebGL2QuadRenderer.js"; // dependency injection coming soon^tm
 
 /** Padding in pixels to be added around the edges of isometric diagrams. */
@@ -126,39 +126,49 @@ export default class StructureDiagramMaker {
 	 * @returns {ImageBitmap}
 	 */
 	#getIconForBlockFromFaces(faces, isometric) {
-		let sortedFaces = faces.map(face => {
+		let faceVertices = faces.map(face => face.vertices);
+		if(!isometric) {
+			// check if the faces won't be visible when viewed from a bird's-eye view (e.g. cross_texture blocks). if this happens, we swizzle the y and z axes so it's effectively looking from the side.
+			if(faceVertices.every(vertices => this.#isFaceInvisibleFromAbove(vertices))) {
+				faceVertices = structuredClone(faceVertices);
+				faceVertices.forEach(vertices => vertices.forEach(v => {
+					v.pos = [v.pos[0], v.pos[2], 16 - v.pos[1]];
+				}));
+			}
+		}
+		let depthSortedFaceVertices = faceVertices.map(vertices => {
 			if(isometric) {
 				return {
-					face,
-					depth: average(face.vertices.map(({ pos: v }) => (16 - v[0]) + v[2] + v[1] * 2 * sqrt(3))) // it works
+					vertices,
+					depth: average(vertices.map(({ pos: p }) => (16 - p[0]) + p[2] + p[1] * 2 * sqrt(3))) // it works
 				};
 			} else {
 				return {
-					face,
-					depth: average(face.vertices.map(({ pos: [, y] }) => y))
+					vertices,
+					depth: average(vertices.map(({ pos: [, y] }) => y))
 				};
 			}
 		}).sort((a, b) => a.depth - b.depth);
 		
 		// Convert face vertex data into flat inputs acceptable by the WebGL engine
-		let quadRenderData = sortedFaces.map(({ face }) => {
+		let quadRenderData = depthSortedFaceVertices.map(({ vertices }) => {
 			let positions = new Float32Array(8);
 			let i = 0;
 			if(isometric) {
-				face.vertices.forEach(({ pos: v }) => {
+				vertices.forEach(({ pos: p }) => {
 					// idk how this works, I got chatgpt to do it. but I know it works
-					positions[i++] = (64 - v[0] - v[2]) / 96;
-					positions[i++] = (48 + (16 + v[2] - v[0] - 2 * v[1]) / sqrt(3)) / 96;
+					positions[i++] = (64 - p[0] - p[2]) / 96;
+					positions[i++] = (48 + (16 + p[2] - p[0] - 2 * p[1]) / sqrt(3)) / 96;
 				});
 			} else {
-				face.vertices.forEach(({ pos: v }) => {
-					positions[i++] = (32 - v[0]) / 48;
-					positions[i++] = (v[2] + 16) / 48;
+				vertices.forEach(({ pos: p }) => {
+					positions[i++] = (32 - p[0]) / 48;
+					positions[i++] = (p[2] + 16) / 48;
 				});
 			}
 			let uvs = new Float32Array(8);
 			i = 0;
-			face.vertices.forEach(({ uv }) => {
+			vertices.forEach(({ uv }) => {
 				uvs[i++] = uv[0];
 				uvs[i++] = 1 - uv[1];
 			});
@@ -166,6 +176,15 @@ export default class StructureDiagramMaker {
 		});
 		
 		return this.#renderer.render(quadRenderData);
+	}
+	/**
+	 * @param {[PolyMeshTemplateVertexWithUv, PolyMeshTemplateVertexWithUv, PolyMeshTemplateVertexWithUv, PolyMeshTemplateVertexWithUv]} vertices
+	 * @returns {boolean}
+	 */
+	#isFaceInvisibleFromAbove(vertices) {
+		// coordinates from a bird's-eye view
+		let coords = vertices.map(({ pos: p }) => [p[0], p[2]]);
+		return vec2.equals(coords[0], coords[1]) || vec2.equals(coords[0], coords[2]) || vec2.equals(coords[0], coords[3]) || vec2.equals(coords[1], coords[2]) || vec2.equals(coords[1], coords[3]) || vec2.equals(coords[2], coords[3]);
 	}
 	/**
 	 * Stitches block icons together using the standard 2d canvas.
@@ -262,4 +281,4 @@ export default class StructureDiagramMaker {
 	}
 }
 
-/** @import { HoloPrintConfig, I32Vec3, PolyMeshTemplateFaceWithUvs } from "./HoloPrint.js" */
+/** @import { HoloPrintConfig, I32Vec3, PolyMeshTemplateFaceWithUvs, PolyMeshTemplateVertexWithUv } from "./HoloPrint.js" */
