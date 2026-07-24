@@ -23,7 +23,16 @@ export default class WebGL2QuadRenderer {
 	
 	/** @returns {boolean} */
 	static isSupported() {
-		return typeof WebGL2RenderingContext != "undefined";
+		if(typeof WebGL2RenderingContext != "undefined") {
+			return false;
+		}
+		let can = new OffscreenCanvas(1, 1);
+		try {
+			can.getContext("webgl2");
+		} catch {
+			return false;
+		}
+		return true;
 	}
 	
 	/**
