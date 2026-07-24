@@ -1,3 +1,6 @@
+// Disclaimer: This is mostly AI-generated, I did not have the willpower to go through tutorial hell again
+// I have some experience with WebGL beforehand but writing it is never fun
+
 import vertexShaderSource from "./WebGL2QuadRendererShader.vertex.glsl" with { type: "text" };
 import fragmentShaderSource from "./WebGL2QuadRendererShader.fragment.glsl" with { type: "text" };
 import { getOffscreenCanvasContext } from "./utils.js";
@@ -20,6 +23,10 @@ export default class WebGL2QuadRenderer {
 	#uvBuffer;
 	/** @readonly */
 	#indexBuffer;
+	/** @readonly */
+	#posLoc;
+	/** @readonly */
+	#uvLoc;
 	
 	/** @returns {boolean} */
 	static isSupported() {
@@ -57,15 +64,17 @@ export default class WebGL2QuadRenderer {
 			gl.deleteProgram(this.#program);
 			throw new Error(`Failed to link program: ${errorInfo}`);
 		}
-
+		
+		this.#posLoc = gl.getAttribLocation(this.#program, "a_position");
+		this.#uvLoc = gl.getAttribLocation(this.#program, "a_uv");
+		
 		this.#positionBuffer = gl.createBuffer();
 		this.#uvBuffer = gl.createBuffer();
 		this.#indexBuffer = gl.createBuffer();
 		
 		gl.enable(gl.BLEND);
 		gl.blendFunc(gl.ONE, gl.ONE_MINUS_SRC_ALPHA);
-
-		// I got AI to write this stuff for me, I have no idea what this does. But it works!
+		
 		this.#glTexture = gl.createTexture();
 		gl.bindTexture(gl.TEXTURE_2D, this.#glTexture);
 		gl.pixelStorei(gl.UNPACK_PREMULTIPLY_ALPHA_WEBGL, true);
@@ -89,24 +98,32 @@ export default class WebGL2QuadRenderer {
 		gl.clear(gl.COLOR_BUFFER_BIT);
 		gl.useProgram(this.#program);
 		
-		quads.forEach(({ positions, uvs }) => {
-			gl.bindBuffer(gl.ARRAY_BUFFER, this.#positionBuffer);
-			gl.bufferData(gl.ARRAY_BUFFER, positions, gl.STREAM_DRAW);
-			let posLoc = gl.getAttribLocation(this.#program, "a_position");
-			gl.enableVertexAttribArray(posLoc);
-			gl.vertexAttribPointer(posLoc, 2, gl.FLOAT, false, 0, 0);
-			
-			gl.bindBuffer(gl.ARRAY_BUFFER, this.#uvBuffer);
-			gl.bufferData(gl.ARRAY_BUFFER, uvs, gl.STREAM_DRAW);
-			let uvLoc = gl.getAttribLocation(this.#program, "a_uv");
-			gl.enableVertexAttribArray(uvLoc);
-			gl.vertexAttribPointer(uvLoc, 2, gl.FLOAT, false, 0, 0);
-			
-			gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, this.#indexBuffer);
-			gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, WebGL2QuadRenderer.#VERTEX_INDICES, gl.STREAM_DRAW);
-
-			gl.drawElements(gl.TRIANGLES, 6, gl.UNSIGNED_SHORT, 0);
+		let quadCount = quads.length;
+		let positions = new Float32Array(quadCount * 8);
+		let uvs = new Float32Array(quadCount * 8);
+		let indices = new Uint16Array(quadCount * 6);
+		// batch everything into a single draw call!
+		quads.forEach(({ positions: quadPositions, uvs: quadUvs }, i) => {
+			positions.set(quadPositions, i * 8);
+			uvs.set(quadUvs, i * 8);
+			let vertexOffset = i * 4;
+			indices.set(WebGL2QuadRenderer.#VERTEX_INDICES.map(index => index + vertexOffset), i * 6);
 		});
+		
+		gl.bindBuffer(gl.ARRAY_BUFFER, this.#positionBuffer);
+		gl.bufferData(gl.ARRAY_BUFFER, positions, gl.STREAM_DRAW);
+		gl.enableVertexAttribArray(this.#posLoc);
+		gl.vertexAttribPointer(this.#posLoc, 2, gl.FLOAT, false, 0, 0);
+		
+		gl.bindBuffer(gl.ARRAY_BUFFER, this.#uvBuffer);
+		gl.bufferData(gl.ARRAY_BUFFER, uvs, gl.STREAM_DRAW);
+		gl.enableVertexAttribArray(this.#uvLoc);
+		gl.vertexAttribPointer(this.#uvLoc, 2, gl.FLOAT, false, 0, 0);
+		
+		gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, this.#indexBuffer);
+		gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, indices, gl.STREAM_DRAW);
+		
+		gl.drawElements(gl.TRIANGLES, quadCount * 6, gl.UNSIGNED_SHORT, 0);
 		
 		return gl.canvas.transferToImageBitmap();
 	}
