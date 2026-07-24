@@ -183,21 +183,26 @@ export default class MaterialList {
 	 * @returns {ExportedMaterialListJsonUi}
 	 */
 	static convertEntriesToJsonUi(entries, missingItemAux = 0) {
+		let elements = entries.length? entries.map(({ translationKey, partitionedCount, auxId }, i) => {
+			let entry = {
+				"$item_translation_key": translationKey,
+				"$item_count": partitionedCount,
+				"$item_id_aux": auxId ?? missingItemAux
+			};
+			if (i & 1) {
+				entry["$background_opacity"] = 0.2;
+			}
+			return {
+				[`entry_${i}@holoprint:material_list.entry`]: entry
+			};
+		}) : [
+			{
+				"empty_notice@holoprint:material_list.empty_notice": {}
+			}
+		];
 		return {
-			entries: entries.map(({ translationKey, partitionedCount, auxId }, i) => {
-				let entry = {
-					"$item_translation_key": translationKey,
-					"$item_count": partitionedCount,
-					"$item_id_aux": auxId ?? missingItemAux
-				};
-				if(i & 1) {
-					entry["$background_opacity"] = 0.2;
-				}
-				return {
-					[`entry_${i}@holoprint:material_list.entry`]: entry
-				};
-			}),
-			visibleHeight: entries.length * 12 + 12 // 12px for each item + 12px for the heading
+			entries: elements,
+			visibleHeight: elements.length * 12 + 12 // 12px for each item + 12px for the heading
 		};
 	}
 	/**

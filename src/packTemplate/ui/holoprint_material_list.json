@@ -94,14 +94,7 @@
 		"anchor_from": "top_left",
 		"controls": "$entries"
 	},
-	"entry": {
-		"type": "image",
-		"size": ["100%", 12],
-		"texture": "textures/ui/White",
-		"color": [0, 0, 0],
-		"$background_opacity|default": 0,
-		"alpha": "$background_opacity",
-		"layer": 100,
+	"entry@row": {
 		"controls": [
 			{
 				"content": {
@@ -156,5 +149,25 @@
 				}
 			}
 		]
+	},
+	"empty_notice@row": {
+		"controls": [
+			{
+				"notice": {
+					"type": "label",
+					"text": "holoprint.material_list.empty",
+					"font_scale_factor": 0.8
+				}
+			}
+		]
+	},
+	"row": {
+		"type": "image",
+		"size": ["100%", 12],
+		"texture": "textures/ui/White",
+		"color": [0, 0, 0],
+		"$background_opacity|default": 0,
+		"alpha": "$background_opacity",
+		"layer": 100
 	}
 }
