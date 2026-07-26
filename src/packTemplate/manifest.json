@@ -11,6 +11,11 @@
 	],
 	"subpacks": [
 		{
+			"folder_name": "leash_knot_mode",
+			"name": "Leash knot mode", // such a goofy name
+			"memory_tier": 0
+		},
+		{
 			"folder_name": "punch_to_activate",
 			"name": "Punch to activate", // like below, translations for these won't be loaded until after the pack is enabled...
 			"memory_tier": 0

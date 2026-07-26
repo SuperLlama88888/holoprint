@@ -1,0 +1,369 @@
+// This is modeled after how_to_play_screen.json and encyclopedia_screen.json
+// Mojang being Mojank, some things need to be named certain ways for them to work.
+// N.B. The how_to_play_common screen uses the special #section_title binding for the title bar, which doesn't work here. So I've had to manually extract some parts of how_to_play_common.json just so I can uses an actual title. Specifically, info_screen and info_screen_content are copied almost verbatim from how_to_play_common.json.	
+
+{
+	"namespace": "holoprint:info_screen",
+	
+	"info_screen@common.base_screen": {
+		"type": "screen",
+		"size": ["100%", "100%"],
+		"button_mappings": [
+			{
+				"from_button_id": "button.menu_cancel",
+				"to_button_id": "button.menu_exit",
+				"mapping_type": "global"
+			},
+			{
+				"from_button_id": "button.menu_tab_left",
+				"to_button_id": "button.menu_tab_left",
+				"mapping_type": "global",
+				"scope": "view"
+			},
+			{
+				"from_button_id": "button.menu_tab_right",
+				"to_button_id": "button.menu_tab_right",
+				"mapping_type": "global",
+				"scope": "view"
+			}
+		],
+		"$screen_content": "holoprint:info_screen.info_screen_content",
+		"$screen_background_control": "how_to_play_common.screen_background",
+		"$selector_stack_panel": "holoprint:info_screen.tab_stack_panel",
+		"$section_content_panels": "holoprint:info_screen.section_content_panels",
+		"$header_safezone_control": "common_store.store_top_bar_filler",
+		"$header_bar_control": "common_store.store_top_bar",
+		"$is_full_screen_layout": true,
+		"$fill_alpha": 0.65
+	},
+	"info_screen_content": {
+		"type": "panel",
+		"controls": [
+			{
+				"header": {
+					"type": "panel",
+					"size": ["100%", 23],
+					"anchor_from": "top_left",
+					"anchor_to": "top_left",
+					"controls": [
+						{
+							"top_bar@how_to_play_common.top_bar": {
+								"layer": 2,
+								"controls": [
+									{
+										"back_button@common.back_title_button": {
+											"anchor_from": "left_middle",
+											"anchor_to": "left_middle",
+											"offset": [2, -1]
+										}
+									},
+									{
+										"how_to_play_title@common.screen_header_title_panel": {
+											"size": ["70% - 22px", "100%"], // Gamepad helpers have max size of 30% and the back button is 20px
+											"offset": [20, -1],
+											"anchor_from": "left_middle",
+											"anchor_to": "left_middle",
+											"$screen_header_title": "holoprint.info_screen.title", // THIS IS IT
+											"layer": 2
+										}
+									},
+									{
+										"gamepad_bumper_helpers@how_to_play_common.gamepad_bumper_helpers": {}
+									}
+								]
+							}
+						}
+					]
+				}
+			},
+			{
+				"container": {
+					"type": "panel",
+					"size": "$store_screen_size",
+					"controls": [
+						{
+							"dialog_content@how_to_play_common.dialog_content": {}
+						}
+					]
+				}
+			}
+		]
+	},
+	"tab_stack_panel": {
+		"type": "stack_panel",
+		"anchor_from": "top_left",
+		"anchor_to": "top_left",
+		"$default_selector_toggle_index": 0,
+		"controls": [
+			{
+				"selector_pane": {
+					"type": "stack_panel",
+					"controls": [
+						{
+							"about_section@how_to_play_common.section_toggle_button": {
+								// JS will add $toggle_group_forced_index (depends on the total number of structures in the pack)
+								"$section_topic": "holoprint_about"
+							}
+						}
+					]
+				}
+			}
+		]
+	},
+	"section_content_panels": {
+		"type": "stack_panel",
+		"anchor_from": "top_left",
+		"anchor_to": "top_left",
+		"size": ["100% - 5px", "100%c + 5px"],
+		"offset": [2, 0],
+		"controls": [
+			{
+				"sections": {
+					"type": "stack_panel",
+					"controls": [
+						{
+							"about_section@section": {
+								"$tab_button_name": "holoprint_about_button_toggle",
+								"$content": "holoprint:info_screen.about_section_content"
+							}
+						}
+					]
+				}
+			}
+		]
+	},
+	
+	"about_section_content": {
+		"type": "stack_panel",
+		"orientation": "vertical",
+		"controls": [
+			{
+				// wrapper element so the banner image is centered horizontally
+				"banner_wrapper": {
+					"type": "panel",
+					"size": ["100%", "11.667%x + 10px"], // 10px vertical padding
+					"controls": [
+						{
+							"banner": {
+								"type": "image",
+								"texture": "textures/holoprint/ui/banner",
+								"size": ["40%", "29.1667%x"]
+							}
+						}
+					]
+				}
+			},
+			{
+				"heading@section_heading": {
+					"text": "howtoplay.holoprint_about"
+				}
+			},
+			{
+				"about@section_paragraph": {
+					"$text": "holoprint.info_screen.info.about"
+				}
+			}
+		]
+	},
+	"structure_section_content_base@section": {
+		"$heading|default": "Error: $heading not set",
+		"$structure_height_plus_1|default": "Error: $structure_height_plus_1 not set",
+		"$diagram_property_bag|default": "Error: $diagram_property_bag not set", // The JS will add bindings holding paths to textures, it's best to look at a generated pack to understand this better.
+		"$layer_slider_name|default": "Error: $layer_slider_name not set",
+		"$structure_index|default": "Error: $structure_index not set",
+		"$material_lists|default": "Error: $material_lists not set",
+		"$tallest_material_list_size|default": "Error: $tallest_material_list_size not set",
+		"type": "stack_panel",
+		"orientation": "vertical",
+		"controls": [
+			{
+				"heading@section_heading": {
+					"text": "$heading"
+				}
+			},
+			{
+				"size_and_layer_label@section_paragraph": {
+					"bindings": [
+						{
+							"binding_type": "view",
+							"source_control_name": "$layer_slider_name",
+							"source_property_name": "#slider_value_as_int",
+							"target_property_name": "#layer"
+						}
+					],
+					// bindings aren't inherited so the text binding must live on the label element, rather than on the parent element
+					"$text": "#text",
+					"$text_property_bag": {
+						"#text": "Error! Please report this on GitHub!"
+					},
+					"$text_bindings": [
+						{
+							"binding_type": "view",
+							"source_control_name": "$layer_slider_name",
+							"source_property_name": "#slider_value_as_int",
+							"target_property_name": "#layer"
+						},
+						{
+							"binding_type": "view",
+							"source_property_name": "('holoprint.info_screen.structure_' + $structure_index + '_layer_' + #layer)",
+							"target_property_name": "#text"
+						}
+					]
+				}
+			},
+			{
+				// Having a wrapper panel centers the slider. However it must also have its size set.
+				"layer_slider_wrapper": {
+					"type": "panel",
+					"size": ["100%", 10],
+					"controls": [
+						{
+							"$layer_slider_name@holoprint:common.slider_with_int_cast": {
+								"size": ["100% - 10px", "100%"],
+								"$option_label": "holoprint.info_screen.change_structure_layer",
+								"$slider_steps": "$structure_height_plus_1"
+							}
+						}
+					]
+				}
+			},
+			{
+				"padding": {
+					"type": "panel",
+					"size": ["100%", 10]
+				}
+			},
+			{
+				"diagram_and_material_list_wrapper": {
+					"type": "stack_panel",
+					"orientation": "horizontal",
+					"size": "$tallest_material_list_size", // I can't use "fill" for the height here for some reason, it just evaluates to 0px. So the JS adds this variable
+					"controls": [
+						{
+							"diagram_background": {
+								"type": "image",
+								"texture": "textures/holoprint/ui/white_circle",
+								"alpha": 0.5,
+								"size": ["50%", "100%x"],
+								"controls": [
+									{
+										"diagram": {
+											"type": "image",
+											"size": ["90%", "90%"],
+											// I tried substituting strings into #texture directly, but for WHATEVER REASON, Bugrock doesn't load the texture (even with force_texture_reload).
+											// This solution also has a nice side effect of allowing us to deduplicate layer diagrams! I found it from TheAndromedarius' post on the Bedrock Add-Ons Discord server: https://discord.com/channels/523663022053392405/1399880155522007232/1399986881382318221
+											"texture": "#texture",
+											"property_bag": "$diagram_property_bag",
+											"bindings": [
+												{
+													"binding_type": "view",
+													"source_control_name": "$layer_slider_name",
+													"source_property_name": "#slider_value_as_int",
+													"target_property_name": "#layer"
+												},
+												{
+													"binding_type": "view",
+													"source_property_name": "('#layer_' + #layer)",
+													"target_property_name": "#texture"
+												}
+											]
+										}
+									}
+								]
+							}
+						},
+						{
+							"material_lists_wrapper": {
+								"type": "panel",
+								"size": ["50%", "100%"],
+								"controls": "$material_lists"
+							}
+						}
+					]
+				}
+			}
+		]
+	},
+	"structure_layer_material_list": {
+		// A wrapper element must be used here because the $heading variable relies on $layer, which will be defined directly on this element. Only children can access it. (Bindings are fine!)
+		"$structure_index|default": "Error: $structure_index not set",
+		"$layer|default": "Error: $layer not set",
+		"type": "panel",
+		"controls": [
+			{
+				"material_list@holoprint:material_list.material_list_base": {
+					"$heading": "('holoprint.material_list.structure_' + $structure_index + '_layer_' + $layer)"
+				}
+			}
+		],
+		"bindings": [
+			{
+				"binding_type": "view",
+				"source_control_name": "$layer_slider_name",
+				"source_property_name": "#slider_value_as_int",
+				"target_property_name": "#layer"
+			},
+			{
+				"binding_type": "view",
+				"source_property_name": "(#layer = $layer)",
+				"target_property_name": "#visible"
+			}
+		]
+	},
+
+	"section@how_to_play_common.main_sections": {
+		"bindings": [
+			{
+				"binding_type": "view",
+				"source_control_name": "$tab_button_name",
+				"source_property_name": "#toggle_state",
+				"target_property_name": "#visible"
+			}
+		],
+		"controls": [
+			{
+				"content@$content": {}
+			}
+		]
+	},
+	"section_heading": {
+		"type": "label",
+		"size": ["100%", 20],
+		"font_type": "MinecraftTen",
+		"font_scale_factor": 1.2
+	},
+	"section_paragraph": {
+		"$text_property_bag|default": {},
+		"$text_bindings|default": [],
+		"type": "stack_panel",
+		"orientation": "vertical",
+		"controls": [
+			{
+				"text": {
+					"type": "label",
+					"text": "$text",
+					"max_size": ["100%", 99999999], // must have this so that the text displays normally - i.e. wraps instead of overflows and only takes up as much height as it needs
+					"property_bag": "$text_property_bag",
+					"bindings": "$text_bindings"
+				}
+			},
+			{
+				"padding": {
+					"type": "panel",
+					"size": ["100%", 5]
+				}
+			}
+		]
+	},
+	
+	"open_button@common_buttons.light_content_button": {
+		"size": [24, 24],
+		"$pressed_button_name": "button.menu_buy_game", // since resource packs can't add their own screens, this will redirect to either the "tabbed upsell" screen or the "Windows 10 trial conversion" screen which have both been modified to display the HoloPrint info screen instead.
+		"$button_content": "holoprint:info_screen.logo"
+	},
+	"logo": {
+		"type": "image",
+		"texture": "textures/holoprint/ui/logo_192",
+		"size": [18, 18]
+	}
+}

@@ -7,7 +7,7 @@
 			{
 				"material_list_trigger@keyboard_trigger": {
 					"$button_name": "$holoprint:material_list_key",
-					"$content": "holoprint:material_list.material_list",
+					"$content": "holoprint:material_list.full_pack_material_list",
 					"$off_content": "hotbar_scroll_keybinds"
 				}
 			},

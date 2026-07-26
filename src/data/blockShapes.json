@@ -135,6 +135,7 @@
 		"wither_rose": "cross_texture",
 		"torchflower": "cross_texture",
 		"torchflower_crop": "cross_texture",
+		"golden_dandelion": "cross_texture", // which is a golden dandelion
 		
 		"short_grass": "cross_texture",
 		"red_mushroom": "cross_texture",
@@ -214,7 +215,8 @@
 		"cave_vines_head_with_berries": "cross_texture",
 		"glow_lichen": "multi_face",
 		"hanging_roots": "cross_texture",
-		"pointed_dripstone": "pointed_dripstone",
+		"pointed_dripstone": "stalagmite_or_stalactite",
+		"sulfur_spike": "stalagmite_or_stalactite",
 		"mangrove_propagule": "mangrove_propagule",
 		"sculk_shrieker": "sculk_shrieker",
 		"sculk_sensor": "sculk_sensor",

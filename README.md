@@ -67,6 +67,7 @@ Special thanks to **kizoku246** for the house in these images!
 - [Indyfficient](https://www.youtube.com/@Indyfficient): The idea of changing structure by hitting the armour stand
 - [Prowl8413](https://www.youtube.com/@Prowl8413): General feedback during development
 - [KITTUradiates](https://github.com/KITTUradiates): Feedback and suggestions
+- [ESBE 3G](https://github.com/McbeEringi/esbe-3g) by [McbeEringi](https://github.com/McbeEringi): Technical base for the info screen UI
 - [Rainbow-Editor](https://github.com/PurpleRain-PR/Rainbow-Editor) by [PurpleRain-PR](https://github.com/PurpleRain-PR): The idea of exporting a GLB from the preview
 - Documentation:
   - [Bedrock Wiki](https://wiki.bedrock.dev): Best resource for learning about resource/behaviour packs!

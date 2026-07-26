@@ -9,6 +9,8 @@ let THREE;
 let OrbitControls;
 /** @type {typeof import("three/examples/jsm/exporters/GLTFExporter.js").GLTFExporter} */
 let GLTFExporter;
+/** @type {typeof import("three/examples/jsm/utils/BufferGeometryUtils.js")} */
+let BufferGeometryUtils;
 
 const IN_PRODUCTION = false;
 
@@ -35,10 +37,15 @@ export default class PreviewRenderer extends AsyncFactory {
 	static #POINT_LIGHT_DEFAULT_INTENSITY = 75;
 	static #DIRECTIONAL_LIGHT_STRENGTH = 1.57;
 	static #FLOOR_SHADOW_DARKNESS = 0.3;
+	/** @type {Partial<typeof PreviewRenderer.prototype.options>} */
+	static #WEAK_DEVICE_OPTIONS = {
+		maxPointLights: 0,
+		// shadows will also be disabled, but when the user enables them, they should be the lowest quality
+		directionalLightShadowMapResolution: 1
+	};
 	
 	cont;
 	packName;
-	textureAtlas;
 	structureSize;
 	blockPalette;
 	polyMeshTemplatePalette;
@@ -95,18 +102,17 @@ export default class PreviewRenderer extends AsyncFactory {
 	 * Create a preview renderer for a completed geometry file.
 	 * @param {Node} cont
 	 * @param {string} packName
-	 * @param {TextureAtlas} textureAtlas
+	 * @param {Blob} imageBlob
 	 * @param {I32Vec3} structureSize
 	 * @param {Block[]} blockPalette
 	 * @param {PolyMeshTemplateFaceWithUvs[][]} polyMeshTemplatePalette
 	 * @param {[Int32Array, Int32Array]} blockIndices
 	 * @param {Partial<typeof this.options>} [options]
 	 */
-	constructor(cont, packName, textureAtlas, structureSize, blockPalette, polyMeshTemplatePalette, blockIndices, options = {}) {
+	constructor(cont, packName, imageBlob, structureSize, blockPalette, polyMeshTemplatePalette, blockIndices, options = {}) {
 		super();
 		this.cont = cont;
 		this.packName = packName;
-		this.textureAtlas = textureAtlas;
 		this.structureSize = structureSize;
 		this.blockPalette = blockPalette;
 		this.polyMeshTemplatePalette = polyMeshTemplatePalette;
@@ -115,7 +121,7 @@ export default class PreviewRenderer extends AsyncFactory {
 		
 		this.#can = document.createElement("canvas");
 		this.#polyMeshMaker = new PolyMeshMaker(polyMeshTemplatePalette);
-		this.#imageBlob = this.textureAtlas.imageBlobs.at(-1)[1];
+		this.#imageBlob = imageBlob;
 		this.#maxDim = max(...this.structureSize);
 		this.#maxDimPixels = this.#maxDim * 16;
 		
@@ -160,6 +166,7 @@ export default class PreviewRenderer extends AsyncFactory {
 		THREE ??= await import("three");
 		OrbitControls ??= (await import("three/examples/jsm/controls/OrbitControls.js")).OrbitControls;
 		GLTFExporter ??= (await import("three/examples/jsm/exporters/GLTFExporter.js")).GLTFExporter;
+		BufferGeometryUtils ??= (await import("three/examples/jsm/utils/BufferGeometryUtils.js"));
 		
 		this.#center = new THREE.Vector3(-this.structureSize[0] * 8, this.structureSize[1] * 8, -this.structureSize[2] * 8);
 		this.#imageBlobData = await toImageData(this.#imageBlob);
@@ -169,6 +176,15 @@ export default class PreviewRenderer extends AsyncFactory {
 			alpha: true,
 			antialias: true,
 		});
+		
+		if(this.#isWeakDevice()) {
+			console.info("Switching to faster preview options");
+			this.options = {
+				...this.options,
+				...PreviewRenderer.#WEAK_DEVICE_OPTIONS
+			};
+		}
+		
 		this.#renderer.setPixelRatio(window.devicePixelRatio);
 		this.#renderer.shadowMap.enabled = true;
 		this.#renderer.shadowMap.type = THREE.PCFShadowMap;
@@ -209,6 +225,9 @@ export default class PreviewRenderer extends AsyncFactory {
 				}
 			}), "preview.options.shadowsEnabled");
 			shadowOption = this.#guiLocName(this.#optionsGui.add(this.options, "directionalLightShadowMapResolution", 1, 5, 1).onChange(() => this.#updateDirectionalLightShadowMapSize()), "preview.options.shadowQuality");
+			if(!this.#directionalLight.castShadow) {
+				shadowOption.hide();
+			}
 			this.#guiLocName(this.#optionsGui.add(this.options, "directionalLightAngle", 0, 360, 1).onChange(() => this.#setDirectionalLightPos()), "preview.options.lightAngle");
 			this.#guiLocName(this.#optionsGui.add(this.options, "directionalLightHeight", 0.1, 2, 0.01).onChange(() => this.#setDirectionalLightPos()), "preview.options.lightHeight");
 			this.#guiLocName(this.#optionsGui.add(this.options, "showSkybox").onChange(() => this.#initBackground()), "preview.options.showSkybox");
@@ -247,6 +266,11 @@ export default class PreviewRenderer extends AsyncFactory {
 			alphaTest: 0.2,
 			transparent: true
 		});
+		
+		/** @type {THREE.BufferGeometry[]} */
+		let opaqueBlockGeos = [];
+		/** @type {THREE.BufferGeometry[]} */
+		let translucentBlockGeos = [];
 		for(let i in this.#blockPositions) {
 			let polyMeshTemplate = this.polyMeshTemplatePalette[i];
 			if(!polyMeshTemplate.length) { // a template is an array of faces. no faces = nothing to be rendered for this block
@@ -256,6 +280,23 @@ export default class PreviewRenderer extends AsyncFactory {
 			let positions = this.#blockPositions[i].map(([x, y, z]) => [-16 * x - 16, 16 * y, -16 * z - 16]);
 			let isTranslucent = this.#isPolyMeshTemplateTranslucent(polyMeshTemplate);
 			let material = isTranslucent? transparentMat : regularMat;
+			
+			// Blocks that appear more than 3 times in the structure use instanced rendering, but all other blocks are merged into meshes
+			// Note: 3 was not chosen for any technical reason.
+			if(positions.length <= 3) {
+				positions.forEach(pos => {
+					let geoAtThisPosition = geo.clone();
+					let translationMatrix = (new THREE.Matrix4()).makeTranslation(...pos);
+					geoAtThisPosition.applyMatrix4(translationMatrix);
+					if(isTranslucent) {
+						translucentBlockGeos.push(geoAtThisPosition);
+					} else {
+						opaqueBlockGeos.push(geoAtThisPosition);
+					}
+				});
+				continue;
+			}
+			
 			let instancedMesh = this.#instanceBufferGeoAtPositions(geo, positions, material);
 			if(isTranslucent) {
 				instancedMesh.renderOrder = positions.length; // more common transparent blocks will be rendered after less common transparent blocks, minimising the amount of visual issues
@@ -263,7 +304,12 @@ export default class PreviewRenderer extends AsyncFactory {
 			instancedMesh.castShadow = true;
 			instancedMesh.receiveShadow = true;
 			this.#scene.add(instancedMesh);
-			this.#shouldRenderNextFrame = true;
+		}
+		if(opaqueBlockGeos.length) {
+			this.#mergeGeosAndAddToScene(opaqueBlockGeos, regularMat);
+		}
+		if(translucentBlockGeos.length) {
+			this.#mergeGeosAndAddToScene(translucentBlockGeos, transparentMat);
 		}
 		
 		this.#loop();
@@ -539,6 +585,14 @@ export default class PreviewRenderer extends AsyncFactory {
 			this.#scene.background = null;
 		}
 	}
+	/**
+	 * Checks if the GPU on the current device is not very powerful.
+	 * @returns {boolean}
+	 */
+	#isWeakDevice() {
+		let gl = this.#renderer.getContext();
+		return gl.getParameter(gl.MAX_VERTEX_UNIFORM_VECTORS) <= 1024 || gl.getParameter(gl.MAX_FRAGMENT_UNIFORM_VECTORS) <= 256; // yes
+	}
 	/** @returns {Promise<THREE.Texture>} */
 	async #createTexture() {
 		let texture = new THREE.DataTexture(this.#imageBlobData.data, this.#imageBlobData.width, this.#imageBlobData.height, THREE.RGBAFormat);
@@ -626,12 +680,29 @@ export default class PreviewRenderer extends AsyncFactory {
 		return instancedMesh;
 	}
 	/**
+	 * Merges multiple geometries into a single mesh then adds it to the scene. Shadows are enabled on the mesh.
+	 * @param {THREE.BufferGeometry[]} geos
+	 * @param {THREE.Material} material
+	 */
+	#mergeGeosAndAddToScene(geos, material) {
+		let mergedGeo = BufferGeometryUtils.mergeGeometries(geos, false);
+		let mesh = new THREE.Mesh(mergedGeo, material);
+		mesh.castShadow = true;
+		mesh.receiveShadow = true;
+		mesh.userData.includeInGlbExport = true;
+		this.#scene.add(mesh);
+	}
+	/**
 	 * Expands the scene's instanced meshes into a new scene.
 	 * @returns {THREE.Scene}
 	 */
 	#expandInstancedMeshes() {
 		let scene = new THREE.Scene();
 		this.#scene.traverse(obj => {
+			if(obj.userData.includeInGlbExport) {
+				scene.add(obj.clone());
+				return;
+			}
 			if(!(obj instanceof THREE.InstancedMesh)) {
 				return;
 			}
@@ -648,8 +719,8 @@ export default class PreviewRenderer extends AsyncFactory {
 }
 
 /** @import { I32Vec3, Vec3, Block, PreviewPointLight, PolyMeshTemplateFaceWithUvs} from "./HoloPrint.js" */
-/** @import TextureAtlas from "./TextureAtlas.js" */
 /** @import { Controller } from "lil-gui" */
 /** @import * as THREE from "three" */
 /** @import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js" */
 /** @import { GLTFExporter } from "three/examples/jsm/exporters/GLTFExporter.js" */
+/** @import BufferGeometryUtils from "three/examples/jsm/utils/BufferGeometryUtils.js" */

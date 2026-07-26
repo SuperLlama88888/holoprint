@@ -1,0 +1,30 @@
+{
+	"namespace": "start",
+	
+	"lower_online_buttons_panel/stacked_column": {
+		"modifications": [
+			{
+				"array_name": "controls",
+				"operation": "insert_back",
+				"value": [
+					{
+						"open_holoprint_info_screen_button_padding": {
+							"type": "panel",
+				 			"size": [5, "100%"]
+						}
+					},
+					{
+						"open_holoprint_info_screen_button_wrapper@start.column_frame": {
+							"size": [28, 32],
+							"controls": [
+								{
+									"open_holoprint_info_screen_button@holoprint:info_screen.open_button": {}
+								}
+							]
+						}
+					}
+				]
+			}
+		]
+	}
+}

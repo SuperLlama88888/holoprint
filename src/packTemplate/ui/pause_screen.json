@@ -1,0 +1,25 @@
+{
+	"namespace": "pause",
+	
+	"skin_panel_interior": {
+		"modifications": [
+			{
+				"array_name": "controls",
+				"operation": "insert_back",
+				"value": [
+					{
+						"holoprint_info_button_panel": {
+							"type": "panel",
+							"size": ["100%", "100%c"],
+							"controls": [
+								{
+									"open_holoprint_info_screen_button@holoprint:info_screen.open_button": {}
+								}
+							]
+						}
+					}
+				]
+			}
+		]
+	}
+}

@@ -24,62 +24,66 @@ rmDir("temp");
 fs.cpSync(srcDir, "temp", {
 	recursive: true
 });
-await processDir("temp");
-rmDir(distDir);
-fs.cpSync("temp", distDir, {
-	recursive: true,
-	filter: filename => shouldBeCopiedFromTempToDist(filename) && !(fs.statSync(filename).isDirectory() && fs.readdirSync(filename).every(file => !shouldBeCopiedFromTempToDist(file)))
-});
+try {
+	await processDir("temp");
+	rmDir(distDir);
+	fs.cpSync("temp", distDir, {
+		recursive: true,
+		filter: filename => shouldBeCopiedFromTempToDist(filename) && !(fs.statSync(filename).isDirectory() && fs.readdirSync(filename).every(file => !shouldBeCopiedFromTempToDist(file)))
+	});
 
-let importMapJSON = fs.readFileSync(`${distDir}/index.html`, "utf-8").match(importMapPattern)[1];
-let externalModules = Object.keys(JSON.parse(importMapJSON)["imports"]);
-let { metafile } = esbuild.buildSync({
-	absWorkingDir: process.cwd(),
-	entryPoints: ["temp/index.js", "temp/styles/index.css"],
-	bundle: true,
-	external: externalModules,
-	dropLabels: ["TS"],
-	minify: true,
-	format: "esm",
-	outdir: distDir,
-	entryNames: "[dir]/[name]-[hash]",
-	assetNames: "[dir]/[name]-[hash]",
-	loader: {
-		".molang.js": "copy", // don't process these files at all, treat them as assets
-		".css": "copy" // lightningcss already handles minification and bundling, so esbuild just needs to append the hashes to the file names
-	},
-	sourcemap: true,
-	metafile: true
-});
-rmDir("temp");
-console.log(esbuild.analyzeMetafileSync(metafile));
-let scriptImportReplacements = [];
-Object.entries(metafile["outputs"]).forEach(([output, { entryPoint }]) => {
-	if(entryPoint) {
-		scriptImportReplacements.push([entryPoint.replace("temp/", ""), output.replace(distDir + "/", "")]);
-	}
-});
-fs.readdirSync(distDir).forEach(filename => {
-	if(path.extname(filename) == ".html") {
-		let filepath = path.join(distDir, filename);
-		let html = fs.readFileSync(filepath, "utf-8");
-		scriptImportReplacements.forEach(([oldName, newName]) => {
-			let regExp = new RegExp(`\\b${oldName.replaceAll(/[.*+?^${}()|[\]\\]/g, "\\$&")}\\b`, "g");
-			html = html.replaceAll(regExp, newName);
-		});
-		if(importMapPattern.test(html)) {
-			html = html.replace(importMapPattern, (_, importMapJSON) => addImportReplacementsToImportMap(JSON.parse(importMapJSON)));
-		} else {
-			let importMapScript = addImportReplacementsToImportMap({});
-			if(html.includes("</head>")) {
-				html = html.replace("</head>", `${importMapScript}</head>`);
-			} else {
-				html += importMapScript;
-			}
+	let importMapJSON = fs.readFileSync(`${distDir}/index.html`, "utf-8").match(importMapPattern)[1];
+	let externalModules = Object.keys(JSON.parse(importMapJSON)["imports"]);
+	let { metafile } = esbuild.buildSync({
+		absWorkingDir: process.cwd(),
+		entryPoints: ["temp/index.js", "temp/styles/index.css"],
+		bundle: true,
+		external: externalModules,
+		dropLabels: ["TS"],
+		minify: true,
+		format: "esm",
+		outdir: distDir,
+		entryNames: "[dir]/[name]-[hash]",
+		assetNames: "[dir]/[name]-[hash]",
+		loader: {
+			".molang.js": "copy", // don't process these files at all, treat them as assets
+			".css": "copy" // lightningcss already handles minification and bundling, so esbuild just needs to append the hashes to the file names
+		},
+		sourcemap: true,
+		metafile: true
+	});
+	rmDir("temp");
+	console.log(esbuild.analyzeMetafileSync(metafile));
+	let scriptImportReplacements = [];
+	Object.entries(metafile["outputs"]).forEach(([output, { entryPoint }]) => {
+		if(entryPoint) {
+			scriptImportReplacements.push([entryPoint.replace("temp/", ""), output.replace(distDir + "/", "")]);
 		}
-		fs.writeFileSync(filepath, html);
-	}
-});
+	});
+	fs.readdirSync(distDir).forEach(filename => {
+		if(path.extname(filename) == ".html") {
+			let filepath = path.join(distDir, filename);
+			let html = fs.readFileSync(filepath, "utf-8");
+			scriptImportReplacements.forEach(([oldName, newName]) => {
+				let regExp = new RegExp(`\\b${oldName.replaceAll(/[.*+?^${}()|[\]\\]/g, "\\$&")}\\b`, "g");
+				html = html.replaceAll(regExp, newName);
+			});
+			if(importMapPattern.test(html)) {
+				html = html.replace(importMapPattern, (_, importMapJSON) => addImportReplacementsToImportMap(JSON.parse(importMapJSON), scriptImportReplacements));
+			} else {
+				let importMapScript = addImportReplacementsToImportMap({}, scriptImportReplacements);
+				if(html.includes("</head>")) {
+					html = html.replace("</head>", `${importMapScript}</head>`);
+				} else {
+					html += importMapScript;
+				}
+			}
+			fs.writeFileSync(filepath, html);
+		}
+	});
+} finally {
+	rmDir("temp");
+}
 
 /**
  * @param {string} dir
@@ -217,14 +221,15 @@ function rmDir(dir) {
  * @returns {boolean}
  */
 function shouldBeCopiedFromTempToDist(filename) {
-	const filesProcessedByEsbuild = [".js", ".css", ".css.map"];
+	const filesProcessedByEsbuild = [".js", ".css", ".css.map", ".glsl"];
 	return !filesProcessedByEsbuild.some(ext => filename.endsWith(ext)) || path.basename(filename) == "index.css.map"
 }
 /**
  * @param {object} importMap
+ * @param {[string, string][]} scriptImportReplacements
  * @returns {string}
  */
-function addImportReplacementsToImportMap(importMap) {
+function addImportReplacementsToImportMap(importMap, scriptImportReplacements) {
 	importMap["imports"] ??= {};
 	scriptImportReplacements.forEach(([oldName, newName]) => {
 		if(path.extname(oldName) == ".js") {
@@ -247,8 +252,7 @@ async function replaceAllAsync(str, regexp, replacer) {
 		return substring;
 	});
 	let replacements = await Promise.all(promises);
-	let i = 0;
-	return str.replaceAll(regexp, () => replacements[i++]);
+	return str.replaceAll(regexp, () => replacements.shift());
 }
 
 /**

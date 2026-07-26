@@ -37,6 +37,7 @@ let packNameInput;
 let coordinateLockStructureCoordsCont;
 /** @type {WeakMap<File, Vec3>} */
 let coordinateLockStructureCoords = new WeakMap();
+/** @type {HTMLDivElement} */
 let completedPacksCont;
 /** @type {SimpleLogger} */
 let logger;
@@ -92,11 +93,12 @@ document[onEvent]("DOMContentLoaded", () => {
 			structureFilesInput.setCustomValidity("");
 		} else {
 			if(files.length == 1) { // the other input methods can't handle multiple files
-				if(files[0].name.endsWith(".mcworld") || files[0].name.endsWith(".zip")) {
+				let firstFileName = files[0].name;
+				if(firstFileName.endsWith(".mcworld") || firstFileName.endsWith(".mctemplate") || firstFileName.endsWith(".zip")) {
 					clearFileInput(structureFilesInput);
 					setFileInputFiles(worldFileInput, files);
 					return;
-				} else if(files[0].name.endsWith(".mcpack")) {
+				} else if(firstFileName.endsWith(".mcpack")) {
 					clearFileInput(structureFilesInput);
 					setFileInputFiles(oldPackInput, files);
 					return;
@@ -445,10 +447,11 @@ async function handleInputFiles(files) {
 	let {
 		"mcstructure": structureFiles = [],
 		"mcworld": worldFiles = [],
+		"mctemplate": templateFiles = [],
 		"zip": zipFiles = [],
 		"mcpack": resourcePackFiles = []
 	} = groupByFileExtension(files);
-	let allWorldFiles = [...worldFiles, ...zipFiles];
+	let allWorldFiles = [...worldFiles, ...templateFiles, ...zipFiles];
 	
 	addFilesToFileInput(structureFilesList, structureFiles);
 	setFileInputFiles(worldFileInput, allWorldFiles.slice(0, 1)); // yes I could make it do all of them, but seriously, how many people are drag-and-dropping more than 1 world file onto the page?
@@ -643,6 +646,7 @@ async function makePack(structureFiles, localResourcePacks) {
 			return tuple([...input.xyz, +input.nextElementSibling.querySelector("input").value]);
 		}) : undefined,
 		BACKUP_SLOT_COUNT: +formData.get("backupSlotCount"),
+		VALIDATE_AIR_BLOCKS: !!formData.get("validateAirBlocks"),
 		PACK_NAME: formData.get("packName").toString() || undefined,
 		PACK_ICON_BLOB: packIconEntry instanceof File && packIconEntry.size? packIconEntry : undefined,
 		AUTHORS: authors,
@@ -660,28 +664,29 @@ async function makePack(structureFiles, localResourcePacks) {
 	
 	let resourcePackStack = new ResourcePackStack(localResourcePacks);
 	
-	let pack;
+	/** @type {Awaited<ReturnType<typeof HoloPrint.makePack>>} */
+	let res;
 	logger?.setOriginTime(performance.now());
 	
 	let generationFailedError; // generation failed or generational failure?
-	if(ACTUAL_CONSOLE_LOG) {
-		pack = await HoloPrint.makePack(structureFiles, config, resourcePackStack, previewCont);
-	} else {
-		try {
-			pack = await HoloPrint.makePack(structureFiles, config, resourcePackStack, previewCont);
-		} catch(e) {
-			console.error(`Pack creation failed!\n${e}`);
-			if(!(e instanceof UserError)) {
-				generationFailedError = e;
-			}
-			if(!(e instanceof DOMException)) { // DOMExceptions can also be thrown, which don't have stack traces and hence can't be tracked if caught. HOWEVER they extend Error...
-				console.debug(getStackTrace(e).join("\n"));
-			}
+	try {
+		res = await HoloPrint.makePack(structureFiles, config, resourcePackStack, previewCont);
+	} catch(e) {
+		if(ACTUAL_CONSOLE_LOG) {
+			throw e;
+		}
+		console.error(`Pack creation failed!\n${e}`);
+		if(!(e instanceof UserError)) {
+			generationFailedError = e;
+		}
+		if(!(e instanceof DOMException)) { // DOMExceptions can also be thrown, which don't have stack traces and hence can't be tracked if caught. HOWEVER they extend Error...
+			console.debug(getStackTrace(e).join("\n"));
 		}
 	}
 	
 	infoButton.classList.add("finished");
-	if(pack) {
+	if(res) {
+		let { pack } = res;
 		infoButton.dataset.translate = "download";
 		infoButton.classList.add("completed");
 		let hasLoggedPackCreation = false;
@@ -697,7 +702,7 @@ async function makePack(structureFiles, localResourcePacks) {
 					}
 				}();
 			}
-			downloadFile(pack, pack.name);
+			downloadFile(pack);
 		};
 	} else {
 		if(generationFailedError) {

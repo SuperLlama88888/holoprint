@@ -1,11 +1,20 @@
 {
 	"namespace": "holoprint:material_list",
 	
-	"material_list": {
+	"full_pack_material_list@material_list_base": {
+		"$size": ["40%", "this gets put in by the JS"],
+		"$max_size": ["40%", "100% - 74px"],
+		"offset": "$holoprint:material_list_offset"
+	},
+	"material_list_base": {
+		"$size|default": ["default", "default"],
+		"$max_size|default": ["default", "default"],
+		"$entries|default": "Error: $entries not set",
+		"$heading|default": "holoprint.material_list.heading",
+		"$item_name_column_size|default": "Error: $item_name_column_size not set",
 		"type": "panel",
 		"anchor_from": "top_middle",
 		"anchor_to": "top_middle",
-		"offset": "$holoprint:material_list_offset",
 		"layer": 50,
 		"controls": [
 			{
@@ -15,8 +24,8 @@
 	},
 	"content": {
 		"type": "image",
-		"size": ["40%", "this gets put in by the JS"],
-		"max_size": ["40%", "100% - 74px"],
+		"size": "$size",
+		"max_size": "$max_size",
 		"texture": "textures/ui/White",
 		"color": [0, 0, 0],
 		"alpha": 0.5,
@@ -71,7 +80,7 @@
 				"pack_name": {
 					"type": "label",
 					"size": ["100% - 18px", 10],
-					"text": "holoprint.material_list.heading",
+					"text": "$heading",
 					"anchor_from": "right_middle",
 					"anchor_to": "right_middle"
 				}
@@ -83,16 +92,9 @@
 		"orientation": "vertical",
 		"anchor_to": "top_left",
 		"anchor_from": "top_left",
-		"controls": []
+		"controls": "$entries"
 	},
-	"entry": {
-		"type": "image",
-		"size": ["100%", 12],
-		"texture": "textures/ui/White",
-		"color": [0, 0, 0],
-		"$background_opacity|default": 0,
-		"alpha": "$background_opacity",
-		"layer": 100,
+	"entry@row": {
 		"controls": [
 			{
 				"content": {
@@ -130,7 +132,7 @@
 							"item_name": {
 								"type": "label",
 								"text": "$item_translation_key",
-								"size": ["100% - 13px - ", 10], // space left for item count is put in by the JS
+								"size": "$item_name_column_size",
 								"font_scale_factor": 0.8
 							}
 						},
@@ -147,5 +149,25 @@
 				}
 			}
 		]
+	},
+	"empty_notice@row": {
+		"controls": [
+			{
+				"notice": {
+					"type": "label",
+					"text": "holoprint.material_list.empty",
+					"font_scale_factor": 0.8
+				}
+			}
+		]
+	},
+	"row": {
+		"type": "image",
+		"size": ["100%", 12],
+		"texture": "textures/ui/White",
+		"color": [0, 0, 0],
+		"$background_opacity|default": 0,
+		"alpha": "$background_opacity",
+		"layer": 100
 	}
 }

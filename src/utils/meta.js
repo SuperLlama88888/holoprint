@@ -98,11 +98,33 @@ export function getClassFullName(c) {
 }
 
 /**
+ * Repeatedly applies an endofunction until it no longer affects the input.
+ * @template {string | number | boolean} T
+ * @param {T} value
+ * @param {(value: T) => T} func
+ * @param {number} [maxRepetitions] The maximum number of repetitions allowed before throwing an error.
+ * @returns {T}
+ */
+export function repeatedlyApplyEndofunction(value, func, maxRepetitions = 100) {
+	/** @type {T} */
+	let oldValue;
+	let repetitions = 0;
+	while(!Object.is(value, oldValue)) {
+		oldValue = value;
+		value = func(value);
+		if(repetitions++ == maxRepetitions) {
+			throw new Error(`Too many (${repetitions}) repetitions: ${value}`);
+		}
+	}
+	return value;
+}
+
+/**
  * @template {string | number | boolean} P
  * @template R
  * @template {(x: P) => R} F
  * @param {F} func
- * @param {(x: P) => boolean} conditionFunc
+ * @param {(x: Parameters<F>[0]) => boolean} conditionFunc
  * @param {(x: R) => R} [preReturnFunc]
  * @returns {F}
  */

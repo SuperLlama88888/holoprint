@@ -26,10 +26,37 @@ export async function sha256text(text) {
 }
 
 /**
+ * Computes the FNV-1a hash from an iterator of numbers.
+ * @param {Iterable<number>} nums
+ * @returns {number}
+ */
+export function fnv1a(nums) {
+	let hash = 2166136261;
+	for(let num of nums) {
+		hash ^= num;
+		hash = Math.imul(hash, 16777619);
+	}
+	return hash >>> 0;
+}
+
+/**
  * Clears all caches.
  * @param {CacheStorage} cacheStorage
  */
 export async function clearCacheStorage(cacheStorage) {
 	let cacheNames = await cacheStorage.keys();
 	await Promise.all(cacheNames.map(cacheName => cacheStorage.delete(cacheName)));
+}
+
+/**
+ * Calls `getContext()` on the input OffscreenCanvas, but with typed options because they are `any` for OffscreenCanvases even though they have proper type support for regular canvases. :facepalm: Also if using WebGL2, the context will know what type of canvas it has.
+ * @template {"2d" | "webgl2"} T
+ * @param {OffscreenCanvas} canvas
+ * @param {T} contextId
+ * @param {T extends "2d"? CanvasRenderingContext2DSettings : WebGLContextAttributes} [options]
+ * @returns {T extends "2d"? OffscreenCanvasRenderingContext2D : WebGL2RenderingContextButSmarter<OffscreenCanvas>}
+ */
+export function getOffscreenCanvasContext(canvas, contextId, options) {
+	// @ts-expect-error
+	return canvas.getContext(contextId, options ?? {});
 }

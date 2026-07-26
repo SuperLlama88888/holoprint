@@ -14,5 +14,13 @@ export function add(a, b) {
 export function sub(a, b) {
 	return [a[0] - b[0], a[1] - b[1]];
 }
+/**
+ * @param {Vec2} a
+ * @param {Vec2} b
+ * @returns {boolean}
+ */
+export function equals(a, b) {
+	return a[0] == b[0] && a[1] == b[1];
+}
 
 /** @import { Vec2 } from "../HoloPrint.js" */

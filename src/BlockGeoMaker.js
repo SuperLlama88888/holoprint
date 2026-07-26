@@ -69,17 +69,31 @@ export default class BlockGeoMaker {
 		this.#blockNameBlockStateTextureVariants = new PatternMap(Object.entries(blockStateDefs["texture_variants"]["block_names"] ?? {}), ",");
 	}
 	/**
-	 * Makes poly mesh templates from a block palette.
+	 * Makes poly mesh templates (unscaled) and their centers of mass from a block palette.
 	 * @param {Block[]} blockPalette
-	 * @returns {Promise<PolyMeshTemplateFace[][]>}
+	 * @returns {Promise<{ templates: PolyMeshTemplateFace[][], centersOfMass: Vec3[] }>}
 	 */
 	async makePolyMeshTemplates(blockPalette) {
-		return await Promise.all(blockPalette.map(block => this.#makePolyMeshTemplate(block)));
+		let results = await Promise.all(blockPalette.map(block => this.#makePolyMeshTemplate(block)));
+		return {
+			templates: results.map(result => result.faces),
+			centersOfMass: results.map(result => result.centerOfMass)
+		};
+	}
+	/**
+	 * Scales poly mesh template faces (with resolved UVs) towards their respective center of mass.
+	 * @template {PolyMeshTemplateFace | PolyMeshTemplateFaceWithUvs} T
+	 * @param {T[][]} polyMeshTemplatePalette
+	 * @param {Vec3[]} centersOfMass
+	 * @returns {T[][]}
+	 */
+	scalePolyMeshTemplates(polyMeshTemplatePalette, centersOfMass) {
+		return polyMeshTemplatePalette.map((faces, i) => this.#scaleFaces(structuredClone(faces), centersOfMass[i]));
 	}
 	/**
 	 * Makes a poly mesh template (i.e. an array of poly mesh template faces) from a block. Texture UVs are unresolved, and are indices for the textureRefs property.
 	 * @param {Block} block
-	 * @returns {Promise<PolyMeshTemplateFace[]>}
+	 * @returns {Promise<{ faces: PolyMeshTemplateFace[], centerOfMass: Vec3 }>}
 	 */
 	async #makePolyMeshTemplate(block) {
 		let blockName = block["name"];
@@ -87,7 +101,7 @@ export default class BlockGeoMaker {
 		let { faces, centerOfMass } = await this.#makePolyMeshTemplateFaces(block, blockShape);
 		if(!faces) {
 			console.debug(`No faces are being rendered for block ${blockName}`);
-			return [];
+			return { faces: [], centerOfMass: [-1, -1, -1] };
 		}
 		if(blockShape.includes("<")) {
 			blockShape = blockShape.slice(0, blockShape.indexOf("<"));
@@ -102,7 +116,6 @@ export default class BlockGeoMaker {
 			});
 			centerOfMass = this.#applyEulerRotation(centerOfMass, rotation, [8, 8, 8]);
 		}
-		faces = this.#scaleFaces(faces, centerOfMass);
 		faces.forEach(face => {
 			if(face["fullbright"]) {
 				face["normal"] = [0, 1, 0];
@@ -111,7 +124,7 @@ export default class BlockGeoMaker {
 			}
 			delete face["fullbright"];
 		});
-		return faces;
+		return { faces, centerOfMass };
 	}
 	/**
 	 * Gets the block shape for a specific block.
@@ -868,9 +881,10 @@ export default class BlockGeoMaker {
 	}
 	/**
 	 * Scales poly mesh templates faces towards a center of mass.
-	 * @param {PolyMeshTemplateFace[]} faces
+	 * @template {PolyMeshTemplateFace | PolyMeshTemplateFaceWithUvs} T
+	 * @param {T[]} faces
 	 * @param {Vec3} centerOfMass
-	 * @returns {PolyMeshTemplateFace[]}
+	 * @returns {T[]}
 	 */
 	#scaleFaces(faces, centerOfMass) {
 		return faces.map(face => {

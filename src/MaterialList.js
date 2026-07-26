@@ -1,12 +1,14 @@
-import { floor, nanToUndefined, PatternMap, removeFalsies, ReplacingPatternMap, tuple } from "./utils.js";
+import { floor, max, nanToUndefined, PatternMap, removeFalsies, ReplacingPatternMap, round, tuple } from "./utils.js";
 
 export default class MaterialList {
 	/** @type {Map<string, number>} */
 	materials = new Map();
 	totalMaterialCount = 0;
+	shulkerBoxGlyphChar = "\uE200";
 	
 	#blockMetadata;
 	#itemMetadata;
+	/** @type {Map<string, string>} */
 	#translations;
 	
 	// I wish I could use import...with to import these from materialListMappings.json, which would have worked with esbuild, but it doesn't let me load JSONC... sad...
@@ -17,6 +19,8 @@ export default class MaterialList {
 	#serializationIdPatches;
 	#blocksMissingSerializationIds;
 	#translationPatches;
+	/** @type {number} */
+	#missingItemAux;
 	
 	/**
 	 * Creates a material list manager to count a list of items.
@@ -42,6 +46,9 @@ export default class MaterialList {
 		this.#serializationIdPatches = new ReplacingPatternMap(serializationIdPatches);
 		this.#blocksMissingSerializationIds = materialListMappings["blocks_missing_serialization_ids"];
 		this.#translationPatches = materialListMappings["translation_patches"];
+		
+		let missingItemId = blockMetadata["data_items"].find(block => block.name == "minecraft:reserved6")?.["raw_id"] ?? 0;
+		this.#missingItemAux = missingItemId * 65536;
 		
 		if(translations) {
 			this.setLanguage(translations);
@@ -131,9 +138,18 @@ export default class MaterialList {
 				translatedName,
 				count,
 				partitionedCount: this.#partitionCount(count),
+				partitionedCountWithoutTotal: this.#partitionCountWithoutTotal(count),
 				auxId
 			};
 		}).sort((a, b) => b.count - a.count || +(a.translatedName > b.translatedName));
+	}
+	/**
+	 * Exports the material list to JSON UI elements.
+	 * @returns {ExportedMaterialListJsonUi}
+	 */
+	exportToJsonUi() {
+		let entries = this.export();
+		return MaterialList.convertEntriesToJsonUi(entries, this.#missingItemAux);
 	}
 	/**
 	 * Sets the language of the material list for exporting.
@@ -158,6 +174,41 @@ export default class MaterialList {
 	clear() {
 		this.materials.clear();
 		this.totalMaterialCount = 0;
+	}
+	
+	/**
+	 * Converts exported material list entries to JSON UI elements.
+	 * @param {MaterialListEntry[]} entries
+	 * @param {number} [missingItemAux] The aux ID to be used if an item's aux ID cannot be found. Defaults to `0`.
+	 * @returns {ExportedMaterialListJsonUi}
+	 */
+	static convertEntriesToJsonUi(entries, missingItemAux = 0) {
+		let elements = entries.length? entries.map(({ translationKey, partitionedCount, auxId }, i) => {
+			let entry = {
+				"$item_translation_key": translationKey,
+				"$item_count": partitionedCount,
+				"$item_id_aux": auxId ?? missingItemAux
+			};
+			if (i & 1) {
+				entry["$background_opacity"] = 0.2;
+			}
+			return {
+				[`entry_${i}@holoprint:material_list.entry`]: entry
+			};
+		}) : [
+			{
+				"empty_notice@holoprint:material_list.empty_notice": {}
+			}
+		];
+		let longestItemNameLength = max(...entries.map(({ translatedName }) => translatedName.length));
+		let longestCountLength = max(...entries.map(({ partitionedCount }) => partitionedCount.length));
+		return {
+			entries: elements,
+			visibleHeight: elements.length * 12 + 12, // 12px for each item + 12px for the heading
+			longestItemNameLength,
+			longestCountLength,
+			itemNameColumnSize: [`100% - ${23 + round(longestCountLength * 4.2)}px`, "100% - 2px"]
+		};
 	}
 	/**
 	 * Finds an item serialization id.
@@ -202,9 +253,17 @@ export default class MaterialList {
 		if(count < 64) {
 			return count.toString();
 		} else {
-			let parts = [[floor(count / 1728), "\uE200"], [floor(count / 64) % 27, "s"], [count % 64, ""]].filter(([n]) => n).map(x => x.join(""));
-			return `${count} = ${parts.join(" + ")}`; // a custom shulker box emoji (taken from OreUI files) is defined in font/glyph_E2.png
+			return `${count} = ${this.#partitionCountWithoutTotal(count)}`;
 		}
+	}
+	/**
+	 * Partitions a count, same as #partitionCount but with no total count at the start
+	 * @param {number} count
+	 * @returns {string}
+	 */
+	#partitionCountWithoutTotal(count) {
+		let parts = [[floor(count / 1728), this.shulkerBoxGlyphChar], [floor(count / 64) % 27, "s"], [count % 64, ""]].filter(([n]) => n).map(x => x.join("")); // a custom shulker box emoji (taken from OreUI files) is defined in font/glyph_E2.png
+		return parts.join(" + ");
 	}
 	/**
 	 * Finds the aux id for an item.
@@ -224,5 +283,5 @@ export default class MaterialList {
 	}
 }
 
-/** @import { MaterialListEntry, Block } from "./HoloPrint.js" */
+/** @import { MaterialListEntry, Block, ExportedMaterialListJsonUi } from "./HoloPrint.js" */
 /** @import * as Data from "./data/schemas" */

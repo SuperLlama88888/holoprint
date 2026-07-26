@@ -7,17 +7,19 @@ import MaterialList from "./MaterialList.js";
 import PreviewRenderer from "./PreviewRenderer.js";
 
 import entityScripts from "./entityScripts.molang.js";
-import { addPaddingToImage, array2DToMolang, arrayToMolang, awaitAllEntries, weaklyCacheUnaryFunc, concatenateFiles, createNumericEnum, desparseArray, functionToMolang, getFileExtension, hexColorToClampedTriplet, itemCriteriaToMolang, jsonc, JSONMap, JSONSet, lcm, loadTranslationLanguage, max, min, onEvent, overlaySquareImages, pi, removeFalsies, removeFileExtension, resizeImageToBlob, round, setImageOpacity, sha256, toBlob, toImage, translate, transposeMatrix, tuple, UserError, ReplacingPatternMap, conditionallyCacheUnaryFunc, clonePromise } from "./utils.js";
+import { addPaddingToImage, array2DToMolang, arrayToMolang, awaitAllEntries, weaklyCacheUnaryFunc, concatenateFiles, createNumericEnum, desparseArray, functionToMolang, getFileExtension, hexColorToClampedTriplet, itemCriteriaToMolang, jsonc, JSONMap, JSONSet, lcm, loadTranslationLanguage, max, min, onEvent, overlaySquareImages, pi, removeFalsies, removeFileExtension, resizeImageToBlob, setImageOpacity, sha256, toBlob, toImage, translate, transposeMatrix, tuple, UserError, ReplacingPatternMap, conditionallyCacheUnaryFunc, clonePromise, getStructureIndexFromCoordinates, getGeoSpaceBlockPos } from "./utils.js";
 import ResourcePackStack from "./ResourcePackStack.js";
 import BlockUpdater from "./BlockUpdater.js";
 import SpawnAnimationMaker from "./SpawnAnimationMaker.js";
 import PolyMeshMaker from "./PolyMeshMaker.js";
 import fetchers from "./fetchers.js";
 import EntityGeoMaker from "./EntityGeoMaker.js";
+import EntityManager from "./EntityManager.js";
+import StructureDiagramMaker from "./StructureDiagramMaker.js";
 
 export const VERSION = "dev";
 export const IGNORED_BLOCKS = ["air", "piston_arm_collision", "sticky_piston_arm_collision", "light_block", "light_block_0", "light_block_1", "light_block_2", "light_block_3", "light_block_4", "light_block_5", "light_block_6", "light_block_7", "light_block_8", "light_block_9", "light_block_10", "light_block_11", "light_block_12", "light_block_13", "light_block_14", "light_block_15"]; // blocks to be ignored when scanning the structure file
-const IGNORED_BLOCK_ENTITIES = ["Beacon", "Beehive", "Bell", "BrewingStand", "ChiseledBookshelf", "CommandBlock", "Comparator", "Conduit", "EnchantTable", "EndGateway", "JigsawBlock", "Lodestone", "SculkCatalyst", "SculkShrieker", "SculkSensor", "CalibratedSculkSensor", "StructureBlock", "BrushableBlock", "TrialSpawner", "Vault"];
+const IGNORED_BLOCK_ENTITIES = new Set(["Beacon", "Beehive", "Bell", "BrewingStand", "ChiseledBookshelf", "CommandBlock", "Comparator", "Conduit", "CreakingHeart", "EnchantTable", "EndGateway", "JigsawBlock", "Lodestone", "SculkCatalyst", "SculkShrieker", "SculkSensor", "CalibratedSculkSensor", "StructureBlock", "BrushableBlock", "TrialSpawner", "Vault"]);
 export const PLAYER_CONTROL_NAMES = {
 	TOGGLE_RENDERING: "player_controls.toggle_rendering",
 	CHANGE_OPACITY: "player_controls.change_opacity",
@@ -52,17 +54,16 @@ const HOLOGRAM_LAYER_MODES = createNumericEnum(["SINGLE", "ALL_BELOW"]);
 /**
  * Makes a HoloPrint resource pack from a structure file.
  * @param {File | File[]} structureFiles Either a singular structure file (`*.mcstructure`), or an array of structure files
- * @param {HoloPrintConfig} [config]
+ * @param {Partial<HoloPrintConfig>} [partialConfig]
  * @param {ResourcePackStack} [resourcePackStack]
- * @param {HTMLElement} [previewCont]
- * @param {(previews: PreviewRenderer[]) => void} [previewLoadedCallback] A function that will be called once the preview has finished loading
- * @returns {Promise<File>} Resource pack (`*.mcpack`)
+ * @param {Element} [previewCont]
+ * @returns {Promise<{ pack: File, materialList: MaterialList, previews?: Promise<PreviewRenderer[]> }>}
  */
-export async function makePack(structureFiles, config, resourcePackStack = new ResourcePackStack(), previewCont, previewLoadedCallback) {
+export async function makePack(structureFiles, partialConfig, resourcePackStack = new ResourcePackStack(), previewCont) {
 	console.info(`Running HoloPrint ${VERSION}`);
 	let startTime = performance.now();
 	
-	config = addDefaultConfig(config ?? {});
+	let config = addDefaultConfig(partialConfig ?? {});
 	if(!Array.isArray(structureFiles)) {
 		structureFiles = [structureFiles];
 	}
@@ -127,22 +128,30 @@ export async function makePack(structureFiles, config, resourcePackStack = new R
 			[_._]: "textures/holoprint/ui/menu_button_pressed.png",
 			[_._]: "textures/holoprint/ui/material_list_button_unpressed.png",
 			[_._]: "textures/holoprint/ui/material_list_button_pressed.png",
-			[_._]: "textures/holoprint/ui/white_circle.png",
-			[_.$]: "textures/holoprint/ui/white_circle.json",
 			[_._]: "textures/holoprint/ui/quick_input_keyboard_hints.png",
-			[_.$]: "ui/_ui_defs.json",
-			[_.$]: "ui/_global_variables.json",
 			[_.$]: "ui/hud_screen.json",
-			materialListUI: "ui/holoprint_material_list.json",
 			[_.$]: "ui/holoprint_keybinds.json",
-			[_.$]: "ui/holoprint_touch_buttons.json",
-			[_.$]: "ui/holoprint_common.json"
+			[_.$]: "ui/holoprint_touch_buttons.json"
 		} : {}),
+		[_._]: "textures/holoprint/ui/white_circle.png",
+		[_.$]: "textures/holoprint/ui/white_circle.json",
+		materialListUI: "ui/holoprint_material_list.json",
+		[_.$]: "ui/_ui_defs.json",
+		[_.$]: "ui/_global_variables.json",
+		[_.$]: "ui/holoprint_common.json",
+		infoScreenUI: "ui/holoprint_info_screen.json",
+		[_.$]: "ui/pause_screen.json",
+		[_.$]: "ui/start_screen.json",
+		[_.$]: "ui/tabbed_upsell_screen.json",
+		[_.$]: "ui/win10_trial_conversion_screen.json",
+		[_._]: "textures/holoprint/ui/logo_192.png",
+		[_._]: "textures/holoprint/ui/banner.png",
 		[_._]: "font/glyph_E2.png",
 		languagesDotJson: "texts/languages.json"
 	});
 	let resourcesPromise = loadResources({
-		entityFile: "entity/armor_stand.entity.json",
+		armorStandEntityFile: "entity/armor_stand.entity.json",
+		leashKnotEntityFile: "entity/leash_knot.entity.json",
 		blocksDotJson: "blocks.json",
 		vanillaTerrainTexture: "textures/terrain_texture.json",
 		flipbookTextures: "textures/flipbook_textures.json",
@@ -158,6 +167,7 @@ export async function makePack(structureFiles, config, resourcePackStack = new R
 	
 	let dataPromise = loadDataFiles(dataFileNames);
 	let { languagesDotJson, bedrockMetadata } = await awaitAllEntries({
+		/** @type {Promise<string[]>} */
 		languagesDotJson: packTemplatePromise.languagesDotJson,
 		bedrockMetadata: loadBedrockMetadataFiles({
 			blocks: "vanilladata_modules/mojang-blocks.json",
@@ -196,23 +206,28 @@ export async function makePack(structureFiles, config, resourcePackStack = new R
 	let entityGeoMaker = new EntityGeoMaker(resourcePackStack);
 	let blockGeoMaker = new BlockGeoMaker(config, entityGeoMaker, data.blockShapes, data.blockShapeGeos, data.blockStateDefinitions, data.blockEigenvariants);
 	// makePolyMeshTemplates() is an impure function and adds texture references to the textureRefs set property.
-	let unresolvedPolyMeshTemplatePalette = await blockGeoMaker.makePolyMeshTemplates(blockPalette);
+	// this is done as a struct of arrays rather than an array of structs, because the UVs are resolved later and carrying the centers of mass along would be a bit awkward.
+	let { templates: unresolvedPolyMeshTemplatePalette, centersOfMass } = await blockGeoMaker.makePolyMeshTemplates(blockPalette);
 	console.info("Finished making block geometry templates!");
 	console.log("Block geo maker:", blockGeoMaker);
 	console.log("Poly mesh template palette:", structuredClone(unresolvedPolyMeshTemplatePalette));
 	
-	let { entityFile, defaultPlayerRenderControllers, blocksDotJson, vanillaTerrainTexture, flipbookTextures } = await resourcesPromise.allValues;
+	let { armorStandEntityFile, leashKnotEntityFile, defaultPlayerRenderControllers, blocksDotJson, vanillaTerrainTexture, flipbookTextures } = await resourcesPromise.allValues;
 	let textureAtlas = new TextureAtlas(config, resourcePackStack, blocksDotJson, vanillaTerrainTexture, flipbookTextures, data.textureAtlasMappings);
 	let textureRefs = Array.from(blockGeoMaker.textureRefs);
 	await textureAtlas.makeAtlas(textureRefs); // each texture reference will get added to the textureUvs array property
 	let textureBlobs = textureAtlas.imageBlobs;
+	let fullOpacityTextureBlob = textureBlobs.at(-1)[1];
 	let defaultTextureIndex = max(textureBlobs.length - 3, 0); // default to 80% opacity
 	
 	console.log("Texture UVs:", textureAtlas.uvs);
-	let polyMeshTemplatePalette = unresolvedPolyMeshTemplatePalette.map(polyMeshTemplate => BlockGeoMaker.resolveTemplateFaceUvs(polyMeshTemplate, textureAtlas));
+	let unscaledPolyMeshTemplatePalette = unresolvedPolyMeshTemplatePalette.map(polyMeshTemplate => BlockGeoMaker.resolveTemplateFaceUvs(polyMeshTemplate, textureAtlas));
+	let polyMeshTemplatePalette = blockGeoMaker.scalePolyMeshTemplates(unscaledPolyMeshTemplatePalette, centersOfMass);
 	console.log("Poly mesh template palette with resolved UVs:", polyMeshTemplatePalette);
 	
-	let { manifest, hologramRenderControllers, hologramGeo, hologramAnimationControllers, hologramAnimations, blockValidationParticle, singleWhitePixelTexture, materialListUI } = await packTemplatePromise.allValues;
+	let structureDiagramsAndIndices = await makeStructureDiagrams(config, fullOpacityTextureBlob, unscaledPolyMeshTemplatePalette, allStructureIndicesByLayer, structureSizes);
+	
+	let { manifest, hologramRenderControllers, hologramGeo, hologramAnimationControllers, hologramAnimations, blockValidationParticle, singleWhitePixelTexture, materialListUI, infoScreenUI } = await packTemplatePromise.allValues;
 	
 	let structureGeoTemplate = hologramGeo["minecraft:geometry"][0];
 	hologramGeo["minecraft:geometry"].splice(0, 1);
@@ -220,12 +235,10 @@ export async function makePack(structureFiles, config, resourcePackStack = new R
 	structureGeoTemplate["description"]["texture_width"] = textureAtlas.textureWidth;
 	structureGeoTemplate["description"]["texture_height"] = textureAtlas.textureHeight;
 	
-	let entityDescription = entityFile["minecraft:client_entity"]["description"];
+	let leashKnotModeArmorStandEntityFile = structuredClone(armorStandEntityFile);
+	let entityManager = new EntityManager({ armorStandEntityFile, leashKnotEntityFile });
 	
 	let totalBlockCount = 0;
-	let totalBlocksToValidateByStructure = [];
-	let totalBlocksToValidateByStructureByLayer = [];
-	let uniqueBlocksToValidate = new Set();
 	let maxHeight = max(...structureSizes.map(structureSize => structureSize[1]));
 	let layerIsEmpty = (new Array(maxHeight)).fill(true);
 	
@@ -237,17 +250,14 @@ export async function makePack(structureFiles, config, resourcePackStack = new R
 		let geoIdentifier = `geometry.holoprint.hologram_${structureI}`;
 		let geo = structuredClone(structureGeoTemplate);
 		geo["description"]["identifier"] = geoIdentifier;
-		entityDescription["geometry"][geoShortName] = geoIdentifier;
+		entityManager.addGeometry(geoShortName, geoIdentifier);
 		hologramRenderControllers["render_controllers"]["controller.render.holoprint.hologram"]["arrays"]["geometries"]["Array.geometries"].push(`Geometry.${geoShortName}`);
-		let blocksToValidate = [];
-		let blocksToValidateByLayer = [];
 		
 		for(let y = 0; y < structureSize[1]; y++) {
-			let blocksToValidateCurrentLayer = 0; // "layer" in here refers to y-coordinate, NOT structure layer
 			for(let x = 0; x < structureSize[0]; x++) {
 				for(let z = 0; z < structureSize[2]; z++) {
-					let blockI = (x * structureSize[1] + y) * structureSize[2] + z;
-					let firstBoneForThisCoordinate = true; // second-layer blocks (e.g. water in waterlogged blocks) will be at the same position
+					let coords = tuple([x, y, z]);
+					let blockI = getStructureIndexFromCoordinates(coords, structureSize);
 					for(let layerI = 0; layerI < 2; layerI++) {
 						let blockPaletteIndices = structureIndicesByLayer[layerI];
 						let paletteI = blockPaletteIndices[blockI];
@@ -258,27 +268,13 @@ export async function makePack(structureFiles, config, resourcePackStack = new R
 							continue;
 						}
 						
-						let blockCoordinateName = `b_${x}_${y}_${z}`;
-						let geoSpaceBlockPos = tuple([-16 * x - 8, 16 * y, 16 * z - 8]); // I got these values from trial and error with blockbench (which makes the x negative I think. it's weird.)
+						let geoSpaceBlockPos = getGeoSpaceBlockPos(coords);
 						polyMeshMaker.add(paletteI, geoSpaceBlockPos, layerI);
-						if(firstBoneForThisCoordinate) { // we only need 1 locator for each block position, even though there may be 2 bones in this position because of the 2nd layer
-							hologramGeo["minecraft:geometry"][2]["bones"][1]["locators"][blockCoordinateName] ??= geoSpaceBlockPos.map(x => x + 8); // 2nd geometry is for particle alignment
-						}
 						
 						let block = blockPalette[paletteI];
 						if(!config.IGNORED_MATERIAL_LIST_BLOCKS.includes(block["name"])) {
 							materialList.add(block);
 						}
-						if(layerI == 0) { // particle_expire_if_in_blocks only works on the first layer :(
-							blocksToValidate.push({
-								"locator": blockCoordinateName,
-								"block": block["name"],
-								"pos": [x, y, z]
-							});
-							blocksToValidateCurrentLayer++;
-							uniqueBlocksToValidate.add(block["name"]);
-						}
-						firstBoneForThisCoordinate = false;
 						totalBlockCount++;
 						layerIsEmpty[y] = false;
 					}
@@ -293,17 +289,15 @@ export async function makePack(structureFiles, config, resourcePackStack = new R
 			};
 			geo["bones"].push(layerBone);
 			polyMeshMaker.clear();
-			blocksToValidateByLayer.push(blocksToValidateCurrentLayer);
 		}
 		hologramGeo["minecraft:geometry"].push(geo);
 		
 		addBoundingBoxParticles(hologramAnimationControllers, structureI, structureSize);
-		addBlockValidationParticles(hologramAnimationControllers, structureI, blocksToValidate, structureSize);
-		totalBlocksToValidateByStructure.push(blocksToValidate.length);
-		totalBlocksToValidateByStructureByLayer.push(blocksToValidateByLayer);
 	});
 	
-	makeLayerAnimations(config, structureSizes, entityDescription, hologramAnimations, hologramAnimationControllers);
+	let { uniqueBlocksToValidate, totalBlocksToValidateByStructure, totalBlocksToValidateByStructureByLayer } = handleBlockValidation(config, allStructureIndicesByLayer, structureSizes, blockPalette, hologramAnimationControllers, (coords, locatorName) => addCoordinateLocatorToHologramGeo(hologramGeo, coords, locatorName));
+	
+	makeLayerAnimations(config, structureSizes, entityManager, hologramAnimations, hologramAnimationControllers);
 	if(config.SPAWN_ANIMATION_ENABLED) {
 		let spawnAnimationMaker = new SpawnAnimationMaker(config, [1, maxHeight, 1]);
 		for(let y = 0; y < maxHeight; y++) {
@@ -323,40 +317,38 @@ export async function makePack(structureFiles, config, resourcePackStack = new R
 	let coordinateLockAxes = config.COORDINATE_LOCK && transposeMatrix(config.COORDINATE_LOCK);
 	let coordinateLockCoordsMolang = config.COORDINATE_LOCK? coordinateLockAxes.slice(0, 3).map(axis => arrayToMolang(axis, "v.hologram.structure_index")) : ["0", "0", "0"];
 	
-	entityDescription["materials"]["hologram"] = "holoprint_hologram";
-	entityDescription["materials"]["hologram.wrong_block_overlay"] = "holoprint_hologram.wrong_block_overlay";
-	entityDescription["textures"]["hologram.overlay"] = "textures/holoprint/entity/overlay";
-	entityDescription["textures"]["hologram.save_icon"] = "textures/holoprint/particle/save_icon";
-	entityDescription["animations"]["hologram.align"] = "animation.holoprint.hologram.align";
+	entityManager.addMaterial("hologram", "holoprint_hologram");
+	entityManager.addMaterial("hologram.wrong_block_overlay", "holoprint_hologram.wrong_block_overlay");
+	entityManager.addTexture("hologram.overlay", "textures/holoprint/entity/overlay");
+	entityManager.addTexture("hologram.save_icon", "textures/holoprint/particle/save_icon");
+	entityManager.addAnimation("hologram.align", "animation.holoprint.hologram.align");
 	if(config.COORDINATE_LOCK) {
-		entityDescription["animations"]["hologram.coordinate_lock"] = "animation.holoprint.hologram.coordinate_lock";
+		entityManager.addAnimation("hologram.coordinate_lock", "animation.holoprint.hologram.coordinate_lock");
 		let coordinateLockRotsMolang = arrayToMolang(coordinateLockAxes[3], "v.hologram.structure_index");
 		hologramAnimations["animations"]["animation.holoprint.hologram.coordinate_lock"]["bones"]["hologram_offset_wrapper"]["rotation"][1] = coordinateLockRotsMolang;
 		delete hologramAnimations["animations"]["animation.holoprint.hologram.offset"];
 	} else {
-		entityDescription["animations"]["hologram.offset"] = "animation.holoprint.hologram.offset";
+		entityManager.addAnimation("hologram.offset", "animation.holoprint.hologram.offset");
 		delete hologramAnimations["animations"]["animation.holoprint.hologram.coordinate_lock"];
 	}
-	entityDescription["animations"]["hologram.spawn"] = "animation.holoprint.hologram.spawn";
-	entityDescription["animations"]["hologram.wrong_block_overlay"] = "animation.holoprint.hologram.wrong_block_overlay";
-	entityDescription["animations"]["controller.hologram.spawn_animation"] = "controller.animation.holoprint.hologram.spawn_animation";
-	entityDescription["animations"]["controller.hologram.layers"] = "controller.animation.holoprint.hologram.layers";
-	entityDescription["animations"]["controller.hologram.bounding_box"] = "controller.animation.holoprint.hologram.bounding_box";
-	entityDescription["animations"]["controller.hologram.block_validation"] = "controller.animation.holoprint.hologram.block_validation";
-	entityDescription["animations"]["controller.hologram.saving_backup_particles"] = "controller.animation.holoprint.hologram.saving_backup_particles";
-	entityDescription["scripts"]["animate"] ??= [];
-	entityDescription["scripts"]["animate"].push("hologram.align", config.COORDINATE_LOCK? "hologram.coordinate_lock" : "hologram.offset", "hologram.wrong_block_overlay", "controller.hologram.spawn_animation", "controller.hologram.layers", "controller.hologram.bounding_box", "controller.hologram.block_validation", "controller.hologram.saving_backup_particles");
-	entityDescription["scripts"]["should_update_bones_and_effects_offscreen"] = true; // makes backups work when offscreen (from my testing it helps a bit). this also makes it render when you're facing away, removing the need for visible_bounds_width/visible_bounds_height in the geometry file. (when should_update_effects_offscreen is set, it renders when facing away, but doesn't seem to have access to v. variables.)
-	entityDescription["scripts"]["initialize"] ??= [];
-	entityDescription["scripts"]["initialize"].push(functionToMolang(entityScripts.armorStandInitialization, {
+	entityManager.addAnimation("hologram.spawn", "animation.holoprint.hologram.spawn");
+	entityManager.addAnimation("hologram.wrong_block_overlay", "animation.holoprint.hologram.wrong_block_overlay");
+	entityManager.addAnimation("controller.hologram.spawn_animation", "controller.animation.holoprint.hologram.spawn_animation");
+	entityManager.addAnimation("controller.hologram.layers", "controller.animation.holoprint.hologram.layers");
+	entityManager.addAnimation("controller.hologram.bounding_box", "controller.animation.holoprint.hologram.bounding_box");
+	entityManager.addAnimation("controller.hologram.block_validation", "controller.animation.holoprint.hologram.block_validation");
+	entityManager.addAnimation("controller.hologram.saving_backup_particles", "controller.animation.holoprint.hologram.saving_backup_particles");
+	entityManager.addAnimateScript("hologram.align", config.COORDINATE_LOCK? "hologram.coordinate_lock" : "hologram.offset", "hologram.wrong_block_overlay", "controller.hologram.spawn_animation", "controller.hologram.layers", "controller.hologram.bounding_box", "controller.hologram.block_validation", "controller.hologram.saving_backup_particles");
+	entityManager.setShouldUpdateBonesAndEffectsOffscreen(true); // makes backups work when offscreen (from my testing it helps a bit). this also makes it render when you're facing away, removing the need for visible_bounds_width/visible_bounds_height in the geometry file. (when should_update_effects_offscreen is set, it renders when facing away, but doesn't seem to have access to v. variables.)
+	
+	let initializeScriptBaseConstants = {
 		structureSize: structureSizes[0],
 		initialOffset: config.INITIAL_OFFSET,
 		defaultTextureIndex,
 		singleLayerMode: HOLOGRAM_LAYER_MODES.SINGLE,
 		structureCount: structureFiles.length
-	}));
-	entityDescription["scripts"]["pre_animation"] ??= [];
-	entityDescription["scripts"]["pre_animation"].push(functionToMolang(entityScripts.armorStandPreAnimation, {
+	};
+	let preAnimationScriptBaseConstants = {
 		textureBlobsCount: textureBlobs.length,
 		totalBlocksToValidate: arrayToMolang(totalBlocksToValidateByStructure, "v.hologram.structure_index"),
 		totalBlocksToValidateByLayer: array2DToMolang(totalBlocksToValidateByStructureByLayer, "v.hologram.structure_index", "v.hologram.layer"),
@@ -376,24 +368,44 @@ export async function makePack(structureFiles, config, resourcePackStack = new R
 		backupHologram: itemCriteriaToMolang(config.CONTROLS.BACKUP_HOLOGRAM),
 		singleLayerMode: HOLOGRAM_LAYER_MODES.SINGLE,
 		ACTIONS: entityScripts.ACTIONS
-	}));
-	entityDescription["geometry"]["hologram.wrong_block_overlay"] = "geometry.holoprint.hologram.wrong_block_overlay";
-	entityDescription["geometry"]["hologram.valid_structure_overlay"] = "geometry.holoprint.hologram.valid_structure_overlay";
-	entityDescription["geometry"]["hologram.particle_alignment"] = "geometry.holoprint.hologram.particle_alignment";
-	entityDescription["render_controllers"] ??= [];
-	entityDescription["render_controllers"].push({
+	};
+	/** @param {object} entityFile @param {boolean} isArmorStand @param {boolean} hasHologram */
+	const addScriptsToEntity = (entityFile, isArmorStand, hasHologram) => {
+		let entityDescription = entityFile["minecraft:client_entity"]["description"];
+		entityDescription["scripts"] ??= {};
+		entityDescription["scripts"]["initialize"] ??= [];
+		entityDescription["scripts"]["initialize"].push(functionToMolang(entityScripts.initialize, {
+			...initializeScriptBaseConstants,
+			isArmorStand,
+			hasHologram
+		}));
+		entityDescription["scripts"]["pre_animation"] ??= [];
+		entityDescription["scripts"]["pre_animation"].push(functionToMolang(entityScripts.preAnimation, {
+			...preAnimationScriptBaseConstants,
+			isArmorStand,
+			hasHologram
+		}));
+	};
+	addScriptsToEntity(armorStandEntityFile, true, true);
+	addScriptsToEntity(leashKnotEntityFile, false, true);
+	addScriptsToEntity(leashKnotModeArmorStandEntityFile, true, false);
+	
+	
+	entityManager.addGeometry("hologram.wrong_block_overlay", "geometry.holoprint.hologram.wrong_block_overlay");
+	entityManager.addGeometry("hologram.valid_structure_overlay", "geometry.holoprint.hologram.valid_structure_overlay");
+	entityManager.addGeometry("hologram.particle_alignment", "geometry.holoprint.hologram.particle_alignment");
+	entityManager.addRenderController({
 		"controller.render.holoprint.hologram": "v.hologram.rendering"
 	}, {
 		"controller.render.holoprint.hologram.wrong_block_overlay": "v.hologram.show_wrong_block_overlay"
 	}, {
 		"controller.render.holoprint.hologram.valid_structure_overlay": "v.hologram.validating && v.wrong_blocks == 0"
 	}, "controller.render.holoprint.hologram.particle_alignment");
-	entityDescription["particle_effects"] ??= {};
-	entityDescription["particle_effects"]["bounding_box_outline"] = "holoprint:bounding_box_outline";
-	entityDescription["particle_effects"]["saving_backup"] = "holoprint:saving_backup";
+	entityManager.addParticleEffect("bounding_box_outline", "holoprint:bounding_box_outline");
+	entityManager.addParticleEffect("saving_backup", "holoprint:saving_backup");
 	
 	textureBlobs.forEach(([textureName]) => {
-		entityDescription["textures"][textureName] = `textures/holoprint/entity/${textureName}`;
+		entityManager.addTexture(textureName, `textures/holoprint/entity/${textureName}`);
 		hologramRenderControllers["render_controllers"]["controller.render.holoprint.hologram"]["arrays"]["textures"]["Array.textures"].push(`Texture.${textureName}`);
 	});
 	
@@ -410,7 +422,7 @@ export async function makePack(structureFiles, config, resourcePackStack = new R
 	// add the particles' short names, and then reference them in the animation controller
 	uniqueBlocksToValidate.forEach(blockName => {
 		let particleName = `validate_${blockName.replace(":", ".")}`;
-		entityDescription["particle_effects"][particleName] = `holoprint:${particleName}`;
+		entityManager.addParticleEffect(particleName, `holoprint:${particleName}`);
 	});
 	
 	let playerRenderControllers = defaultPlayerRenderControllers && addPlayerControlsToRenderControllers(config, defaultPlayerRenderControllers);
@@ -427,9 +439,12 @@ export async function makePack(structureFiles, config, resourcePackStack = new R
 	// console.log(partitionedBlockCounts);
 	let highestItemCount;
 	if(config.UI_CONTROLS_ENABLED) {
-		addMaterialListUI(exportedMaterialListEnglish, materialListUI, bedrockMetadata.blocks);
+		addMaterialListUI(exportedMaterialListEnglish, materialListUI);
 		highestItemCount = max(...exportedMaterialListEnglish.map(({ count }) => count));
 	}
+	
+	let materialListsByLayerByStructure = makeMaterialListsForEachStructureAndEachLayer(config, allStructureIndicesByLayer, structureSizes, blockPalette, bedrockMetadata.blocks, bedrockMetadata.items, data.materialListMappings, resourceLangFiles["en_US"]);
+	addInfoScreenUIPages(infoScreenUI, structureSizes, structureDiagramsAndIndices, materialListsByLayerByStructure);
 	
 	manifest["header"]["name"] = packName;
 	manifest["header"]["uuid"] = crypto.randomUUID();
@@ -461,7 +476,7 @@ export async function makePack(structureFiles, config, resourcePackStack = new R
 	}
 	
 	let packTemplateLangFiles = await packTemplateLangFilesPromise;
-	let langFiles = makeLangFiles(config, packTemplateLangFiles, packName, materialList, exportedMaterialLists, controlsHaveBeenCustomised, inGameControls, controlItemTranslations);
+	let langFiles = makeLangFiles(config, packTemplateLangFiles, packName, materialList, exportedMaterialLists, controlsHaveBeenCustomised, inGameControls, controlItemTranslations, structureSizes);
 	
 	await retexturingControlItemsPromise;
 	
@@ -479,9 +494,13 @@ export async function makePack(structureFiles, config, resourcePackStack = new R
 		});
 	}
 	packFiles["pack_icon.png"] = packIcon;
-	let entityFileJson = JSON.stringify(entityFile);
-	packFiles["entity/armor_stand.entity.json"] = entityFileJson.replaceAll("HOLOGRAM_INITIAL_ACTIVATION", "true");
-	packFiles["subpacks/punch_to_activate/entity/armor_stand.entity.json"] = entityFileJson.replaceAll("HOLOGRAM_INITIAL_ACTIVATION", "false");
+	let regularArmorStandEntityJson = JSON.stringify(armorStandEntityFile);
+	packFiles["subpacks/default/entity/armor_stand.entity.json"] = regularArmorStandEntityJson.replaceAll("HOLOGRAM_INITIAL_ACTIVATION", "true");
+	packFiles["subpacks/punch_to_activate/entity/armor_stand.entity.json"] = regularArmorStandEntityJson.replaceAll("HOLOGRAM_INITIAL_ACTIVATION", "false");
+	let leashKnotEntityJson = JSON.stringify(leashKnotEntityFile).replaceAll("HOLOGRAM_INITIAL_ACTIVATION", "true");
+	packFiles["subpacks/leash_knot_mode/entity/leash_knot.entity.json"] = leashKnotEntityJson;
+	let leashKnotModeArmorStandEntityJson = JSON.stringify(leashKnotModeArmorStandEntityFile);
+	packFiles["subpacks/leash_knot_mode/entity/armor_stand.entity.json"] = leashKnotModeArmorStandEntityJson;
 	if(config.PLAYER_CONTROLS_ENABLED) {
 		packFiles["render_controllers/player.render_controllers.json"] = playerRenderControllers;
 	}
@@ -496,6 +515,9 @@ export async function makePack(structureFiles, config, resourcePackStack = new R
 	packFiles["textures/holoprint/entity/overlay.png"] = overlayTexture;
 	textureBlobs.forEach(([textureName, blob]) => {
 		packFiles[`textures/holoprint/entity/${textureName}.png`] = blob;
+	});
+	structureDiagramsAndIndices.diagrams.forEach((diagramBlob, diagramIndex) => {
+		packFiles[`${getLayerDiagramTextureName(diagramIndex)}.png`] = diagramBlob;
 	});
 	if(config.RETEXTURE_CONTROL_ITEMS) {
 		if(!hasModifiedTerrainTexture) {
@@ -536,21 +558,28 @@ export async function makePack(structureFiles, config, resourcePackStack = new R
 	
 	console.info(`Finished creating pack in ${+(performance.now() - startTime).toFixed(0) / 1000}s!`);
 	
+	let pack = new File([zippedPack], `${packName}.holoprint.mcpack`, {
+		type: "application/mcpack"
+	});
+	let res = {
+		pack,
+		materialList
+	};
+	
 	if(previewCont) {
-		let showPreview = async () => {
-			let previews = await Promise.all(structureSizes.map(async (structureSize, structureI) => {
+		let showPreview = () => {
+			res.previews = Promise.all(structureSizes.map(async (structureSize, structureI) => {
 				if(structureI > 0) {
 					previewCont.parentNode.appendChild(document.createElement("hr"));
 				}
 				let cont = structureI == 0? previewCont : previewCont.parentNode.appendChild(previewCont.cloneNode());
 				let name = structureSizes.length == 1? packName : getDefaultPackName([structureFiles[structureI]]);
-				return await PreviewRenderer.new(cont, name, textureAtlas, structureSize, blockPalette, polyMeshTemplatePalette, allStructureIndicesByLayer[structureI], {
+				return await PreviewRenderer.new(cont, name, fullOpacityTextureBlob, structureSize, blockPalette, polyMeshTemplatePalette, allStructureIndicesByLayer[structureI], {
 					showSkybox: config.SHOW_PREVIEW_SKYBOX,
 					showFps: config.SHOW_PREVIEW_WIDGETS,
 					showOptions: config.SHOW_PREVIEW_WIDGETS
 				});
 			}));
-			previewLoadedCallback?.(previews);
 		};
 		if(totalBlockCount < config.PREVIEW_BLOCK_LIMIT && removeFalsies(blockPalette).length < 250) {
 			showPreview();
@@ -573,9 +602,7 @@ export async function makePack(structureFiles, config, resourcePackStack = new R
 		}
 	}
 	
-	return new File([zippedPack], `${packName}.holoprint.mcpack`, {
-		type: "application/mcpack"
-	});
+	return res;
 }
 /**
  * Retrieves the structure files from a completed HoloPrint resource pack.
@@ -601,7 +628,7 @@ export async function extractStructureFilesFromPack(resourcePack) {
  * @param {HoloPrintConfig} [config]
  * @param {ResourcePackStack} [resourcePackStack]
  * @param {HTMLElement} [previewCont]
- * @returns {Promise<File>}
+ * @returns {Promise<{ pack: File, materialList: MaterialList, previews?: Promise<PreviewRenderer[]> }>}
  */
 export async function updatePack(resourcePack, config, resourcePackStack, previewCont) {
 	let structureFiles = await extractStructureFilesFromPack(resourcePack);
@@ -685,6 +712,8 @@ export function addDefaultConfig(config) {
 			INITIAL_OFFSET: tuple([0, 0, 0]),
 			COORDINATE_LOCK: undefined,
 			BACKUP_SLOT_COUNT: 10,
+			VALIDATE_AIR_BLOCKS: false,
+			LAYER_BY_LAYER_DIAGRAM_BLOCK_RESOLUTION: 64,
 			PACK_NAME: undefined,
 			PACK_ICON_BLOB: undefined,
 			AUTHORS: [],
@@ -932,7 +961,7 @@ async function tweakBlockPalette(structure, ignoredBlocks) {
 		}
 		
 		let blockEntityData = structuredClone(blockPositionData[i]["block_entity_data"]);
-		if(IGNORED_BLOCK_ENTITIES.includes(blockEntityData["id"])) {
+		if(IGNORED_BLOCK_ENTITIES.has(blockEntityData["id"])) {
 			continue;
 		}
 		delete blockEntityData["x"];
@@ -983,14 +1012,41 @@ function mergeMultiplePalettesAndIndices(palettesAndIndices) {
 	};
 }
 /**
+ * @typedef {object} StructureDiagramsAndIndices
+ * @property {Blob[]} diagrams
+ * @property {number[][]} indices
+ */
+/**
+ * Makes the layer-by-layer diagrams and the isometric diagram for structures.
+ * @param {HoloPrintConfig} config
+ * @param {Blob} textureBlob
+ * @param {PolyMeshTemplateFaceWithUvs[][]} polyMeshTemplatePalette
+ * @param {[Int32Array, Int32Array][]} allStructureIndicesByLayer
+ * @param {I32Vec3[]} structureSizes
+ * @returns {Promise<StructureDiagramsAndIndices>}
+ */
+async function makeStructureDiagrams(config, textureBlob, polyMeshTemplatePalette, allStructureIndicesByLayer, structureSizes) {
+	let structureDiagramMaker = new StructureDiagramMaker(config, await toImage(textureBlob));
+	let diagramsAndIndices = await structureDiagramMaker.makeDiagramsForStructures(polyMeshTemplatePalette, allStructureIndicesByLayer, structureSizes);
+	structureDiagramMaker.dispose();
+	return diagramsAndIndices;
+}
+/**
+ * @param {number} index
+ * @returns {string}
+ */
+function getLayerDiagramTextureName(index) {
+	return `textures/holoprint/ui/layer_diagram_${index}`;
+}
+/**
  * Makes the layer animations and animation controllers. Mutates the original arguments.
  * @param {HoloPrintConfig} config
  * @param {I32Vec3[]} structureSizes
- * @param {object} entityDescription
+ * @param {EntityManager} entityManager
  * @param {object} hologramAnimations
  * @param {object} hologramAnimationControllers
  */
-function makeLayerAnimations(config, structureSizes, entityDescription, hologramAnimations, hologramAnimationControllers) {
+function makeLayerAnimations(config, structureSizes, entityManager, hologramAnimations, hologramAnimationControllers) {
 	let layerAnimationStates = hologramAnimationControllers["animation_controllers"]["controller.animation.holoprint.hologram.layers"]["states"];
 	let topLayer = max(...structureSizes.map(structureSize => structureSize[1])) - 1;
 	layerAnimationStates["default"]["transitions"].push(
@@ -1047,8 +1103,9 @@ function makeLayerAnimations(config, structureSizes, entityDescription, hologram
 		if(Object.entries(layerAnimation["bones"]).length == 0) {
 			delete layerAnimation["bones"];
 		}
-		hologramAnimations["animations"][`animation.holoprint.hologram.l_${y}`] = layerAnimation;
-		entityDescription["animations"][`hologram.l_${y}`] = `animation.holoprint.hologram.l_${y}`;
+		let animationFullName = `animation.holoprint.hologram.l_${y}`;
+		hologramAnimations["animations"][animationFullName] = layerAnimation;
+		entityManager.addAnimation(`hologram.l_${y}`, animationFullName);
 		if(y < topLayer) { // top layer with all layers below is the default view, so the animation + animation controller state doesn't need to be made for it
 			layerAnimationStates[`${layerName}-`] = {
 				"animations": [`hologram.l_${y}-`],
@@ -1084,7 +1141,7 @@ function makeLayerAnimations(config, structureSizes, entityDescription, hologram
 				delete layerAnimationAllBelow["bones"];
 			}
 			hologramAnimations["animations"][`animation.holoprint.hologram.l_${y}-`] = layerAnimationAllBelow;
-			entityDescription["animations"][`hologram.l_${y}-`] = `animation.holoprint.hologram.l_${y}-`;
+			entityManager.addAnimation(`hologram.l_${y}-`, `animation.holoprint.hologram.l_${y}-`);
 		}
 	}
 }
@@ -1131,10 +1188,80 @@ function addBoundingBoxParticles(hologramAnimationControllers, structureI, struc
 	});
 }
 /**
+ * Handles everything to do with block validation except creating the particle files from the template: Finding all blocks to be validated, getting all the unique blocks to be validated (which need particle files), and counting all the blocks to be validated per structure and per layer per structure for the Molang validation stuff.
+ * @param {HoloPrintConfig} config
+ * @param {[Int32Array, Int32Array][]} allStructureIndicesByLayer
+ * @param {I32Vec3[]} structureSizes
+ * @param {Block[]} blockPalette
+ * @param {object} hologramAnimationControllers
+ * @param {(coords: Vec3, locatorName: string) => void} addLocator
+ * @returns {{ uniqueBlocksToValidate: Set<string>, totalBlocksToValidateByStructure: number[], totalBlocksToValidateByStructureByLayer: number[][] }}
+ */
+function handleBlockValidation(config, allStructureIndicesByLayer, structureSizes, blockPalette, hologramAnimationControllers, addLocator) {
+	/** @type {number[]} */
+	let totalBlocksToValidateByStructure = [];
+	/** @type {number[][]} */
+	let totalBlocksToValidateByStructureByLayer = [];
+	/** @type {Set<string>} */
+	let uniqueBlocksToValidate = new Set();
+	
+	allStructureIndicesByLayer.forEach((structureIndicesByLayer, structureI) => {
+		let structureSize = structureSizes[structureI];
+		// particle_expire_if_in_blocks only works on the first layer :(
+		let blockPaletteIndices = structureIndicesByLayer[0];
+		/** @type {BlockToValidate[]} */
+		let blocksToValidate = [];
+		let blocksToValidateByLayer = [];
+		
+		for(let y = 0; y < structureSize[1]; y++) {
+			let blocksToValidateCurrentLayer = 0; // "layer" in here refers to y-coordinate, NOT structure layer
+			for(let x = 0; x < structureSize[0]; x++) {
+				for(let z = 0; z < structureSize[2]; z++) {
+					let coords = tuple([x, y, z]);
+					let blockI = getStructureIndexFromCoordinates(coords, structureSize);
+					let paletteI = blockPaletteIndices[blockI];
+					let block = blockPalette[paletteI];
+					if(!block && !config.VALIDATE_AIR_BLOCKS) {
+						continue;
+					}
+					
+					let blockName = block?.["name"] ?? "air";
+					let blockCoordinateLocatorName = `b_${x}_${y}_${z}`;
+					blocksToValidate.push({
+						"locator": blockCoordinateLocatorName,
+						"block": blockName,
+						"pos": coords
+					});
+					blocksToValidateCurrentLayer++;
+					uniqueBlocksToValidate.add(blockName);
+					
+					addLocator(coords, blockCoordinateLocatorName);
+				}
+			}
+			blocksToValidateByLayer.push(blocksToValidateCurrentLayer);
+		}
+		
+		addBlockValidationParticles(hologramAnimationControllers, structureI, blocksToValidate, structureSize);
+		totalBlocksToValidateByStructure.push(blocksToValidate.length);
+		totalBlocksToValidateByStructureByLayer.push(blocksToValidateByLayer);
+	});
+	return { uniqueBlocksToValidate, totalBlocksToValidateByStructure, totalBlocksToValidateByStructureByLayer };
+}
+/**
+ * Adds a locator at a position to the hologram geo for aligning validation particles.
+ * @param {object} hologramGeo
+ * @param {Vec3} coords
+ * @param {string} locatorName
+ */
+function addCoordinateLocatorToHologramGeo(hologramGeo, coords, locatorName) {
+	let geoSpaceCoords = getGeoSpaceBlockPos(coords)
+	hologramGeo["minecraft:geometry"][2]["bones"][1]["locators"][locatorName] ??= geoSpaceCoords.map(x => x + 8); // 2nd geometry is for particle alignment
+}
+/**
  * Adds block validation particles for a single structure to the hologram animation controllers in-place.
  * @param {Record<string, any>} hologramAnimationControllers
  * @param {number} structureI
- * @param {Record<string, any>[]} blocksToValidate
+ * @param {BlockToValidate[]} blocksToValidate
  * @param {I32Vec3} structureSize
  */
 function addBlockValidationParticles(hologramAnimationControllers, structureI, blocksToValidate, structureSize) {
@@ -1263,29 +1390,143 @@ function patchRenderControllers(renderControllers, patches) {
 	};
 }
 /**
+ * Makes material lists for each structure and layer. Returns a 2d array of material lists, indexed by structure then layer, where layer 0 is the full structure, and subsequent layers are the actual layers (1-indexed).
+ * @param {HoloPrintConfig} config
+ * @param {[Int32Array, Int32Array][]} allStructureIndicesByLayer
+ * @param {I32Vec3[]} structureSizes
+ * @param {Block[]} blockPalette
+ * @param {object} blockMetadata
+ * @param {object} itemMetadata
+ * @param {Data.MaterialListMappings} materialListMappings
+ * @param {string} langFile
+ * @returns {MaterialList[][]}
+ */
+function makeMaterialListsForEachStructureAndEachLayer(config, allStructureIndicesByLayer, structureSizes, blockPalette, blockMetadata, itemMetadata, materialListMappings, langFile) {
+	return allStructureIndicesByLayer.map((structureIndicesByLayer, structureI) => {
+		let structureSize = structureSizes[structureI];
+		let materialListsForThisStructure = (new Array(structureSize[1] + 1)).fill().map(() => new MaterialList(blockMetadata, itemMetadata, materialListMappings, langFile));
+		for(let y = 0; y < structureSize[1]; y++) {
+			for(let x = 0; x < structureSize[0]; x++) {
+				for(let z = 0; z < structureSize[2]; z++) {
+					for(let layerI = 0; layerI < 2; layerI++) { // WHY is this so verbose?!?!?!?!?
+						let blockPaletteIndices = structureIndicesByLayer[layerI];
+						let coords = tuple([x, y, z]);
+						let blockI = getStructureIndexFromCoordinates(coords, structureSize);
+						let paletteI = blockPaletteIndices[blockI];
+						let block = blockPalette[paletteI];
+						if(!block || config.IGNORED_MATERIAL_LIST_BLOCKS.includes(block["name"])) {
+							continue;
+						}
+						materialListsForThisStructure[0].add(block);
+						materialListsForThisStructure[y + 1].add(block);
+					}
+				}
+			}
+		}
+		return materialListsForThisStructure;
+	});
+}
+/**
  * Adds the material list to the `holoprint_material_list.json` UI file.
  * @param {MaterialListEntry[]} finalisedMaterialList
  * @param {object} materialListUI
- * @param {object} blockMetadata
  */
-function addMaterialListUI(finalisedMaterialList, materialListUI, blockMetadata) {
-	let missingItemAux = blockMetadata["data_items"].find(block => block.name == "minecraft:reserved6")?.["raw_id"] ?? 0;
-	materialListUI["entries"]["controls"].push(...finalisedMaterialList.map(({ translationKey, partitionedCount, auxId }, i) => ({
-		[`entry_${i}@holoprint:material_list.entry`]: {
-			"$item_translation_key": translationKey,
-			"$item_count": partitionedCount,
-			"$item_id_aux": auxId ?? missingItemAux,
-			"$background_opacity": i & 1? 0.2 : undefined
-		}
-	})));
-	let longestItemNameLength = max(...finalisedMaterialList.map(({ translatedName }) => translatedName.length));
-	let longestCountLength = max(...finalisedMaterialList.map(({ partitionedCount }) => partitionedCount.length));
-	if(longestItemNameLength + longestCountLength >= 43) {
-		materialListUI["content"]["size"][0] = "50%"; // up from 40%
-		materialListUI["content"]["max_size"][0] = "50%";
+function addMaterialListUI(finalisedMaterialList, materialListUI) {
+	let fullPackMaterialList = getUIElementFromPath(materialListUI, "full_pack_material_list");
+	// TODO: make this use missing item aux id properly, which requires decoupling translations from material list exporting
+	let exportedJsonUi = MaterialList.convertEntriesToJsonUi(finalisedMaterialList);
+	fullPackMaterialList["$entries"] = exportedJsonUi.entries;
+	if(exportedJsonUi.longestItemNameLength + exportedJsonUi.longestCountLength >= 43) {
+		fullPackMaterialList["$size"][0] = "50%"; // up from 40%
+		fullPackMaterialList["$max_size"][0] = "50%";
 	}
-	materialListUI["content"]["size"][1] = finalisedMaterialList.length * 12 + 12; // 12px for each item + 12px for the heading
-	materialListUI["entry"]["controls"][0]["content"]["controls"][3]["item_name"]["size"][0] += `${round(longestCountLength * 4.2 + 10)}px`;
+	fullPackMaterialList["$size"][1] = exportedJsonUi.visibleHeight;
+	fullPackMaterialList["$item_name_column_size"] = exportedJsonUi.itemNameColumnSize;
+}
+/**
+ * @param {number} structureI
+ * @returns {string}
+ */
+function getInfoScreenSectionHeadingTranslationKey(structureI) {
+	// this MUST be formatted this way because how_to_play_common:section_toggle_button uses this
+	// don't think I can use . because that would be interpreted as a namespace
+	return `howtoplay.holoprint_structure_${structureI}`;
+}
+/**
+ * 
+ * @param {object} infoScreenUI
+ * @param {I32Vec3[]} structureSizes
+ * @param {StructureDiagramsAndIndices} structureDiagrams
+ * @param {MaterialList[][]} materialListsByLayerByStructure
+ */
+function addInfoScreenUIPages(infoScreenUI, structureSizes, structureDiagrams, materialListsByLayerByStructure) {
+	let tabSelector = getUIElementFromPath(infoScreenUI, "tab_stack_panel", "selector_pane");
+	let sectionContentPanels = getUIElementFromPath(infoScreenUI, "section_content_panels", "sections");
+	structureSizes.forEach((structureSize, structureI) => {
+		let structureName = `structure_${structureI}`;
+		let pageContentElementName = `${structureName}_section_content`;
+		let headingTranslationKey = getInfoScreenSectionHeadingTranslationKey(structureI);
+		
+		tabSelector["controls"].splice(-1, 0, {
+			[`${structureName}_tab_button@how_to_play_common.section_toggle_button`]: {
+				"$toggle_group_forced_index": structureI,
+				"$section_topic": `holoprint_${structureName}`
+			}
+		});
+		sectionContentPanels["controls"].splice(0, -1, {
+			[`${structureName}_section@section`]: {
+				// this MUST end with _button_toggle because how_to_play_common:section_toggle_button uses this
+				// I could make my own version of section_toggle_button to circumvent this, but it's not too inconvenient
+				"$tab_button_name": `holoprint_${structureName}_button_toggle`,
+				"$content": `holoprint:info_screen.${pageContentElementName}`
+			}
+		});
+		let structureDiagramIndices = structureDiagrams.indices[structureI];
+		let structureDiagramTextureBindings = structureDiagramIndices.map((diagramIndex, layerI) => [`#layer_${layerI}`, getLayerDiagramTextureName(diagramIndex)]);
+		let materialListsByLayer = materialListsByLayerByStructure[structureI];
+		let materialListsExportedToJsonUi = materialListsByLayer.map(materialList => materialList.exportToJsonUi());
+		let materialListsByLayerElements = materialListsExportedToJsonUi.map((exportedJsonUi, layerI) => ({
+			[`layer_${layerI}@structure_layer_material_list`]: {
+				"$layer": layerI,
+				"$entries": exportedJsonUi.entries,
+				"$size": ["100%", exportedJsonUi.visibleHeight],
+				"$item_name_column_size": exportedJsonUi.itemNameColumnSize
+			}
+		}));
+		infoScreenUI[`${pageContentElementName}@structure_section_content_base`] = {
+			"$heading": headingTranslationKey,
+			"$structure_height_plus_1": structureSize[1] + 1, // I'm adding the 1 here rather than inside the JSON UI for +0.000001 fps
+			"$diagram_property_bag": Object.fromEntries(structureDiagramTextureBindings),
+			"$layer_slider_name": `${structureName}_layer_slider`,
+			"$structure_index": structureI,
+			"$material_lists": materialListsByLayerElements,
+			"$tallest_material_list_size": ["100%", max(...materialListsExportedToJsonUi.map(exportedJsonUi => exportedJsonUi.visibleHeight))]
+		};
+	});
+	
+	getUIElementFromPath(infoScreenUI, "tab_stack_panel", "selector_pane", "about_section")["$toggle_group_forced_index"] = structureSizes.length;
+}
+/**
+ * Gets the element at a specified path from a JSON UI object.
+ * @param {string} rootUiObject
+ * @param {...string} elementPath
+ * @returns {object}
+ */
+function getUIElementFromPath(rootUiObject, ...elementPath) {
+	let el = rootUiObject;
+	elementPath.forEach((childName, i) => {
+		if(i == 0) {
+			el = Object.entries(el).find(([key]) => key.split("@")[0] == childName)?.[1];
+		} else {
+			let childObj = el?.["controls"]?.find(elObj => Object.keys(elObj)[0].split("@")[0] == childName);
+			if(childObj) {
+				el = Object.values(childObj)[0];
+			} else {
+				el = undefined;
+			}
+		}
+	});
+	return el;
 }
 /**
  * Translates control items by making a fake material list.
@@ -1347,9 +1588,10 @@ function translateControlItems(config, blockMetadata, itemMetadata, materialList
  * @param {boolean} controlsHaveBeenCustomised
  * @param {Record<string, string>} inGameControls
  * @param {Record<string, string>} controlItemTranslations
+ * @param {I32Vec3[]} structureSizes
  * @returns {[string, string][]}
  */
-function makeLangFiles(config, packTemplateLangFiles, packName, materialList, exportedMaterialLists, controlsHaveBeenCustomised, inGameControls, controlItemTranslations) {
+function makeLangFiles(config, packTemplateLangFiles, packName, materialList, exportedMaterialLists, controlsHaveBeenCustomised, inGameControls, controlItemTranslations, structureSizes) {
 	const disabledFeatureTranslations = { // these look at the .lang RP files
 		"SPAWN_ANIMATION_ENABLED": "spawn_animation_disabled",
 		"PLAYER_CONTROLS_ENABLED": "player_controls_disabled",
@@ -1404,6 +1646,21 @@ function makeLangFiles(config, packTemplateLangFiles, packName, materialList, ex
 		if(config.RENAME_CONTROL_ITEMS) {
 			langFile += controlItemTranslations[language];
 		}
+		
+		structureSizes.forEach((structureSize, structureI) => {
+			// TODO: fix translations. just fix it entirely. throw all this garbage out
+			let structureName = `Structure ${structureI + 1}`; // todo: use file names?
+			let sectionHeadingTranslationKey = getInfoScreenSectionHeadingTranslationKey(structureI);
+			langFile += `\n${sectionHeadingTranslationKey}=${structureName}`;
+			const barSeparator = " §8|§r ";
+			let sizeInfo = `Size: ${structureSize.join("x")}${barSeparator}`;
+			langFile += `\nholoprint.info_screen.structure_${structureI}_layer_0=${sizeInfo}Full structure`;
+			langFile += `\nholoprint.material_list.structure_${structureI}_layer_0=Material list${barSeparator}${structureName}`;
+			for(let layer = 1; layer < structureSize[1] + 1; layer++) {
+				langFile += `\nholoprint.info_screen.structure_${structureI}_layer_${layer}=${sizeInfo}Layer ${layer}`; // AHHHH IK THIS CAUSES DUPLICATED. I NEED TO GET THIS UPDATE OUT TONIGHTTTTT
+				langFile += `\nholoprint.material_list.structure_${structureI}_layer_${layer}=Material list${barSeparator}${structureName}${barSeparator}Layer ${layer}`;
+			}
+		});
 		
 		return [language, langFile];
 	});
@@ -1660,6 +1917,8 @@ function expandItemCriteria(itemCriteria, itemTags) {
  * @property {Vec3} INITIAL_OFFSET
  * @property {Vec4[] | undefined} COORDINATE_LOCK If present, each structure's hologram will be locked to these coordinates. The last component is rotation.
  * @property {number} BACKUP_SLOT_COUNT
+ * @property {boolean} VALIDATE_AIR_BLOCKS
+ * @property {number} LAYER_BY_LAYER_DIAGRAM_BLOCK_RESOLUTION The resolution, in pixels, of each block in the layer-by-layer diagram.
  * @property {string | undefined} PACK_NAME The name of the completed pack; will default to the structure file names
  * @property {Blob} PACK_ICON_BLOB Blob for `pack_icon.png`
  * @property {string[]} AUTHORS
@@ -1700,6 +1959,12 @@ function expandItemCriteria(itemCriteria, itemTags) {
  * @property {string} name The block's ID
  * @property {Record<string, number | string>} [states] Block states
  * @property {object} [block_entity_data] Block entity data
+ */
+/**
+ * @typedef {object} BlockToValidate
+ * @property {string} locator
+ * @property {string} block
+ * @property {Vec3} pos
  */
 /**
  * @typedef {Record<Data.CardinalDirection, { uv: Vec2, uv_size: Vec2 }>} CubeUv
@@ -1780,7 +2045,16 @@ function expandItemCriteria(itemCriteria, itemTags) {
  * @property {string} translatedName
  * @property {number} count How many of this item is required
  * @property {string} partitionedCount A formatted string representing partitions of the total count
+ * @property {string} partitionedCountWithoutTotal Same as partitionedCount, but without the "[total count] = " at the start
  * @property {number | undefined} auxId The item's aux ID
+ */
+/**
+ * @typedef {object} ExportedMaterialListJsonUi
+ * @property {Record<string, object>[]} entries
+ * @property {number} visibleHeight
+ * @property {number} longestItemNameLength
+ * @property {number} longestCountLength
+ * @property {[string | number, string | number]} itemNameColumnSize
  */
 /**
  * @typedef {object} SpawnAnimationBone Information about a bone in the spawn animation.
@@ -1907,4 +2181,7 @@ function expandItemCriteria(itemCriteria, itemTags) {
  */
 /**
  * @typedef {Int32Array & { length: 3 }} I32Vec3
+ */
+/**
+ * @typedef {Float32Array & { length: 8 }} F32Vec8
  */

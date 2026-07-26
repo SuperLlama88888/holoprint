@@ -1,0 +1,8 @@
+// There is unfortunately no way to add a new UI screen with a resource pack, so the info screen actually displays via overriding the "tabbed upsell" screen or the "Windows 10 trial conversion" screen. (I think that it depends on the platform.)
+// I found this trick from the ESBE 3G shader pack, which has its own info screen: https://github.com/McbeEringi/esbe-3g
+// Given that these shaders no longer work in modern versions, it's unlikely to run into conflicts, unless other packs also use this trick.
+{
+	"namespace": "tabbed_upsell",
+	
+	"tabbed_upsell_screen@holoprint:info_screen.info_screen": {}
+}
