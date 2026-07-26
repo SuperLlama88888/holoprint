@@ -1484,17 +1484,15 @@ function addInfoScreenUIPages(infoScreenUI, structureSizes, structureDiagrams, m
 		let structureDiagramIndices = structureDiagrams.indices[structureI];
 		let structureDiagramTextureBindings = structureDiagramIndices.map((diagramIndex, layerI) => [`#layer_${layerI}`, getLayerDiagramTextureName(diagramIndex)]);
 		let materialListsByLayer = materialListsByLayerByStructure[structureI];
-		let materialListsByLayerElements = materialListsByLayer.map((materialList, layerI) => {
-			let exportedJsonUi = materialList.exportToJsonUi();
-			return {
-				[`layer_${layerI}@structure_layer_material_list`]: {
-					"$layer": layerI,
-					"$entries": exportedJsonUi.entries,
-					"$size": ["100%", exportedJsonUi.visibleHeight],
-					"$item_name_column_size": exportedJsonUi.itemNameColumnSize
-				}
-			};
-		});
+		let materialListsExportedToJsonUi = materialListsByLayer.map(materialList => materialList.exportToJsonUi());
+		let materialListsByLayerElements = materialListsExportedToJsonUi.map((exportedJsonUi, layerI) => ({
+			[`layer_${layerI}@structure_layer_material_list`]: {
+				"$layer": layerI,
+				"$entries": exportedJsonUi.entries,
+				"$size": ["100%", exportedJsonUi.visibleHeight],
+				"$item_name_column_size": exportedJsonUi.itemNameColumnSize
+			}
+		}));
 		infoScreenUI[`${pageContentElementName}@structure_section_content_base`] = {
 			"$heading": headingTranslationKey,
 			"$structure_height_plus_1": structureSize[1] + 1, // I'm adding the 1 here rather than inside the JSON UI for +0.000001 fps
@@ -1502,6 +1500,7 @@ function addInfoScreenUIPages(infoScreenUI, structureSizes, structureDiagrams, m
 			"$layer_slider_name": `${structureName}_layer_slider`,
 			"$structure_index": structureI,
 			"$material_lists": materialListsByLayerElements,
+			"$tallest_material_list_size": ["100%", max(...materialListsExportedToJsonUi.map(exportedJsonUi => exportedJsonUi.visibleHeight))]
 		};
 	});
 	

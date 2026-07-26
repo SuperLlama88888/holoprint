@@ -172,6 +172,7 @@
 		"$layer_slider_name|default": "Error: $layer_slider_name not set",
 		"$structure_index|default": "Error: $structure_index not set",
 		"$material_lists|default": "Error: $material_lists not set",
+		"$tallest_material_list_size|default": "Error: $tallest_material_list_size not set",
 		"type": "stack_panel",
 		"orientation": "vertical",
 		"controls": [
@@ -233,16 +234,17 @@
 				}
 			},
 			{
-				"diagram_wrapper": {
-					"type": "panel",
-					"size": ["100%", "40%x"],
+				"diagram_and_material_list_wrapper": {
+					"type": "stack_panel",
+					"orientation": "horizontal",
+					"size": "$tallest_material_list_size", // I can't use "fill" for the height here for some reason, it just evaluates to 0px. So the JS adds this variable
 					"controls": [
 						{
 							"diagram_background": {
 								"type": "image",
 								"texture": "textures/holoprint/ui/white_circle",
 								"alpha": 0.5,
-								"size": ["40%", "100%x"],
+								"size": ["50%", "100%x"],
 								"controls": [
 									{
 										"diagram": {
@@ -269,14 +271,15 @@
 									}
 								]
 							}
+						},
+						{
+							"material_lists_wrapper": {
+								"type": "panel",
+								"size": ["50%", "100%"],
+								"controls": "$material_lists"
+							}
 						}
 					]
-				}
-			},
-			{
-				"material_lists_wrapper": {
-					"type": "panel",
-					"controls": "$material_lists"
 				}
 			}
 		]
@@ -289,8 +292,7 @@
 		"controls": [
 			{
 				"material_list@holoprint:material_list.material_list_base": {
-					"$heading": "('holoprint.material_list.structure_' + $structure_index + '_layer_' + $layer)",
-					"$allow_scrolling": false
+					"$heading": "('holoprint.material_list.structure_' + $structure_index + '_layer_' + $layer)"
 				}
 			}
 		],

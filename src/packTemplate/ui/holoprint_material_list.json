@@ -3,7 +3,8 @@
 	
 	"full_pack_material_list@material_list_base": {
 		"$size": ["40%", "this gets put in by the JS"],
-		"$max_size": ["40%", "100% - 74px"]
+		"$max_size": ["40%", "100% - 74px"],
+		"offset": "$holoprint:material_list_offset"
 	},
 	"material_list_base": {
 		"$size|default": ["default", "default"],
@@ -11,11 +12,9 @@
 		"$entries|default": "Error: $entries not set",
 		"$heading|default": "holoprint.material_list.heading",
 		"$item_name_column_size|default": "Error: $item_name_column_size not set",
-		"$allow_scrolling|default": true,
 		"type": "panel",
 		"anchor_from": "top_middle",
 		"anchor_to": "top_middle",
-		"offset": "$holoprint:material_list_offset",
 		"layer": 50,
 		"controls": [
 			{
@@ -33,22 +32,27 @@
 		"layer": 10,
 		"anchor_from": "top_middle",
 		"anchor_to": "top_middle",
-		"variables": [
-			{
-				"requires": "$allow_scrolling",
-				"$content": "scrolling_entries"
-			},
-			{
-				"requires": "(not $allow_scrolling)",
-				"$content": "static_entries"
-			}
-		],
 		"controls": [
 			{
 				"heading@heading": {}
 			},
 			{
-				"content@$content": {}
+				"scrolling_input_panel": {
+					"type": "input_panel",
+					"prevent_touch_input": true,
+					"controls": [
+						{
+							"scrolling_panel@common.scrolling_panel": {
+								"anchor_from": "bottom_middle",
+								"anchor_to": "bottom_middle",
+								"size": ["100%", "100% - 12px"],
+								"$show_background": false,
+								"$scrolling_content": "holoprint:material_list.entries",
+								"$always_handle_scrolling": true
+							}
+						}
+					]
+				}
 			}
 		]
 	},
@@ -83,30 +87,11 @@
 			}
 		]
 	},
-	"scrolling_entries": {
-		"type": "input_panel",
-		"prevent_touch_input": true,
-		"controls": [
-			{
-				"scrolling_panel@common.scrolling_panel": {
-					"$show_background": false,
-					"$scrolling_content": "holoprint:material_list.entries",
-					"$always_handle_scrolling": true,
-					"size": ["100%", "100% - 12px"],
-					"anchor_from": "bottom_middle",
-					"anchor_to": "bottom_middle"
-				}
-			}
-		]
-	},
-	"static_entries@entries": {
-		"size": ["100%", "100% - 12px"]
-	},
 	"entries": {
 		"type": "stack_panel",
 		"orientation": "vertical",
-		"anchor_to": "bottom_middle",
-		"anchor_from": "bottom_middle",
+		"anchor_to": "top_left",
+		"anchor_from": "top_left",
 		"controls": "$entries"
 	},
 	"entry@row": {
