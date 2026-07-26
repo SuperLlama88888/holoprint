@@ -1447,15 +1447,10 @@ function addMaterialListUI(finalisedMaterialList, materialListUI) {
  * @param {number} structureI
  * @returns {string}
  */
-function getInfoScreenPageHeadingTranslationKey(structureI) {
-	return `holoprint.info_screen.structure_${structureI}.heading`;
-}
-/**
- * @param {number} structureI
- * @returns {string}
- */
-function getInfoScreenStructureSizeLabelTranslationKey(structureI) {
-	return `holoprint.info_screen.structure_${structureI}.size`;
+function getInfoScreenSectionHeadingTranslationKey(structureI) {
+	// this MUST be formatted this way because how_to_play_common:section_toggle_button uses this
+	// don't think I can use . because that would be interpreted as a namespace
+	return `howtoplay.holoprint_structure_${structureI}`;
 }
 /**
  * 
@@ -1465,26 +1460,25 @@ function getInfoScreenStructureSizeLabelTranslationKey(structureI) {
  * @param {MaterialList[][]} materialListsByLayerByStructure
  */
 function addInfoScreenUIPages(infoScreenUI, structureSizes, structureDiagrams, materialListsByLayerByStructure) {
-	let tabSelector = getUIElementFromPath(infoScreenUI, "main", "tab_selector_panel", "tab_selector");
-	let tabContentPane = getUIElementFromPath(infoScreenUI, "main", "tab_content_pane");
+	let tabSelector = getUIElementFromPath(infoScreenUI, "tab_stack_panel", "selector_pane");
+	let sectionContentPanels = getUIElementFromPath(infoScreenUI, "section_content_panels", "sections");
 	structureSizes.forEach((structureSize, structureI) => {
 		let structureName = `structure_${structureI}`;
-		let tabButtonToggleName = `${structureName}_tab_button_toggle`;
-		let pageContentElementName = `${structureName}_page_content`;
-		let headingTranslationKey = getInfoScreenPageHeadingTranslationKey(structureI);
-		let structureSizeInfoTranslationKey = getInfoScreenStructureSizeLabelTranslationKey(structureI);
+		let pageContentElementName = `${structureName}_section_content`;
+		let headingTranslationKey = getInfoScreenSectionHeadingTranslationKey(structureI);
 		
 		tabSelector["controls"].splice(-1, 0, {
-			[`${structureName}_tab_button@holoprint:info_screen.tab_toggle`]: {
+			[`${structureName}_tab_button@how_to_play_common.section_toggle_button`]: {
 				"$toggle_group_forced_index": structureI,
-				"$tab_view_binding_name": tabButtonToggleName,
-				"$button_text": headingTranslationKey
+				"$section_topic": `holoprint_${structureName}`
 			}
 		});
-		tabContentPane["controls"].splice(0, -1, {
-			[`${structureName}_page@page`]: {
-				"$tab_button_name": tabButtonToggleName,
-				"$scrolling_content": `holoprint:info_screen.${pageContentElementName}`
+		sectionContentPanels["controls"].splice(0, -1, {
+			[`${structureName}_section@section`]: {
+				// this MUST end with _button_toggle because how_to_play_common:section_toggle_button uses this
+				// I could make my own version of section_toggle_button to circumvent this, but it's not too inconvenient
+				"$tab_button_name": `holoprint_${structureName}_button_toggle`,
+				"$content": `holoprint:info_screen.${pageContentElementName}`
 			}
 		});
 		let structureDiagramIndices = structureDiagrams.indices[structureI];
@@ -1501,18 +1495,17 @@ function addInfoScreenUIPages(infoScreenUI, structureSizes, structureDiagrams, m
 				}
 			};
 		});
-		infoScreenUI[`${pageContentElementName}@structure_page_content_base`] = {
+		infoScreenUI[`${pageContentElementName}@structure_section_content_base`] = {
 			"$heading": headingTranslationKey,
 			"$structure_height_plus_1": structureSize[1] + 1, // I'm adding the 1 here rather than inside the JSON UI for +0.000001 fps
 			"$diagram_property_bag": Object.fromEntries(structureDiagramTextureBindings),
 			"$layer_slider_name": `${structureName}_layer_slider`,
 			"$structure_index": structureI,
-			"$structure_size_info": structureSizeInfoTranslationKey,
 			"$material_lists": materialListsByLayerElements,
 		};
 	});
 	
-	getUIElementFromPath(infoScreenUI, "main", "tab_selector_panel", "tab_selector", "info_tab_button")["$toggle_group_forced_index"] = structureSizes.length;
+	getUIElementFromPath(infoScreenUI, "tab_stack_panel", "selector_pane", "about_section")["$toggle_group_forced_index"] = structureSizes.length;
 }
 /**
  * Gets the element at a specified path from a JSON UI object.
@@ -1658,7 +1651,8 @@ function makeLangFiles(config, packTemplateLangFiles, packName, materialList, ex
 		structureSizes.forEach((structureSize, structureI) => {
 			// TODO: fix translations. just fix it entirely. throw all this garbage out
 			let structureName = `Structure ${structureI + 1}`; // todo: use file names?
-			langFile += `\nholoprint.info_screen.structure_${structureI}.heading=${structureName}`;
+			let sectionHeadingTranslationKey = getInfoScreenSectionHeadingTranslationKey(structureI);
+			langFile += `\n${sectionHeadingTranslationKey}=${structureName}`;
 			const barSeparator = " §8|§r ";
 			let sizeInfo = `Size: ${structureSize.join("x")}${barSeparator}`;
 			langFile += `\nholoprint.info_screen.structure_${structureI}_layer_0=${sizeInfo}Full structure`;

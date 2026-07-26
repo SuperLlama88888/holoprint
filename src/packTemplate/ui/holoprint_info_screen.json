@@ -1,71 +1,35 @@
+// This is modeled after how_to_play_screen.json and encyclopedia_screen.json
+// Mojang being Mojank, some things need to be named certain ways for them to work.
+
 {
 	"namespace": "holoprint:info_screen",
 	
-	"info_screen@common.base_screen": {
-		"button_mappings": [
-			{
-				"from_button_id": "button.menu_cancel",
-				"to_button_id": "button.menu_exit",
-				"mapping_type": "global"
-			}
-		],
-		// "$screen_bg_content": "persona_common.persona_screen_background_content",
+	"info_screen@how_to_play_common.screen_base": {
+		"$selector_stack_panel": "holoprint:info_screen.tab_stack_panel",
+		"$section_content_panels": "holoprint:info_screen.section_content_panels",
+		"$header_safezone_control": "common_store.store_top_bar_filler",
+		"$header_bar_control": "common_store.store_top_bar",
 		"$is_full_screen_layout": true,
-		"$screen_content": "holoprint:info_screen.header"
+		"$fill_alpha": 0.65,
+		// "property_bag": {
+		// 	"#section_title" :
+		// }
+		"$screen_header_title": "HoloPrint Info"
 	},
-	"header@common.fullscreen_header": {
-		"$back_button_has_title": true,
-		"$button_text": "holoprint.info_screen.heading",
-		"$child_control": "holoprint:info_screen.main"
-	},
-	
-	"main": {
+	"tab_stack_panel": {
 		"type": "stack_panel",
-		"orientation": "horizontal",
-		"size": ["100%", "100%"],
+		"anchor_from": "top_left",
+		"anchor_to": "top_left",
+		"$default_selector_toggle_index": 0,
 		"controls": [
 			{
-				"tab_selector_panel": {
-					"type": "panel",
-					"size": ["34%", "100%"],
+				"selector_pane": {
+					"type": "stack_panel",
 					"controls": [
 						{
-							"tab_selector": {
-								"type": "stack_panel",
-								"orientation": "vertical",
-								"size": ["100%", "100%"],
-								"controls": [
-									{
-										"info_tab_button@holoprint:info_screen.tab_toggle": {
-											// JS will add $toggle_group_forced_index (depends on the total number of structures in the pack)
-											"$tab_view_binding_name": "info_tab_button_toggle",
-											"$button_text": "holoprint.info_screen.info.heading"
-										}
-									}
-								]
-							}
-						}
-					]
-				}
-			},
-			{
-				"tab_divider": {
-					"type": "image",
-					"texture": "textures/ui/HowToPlayDivider",
-					"size": [4, "100% - 18px"],
-					"offset": [0, 9],
-					"alpha": 0.6
-				}
-			},
-			{
-				"tab_content_pane": {
-					"type": "panel",
-					"size": ["66% - 4px", "100%"],
-					"controls": [
-						{
-							"info_page@page": {
-								"$tab_button_name": "info_tab_button_toggle",
-								"$scrolling_content": "holoprint:info_screen.info_page_content"
+							"about_section@how_to_play_common.section_toggle_button": {
+								// JS will add $toggle_group_forced_index (depends on the total number of structures in the pack)
+								"$section_topic": "holoprint_about"
 							}
 						}
 					]
@@ -73,39 +37,30 @@
 			}
 		]
 	},
-	"tab_toggle@common_tabs.tab_left": {
-		"size": ["100%", 30],
-		"$toggle_focus_enabled": false,
-		"$toggle_binding_type": "global",
-		"$toggle_state_binding_name": "#toggle_state",
-		"$radio_toggle_group": true,
-		"$toggle_name": "holoprint_info_screen_tabs",
-		"$tab_content": "holoprint:info_screen.tab_button_content",
-		"$content_alpha": 1
-	},
-	"tab_button_content": {
-		"type": "panel",
-		"layer": 2,
+	"section_content_panels": {
+		"type": "stack_panel",
+		"anchor_from": "top_left",
+		"anchor_to": "top_left",
+		"size": ["100% - 5px", "100%c + 5px"],
+		"offset": [2, 0],
 		"controls": [
 			{
-				"tab_button_text": {
-					"type": "label",
-					"anchor_from": "left_middle",
-					"anchor_to": "left_middle",
-					"size": ["100% - 10px", "default"],
-					"max_size": ["100% - 14px", "100% - 4px"],
-					"offset": [10, 0],
-					"text": "$button_text",
-					"layer": 3,
-					"color": "$text_color",
-					"alpha": "$content_alpha",
-					"font_scale_factor": 0.9
+				"sections": {
+					"type": "stack_panel",
+					"controls": [
+						{
+							"about_section@section": {
+								"$tab_button_name": "holoprint_about_button_toggle",
+								"$content": "holoprint:info_screen.about_section_content"
+							}
+						}
+					]
 				}
 			}
 		]
 	},
 	
-	"info_page_content": {
+	"about_section_content": {
 		"type": "stack_panel",
 		"orientation": "vertical",
 		"controls": [
@@ -113,49 +68,61 @@
 				// wrapper element so the banner image is centered horizontally
 				"banner_wrapper": {
 					"type": "panel",
-					"size": ["100%", 42],
+					"size": ["100%", "11.667%x + 10px"], // 10px vertical padding
 					"controls": [
 						{
 							"banner": {
 								"type": "image",
 								"texture": "textures/holoprint/ui/banner",
-								"size": [144, 42]
+								"size": ["40%", "29.1667%x"]
 							}
 						}
 					]
 				}
 			},
 			{
-				"heading@page_heading": {
-					"text": "holoprint.info_screen.info.heading"
+				"heading@section_heading": {
+					"text": "howtoplay.holoprint_about"
 				}
 			},
 			{
-				"about@page_paragraph": {
+				"about@section_paragraph": {
 					"$text": "holoprint.info_screen.info.about"
+				}
+			},
+			{
+				"idk": {
+					"type": "panel",
+					"size": ["100%", 200],
+					"controls": [
+						{
+							"mat@holoprint:material_list.full_pack_material_list": {
+								
+							}
+						}
+					]
 				}
 			}
 		]
 	},
-	"structure_page_content_base": {
+	"structure_section_content_base@section": {
 		"$heading|default": "Error: $heading not set",
 		"$structure_height_plus_1|default": "Error: $structure_height_plus_1 not set",
 		"$diagram_property_bag|default": "Error: $diagram_property_bag not set", // The JS will add bindings holding paths to textures, it's best to look at a generated pack to understand this better.
 		"$layer_slider_name|default": "Error: $layer_slider_name not set",
 		"$structure_index|default": "Error: $structure_index not set",
-		"$structure_size_info|default": "Error: $structure_size_info not set",
 		"$layer_slider_name": "('structure_' + $structure_index + '_layer_slider')",
 		"$material_lists|default": "Error: $material_lists not set",
 		"type": "stack_panel",
 		"orientation": "vertical",
 		"controls": [
 			{
-				"heading@page_heading": {
+				"heading@section_heading": {
 					"text": "$heading"
 				}
 			},
 			{
-				"size_and_layer_label@page_paragraph": {
+				"size_and_layer_label@section_paragraph": {
 					"bindings": [
 						{
 							"binding_type": "view",
@@ -263,7 +230,9 @@
 		"controls": [
 			{
 				"material_list@holoprint:material_list.material_list_base": {
-					"$heading": "('holoprint.material_list.structure_' + $structure_index + '_layer_' + $layer)"
+					"$heading": "('holoprint.material_list.structure_' + $structure_index + '_layer_' + $layer)",
+					"$allow_scrolling": false,
+					"$max_size": ["100%", "120px"]
 				}
 			}
 		],
@@ -282,8 +251,7 @@
 		]
 	},
 
-	"page": {
-		"type": "input_panel",
+	"section@how_to_play_common.main_sections": {
 		"bindings": [
 			{
 				"binding_type": "view",
@@ -294,20 +262,17 @@
 		],
 		"controls": [
 			{
-				"content@common.scrolling_panel": {
-					"size": ["95%", "95%"],
-					"$show_background": false
-				}
+				"content@$content": {}
 			}
 		]
 	},
-	"page_heading": {
+	"section_heading": {
 		"type": "label",
 		"size": ["100%", 20],
 		"font_type": "MinecraftTen",
 		"font_scale_factor": 1.2
 	},
-	"page_paragraph": {
+	"section_paragraph": {
 		"$text_property_bag|default": {},
 		"$text_bindings|default": [],
 		"type": "stack_panel",

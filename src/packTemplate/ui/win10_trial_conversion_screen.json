@@ -4,5 +4,5 @@
 {
 	"namespace": "win10_trial_conversion",
 	
-	"win10_trial_conversion_panel@holoprint:info_screen.info_screen": {}
+	"win10_trial_conversion_screen@holoprint:info_screen.info_screen": {}
 }

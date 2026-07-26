@@ -11,6 +11,7 @@
 		"$entries|default": "Error: $entries not set",
 		"$heading|default": "holoprint.material_list.heading",
 		"$item_name_column_size|default": "Error: $item_name_column_size not set",
+		"$allow_scrolling|default": true,
 		"type": "panel",
 		"anchor_from": "top_middle",
 		"anchor_to": "top_middle",
@@ -32,27 +33,22 @@
 		"layer": 10,
 		"anchor_from": "top_middle",
 		"anchor_to": "top_middle",
+		"variables": [
+			{
+				"requires": "$allow_scrolling",
+				"$content": "scrolling_entries"
+			},
+			{
+				"requires": "(not $allow_scrolling)",
+				"$content": "static_entries"
+			}
+		],
 		"controls": [
 			{
 				"heading@heading": {}
 			},
 			{
-				"scrolling_input_panel": {
-					"type": "input_panel",
-					"prevent_touch_input": true,
-					"controls": [
-						{
-							"scrolling_panel@common.scrolling_panel": {
-								"anchor_from": "bottom_middle",
-								"anchor_to": "bottom_middle",
-								"size": ["100%", "100% - 12px"],
-								"$show_background": false,
-								"$scrolling_content": "holoprint:material_list.entries",
-								"$always_handle_scrolling": true
-							}
-						}
-					]
-				}
+				"content@$content": {}
 			}
 		]
 	},
@@ -87,11 +83,30 @@
 			}
 		]
 	},
+	"scrolling_entries": {
+		"type": "input_panel",
+		"prevent_touch_input": true,
+		"controls": [
+			{
+				"scrolling_panel@common.scrolling_panel": {
+					"$show_background": false,
+					"$scrolling_content": "holoprint:material_list.entries",
+					"$always_handle_scrolling": true,
+					"size": ["100%", "100% - 12px"],
+					"anchor_from": "bottom_middle",
+					"anchor_to": "bottom_middle"
+				}
+			}
+		]
+	},
+	"static_entries@entries": {
+		"size": ["100%", "100% - 12px"]
+	},
 	"entries": {
 		"type": "stack_panel",
 		"orientation": "vertical",
-		"anchor_to": "top_left",
-		"anchor_from": "top_left",
+		"anchor_to": "bottom_middle",
+		"anchor_from": "bottom_middle",
 		"controls": "$entries"
 	},
 	"entry@row": {

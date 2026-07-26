@@ -19,8 +19,8 @@ holoprint.controls.move_hologram_z=Move hologram Z
 holoprint.material_list.heading=Material List: {PACK_NAME}
 holoprint.material_list.empty=§oThere are no items in this material list.§r
 
-holoprint.info_screen.heading=HoloPrint Info
-holoprint.info_screen.info.heading=About HoloPrint	## putting the formatting codes here looks bad, maybe once I make the ui nicer?
+howtoplay.holoprint_about=About HoloPrint
+howtoplay.holoprint_about.title=HoloPrint Info - About HoloPrint
 holoprint.info_screen.info.about=You are using a §uHoloPrint§r resource pack generated on §o{PACK_GENERATION_TIME}§r.\n\n§uHoloPrint§r is developed by §l§6SuperLlama88888§r and is a fully open-source project.\n\nThe source code can be found at: §ohttps://github.com/SuperLlama88888/holoprint§r\n\nFor more info, visit the wiki at: §ohttps://holoprint-mc.github.io/wiki§r
 
 holoprint.info_screen.change_structure_layer=Change layer
