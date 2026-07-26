@@ -162,19 +162,6 @@
 				"about@section_paragraph": {
 					"$text": "holoprint.info_screen.info.about"
 				}
-			},
-			{
-				"idk": {
-					"type": "panel",
-					"size": ["100%", 200],
-					"controls": [
-						{
-							"mat@holoprint:material_list.full_pack_material_list": {
-								
-							}
-						}
-					]
-				}
 			}
 		]
 	},
@@ -184,7 +171,6 @@
 		"$diagram_property_bag|default": "Error: $diagram_property_bag not set", // The JS will add bindings holding paths to textures, it's best to look at a generated pack to understand this better.
 		"$layer_slider_name|default": "Error: $layer_slider_name not set",
 		"$structure_index|default": "Error: $structure_index not set",
-		"$layer_slider_name": "('structure_' + $structure_index + '_layer_slider')",
 		"$material_lists|default": "Error: $material_lists not set",
 		"type": "stack_panel",
 		"orientation": "vertical",
@@ -304,8 +290,7 @@
 			{
 				"material_list@holoprint:material_list.material_list_base": {
 					"$heading": "('holoprint.material_list.structure_' + $structure_index + '_layer_' + $layer)",
-					"$allow_scrolling": false,
-					"$max_size": ["100%", "120px"]
+					"$allow_scrolling": false
 				}
 			}
 		],
