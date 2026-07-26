@@ -96,6 +96,7 @@
   "settings.textures.outline.opacity": "纹理轮廓不透明度:",
   "settings.textures.outline.width": "纹理轮廓线宽:",
   "settings.textures.outline.width.no_outline": "无",
+  "settings.validate_air_blocks": "Validate air blocks:",
   "terms_of_use_notice": "生成资源包即代表你已同意服务条款。(https://github.com/SuperLlama88888/holoprint/blob/main/TERMS_OF_USE.md)（真的很短！）",
   "structure_files.heading": "结构文件",
   "structure_files.upload": "上传结构文件 (`*.mcstructure`)",
