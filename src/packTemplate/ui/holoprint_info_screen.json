@@ -1,20 +1,93 @@
 // This is modeled after how_to_play_screen.json and encyclopedia_screen.json
 // Mojang being Mojank, some things need to be named certain ways for them to work.
+// N.B. The how_to_play_common screen uses the special #section_title binding for the title bar, which doesn't work here. So I've had to manually extract some parts of how_to_play_common.json just so I can uses an actual title. Specifically, info_screen and info_screen_content are copied almost verbatim from how_to_play_common.json.	
 
 {
 	"namespace": "holoprint:info_screen",
 	
-	"info_screen@how_to_play_common.screen_base": {
+	"info_screen@common.base_screen": {
+		"type": "screen",
+		"size": ["100%", "100%"],
+		"button_mappings": [
+			{
+				"from_button_id": "button.menu_cancel",
+				"to_button_id": "button.menu_exit",
+				"mapping_type": "global"
+			},
+			{
+				"from_button_id": "button.menu_tab_left",
+				"to_button_id": "button.menu_tab_left",
+				"mapping_type": "global",
+				"scope": "view"
+			},
+			{
+				"from_button_id": "button.menu_tab_right",
+				"to_button_id": "button.menu_tab_right",
+				"mapping_type": "global",
+				"scope": "view"
+			}
+		],
+		"$screen_content": "holoprint:info_screen.info_screen_content",
+		"$screen_background_control": "how_to_play_common.screen_background",
 		"$selector_stack_panel": "holoprint:info_screen.tab_stack_panel",
 		"$section_content_panels": "holoprint:info_screen.section_content_panels",
 		"$header_safezone_control": "common_store.store_top_bar_filler",
 		"$header_bar_control": "common_store.store_top_bar",
 		"$is_full_screen_layout": true,
-		"$fill_alpha": 0.65,
-		// "property_bag": {
-		// 	"#section_title" :
-		// }
-		"$screen_header_title": "HoloPrint Info"
+		"$fill_alpha": 0.65
+	},
+	"info_screen_content": {
+		"type": "panel",
+		"controls": [
+			{
+				"header": {
+					"type": "panel",
+					"size": ["100%", 23],
+					"anchor_from": "top_left",
+					"anchor_to": "top_left",
+					"controls": [
+						{
+							"top_bar@how_to_play_common.top_bar": {
+								"layer": 2,
+								"controls": [
+									{
+										"back_button@common.back_title_button": {
+											"anchor_from": "left_middle",
+											"anchor_to": "left_middle",
+											"offset": [2, -1]
+										}
+									},
+									{
+										"how_to_play_title@common.screen_header_title_panel": {
+											"size": ["70% - 22px", "100%"], // Gamepad helpers have max size of 30% and the back button is 20px
+											"offset": [20, -1],
+											"anchor_from": "left_middle",
+											"anchor_to": "left_middle",
+											"$screen_header_title": "holoprint.info_screen.title", // THIS IS IT
+											"layer": 2
+										}
+									},
+									{
+										"gamepad_bumper_helpers@how_to_play_common.gamepad_bumper_helpers": {}
+									}
+								]
+							}
+						}
+					]
+				}
+			},
+			{
+				"container": {
+					"type": "panel",
+					"size": "$store_screen_size",
+					"controls": [
+						{
+							"dialog_content@how_to_play_common.dialog_content": {}
+						}
+					]
+				}
+			}
+		]
 	},
 	"tab_stack_panel": {
 		"type": "stack_panel",
