@@ -10,7 +10,7 @@ jobs:
     if: github.repository == 'HoloPrint-MC/holoprint-mc.github.io'
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4.1.1
+        uses: actions/checkout@v7.0.1
         with:
           token: ${{ secrets.PAT }}
       - name: Fetch upstream

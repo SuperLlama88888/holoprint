@@ -135,7 +135,7 @@ async function processHTML(code) {
 		collapseWhitespace: true,
 		collapseBooleanAttributes: true,
 		sortAttributes: true,
-		sortClassName: true,
+		sortClassNames: true,
 		minifyCSS: css => processCSS(css).code,
 		inlineCustomElements: ["vec-3-input", "slot", "span"]
 	});
