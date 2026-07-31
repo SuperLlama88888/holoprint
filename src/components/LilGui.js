@@ -16,7 +16,7 @@ export default class LilGui extends HTMLElement {
 	connectedCallback() {
 		let previousStyles = new Set(selectEls("head > style"));
 		this.gui = new GUI({
-			// @ts-ignore
+			// @ts-expect-error
 			container: this.shadowRoot
 		});
 		if(!LilGui.#lilGuiStylesheet) {

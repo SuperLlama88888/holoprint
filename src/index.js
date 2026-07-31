@@ -404,7 +404,7 @@ document[onEvent]("DOMContentLoaded", () => {
 				return;
 			}
 			let allAddedChildren = mutations.flatMap(mutation => Array.from(mutation.addedNodes)).filter(node => node instanceof Element);
-			// @ts-ignore
+			// @ts-expect-error
 			let shouldRetranslate = allAddedChildren.some(node => Array.from(node.attributes).some(attr => attr.name.startsWith("data-translate") || attr.name.startsWith("data-translation-sub-")) || getAllChildren(node).some(el => Array.from(el.attributes).some(attr => attr.name.startsWith("data-translate") || attr.name.startsWith("data-translation-sub-")))) || mutations.find(mutation => mutation.type == "attributes" && (mutation.attributeName.startsWith("data-translate") || mutation.attributeName.startsWith("data-translation-sub-")) && mutation.target.getAttribute(mutation.attributeName) != mutation.oldValue); // retranslate when an element with a translate dataset attribute or a child with a translate dataset attribute is added, or when a translate dataset attribute is changed
 			if(shouldRetranslate) {
 				retranslating = true;
@@ -637,7 +637,7 @@ async function makePack(structureFiles, localResourcePacks) {
 		RETEXTURE_CONTROL_ITEMS: !!formData.get("retextureControlItems"),
 		CONTROL_ITEM_TEXTURE_SCALE: +formData.get("controlItemTextureScale"),
 		RENAME_CONTROL_ITEMS: !!formData.get("renameControlItems"),
-		// @ts-ignore
+		// @ts-expect-error
 		CONTROLS: Object.fromEntries(Array.from(formData).filter(([key]) => key.startsWith("control.")).map(([key, value]) => [key.replace(/^control./, ""), JSON.parse(value)])),
 		// @ts-expect-error
 		INITIAL_OFFSET: formData.get("initialOffset").toString().split(",").map(x => +x),

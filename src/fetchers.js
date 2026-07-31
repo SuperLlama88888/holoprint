@@ -114,7 +114,7 @@ async function createCachingFetcher(name, owner, repo, version) {
  */
 function sortVersions(versions) {
 	let versionsAndParsed = versions.map(v => [v, Array.from(v.matchAll(/\d+/g)).map(m => +m[0])]);
-	versionsAndParsed.sort(([, a], [, b]) => Array(max(a.length, b.length)).fill().map((_, i) => (a[i] ?? 0) - (b[i] ?? 0)).find(d => d) || 0);
+	versionsAndParsed.sort(([, a], [, b]) => Array(max(a.length, b.length)).fill(0).map((_, i) => (a[i] ?? 0) - (b[i] ?? 0)).find(d => d) || 0);
 	return versionsAndParsed.map(([ver]) => ver);
 }
 

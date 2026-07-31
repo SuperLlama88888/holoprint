@@ -2,12 +2,25 @@
 	"name": "root",
 	"type": "module",
 	"scripts": {
-		"lint": "tsc 2>&1 | grep -Ev 'TS2307|TS2694'",
+		"lint": "tsc",
 		"test": "npm run test --workspaces --if-present",
 		"build": "npm run build -w pipeline"
 	},
 	"workspaces": [
 		"pipeline",
 		"tests/**"
-	]
+	],
+	"devDependencies": {
+		"typescript": "7.0.2",
+		"@types/three": "0.177.0",
+		"@supabase/supabase-js": "2",
+		"deepmerge": "4.3.1",
+		"lil-gui": "0.20.0",
+		"mcbe-leveldb-reader": "2.0.1",
+		"nbtify-readonly-typeless": "1.1.2",
+		"potpack": "2.1.0",
+		"stats.js": "0.17.0",
+		"strip-json-comments": "5.0.1",
+		"tga-js": "1.1.1"
+	}
 }

@@ -78,7 +78,7 @@ export async function makePack(structureFiles, partialConfig, resourcePackStack 
 	// @ts-expect-error
 	let dataFileNames = ["textureAtlasMappings", "blockShapes", "blockShapeGeos", "blockStateDefinitions", "blockEigenvariants", "materialListMappings"];
 	if(config.RETEXTURE_CONTROL_ITEMS) {
-		// @ts-ignore
+		// @ts-expect-error
 		dataFileNames.push("itemIcons");
 	}
 	// utility so I don't have to type _1234 or $9876 all the time for loading files below.
@@ -613,7 +613,7 @@ export async function extractStructureFilesFromPack(resourcePack) {
 	let packFileReader = new BlobReader(resourcePack);
 	let packFolder = new ZipReader(packFileReader);
 	/** @type {FileEntry[]} */
-	// @ts-ignore
+	// @ts-expect-error
 	let structureFileEntries = (await packFolder.getEntries()).filter(entry => entry.filename.endsWith(".mcstructure"));
 	packFolder.close();
 	let structureBlobs = await Promise.all(structureFileEntries.map(entry => entry.getData(new BlobWriter())));
@@ -821,7 +821,7 @@ const fetchPackTemplateFile = conditionallyCacheUnaryFunc(
 /**
  * @template {string} F
  * @template {string} [N = ""]
- * @typedef {N extends `_${string}`? Blob : F extends `${string}.json` | `${string}.material`? object : F extends `${string}.lang`? string : F extends `${string}.png`? HTMLImageElement : never} GetFileType
+ * @typedef {N extends `_${string}`? Blob : F extends `${string}.json` | `${string}.material`? any : F extends `${string}.lang`? string : F extends `${string}.png`? HTMLImageElement : never} GetFileType
  */
 /**
  * @template {Record<string, string>} T
@@ -843,12 +843,13 @@ function loadResources(resourceFiles, resourcePackStack) {
  * @template {Record<string, string>} T
  * @param {{ [K in keyof T]: T[K] }} fileNamesAndPaths
  * @param {(filePath: string) => Promise<Response>} fetchFunc
- * @returns {{ [K in keyof T]: Promise<GetFileType<T[K], K>> } & { allValues: Promise<{ [K in keyof T]: GetFileType<T[K], K> }>, allEntries: Promise<{ [K in keyof T as T[K]]: GetFileType<T[K], K> }> }}
+ * @returns {{ [K in keyof T as (K extends string? K : never)]: Promise<GetFileType<T[K], K>> } & { allValues: Promise<{ [K in keyof T]: GetFileType<T[K], K> }>, allEntries: Promise<{ [K in keyof T as T[K]]: GetFileType<T[K], K> }> }}
+ * @areturns {{ [K in keyof T]: T[K] }}
  */
 function multiload(fileNamesAndPaths, fetchFunc) {
 	let entries = Object.entries(fileNamesAndPaths).filter(([, path]) => path);
 	let contents = Object.fromEntries(entries.map(([name, path]) => [name, getResponseContents(fetchFunc(path), path, name.startsWith("_"))]));
-	// @ts-ignore
+	// @ts-expect-error
 	return {
 		...contents,
 		allValues: awaitAllEntries(contents),
@@ -902,10 +903,11 @@ async function getResponseContents(resPromise, filePath, rawBlob) {
 	let fileExtension = getFileExtension(filePath);
 	switch(fileExtension) {
 		case "json":
+		// @ts-expect-error
 		case "material": return await jsonc(res);
-		// @ts-ignore
+		// @ts-expect-error
 		case "lang": return await res.text();
-		// @ts-ignore
+		// @ts-expect-error
 		case "png": return await toImage(res);
 	}
 }
@@ -1404,7 +1406,7 @@ function patchRenderControllers(renderControllers, patches) {
 function makeMaterialListsForEachStructureAndEachLayer(config, allStructureIndicesByLayer, structureSizes, blockPalette, blockMetadata, itemMetadata, materialListMappings, langFile) {
 	return allStructureIndicesByLayer.map((structureIndicesByLayer, structureI) => {
 		let structureSize = structureSizes[structureI];
-		let materialListsForThisStructure = (new Array(structureSize[1] + 1)).fill().map(() => new MaterialList(blockMetadata, itemMetadata, materialListMappings, langFile));
+		let materialListsForThisStructure = (new Array(structureSize[1] + 1)).fill(null).map(() => new MaterialList(blockMetadata, itemMetadata, materialListMappings, langFile));
 		for(let y = 0; y < structureSize[1]; y++) {
 			for(let x = 0; x < structureSize[0]; x++) {
 				for(let z = 0; z < structureSize[2]; z++) {
@@ -1508,7 +1510,7 @@ function addInfoScreenUIPages(infoScreenUI, structureSizes, structureDiagrams, m
 }
 /**
  * Gets the element at a specified path from a JSON UI object.
- * @param {string} rootUiObject
+ * @param {object} rootUiObject
  * @param {...string} elementPath
  * @returns {object}
  */

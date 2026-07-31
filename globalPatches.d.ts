@@ -21,7 +21,8 @@ declare global {
 		new<T extends number>(length: T): Float32Array & { length: T };
 	}
 	interface ObjectConstructor {
-		entries<K extends string, T>(o: Record<K, T>): [K, T][];
+		// TS 7 made me add " & (string extends K? number : never)" because otherwise it infers all calls to Object.entries() as [never, never][] :(
+		entries<K extends string, T>(o: Record<K, T> & (string extends K? never : any) & ([T] extends [never]? never : T)): [K, T][];
 		// fromEntries is from https://github.com/microsoft/TypeScript/pull/61074
 		fromEntries<K extends PropertyKey, T = any>(entries: Iterable<readonly [K, T]>): { [Key in K]: T; };
 	}
@@ -67,7 +68,7 @@ declare global {
 		canvas: T; // without this line, I would run into issues where it doesn't know that I am indeed using an OffscreenCanvas and therefore it would give a red squiggly line for trying to use methods that don't exist on regular canvases. LIKE HELLO TYPESCRIPT??
 	}
 }
-declare module "https://esm.sh/three@0.177.0/examples/jsm/controls/OrbitControls.js" {
+declare module "@types/three/examples/jsm/controls/OrbitControls.d.ts" {
 	interface OrbitControls {
 		_sphericalDelta: {
 			phi: number

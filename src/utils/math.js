@@ -1,4 +1,4 @@
-export const { min, max, floor, ceil, sqrt, round, abs, PI: pi, exp, log: ln, sin, cos, tan, hypot } = Math;
+export const { min, max, sign, floor, ceil, sqrt, round, abs, PI: pi, exp, log: ln, sin, cos, tan, hypot } = Math;
 export const clamp = (n, lowest, highest) => min(max(n, lowest), highest);
 export function sinDeg(deg) {
 	return sin(deg * pi / 180);
@@ -54,14 +54,14 @@ export function lcm(a, b) {
 export function distanceSquared(a, b) {
 	return (a[0] - b[0]) * (a[0] - b[0]) + (a[1] - b[1]) * (a[1] - b[1]) + (a[2] - b[2]) * (a[2] - b[2]);
 }
-export function range(a, b, c) {
-	if(b == undefined && c == undefined) {
-		return (new Array(a + 1)).fill().map((_, i) => i);
-	} else if(c == undefined) {
-		return (new Array(b - a + 1)).fill().map((_, i) => i + a);
-	} else {
-		return (new Array((b - a) / c + 1)).fill().map((_, i) => i * c + a);
-	}
+/**
+ * @param {number} low
+ * @param {number} high
+ * @param {number} [step]
+ * @returns {number[]}
+ */
+export function range(low, high, step = 1) {
+	return (new Array((high - low) / step + 1)).fill(0).map((_, i) => i * step + low);
 }
 /**
  * Changes the rows and columns of a matrix.
@@ -72,7 +72,7 @@ export function range(a, b, c) {
  * @returns {TupleMatrix<C, R, T>}
  */
 export function transposeMatrix(matrix) {
-	// @ts-ignore
+	// @ts-expect-error
 	return matrix[0].map((_, i) => matrix.map(row => row[i]));
 }
 /**

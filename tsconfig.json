@@ -5,9 +5,10 @@
 		"strict": false,
 		"noUnusedLocals": true,
 		"noUnusedParameters": true,
+		"skipLibCheck": true,
 		"target": "esnext",
 		"module": "esnext",
 		"moduleResolution": "bundler"
 	},
-	"include": ["src/**/*.js", "globalPatches.d.ts"]
+	"include": ["src/**/*", "globalPatches.d.ts"]
 }
