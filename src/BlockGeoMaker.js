@@ -379,17 +379,18 @@ export default class BlockGeoMaker {
 						uvRot += 90;
 					}
 				}
-				let flipTextureHorizontally = cube["flip_textures_horizontally"]?.includes(faceName) ^ (isSideFace && cube["flip_textures_horizontally"]?.includes("side")) ^ cube["flip_textures_horizontally"]?.includes("*");
-				let flipTextureVertically = cube["flip_textures_vertically"]?.includes(faceName) ^ (isSideFace && cube["flip_textures_vertically"]?.includes("side")) ^ cube["flip_textures_vertically"]?.includes("*");
+				let flipTextureHorizontally = cube["flip_textures_horizontally"]?.includes(faceName) != (isSideFace && cube["flip_textures_horizontally"]?.includes("side")) != cube["flip_textures_horizontally"]?.includes("*");
+				let flipTextureVertically = cube["flip_textures_vertically"]?.includes(faceName) != (isSideFace && cube["flip_textures_vertically"]?.includes("side")) != cube["flip_textures_vertically"]?.includes("*");
 				if("box_uv" in cube) { // box uv does some flipping automatically
-					flipTextureHorizontally ^= +(faceName != "north" && faceName != "south");
-					flipTextureVertically ^= +(faceName == "up");
+					// this is why I don't like !==
+					flipTextureHorizontally = flipTextureHorizontally != (faceName != "north" && faceName != "south");
+					flipTextureVertically = flipTextureVertically != (faceName == "up");
 				}
-				if(+(faceName == "down" || faceName == "up") ^ flipTextureHorizontally) { // in MC the down/up faces are rotated 180 degrees compared to how they are in geometry; this can be faked by flipping both axes.
+				if((faceName == "down" || faceName == "up") != flipTextureHorizontally) { // in MC the down/up faces are rotated 180 degrees compared to how they are in geometry; this can be faked by flipping both axes.
 					[vertices[0]["corner"], vertices[1]["corner"]] = [vertices[1]["corner"], vertices[0]["corner"]];
 					[vertices[2]["corner"], vertices[3]["corner"]] = [vertices[3]["corner"], vertices[2]["corner"]];
 				}
-				if(+(faceName == "down" || faceName == "up") ^ flipTextureVertically) {
+				if((faceName == "down" || faceName == "up") != flipTextureVertically) {
 					[vertices[0]["corner"], vertices[2]["corner"]] = [vertices[2]["corner"], vertices[0]["corner"]];
 					[vertices[1]["corner"], vertices[3]["corner"]] = [vertices[3]["corner"], vertices[1]["corner"]];
 				}
@@ -513,7 +514,7 @@ export default class BlockGeoMaker {
 	/**
 	 * Optimises geometries by merging adjacent cubes and culling hidden faces.
 	 * @param {CubeWithEasyProperties[]} cubes
-	 * @returns {object[]}
+	 * @returns {CubeWithEasyProperties[]}
 	 */
 	#optimizeGeometry(cubes) {
 		let [unoptimizableCubes, optimizableCubes] = conditionallyGroup(cubes, cube => !("rot" in cube));
@@ -981,84 +982,94 @@ export default class BlockGeoMaker {
 	 * @param {string} fullExpression
 	 * @param {Data.Cube} cube
 	 * @param {string} specialTexture
-	 * @returns {string}
+	 * @returns {"#tex" | "carried" | "carried.down" | "carried.east" | "carried.north" | "carried.side" | "carried.south" | "carried.up" | "carried.west" | "down" | "east" | "none" | "north" | "side" | "south" | "up" | "west" | `textures/${string}`} // yes
 	 */
 	#interpolateInBlockValues(block, fullExpression, cube, specialTexture) {
 		let wholeStringValue;
-		let substitutedExpression = fullExpression.replaceAll(/\${([^}]+)}/g, (bracketedExpression, expression) => {
-			if(wholeStringValue != undefined) return;
-			if(/^Array\.\w+\[[^\[]+\]$/.test(expression)) {
-				let [, arrayName, arrayIndexVar] = expression.match(/^Array\.(\w+)\[([^\[]+)\]$/);
-				let array = cube["arrays"]?.[arrayName];
-				if(!array) {
-					console.error(`Couldn't find array ${arrayName} in cube:`, cube);
-					return "";
-				}
-				let arrayIndex;
-				if(arrayIndexVar.startsWith("entity.")) {
-					let blockEntityProperty = arrayIndexVar.slice(7);
-					if(!("block_entity_data" in block) || !(blockEntityProperty in block["block_entity_data"])) {
-						console.error(`Cannot find block entity property ${blockEntityProperty} in ${block["name"]}:`, block);
+		let substitutedExpression = fullExpression.replaceAll(/\${([^}]+)}/g, 
+			/** @type {(...args: string[]) => string} */
+			(bracketedExpression, expression) => {
+				if(wholeStringValue != undefined) return;
+				if(/^Array\.\w+\[[^\[]+\]$/.test(expression)) {
+					let [, arrayName, arrayIndexVar] = expression.match(/^Array\.(\w+)\[([^\[]+)\]$/);
+					let array = cube["arrays"]?.[arrayName];
+					if(!array) {
+						console.error(`Couldn't find array ${arrayName} in cube:`, cube);
 						return "";
 					}
-					arrayIndex = block["block_entity_data"][blockEntityProperty];
-				} else {
-					if(!("states" in block) || !(arrayIndexVar in block["states"])) {
-						console.error(`Cannot find block state ${arrayIndexVar} in ${block["name"]}:`, block);
-						return "";
-					}
-					arrayIndex = block["states"][arrayIndexVar];
-				}
-				if(!(arrayIndex in array)) {
-					console.error(`Array index out of bounds: ${JSON.stringify(array)}[${arrayIndex}]`);
-					return "";
-				}
-				return array[arrayIndex];
-			}
-			let match = expression.replaceAll(/\s/g, "").match(/^(#block_name|#block_states|#block_entity_data|#tex)((?:\.\w+|\[-?\d+\])*)(\[(-?\d+):(-?\d*)\]|\[:(-?\d+)\])?(?:\?\?(.+))?$/);
-			if(!match) {
-				console.error(`Wrongly formatted expression: ${bracketedExpression}`);
-				return "";
-			}
-			let [, specialVar, propertyChain, ...slicingAndDefault] = match;
-			let value = function() {
-				switch(specialVar) {
-					case "#block_name": return block["name"];
-					case "#block_states": return block["states"];
-					case "#block_entity_data": return block["block_entity_data"];
-					case "#tex": {
-						if(specialTexture == undefined) {
-							console.error(`No #tex for block ${block["name"]}!`);
+					let arrayIndex;
+					if(arrayIndexVar.startsWith("entity.")) {
+						let blockEntityProperty = arrayIndexVar.slice(7);
+						if(!("block_entity_data" in block) || !(blockEntityProperty in block["block_entity_data"])) {
+							console.error(`Cannot find block entity property ${blockEntityProperty} in ${block["name"]}:`, block);
+							return "";
 						}
-						return specialTexture;
-					}
-				}
-				console.error(`Unknown special variable: ${specialVar}`);
-			}();
-			propertyChain.match(/\.\w+|\[-?\d+\]/g)?.forEach(property => {
-				let keys = property.match(/^\.(\w+)|\[(\d+)\]$/);
-				value = value?.[keys[1] ?? keys[2]];
-			});
-			if(slicingAndDefault[0] != undefined) {
-				value = value?.slice(slicingAndDefault[1], slicingAndDefault[3] ?? (slicingAndDefault[2] == ""? undefined : slicingAndDefault[2]));
-			}
-			if(value == undefined || value === "") {
-				if(slicingAndDefault[4] != undefined) {
-					let defaultValue = slicingAndDefault[4];
-					if(/SET_WHOLE_STRING\([^)]+\)/.test(defaultValue)) {
-						wholeStringValue = defaultValue.match(/\(([^)]+)\)/)[1];
-						return;
+						arrayIndex = block["block_entity_data"][blockEntityProperty];
 					} else {
-						value = defaultValue;
+						if(!("states" in block) || !(arrayIndexVar in block["states"])) {
+							console.error(`Cannot find block state ${arrayIndexVar} in ${block["name"]}:`, block);
+							return "";
+						}
+						arrayIndex = block["states"][arrayIndexVar];
 					}
-				} else {
-					console.error(`Nothing for ${specialVar}${propertyChain} in block:`, block);
+					if(!(arrayIndex in array)) {
+						console.error(`Array index out of bounds: ${JSON.stringify(array)}[${arrayIndex}]`);
+						return "";
+					}
+					return array[arrayIndex];
+				}
+				let match = expression.replaceAll(/\s/g, "").match(/^(#block_name|#block_states|#block_entity_data|#tex)((?:\.\w+|\[-?\d+\])*)(\[(-?\d+):(-?\d*)\]|\[:(-?\d+)\])?(?:\?\?(.+))?$/);
+				if(!match) {
+					console.error(`Wrongly formatted expression: ${bracketedExpression}`);
 					return "";
 				}
+				let [, specialVar, propertyChain, ...slicingAndDefault] = match;
+				let value = function() {
+					switch(specialVar) {
+						case "#block_name": return block["name"];
+						case "#block_states": return block["states"];
+						case "#block_entity_data": return block["block_entity_data"];
+						case "#tex": {
+							if(specialTexture == undefined) {
+								console.error(`No #tex for block ${block["name"]}!`);
+							}
+							return specialTexture;
+						}
+					}
+					console.error(`Unknown special variable: ${specialVar}`);
+				}();
+				propertyChain.match(/\.\w+|\[-?\d+\]/g)?.forEach(property => {
+					let keys = property.match(/^\.(\w+)|\[(\d+)\]$/);
+					value = value?.[keys[1] ?? keys[2]];
+				});
+				if(slicingAndDefault[0] != undefined && typeof value == "string") {
+					value = value.slice(+slicingAndDefault[1], +(slicingAndDefault[3] ?? (slicingAndDefault[2] == ""? undefined : slicingAndDefault[2])));
+				}
+				if(value == undefined || value === "") {
+					if(slicingAndDefault[4] != undefined) {
+						let defaultValue = slicingAndDefault[4];
+						if(/SET_WHOLE_STRING\([^)]+\)/.test(defaultValue)) {
+							wholeStringValue = defaultValue.match(/\(([^)]+)\)/)[1];
+							return;
+						} else {
+							value = defaultValue;
+						}
+					} else {
+						console.error(`Nothing for ${specialVar}${propertyChain} in block:`, block);
+						return "";
+					}
+				}
+				if(typeof value == "number") {
+					value = String(value);
+				}
+				if(typeof value != "string") {
+					console.error(`Interpolated value is not a string somehow:`, value);
+					return "";
+				}
+				// console.debug(`Changed ${bracketedExpression} to ${value}!`, block);
+				return value;
 			}
-			// console.debug(`Changed ${bracketedExpression} to ${value}!`, block);
-			return value;
-		});
+		);
 		return wholeStringValue ?? substitutedExpression;
 	}
 	
@@ -1112,7 +1123,7 @@ export default class BlockGeoMaker {
 }
 
 /**
- * @typedef {Data.Cube & Record<"x" | "y" | "z" | "w" | "h" | "d", number>} CubeWithEasyProperties
+ * @typedef {Data.Cube & Record<"x" | "y" | "z" | "w" | "h" | "d", number> & { block_override?: Block }} CubeWithEasyProperties
  */
 
 /** @import { Vec3, Block, HoloPrintConfig, PolyMeshTemplateFaceWithUvs, PolyMeshTemplateFace, Rectangle, PolyMeshTemplateVertex, CubeUv } from "./HoloPrint.js" */

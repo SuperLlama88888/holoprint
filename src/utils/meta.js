@@ -16,18 +16,24 @@ import { removeFalsies } from "./arrays.js";
  * @param {F} secondaryMethod The function that will have a patch applied to turn into a symbol during property access
  * @returns {F & symbol}
  */
+/**
+ * @template {Function} F
+ * @param {object | object[]} objects
+ * @param {Function} primaryMethod
+ * @param {F} [secondaryMethod]
+ * @returns {symbol | (F & symbol)}
+ */
 export function symbolPatch(objects, primaryMethod, secondaryMethod) {
 	let symbol = Symbol(primaryMethod.name);
-	if(!Array.isArray(objects)) {
-		objects = [objects];
-	}
-	objects.forEach(object => {
+	let objectsArr = Array.isArray(objects)? objects : [objects];
+	objectsArr.forEach(object => {
 		Object.defineProperty(object, symbol, { // defaults to nonconfigurable, nonenumerable and unwritable
 			value: primaryMethod
 		});
 	});
 	if(secondaryMethod) {
 		secondaryMethod[Symbol.toPrimitive] = () => symbol; // used during property access: https://tc39.es/ecma262/multipage/abstract-operations.html#sec-toprimitive. throws a TypeError if you're trying to convert to a string, but it's fine for property access because it's a symbol
+		// @ts-expect-error
 		return secondaryMethod;
 	} else {
 		return symbol;
@@ -39,19 +45,19 @@ export const nanToUndefined = x => Number.isNaN(x)? undefined : x;
 export const doNothing = x => x;
 /** @template {any[]} T @param {[...T]} x @returns {T} */
 export const tuple = x => x;
-/** @template T @param {T} _type @returns {T extends any[]? T[number]["prototype"][] : T["prototype"]} */
+/** @template {{ "prototype": any } | { "prototype": any }[]} T @param {T} _type @returns {T extends any[]? T[number]["prototype"][] : T extends { "prototype": any }? T["prototype"] : never} */
 export const cast = (x, _type) => x;
 /**
- * @template {Function | Function[]} T
+ * @template {(Function & { "prototype": any }) | Function[]} T
  * @param {T} _type
- * @returns {asserts x is (T extends any[]? T[number]["prototype"][] : T["prototype"])}
+ * @returns {asserts x is (T extends any[]? T[number]["prototype"][] : T extends Function? T["prototype"] : never)}
 */
 export function assertAs(x, _type) {
 	if(typeof _type == "function") {
 		if(!(x instanceof _type)) {
 			throw new Error(`Assert failed: ${x} is not of type ${_type.name}\n${JSON.stringify(x)}`);
 		}
-	} else {
+	} else if(Array.isArray(_type)) {
 		let permissibleTypes = Array.from(new Set(_type));
 		if(!permissibleTypes.some(t => x instanceof t)) {
 			throw new Error(`Assert failed: ${x} is not of type ${permissibleTypes.join(" | ")}\n${JSON.stringify(x)}`);

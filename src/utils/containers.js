@@ -4,10 +4,6 @@ import { doNothing, tuple } from "./meta.js";
 function stringifyJsonBigIntSafe(value) {
 	return JSON.stringify(value, (_, x) => typeof x == "bigint"? (JSON.rawJSON ?? doNothing)(x.toString()) : x); // JSON.rawJSON offers the perfect solution but is very modern, so stringifying them is the next best option
 }
-// @ts-expect-error
-function parseJsonBigIntSafe(value) { // this function is unused but I'm keeping it here because it works well with the function above
-	return JSON.parse(value, (_, x, context) => context && Number.isInteger(x) && !Number.isSafeInteger(x)? BigInt(context.source) : x);
-}
 
 /**
  * @template A

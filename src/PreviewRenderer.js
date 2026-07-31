@@ -68,35 +68,35 @@ export default class PreviewRenderer extends AsyncFactory {
 	#imageBlob;
 	/** @type {ImageData} */
 	#imageBlobData;
-	/** @type {THREE.Vector3} */
+	/** @type {three.Vector3} */
 	#center;
 	#maxDim;
 	#maxDimPixels;
 	#lastFrameTime = performance.now();
 	/** @type {Vec3[][]} */
 	#blockPositions = [];
-	/** @type {THREE.DirectionalLight} */
+	/** @type {three.DirectionalLight} */
 	#directionalLight;
 	/** @type {PreviewPointLight[]} */
 	#pointLights = [];
-	/** @type {THREE.PointLight[]} */
+	/** @type {three.PointLight[]} */
 	#pointLightsInScene = [];
-	/** @type {WeakMap<THREE.PointLight, THREE.PointLightHelper>} */
+	/** @type {WeakMap<three.PointLight, three.PointLightHelper>} */
 	#pointLightHelpers = new WeakMap();
-	/** @type {THREE.WebGLRenderer} */
+	/** @type {three.WebGLRenderer} */
 	#renderer;
-	/** @type {THREE.Scene} */
+	/** @type {three.Scene} */
 	#scene;
-	/** @type {THREE.PerspectiveCamera} */
+	/** @type {three.PerspectiveCamera} */
 	#camera;
-	/** @type {OrbitControls} */
+	/** @type {import("three/examples/jsm/controls/OrbitControls.js").OrbitControls} */
 	#controls;
-	/** @type {THREE.CubeTexture} */
+	/** @type {three.CubeTexture} */
 	#skyboxCubemap;
 	#shouldRenderNextFrame = true;
 	#stats;
 	#optionsGui;
-	/** @type {THREE.Object3D[]} */
+	/** @type {three.Object3D[]} */
 	#debugHelpers = [];
 	/**
 	 * Create a preview renderer for a completed geometry file.
@@ -107,7 +107,7 @@ export default class PreviewRenderer extends AsyncFactory {
 	 * @param {Block[]} blockPalette
 	 * @param {PolyMeshTemplateFaceWithUvs[][]} polyMeshTemplatePalette
 	 * @param {[Int32Array, Int32Array]} blockIndices
-	 * @param {Partial<typeof this.options>} [options]
+	 * @param {Partial<typeof PreviewRenderer.prototype.options>} [options]
 	 */
 	constructor(cont, packName, imageBlob, structureSize, blockPalette, polyMeshTemplatePalette, blockIndices, options = {}) {
 		super();
@@ -267,9 +267,9 @@ export default class PreviewRenderer extends AsyncFactory {
 			transparent: true
 		});
 		
-		/** @type {THREE.BufferGeometry[]} */
+		/** @type {three.BufferGeometry[]} */
 		let opaqueBlockGeos = [];
-		/** @type {THREE.BufferGeometry[]} */
+		/** @type {three.BufferGeometry[]} */
 		let translucentBlockGeos = [];
 		for(let i in this.#blockPositions) {
 			let polyMeshTemplate = this.polyMeshTemplatePalette[i];
@@ -593,7 +593,7 @@ export default class PreviewRenderer extends AsyncFactory {
 		let gl = this.#renderer.getContext();
 		return gl.getParameter(gl.MAX_VERTEX_UNIFORM_VECTORS) <= 1024 || gl.getParameter(gl.MAX_FRAGMENT_UNIFORM_VECTORS) <= 256; // yes
 	}
-	/** @returns {Promise<THREE.Texture>} */
+	/** @returns {Promise<three.Texture>} */
 	async #createTexture() {
 		let texture = new THREE.DataTexture(this.#imageBlobData.data, this.#imageBlobData.width, this.#imageBlobData.height, THREE.RGBAFormat);
 		texture.colorSpace = THREE.SRGBColorSpace;
@@ -604,7 +604,7 @@ export default class PreviewRenderer extends AsyncFactory {
 	/**
 	 * Converts a poly mesh template in the palette to a Three.js BufferGeometry.
 	 * @param {number} polyMeshTemplatePaletteI
-	 * @returns {THREE.BufferGeometry}
+	 * @returns {three.BufferGeometry}
 	 */
 	#polyMeshTemplateToBufferGeo(polyMeshTemplatePaletteI) {
 		this.#polyMeshMaker.add(polyMeshTemplatePaletteI);
@@ -663,10 +663,10 @@ export default class PreviewRenderer extends AsyncFactory {
 	}
 	/**
 	 * Creates an instanced mesh from a group.
-	 * @param {THREE.BufferGeometry} bufferGeo
+	 * @param {three.BufferGeometry} bufferGeo
 	 * @param {Vec3[]} positions
-	 * @param {THREE.Material} material
-	 * @returns {THREE.InstancedMesh}
+	 * @param {three.Material} material
+	 * @returns {three.InstancedMesh}
 	 */
 	#instanceBufferGeoAtPositions(bufferGeo, positions, material) { // todo: investigate better performance w/ InstancedBufferGeometry
 		let instancedMesh = new THREE.InstancedMesh(bufferGeo, material, positions.length);
@@ -681,8 +681,8 @@ export default class PreviewRenderer extends AsyncFactory {
 	}
 	/**
 	 * Merges multiple geometries into a single mesh then adds it to the scene. Shadows are enabled on the mesh.
-	 * @param {THREE.BufferGeometry[]} geos
-	 * @param {THREE.Material} material
+	 * @param {three.BufferGeometry[]} geos
+	 * @param {three.Material} material
 	 */
 	#mergeGeosAndAddToScene(geos, material) {
 		let mergedGeo = BufferGeometryUtils.mergeGeometries(geos, false);
@@ -694,7 +694,7 @@ export default class PreviewRenderer extends AsyncFactory {
 	}
 	/**
 	 * Expands the scene's instanced meshes into a new scene.
-	 * @returns {THREE.Scene}
+	 * @returns {three.Scene}
 	 */
 	#expandInstancedMeshes() {
 		let scene = new THREE.Scene();
@@ -720,7 +720,4 @@ export default class PreviewRenderer extends AsyncFactory {
 
 /** @import { I32Vec3, Vec3, Block, PreviewPointLight, PolyMeshTemplateFaceWithUvs} from "./HoloPrint.js" */
 /** @import { Controller } from "lil-gui" */
-/** @import * as THREE from "three" */
-/** @import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js" */
-/** @import { GLTFExporter } from "three/examples/jsm/exporters/GLTFExporter.js" */
-/** @import BufferGeometryUtils from "three/examples/jsm/utils/BufferGeometryUtils.js" */
+/** @import * as three from "three" */

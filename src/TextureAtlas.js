@@ -42,7 +42,7 @@ export default class TextureAtlas {
 	 * @param {ResourcePackStack} resourcePackStack
 	 * @param {object} blocksDotJson
 	 * @param {object} terrainTexture
-	 * @param {object} flipbookTextures
+	 * @param {object[]} flipbookTextures
 	 * @param {Data.TextureAtlasMappings} textureAtlasMappings
 	 */
 	constructor(config, resourcePackStack, blocksDotJson, terrainTexture, flipbookTextures, textureAtlasMappings) {
@@ -399,7 +399,7 @@ export default class TextureAtlas {
 		}
 		imageFragments.sort((a, b) => a["i"] - b["i"]);
 		/** @type {(ImageFragment & Rectangle & { actualSize: Vec2, offset: Vec2 })[]} */
-		// @ts-ignore
+		// @ts-expect-error
 		let packedImageFragments = imageFragments;
 		this.textureWidth = packing.w;
 		this.textureHeight = packing.h;
