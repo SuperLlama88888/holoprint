@@ -328,6 +328,10 @@ export default class BlockGeoMaker {
 				cubeVariant = variant; // default variant for this block
 			}
 			
+			// if the arrays are undefined, the set will be empty, so no ?? [] is needed here
+			let texturesToFlipHorizontally = new Set(cube["flip_textures_horizontally"]);
+			let texturesToFlipVertically = new Set(cube["flip_textures_vertically"]);
+			
 			/** @type {(PolyMeshTemplateFace & { fullbright: boolean })[]} */
 			let faces = [];
 			let textureSize = cube["texture_size"] ?? [16, 16];
@@ -392,18 +396,31 @@ export default class BlockGeoMaker {
 						uvRot += 90;
 					}
 				}
-				let flipTextureHorizontally = cube["flip_textures_horizontally"]?.includes(faceName) != (isSideFace && cube["flip_textures_horizontally"]?.includes("side")) != cube["flip_textures_horizontally"]?.includes("*");
-				let flipTextureVertically = cube["flip_textures_vertically"]?.includes(faceName) != (isSideFace && cube["flip_textures_vertically"]?.includes("side")) != cube["flip_textures_vertically"]?.includes("*");
+				let flipHorizontallyFactors = [
+					texturesToFlipHorizontally.has(faceName),
+					isSideFace && texturesToFlipHorizontally.has("side"),
+					texturesToFlipHorizontally.has("*"),
+					faceName == "down" || faceName == "up" // in MC the down/up faces are rotated 180 degrees compared to how they are in geometry; this can be faked by flipping both axes.
+				];
+				let flipVerticallyFactors = [
+					texturesToFlipVertically.has(faceName),
+					isSideFace && texturesToFlipVertically.has("side"),
+					texturesToFlipVertically.has("*"),
+					faceName == "down" || faceName == "up"
+				];
 				if("box_uv" in cube) { // box uv does some flipping automatically
-					// this is why I don't like !==
-					flipTextureHorizontally = flipTextureHorizontally != (faceName != "north" && faceName != "south");
-					flipTextureVertically = flipTextureVertically != (faceName == "up");
+					flipHorizontallyFactors.push(faceName != "north" && faceName != "south");
+					flipVerticallyFactors.push(faceName == "up");
 				}
-				if((faceName == "down" || faceName == "up") != flipTextureHorizontally) { // in MC the down/up faces are rotated 180 degrees compared to how they are in geometry; this can be faked by flipping both axes.
+				// calculate the XOR of all "factors"
+				let flipTextureHorizontally = flipHorizontallyFactors.reduce((a, b) => a != b, false);
+				let flipTextureVertically = flipVerticallyFactors.reduce((a, b) => a != b, false);
+				
+				if(flipTextureHorizontally) {
 					[vertices[0]["corner"], vertices[1]["corner"]] = [vertices[1]["corner"], vertices[0]["corner"]];
 					[vertices[2]["corner"], vertices[3]["corner"]] = [vertices[3]["corner"], vertices[2]["corner"]];
 				}
-				if((faceName == "down" || faceName == "up") != flipTextureVertically) {
+				if(flipTextureVertically) {
 					[vertices[0]["corner"], vertices[2]["corner"]] = [vertices[2]["corner"], vertices[0]["corner"]];
 					[vertices[1]["corner"], vertices[3]["corner"]] = [vertices[3]["corner"], vertices[1]["corner"]];
 				}
