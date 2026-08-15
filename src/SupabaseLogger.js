@@ -1,9 +1,9 @@
 import { addOrdinalSuffix, AsyncFactory, concatenateFiles, sha256, toHexadecimalString } from "./utils.js";
 
 export default class SupabaseLogger extends AsyncFactory {
-	/** @readonly */
+	/** @readonly @type {string} */
 	projectUrl;
-	/** @readonly */
+	/** @readonly @type {string} */
 	apiKey;
 	/** @type {SupabaseClient} */
 	supabase;

@@ -1,11 +1,14 @@
 import { exp, max } from "./utils.js";
 
 export default class SpawnAnimationMaker {
+	/** @readonly @type {HoloPrintConfig} */
 	config;
+	/** @readonly @type {I32Vec3 | Vec3} */
 	structureSize;
-	/** @type {SpawnAnimationBone[]} */
+	/** @readonly @type {SpawnAnimationBone[]} */
 	#animatedBones = [];
 	#totalAnimationLength = 0;
+	/** @readonly @type {number} */
 	#randomness;
 	/**
 	 * Creates a SpawnAnimationMaker for managing the spawn animation.

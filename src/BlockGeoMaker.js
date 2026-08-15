@@ -8,24 +8,37 @@ import { hexColorToClampedTriplet, JSONSet, max, rotateDeg, conditionallyGroup, 
 // https://wiki.bedrock.dev/documentation/materials.html#entity-alphatest
 
 export default class BlockGeoMaker {
+	/** @readonly @type {HoloPrintConfig} */
 	config;
 	textureRefs = new JSONSet();
 	
+	/** @readonly @type {EntityGeoMaker} */
 	#entityGeoMaker;
 	
+	/** @readonly @type {Data.BlockShapes["individual_blocks"]} */
 	#individualBlockShapes;
+	/** @readonly @type {[RegExp, string][]} */
 	#blockShapePatterns;
+	/** @readonly @type {Data.BlockShapeGeos} */
 	#blockShapeGeos;
+	/** @readonly @type {Data.BlockEigenvariants} */
 	#eigenvariants;
 	
+	/** @readonly @type {Data.Rotation} */
 	#globalBlockStateRotations;
+	/** @readonly @type {Map<string, Data.Rotation>} */
 	#blockShapeBlockStateRotations = new Map();
+	/** @readonly @type {Map<string, Data.Rotation>} */
 	#blockNameBlockStateRotations = new Map();
 	
+	/** @readonly @type {Data.BlockStateVariants} */
 	#globalBlockStateTextureVariants;
+	/** @readonly @type {Map<string, Data.BlockStateVariants>} */
 	#blockShapeBlockStateTextureVariants = new Map();
+	/** @readonly @type {PatternMap<Data.BlockStateVariants>} */
 	#blockNameBlockStateTextureVariants;
 	
+	/** @readonly @type {Map<string, string>} */
 	#cachedBlockShapes = new Map();
 	
 	/**

@@ -1,6 +1,7 @@
 import { jsonc, tuple, vec3 } from "./utils.js";
 
 export default class EntityGeoMaker {
+	/** @readonly @type {ResourcePackStack} */
 	resourcePackStack;
 	
 	/**

@@ -2,15 +2,22 @@
 import { ceil, downloadFile, getStackTrace, html, onEvent, selectEl } from "../utils.js";
 
 export default class SimpleLogger extends HTMLElement {
+	/** @type {DOMHighResTimeStamp} */
 	#originTime;
 	
+	/** @type {HTMLDivElement} */
 	node;
+	/** @readonly @type {object[]} */
 	allLogs = [];
 	
-	#errorCount;
-	#warningCount;
+	/** @type {number} */
+	#errorCount = 0;
+	/** @type {number} */
+	#warningCount = 0;
 	
+	/** @type {HTMLSpanElement} */
 	#errorCountNode;
+	/** @type {HTMLSpanElement} */
 	#warningCountNode;
 	
 	constructor() {
@@ -94,9 +101,6 @@ export default class SimpleLogger extends HTMLElement {
 		});
 		this.#warningCountNode = this.node[selectEl]("#warningCount");
 		this.#errorCountNode = this.node[selectEl]("#errorCount");
-		
-		this.#errorCount = 0;
-		this.#warningCount = 0;
 		
 		this.#originTime = performance.now();
 	}

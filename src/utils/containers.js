@@ -10,9 +10,9 @@ function stringifyJsonBigIntSafe(value) {
  * @template B
  */
 export class CoupleSet {
-	/** @type {[A, B][]} */
+	/** @readonly @type {[A, B][]} */
 	#values = [];
-	/** @type {Map<A, Map<B, number>>} */
+	/** @readonly @type {Map<A, Map<B, number>>} */
 	#val0s = new Map();
 	/**
 	 * Adds a value and returns the index of it in the set.
@@ -42,9 +42,9 @@ export class CoupleSet {
  * @template C
  */
 export class TripleSet {
-	/** @type {[A, B, C][]} */
+	/** @readonly @type {[A, B, C][]} */
 	#values = [];
-	/** @type {Map<A, Map<B, Map<C, number>>>} */
+	/** @readonly @type {Map<A, Map<B, Map<C, number>>>} */
 	#val0s = new Map();
 	/**
 	 * Adds a value and returns the index of it in the set.
@@ -76,11 +76,11 @@ export class TripleSet {
 
 /** @template T */
 export class JSONSet {
-	/** @type {(value: T) => string} */
+	/** @readonly @type {(value: T) => string} */
 	stringify = stringifyJsonBigIntSafe;
-	/** @type {Set<string>} */
+	/** @readonly @type {Set<string>} */
 	#set = new Set();
-	/** @type {Map<string, number>} */
+	/** @readonly @type {Map<string, number>} */
 	#indices = new Map();
 	/** @type {T[]} */
 	#actualValues = [];
@@ -136,9 +136,9 @@ export class JSONSet {
  * @template V
  */
 export class JSONMap { // very barebones
-	/** @type {(key: K) => string} */
+	/** @readonly @type {(key: K) => string} */
 	stringify = stringifyJsonBigIntSafe;
-	/** @type {Map<string, V>} */
+	/** @readonly @type {Map<string, V>} */
 	#entries = new Map();
 	/**
 	 * @param {[K, V][]} [entries]
@@ -179,12 +179,12 @@ export class JSONMap { // very barebones
  * @template H
  */
 export class HashMap {
-	/** @readonly */
+	/** @readonly @type {(value: K) => H} */
 	#hashFunction;
-	/** @readonly */
+	/** @readonly @type {(a: K, b: K) => boolean} */
 	#equalityFunction;
 	
-	/** @type {Map<H, [K, V][]>} */
+	/** @readonly @type {Map<H, [K, V][]>} */
 	#map = new Map();
 	/**
 	 * @param {(value: K) => H} hashFunction
@@ -243,10 +243,11 @@ export class HashMap {
 
 /** A set for strings that works with regular expressions. */
 export class PatternSet {
+	/** @readonly @type {string | undefined} */
 	#stringDelimiter;
-	/** @type {Set<string>} */
+	/** @readonly @type {Set<string>} */
 	#stringValues = new Set();
-	/** @type {RegExp[]} */
+	/** @readonly @type {RegExp[]} */
 	#patterns = [];
 	/**
 	 * @param {string[]} [values]
@@ -276,10 +277,11 @@ export class PatternSet {
  * @template V
  */
 export class PatternMap {
+	/** @readonly @type {string | undefined} */
 	#stringDelimiter;
-	/** @type {Map<string, V>} */
+	/** @readonly @type {Map<string, V>} */
 	#stringEntries = new Map();
-	/** @type {[RegExp, V][]} */
+	/** @readonly @type {[RegExp, V][]} */
 	#patterns = [];
 	/**
 	 * @param {Iterable<[string, V]>} [entries]
@@ -309,10 +311,11 @@ export class PatternMap {
 }
 /** A map for string-string entries that works for regular expressions, which can perform replacements on keys. */
 export class ReplacingPatternMap {
+	/** @readonly @type {string | undefined} */
 	#stringDelimiter;
-	/** @type {Map<string, string>} */
+	/** @readonly @type {Map<string, string>} */
 	#stringEntries = new Map();
-	/** @type {[RegExp, string][]} */
+	/** @readonly @type {[RegExp, string][]} */
 	#patterns = [];
 	/**
 	 * @param {Iterable<[string, string]>} [entries]

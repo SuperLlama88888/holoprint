@@ -1,25 +1,34 @@
 import { floor, max, nanToUndefined, PatternMap, removeFalsies, ReplacingPatternMap, round, tuple } from "./utils.js";
 
 export default class MaterialList {
-	/** @type {Map<string, number>} */
+	/** @readonly @type {Map<string, number>} */
 	materials = new Map();
 	totalMaterialCount = 0;
 	shulkerBoxGlyphChar = "\uE200";
 	
+	/** @readonly @type {Map<string, object>} */
 	#blockMetadata;
+	/** @readonly @type {Map<string, object>} */
 	#itemMetadata;
 	/** @type {Map<string, string>} */
 	#translations;
 	
 	// I wish I could use import...with to import these from materialListMappings.json, which would have worked with esbuild, but it doesn't let me load JSONC... sad...
+	/** @readonly @type {Data.MaterialListMappings["ignored_blocks"]} */
 	#ignoredBlocks;
+	/** @readonly @type {ReplacingPatternMap} */
 	#blockToItemMappings;
+	/** @readonly @type {PatternMap<[number, string]>} */
 	#itemCountMultipliers;
+	/** @readonly @type {Data.MaterialListMappings["special_block_entity_properties"]} */
 	#specialBlockEntityProperties;
+	/** @readonly @type {ReplacingPatternMap} */
 	#serializationIdPatches;
+	/** @readonly @type {Data.MaterialListMappings["blocks_missing_serialization_ids"]} */
 	#blocksMissingSerializationIds;
+	/** @readonly @type {Data.MaterialListMappings["translation_patches"]} */
 	#translationPatches;
-	/** @type {number} */
+	/** @readonly @type {number} */
 	#missingItemAux;
 	
 	/**

@@ -5,17 +5,17 @@ import WebGL2QuadRenderer from "./WebGL2QuadRenderer.js"; // dependency injectio
 const ISOMETRIC_DIAGRAM_PADDING = 8;
 
 export default class StructureDiagramMaker {
-	/** @readonly */
+	/** @readonly @type {number} */
 	size;
 	/** @readonly @type {WebGL2QuadRenderer | null} */
 	#renderer = null;
-	/** @readonly */
+	/** @readonly @type {number} */
 	#isoXStep;
-	/** @readonly */
+	/** @readonly @type {number} */
 	#isoXYZStep;
-	/** @readonly */
+	/** @readonly @type {number} */
 	#isoYYStep;
-	/** @readonly */
+	/** @readonly @type {number} */
 	#isoBlockIconOffset;
 	
 	/**

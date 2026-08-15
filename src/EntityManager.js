@@ -3,9 +3,9 @@
  * @template {Record<string, object>} T
  */
 export default class EntityManager {
-	/** @readonly */
+	/** @readonly @type {T} */
 	entityFilesAndNames;
-	/** @readonly */
+	/** @readonly @type {object[]} */
 	#entities;
 	
 	/**

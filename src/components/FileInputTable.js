@@ -19,7 +19,7 @@ export default class FileInputTable extends HTMLElement {
 	#rowBeingDragged;
 	/** @type {number} */
 	#touchDragVerticalOffset;
-	/** @type {WeakMap<HTMLTableRowElement, File>} */
+	/** @readonly @type {WeakMap<HTMLTableRowElement, File>} */
 	#filesByRow = new WeakMap();
 	
 	constructor() {

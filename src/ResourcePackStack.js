@@ -12,7 +12,7 @@ export default class ResourcePackStack {
 	
 	/** Whether or not there are any resource packs attached (apart from vanilla ofc) @type {boolean} */
 	hasResourcePacks;
-	/** @type {LocalResourcePack[]} */
+	/** @readonly @type {LocalResourcePack[]} */
 	localResourcePacks;
 	
 	/**

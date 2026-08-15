@@ -3,10 +3,11 @@ import { JSONMap, min, CoupleSet, TripleSet, vec3 } from "./utils.js";
 const stringifyVec3 = "InternalError" in window? vec => vec[0] + "," + vec[1] + "," + vec[2] : vec => `${vec[0]},${vec[1]},${vec[2]}`;
 
 export default class PolyMeshMaker {
+	/** @readonly @type {PolyMeshTemplateFaceWithUvs[][]} */
 	templatePalette;
-	/** @type {[Vec3, number][][]} */
+	/** @readonly @type {[Vec3, number][][]} */
 	#blocks = [];
-	/** @type {JSONMap<Vec3, number>} */
+	/** @readonly @type {JSONMap<Vec3, number>} */
 	#positionsWithMultipleBlocks = new JSONMap([], stringifyVec3);
 	
 	/** @param {PolyMeshTemplateFaceWithUvs[][]} templatePalette */
