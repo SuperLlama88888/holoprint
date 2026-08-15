@@ -4,12 +4,13 @@ import { dispatchInputEvents, flattenObject, html, onEvent, reduceProperties, se
 export default class Vec3Input extends HTMLElement {
 	static formAssociated = true;
 	
+	/** @readonly @type {ElementInternals} */
 	internals;
 	
 	#connected = false;
 	/** @type {HTMLFormElement} */
 	#form;
-	/** @type {[HTMLInputElement, HTMLInputElement, HTMLInputElement]} */
+	/** @readonly @type {[HTMLInputElement, HTMLInputElement, HTMLInputElement]} */
 	#inputs;
 	#canSetInputValues = false;
 	

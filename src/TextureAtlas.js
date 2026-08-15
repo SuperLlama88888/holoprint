@@ -4,18 +4,26 @@ import potpack from "potpack";
 import ResourcePackStack from "./ResourcePackStack.js";
 
 export default class TextureAtlas {
+	/** @readonly @type {Data.TextureAtlasMappings["blocks_dot_json_patches"]} */
 	#blocksDotJsonPatches;
+	/** @readonly @type {Data.TextureAtlasMappings["blocks_to_use_carried_textures"]} */
 	#blocksToUseCarriedTextures;
+	/** @readonly @type {Data.TextureAtlasMappings["transparent_blocks"]} */
 	#transparentBlocks;
+	/** @readonly @type {Data.TextureAtlasMappings["terrain_texture_tints"]} */
 	#terrainTextureTints;
 	
+	/** @readonly @type {object} */
 	blocksDotJson;
+	/** @readonly @type {object} */
 	terrainTexture;
 	
+	/** @readonly @type {Map<string, number>} */
 	#flipbookTexturesAndSizes = new Map();
 	
-	/** @type {HoloPrintConfig} */
+	/** @readonly @type {HoloPrintConfig} */
 	config;
+	/** @readonly @type {ResourcePackStack} */
 	resourcePackStack;
 	
 	/**

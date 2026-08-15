@@ -3,8 +3,11 @@ import { AsyncFactory, dirname, sha256, sha256text, toHexadecimalString } from "
 export default class LocalResourcePack extends AsyncFactory {
 	/** @type {string} A unique hash for this local resource pack. */
 	hash;
+	/** @readonly @type {File[]} */
 	files;
+	/** @readonly @type {boolean} */
 	aggressiveHashing;
+	/** @readonly @type {Map<string, File>} */
 	#files = new Map();
 	
 	/**

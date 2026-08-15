@@ -22,10 +22,13 @@ export default class ItemCriteriaInput extends HTMLElement {
 	static formAssociated = true;
 	static observedAttributes = ["value-items", "value-tags"];
 	
+	/** @readonly @type {ElementInternals} */
 	internals;
 	
 	#connected = false;
+	/** @readonly @type {((...args: any) => void)[]} */
 	#tasksPendingConnection = [];
+	/** @readonly @type {Function | undefined} */
 	#translateCurrentLanguage;
 	/** @type {HTMLLabelElement} */
 	#criteriaInputsCont;

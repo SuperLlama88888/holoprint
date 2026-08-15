@@ -7,24 +7,23 @@ import { getOffscreenCanvasContext } from "./utils.js";
 
 /** A lightweight WebGL 2 utility to render arbitrary quads directly to an `ImageBitmap`. */
 export default class WebGL2QuadRenderer {
-	
-	/** @readonly */
+	/** @readonly @type {number} */
 	size;
-	/** @readonly */
+	/** @readonly @type {WebGL2RenderingContextButSmarter<OffscreenCanvas>} */
 	#gl;
-	/** @readonly */
+	/** @readonly @type {WebGLProgram} */
 	#program;
-	/** @readonly */
+	/** @readonly @type {WebGLTexture} */
 	#glTexture;
-	/** @readonly */
+	/** @readonly @type {WebGLBuffer} */
 	#positionBuffer;
-	/** @readonly */
+	/** @readonly @type {WebGLBuffer} */
 	#uvBuffer;
-	/** @readonly */
+	/** @readonly @type {WebGLBuffer} */
 	#indexBuffer;
-	/** @readonly */
+	/** @readonly @type {GLint} */
 	#posLoc;
-	/** @readonly */
+	/** @readonly @type {GLint} */
 	#uvLoc;
 	
 	/** @returns {boolean} */

@@ -6,9 +6,9 @@ import fetchers from "./fetchers.js";
 export default class BlockUpdater {
 	static LATEST_VERSION = 18168865; // 01 15 3C 21 = 1.21.60.33 (1.21.61)
 	
-	/** @type {Record<string, BlockUpdateSchemaSkeleton[]>} */
+	/** @readonly @type {Record<string, BlockUpdateSchemaSkeleton[]>} */
 	#schemaIndex = {};
-	/** @type {Map<string, BlockUpdateSchema>} */
+	/** @readonly @type {Map<string, BlockUpdateSchema>} */
 	#schemas = new Map();
 	
 	/**

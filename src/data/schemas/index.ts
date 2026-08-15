@@ -120,7 +120,7 @@ export type BlockStateVariants = {
 		[value: string]: number;
 	};
 };
-interface Rotation {
+export interface Rotation {
 	/** Block state keys or entity property keys (e.g., "facing", "entity.rotation") */
 	[key: string]: {
 		[value: string]: RotationTriplet;

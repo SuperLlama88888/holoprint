@@ -37,18 +37,23 @@ export default class PreviewRenderer extends AsyncFactory {
 	static #POINT_LIGHT_DEFAULT_INTENSITY = 75;
 	static #DIRECTIONAL_LIGHT_STRENGTH = 1.57;
 	static #FLOOR_SHADOW_DARKNESS = 0.3;
-	/** @type {Partial<typeof PreviewRenderer.prototype.options>} */
+	/** @readonly @type {Partial<typeof PreviewRenderer.prototype.options>} */
 	static #WEAK_DEVICE_OPTIONS = {
 		maxPointLights: 0,
 		// shadows will also be disabled, but when the user enables them, they should be the lowest quality
 		directionalLightShadowMapResolution: 1
 	};
-	
+	/** @readonly @type {Node} */
 	cont;
+	/** @readonly @type {string} */
 	packName;
+	/** @readonly @type {I32Vec3} */
 	structureSize;
+	/** @readonly @type {Block[]} */
 	blockPalette;
+	/** @readonly @type {PolyMeshTemplateFaceWithUvs[][]} */
 	polyMeshTemplatePalette;
+	/** @readonly @type {[Int32Array, Int32Array]} */
 	blockIndices;
 	options = {
 		showSkybox: true,
@@ -62,26 +67,32 @@ export default class PreviewRenderer extends AsyncFactory {
 		showOptions: true
 	};
 	#canvasSize = min(window.innerWidth, window.innerHeight) * 0.8;
+	/** @readonly @type {HTMLDivElement} */
 	#loadingMessage;
+	/** @readonly @type {HTMLCanvasElement} */
 	#can;
+	/** @readonly @type {PolyMeshMaker} */
 	#polyMeshMaker;
+	/** @readonly @type {Blob} */
 	#imageBlob;
 	/** @type {ImageData} */
 	#imageBlobData;
 	/** @type {three.Vector3} */
 	#center;
+	/** @readonly @type {number} */
 	#maxDim;
+	/** @readonly @type {number} */
 	#maxDimPixels;
 	#lastFrameTime = performance.now();
-	/** @type {Vec3[][]} */
+	/** @readonly @type {Vec3[][]} */
 	#blockPositions = [];
 	/** @type {three.DirectionalLight} */
 	#directionalLight;
-	/** @type {PreviewPointLight[]} */
+	/** @readonly @type {PreviewPointLight[]} */
 	#pointLights = [];
-	/** @type {three.PointLight[]} */
+	/** @readonly @type {three.PointLight[]} */
 	#pointLightsInScene = [];
-	/** @type {WeakMap<three.PointLight, three.PointLightHelper>} */
+	/** @readonly @type {WeakMap<three.PointLight, three.PointLightHelper>} */
 	#pointLightHelpers = new WeakMap();
 	/** @type {three.WebGLRenderer} */
 	#renderer;
@@ -94,9 +105,11 @@ export default class PreviewRenderer extends AsyncFactory {
 	/** @type {three.CubeTexture} */
 	#skyboxCubemap;
 	#shouldRenderNextFrame = true;
+	/** @readonly @type {Stats} */
 	#stats;
+	/** @readonly @type {GUI} */
 	#optionsGui;
-	/** @type {three.Object3D[]} */
+	/** @readonly @type {three.Object3D[]} */
 	#debugHelpers = [];
 	/**
 	 * Create a preview renderer for a completed geometry file.
@@ -719,5 +732,5 @@ export default class PreviewRenderer extends AsyncFactory {
 }
 
 /** @import { I32Vec3, Vec3, Block, PreviewPointLight, PolyMeshTemplateFaceWithUvs} from "./HoloPrint.js" */
-/** @import { Controller } from "lil-gui" */
+/** @import { Controller, GUI } from "lil-gui" */
 /** @import * as three from "three" */
