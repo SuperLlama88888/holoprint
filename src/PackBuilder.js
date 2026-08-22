@@ -88,19 +88,5 @@ export default class PackBuilder {
 	}
 }
 
-/**
- * @typedef {(filePath: string) => Promise<Response>} FetchFunc
- */
-/**
- * @typedef {(resPromise: Promise<Response>, filePath: string) => Promise<any>} GetResponseContentsFunc
- */
-/**
- * @typedef AddFileOptions
- * @property {string} [comment] An optional comment to add to the file entry.
- */
-/**
- * @typedef ExportOptions
- * @property {number} [zipCompressionLevel]
- */
-
 /** @import { ZipWriterAddDataOptions } from "@zip.js/zip.js" */
+/** @import { FetchFunc, GetResponseContentsFunc, AddFileOptions, ExportOptions } from "./PackBuilder.types.ts" */

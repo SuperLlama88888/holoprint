@@ -130,4 +130,4 @@ export default class Vec3Input extends HTMLElement {
 	}
 }
 
-/** @import { I32Vec3, Vec3 } from "../HoloPrint.js" */
+/** @import { I32Vec3, Vec3 } from "../common.types.ts" */

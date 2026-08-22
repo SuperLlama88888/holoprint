@@ -721,4 +721,4 @@ async function makePack(structureFiles, localResourcePacks) {
 	generatePackFormSubmitButton.disabled = false;
 }
 
-/** @import { HoloPrintConfig, Vec3 } from "./HoloPrint.js" */
+/** @import { HoloPrintConfig, Vec3 } from "./common.types.ts" */

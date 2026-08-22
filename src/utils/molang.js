@@ -354,4 +354,4 @@ function findClosingBraceIndex(code, startIndex) {
 	return i - 1;
 }
 
-/** @import { ItemCriteria, Vec2 } from "../HoloPrint.js" */
+/** @import { ItemCriteria, Vec2 } from "../common.types.ts" */

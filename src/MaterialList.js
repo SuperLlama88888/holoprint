@@ -292,5 +292,6 @@ export default class MaterialList {
 	}
 }
 
-/** @import { MaterialListEntry, Block, ExportedMaterialListJsonUi } from "./HoloPrint.js" */
+/** @import { Block } from "./common.types.ts" */
+/** @import { MaterialListEntry, ExportedMaterialListJsonUi } from "./MaterialList.types.ts" */
 /** @import * as Data from "./data/schemas" */

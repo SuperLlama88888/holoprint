@@ -1152,11 +1152,10 @@ export default class BlockGeoMaker {
 	}
 }
 
-/**
- * @typedef {Data.Cube & Record<"x" | "y" | "z" | "w" | "h" | "d", number> & { block_override?: Block }} CubeWithEasyProperties
- */
 
-/** @import { Vec3, Block, HoloPrintConfig, PolyMeshTemplateFaceWithUvs, PolyMeshTemplateFace, Rectangle, PolyMeshTemplateVertex, CubeUv } from "./HoloPrint.js" */
+/** @import { Vec3, Block, HoloPrintConfig, Rectangle } from "./common.types.ts" */
+/** @import { CubeUv, CubeWithEasyProperties } from "./BlockGeoMaker.types.ts" */
+/** @import { PolyMeshTemplateFaceWithUvs, PolyMeshTemplateFace, PolyMeshTemplateVertex } from "./PolyMeshMaker.types.ts" */
 /** @import TextureAtlas from "./TextureAtlas.js" */
 /** @import EntityGeoMaker from "./EntityGeoMaker.js" */
 /** @import * as Data from "./data/schemas" */

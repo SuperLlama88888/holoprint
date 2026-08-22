@@ -661,5 +661,6 @@ export default class TextureAtlas {
 	}
 }
 
-/** @import { TextureReference, TextureFragment, ImageFragment, HoloPrintConfig, Vec3, Vec2, Rectangle, ImageUv } from "./HoloPrint.js" */
+/** @import { HoloPrintConfig, Vec3, Vec2, Rectangle } from "./common.types.ts" */
+/** @import { TextureReference, TextureFragment, ImageFragment, ImageUv } from "./TextureAtlas.types.ts" */
 /** @import * as Data from "./data/schemas" */

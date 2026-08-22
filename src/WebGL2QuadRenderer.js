@@ -161,4 +161,4 @@ export default class WebGL2QuadRenderer {
 	};
 }
 
-/** @import { F32Vec8 } from "./HoloPrint.js" */
+/** @import { F32Vec8 } from "./common.types.ts" */
