@@ -1,5 +1,5 @@
 import { extractStructureFilesFromMcworld } from "mcbe-leveldb-reader";
-import { selectEl, downloadFile, sleep, selectEls, loadTranslationLanguage, translate, getStackTrace, random, UserError, joinOr, conditionallyGroup, groupByFileExtension, addFilesToFileInput, setFileInputFiles, dispatchInputEvents, getAllChildren, jsonc, toImage, removeFalsies, clearCacheStorage, onEvent, onEventAndNow, cast, clearFileInput, html, removeFileExtension, tuple, assertAs } from "./utils.js";
+import { selectEl, downloadFile, sleep, selectEls, loadTranslationLanguage, translate, getStackTrace, random, UserError, joinOr, conditionallyGroup, groupByFileExtension, addFilesToFileInput, setFileInputFiles, dispatchInputEvents, getAllChildren, jsonc, toImage, removeFalsies, clearCacheStorage, onEvent, onEventAndNow, cast, clearFileInput, html, removeFileExtension, tuple, assertAs, getFileExtension } from "./utils.js";
 import * as HoloPrint from "./HoloPrint.js";
 import SupabaseLogger from "./SupabaseLogger.js";
 
@@ -87,18 +87,18 @@ document[onEvent]("DOMContentLoaded", () => {
 			return;
 		}
 		let files = Array.from(structureFilesInput.files);
-		let filesToAdd = files.filter(file => file.name.endsWith(".mcstructure"));
+		let filesToAdd = files.filter(file => getFileExtension(file) == "mcstructure");
 		if(files.length == filesToAdd.length) {
 			notStructureFileError.classList.add("hidden");
 			structureFilesInput.setCustomValidity("");
 		} else {
 			if(files.length == 1) { // the other input methods can't handle multiple files
-				let firstFileName = files[0].name;
-				if(firstFileName.endsWith(".mcworld") || firstFileName.endsWith(".mctemplate") || firstFileName.endsWith(".zip")) {
+				let fileExtension = getFileExtension(files[0]);
+				if(fileExtension == "mcworld" || fileExtension == "mctemplate" || fileExtension == "zip") {
 					clearFileInput(structureFilesInput);
 					setFileInputFiles(worldFileInput, files);
 					return;
-				} else if(firstFileName.endsWith(".mcpack")) {
+				} else if(fileExtension == "mcpack") {
 					clearFileInput(structureFilesInput);
 					setFileInputFiles(oldPackInput, files);
 					return;
@@ -590,7 +590,7 @@ async function temporarilyChangeText(el, translationKey, duration = 2000) {
  */
 function validateFileInputFileTypes(fileInput) {
 	let acceptableFileExtensions = fileInput.accept.split(",");
-	let valid = Array.from(fileInput.files).every(file => acceptableFileExtensions.some(fileExtension => file.name.endsWith(fileExtension)));
+	let valid = Array.from(fileInput.files).every(file => acceptableFileExtensions.some(fileExtension => file.name.toLowerCase().endsWith(fileExtension)));
 	if(valid) {
 		fileInput.setCustomValidity("");
 	} else {

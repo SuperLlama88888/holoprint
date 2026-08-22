@@ -103,7 +103,7 @@
 							<fieldset>
 								<legend data-translate="structure_files.upload">Upload structure files (<code>*.mcstructure</code>)</legend>
 								<label>
-									<input type="file" accept=".mcstructure" multiple form="" autocomplete="off" id="structureFilesInput"/>
+									<input type="file" accept=".mcstructure,.MCSTRUCTURE" multiple form="" autocomplete="off" id="structureFilesInput"/>
 									<div class="buttonlike"><p data-translate="upload.button">Upload a file</p><p data-translate="upload.button.drop_notice">Or drop files here</p></div>
 								</label>
 								<span class="hidden" id="notStructureFileError" data-translate="structure_files.error">Please upload only <code>.mcstructure</code> files.</span>
@@ -113,7 +113,7 @@
 							<fieldset>
 								<legend data-translate="extract_from_world.upload">Upload world file (<code>*.mcworld</code>, <code>*.mctemplate</code>, <code>*.zip</code>)</legend>
 								<label>
-									<input type="file" accept=".mcworld,.mctemplate,.zip" form="" autocomplete="off" id="worldFileInput"/>
+									<input type="file" accept=".mcworld,.MCWORLD,.mctemplate,.MCTEMPLATE,.zip,.ZIP" form="" autocomplete="off" id="worldFileInput"/>
 									<div class="buttonlike"><p data-translate="upload.button.world">Upload a world file</p><p data-translate="upload.button.drop_notice">Or drop files here</p></div>
 								</label>
 								<span class="hidden" id="worldExtractionMessage" data-translate="extract_from_world.extracting">Extracting structures from world...</span>
@@ -126,7 +126,7 @@
 							<fieldset>
 								<legend data-translate="update_pack.upload">Upload old Structura/HoloPrint pack (<code>*.mcpack</code>)</legend>
 								<label>
-									<input type="file" accept=".mcpack" form="" autocomplete="off" id="oldPackInput"/>
+									<input type="file" accept=".mcpack,.MCPACK" form="" autocomplete="off" id="oldPackInput"/>
 									<div class="buttonlike"><p data-translate="upload.button.old_pack">Upload an old pack</p><p data-translate="upload.button.drop_notice">Or drop files here</p></div>
 								</label>
 								<span class="hidden" id="oldPackExtractionMessage" data-translate="update_pack.extracting">Extracting structure files...</span>
