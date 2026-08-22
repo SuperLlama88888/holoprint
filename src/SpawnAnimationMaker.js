@@ -128,4 +128,6 @@ export default class SpawnAnimationMaker {
 	}
 }
 
-/** @import { HoloPrintConfig, Vec3, I32Vec3, SpawnAnimationBone, MinecraftAnimation } from "./HoloPrint.js" */
+/** @import { MinecraftAnimation } from "./minecraft.types.ts" */
+/** @import { HoloPrintConfig, Vec3, I32Vec3 } from "./common.types.ts" */
+/** @import { SpawnAnimationBone } from "./SpawnAnimationMaker.types.ts" */

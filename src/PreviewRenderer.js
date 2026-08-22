@@ -731,6 +731,8 @@ export default class PreviewRenderer extends AsyncFactory {
 	}
 }
 
-/** @import { I32Vec3, Vec3, Block, PreviewPointLight, PolyMeshTemplateFaceWithUvs} from "./HoloPrint.js" */
+/** @import { PolyMeshTemplateFaceWithUvs } from "./PolyMeshMaker.types.ts" */
+/** @import { Block, I32Vec3, Vec3 } from "./common.types.ts" */
+/** @import { PreviewPointLight } from "./PreviewRenderer.types.ts" */
 /** @import { Controller, GUI } from "lil-gui" */
 /** @import * as three from "three" */

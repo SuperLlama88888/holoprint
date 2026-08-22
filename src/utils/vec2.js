@@ -23,4 +23,4 @@ export function equals(a, b) {
 	return a[0] == b[0] && a[1] == b[1];
 }
 
-/** @import { Vec2 } from "../HoloPrint.js" */
+/** @import { Vec2 } from "../common.types.ts" */

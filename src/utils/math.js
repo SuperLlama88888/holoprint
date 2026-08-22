@@ -89,4 +89,4 @@ export function mulMat4([[a, b, c, d], [e, f, g, h], [i, j, k, l], [m, n, o, p]]
 	];
 }
 
-/** @import { Mat4, Matrix, TupleMatrix, Vec3, Vec4 } from "../HoloPrint.js" */
+/** @import { Mat4, Matrix, TupleMatrix, Vec3, Vec4 } from "../common.types.ts" */

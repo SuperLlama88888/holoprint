@@ -293,4 +293,5 @@ export default class StructureDiagramMaker {
 	}
 }
 
-/** @import { HoloPrintConfig, I32Vec3, PolyMeshTemplateFaceWithUvs, PolyMeshTemplateVertexWithUv } from "./HoloPrint.js" */
+/** @import { HoloPrintConfig, I32Vec3 } from "./common.types.ts" */
+/** @import { PolyMeshTemplateFaceWithUvs, PolyMeshTemplateVertexWithUv } from "./PolyMeshMaker.types.ts" */

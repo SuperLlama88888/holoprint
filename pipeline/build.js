@@ -255,7 +255,4 @@ async function replaceAllAsync(str, regexp, replacer) {
 	return str.replaceAll(regexp, () => replacements.shift());
 }
 
-/**
- * @template T
- * @typedef {Promise<T> | T} MaybePromise
- */
+/** @import { MaybePromise } from "./types.ts" */

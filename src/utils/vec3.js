@@ -49,4 +49,4 @@ export function toFixed(vec, decimals) {
 	return [round(vec[0] * power) / power, round(vec[1] * power) / power, round(vec[2] * power) / power];
 }
 
-/** @import { Vec3 } from "../HoloPrint.js" */
+/** @import { Vec3 } from "../common.types.ts" */

@@ -238,4 +238,6 @@ export default class BlockUpdater {
 	}
 }
 
-/** @import { NBTBlock, Block, BlockUpdateSchemaSkeleton, BlockUpdateSchema, TypedBlockStateProperty, BlockUpdateSchemaFlattenRule } from "./HoloPrint.js" */
+/** @import { Block } from "./common.types.ts" */
+/** @import { NBTBlock } from "./minecraft.types.ts" */
+/** @import { BlockUpdateSchemaSkeleton, BlockUpdateSchema, TypedBlockStateProperty, BlockUpdateSchemaFlattenRule } from "./BlockUpdater.types.ts" */

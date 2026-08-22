@@ -101,4 +101,4 @@ export function* getPixelBytesInSquare(imageData, sourceX, sourceY, w, h) {
 	}
 }
 
-/** @import { Vec3 } from "../HoloPrint.js" */
+/** @import { Vec3 } from "../common.types.ts" */

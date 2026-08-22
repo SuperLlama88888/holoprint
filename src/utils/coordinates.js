@@ -17,4 +17,4 @@ export function getGeoSpaceBlockPos([x, y, z]) {
 	return [-16 * x - 8, 16 * y, 16 * z - 8]; // I got these values from trial and error with blockbench (which makes the x negative I think. it's weird.)
 }
 
-/** @import { Vec3, I32Vec3 } from "../HoloPrint.js" */
+/** @import { Vec3, I32Vec3 } from "../common.types.ts" */

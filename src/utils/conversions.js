@@ -115,4 +115,4 @@ export function hexColorToClampedTriplet(hexColor) {
 	return tuple([r, g, b]).map(x => parseInt(x, 16) / 255);
 }
 
-/** @import { Vec3 } from "../HoloPrint.js" */
+/** @import { Vec3 } from "../common.types.ts" */
