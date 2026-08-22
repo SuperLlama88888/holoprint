@@ -17,7 +17,8 @@ export function dirname(path) {
 	return path.includes("/")? path.slice(0, path.lastIndexOf("/") + 1) : "";
 }
 /**
- * Finds the file extension from a file or filename.
+ * Finds the file extension from a file or filename, RETURNING LOWERCASE for simplicity. No "." is included.
+ * E.g. `a.foo.ZIP` -> `zip`
  * @param {File | string} filename
  * @returns {string}
  */
@@ -25,7 +26,7 @@ export function getFileExtension(filename) {
 	if(filename instanceof File) {
 		filename = filename.name;
 	}
-	return filename.slice(filename.lastIndexOf(".") + 1);
+	return filename.slice(filename.lastIndexOf(".") + 1).toLowerCase();
 }
 /**
  * Removes the (last) file extension from a filename.
@@ -36,7 +37,7 @@ export function removeFileExtension(filename) {
 	return filename.includes(".")? filename.slice(0, filename.lastIndexOf(".")) : filename;
 }
 /**
- * Groups files by their file extensions.
+ * Groups files by their file extensions (lowercased).
  * @param {File[]} files
  * @returns {Record<string, File[] | undefined>}
  */
