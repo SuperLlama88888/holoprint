@@ -1,5 +1,5 @@
 import * as NBT from "nbtify-readonly-typeless";
-import { ZipWriter, TextReader, BlobWriter, BlobReader, ZipReader } from "@zip.js/zip.js";
+import { BlobWriter, BlobReader, ZipReader } from "@zip.js/zip.js";
 
 import BlockGeoMaker from "./BlockGeoMaker.js";
 import TextureAtlas from "./TextureAtlas.js";
@@ -7,7 +7,7 @@ import MaterialList from "./MaterialList.js";
 import PreviewRenderer from "./PreviewRenderer.js";
 
 import entityScripts from "./entityScripts.molang.js";
-import { addPaddingToImage, array2DToMolang, arrayToMolang, awaitAllEntries, weaklyCacheUnaryFunc, concatenateFiles, createNumericEnum, desparseArray, functionToMolang, getFileExtension, hexColorToClampedTriplet, itemCriteriaToMolang, jsonc, JSONMap, JSONSet, lcm, loadTranslationLanguage, max, min, onEvent, overlaySquareImages, pi, removeFalsies, removeFileExtension, resizeImageToBlob, setImageOpacity, sha256, toBlob, toImage, translate, transposeMatrix, tuple, UserError, ReplacingPatternMap, conditionallyCacheUnaryFunc, clonePromise, getStructureIndexFromCoordinates, getGeoSpaceBlockPos } from "./utils.js";
+import { addPaddingToImage, array2DToMolang, arrayToMolang, awaitAllEntries, weaklyCacheUnaryFunc, concatenateFiles, createNumericEnum, desparseArray, functionToMolang, getFileExtension, hexColorToClampedTriplet, itemCriteriaToMolang, jsonc, JSONMap, JSONSet, lcm, loadTranslationLanguage, max, min, onEvent, overlaySquareImages, pi, removeFalsies, removeFileExtension, resizeImageToBlob, setImageOpacity, sha256, toImage, translate, transposeMatrix, tuple, UserError, ReplacingPatternMap, conditionallyCacheUnaryFunc, clonePromise, getStructureIndexFromCoordinates, getGeoSpaceBlockPos } from "./utils.js";
 import ResourcePackStack from "./ResourcePackStack.js";
 import BlockUpdater from "./BlockUpdater.js";
 import SpawnAnimationMaker from "./SpawnAnimationMaker.js";
@@ -16,6 +16,7 @@ import fetchers from "./fetchers.js";
 import EntityGeoMaker from "./EntityGeoMaker.js";
 import EntityManager from "./EntityManager.js";
 import StructureDiagramMaker from "./StructureDiagramMaker.js";
+import PackBuilder from "./PackBuilder.js";
 
 export const VERSION = "dev";
 export const IGNORED_BLOCKS = ["air", "piston_arm_collision", "sticky_piston_arm_collision", "light_block", "light_block_0", "light_block_1", "light_block_2", "light_block_3", "light_block_4", "light_block_5", "light_block_6", "light_block_7", "light_block_8", "light_block_9", "light_block_10", "light_block_11", "light_block_12", "light_block_13", "light_block_14", "light_block_15"]; // blocks to be ignored when scanning the structure file
@@ -81,72 +82,66 @@ export async function makePack(structureFiles, partialConfig, resourcePackStack 
 		// @ts-expect-error
 		dataFileNames.push("itemIcons");
 	}
-	// utility so I don't have to type _1234 or $9876 all the time for loading files below.
-	const _ = {
-		__: 0,
-		get _() {
-			return `_${this.__++}`;
-		},
-		$$: 0,
-		get $() {
-			return `$${this.$$++}`;
-		}
-	};
+	let packBuilder = new PackBuilder(fetchPackTemplateFile, getResponseContents);
+	packBuilder.addPackTemplateFiles(
+		"materials/entity.material",
+		"particles/bounding_box_outline.json",
+		"particles/saving_backup.json",
+		"textures/holoprint/particle/exclamation_mark.png",
+		"textures/holoprint/particle/save_icon.png",
+		"textures/holoprint/ui/white_circle.png",
+		"textures/holoprint/ui/white_circle.json",
+		"ui/_ui_defs.json",
+		"ui/_global_variables.json",
+		"ui/holoprint_common.json",
+		"ui/pause_screen.json",
+		"ui/start_screen.json",
+		"ui/tabbed_upsell_screen.json",
+		"ui/win10_trial_conversion_screen.json",
+		"textures/holoprint/ui/logo_192.png",
+		"textures/holoprint/ui/banner.png",
+		"font/glyph_E2.png"
+	);
+	if(config.UI_CONTROLS_ENABLED) {
+		packBuilder.addPackTemplateFiles(
+			"textures/holoprint/icons/toggle_rendering.png",
+			"textures/holoprint/icons/change_opacity.png",
+			"textures/holoprint/icons/increase_opacity.png",
+			"textures/holoprint/icons/toggle_tint.png",
+			"textures/holoprint/icons/toggle_validating.png",
+			"textures/holoprint/icons/change_layer.png",
+			"textures/holoprint/icons/increase_layer.png",
+			"textures/holoprint/icons/decrease_layer.png",
+			"textures/holoprint/icons/change_layer_mode.png",
+			"textures/holoprint/icons/move_hologram_x.png",
+			"textures/holoprint/icons/move_hologram_y.png",
+			"textures/holoprint/icons/move_hologram_z.png",
+			"textures/holoprint/icons/rotate_hologram.png",
+			"textures/holoprint/icons/change_structure.png",
+			"textures/holoprint/icons/backup_hologram.png",
+			"textures/holoprint/ui/menu_sliders_icon.png",
+			"textures/holoprint/ui/menu_button_unpressed.png",
+			"textures/holoprint/ui/menu_button_pressed.png",
+			"textures/holoprint/ui/material_list_button_unpressed.png",
+			"textures/holoprint/ui/material_list_button_pressed.png",
+			"textures/holoprint/ui/quick_input_keyboard_hints.png",
+			"ui/hud_screen.json",
+			"ui/holoprint_keybinds.json",
+			"ui/holoprint_touch_buttons.json"
+		);
+	}
 	let packTemplatePromise = loadPackTemplate({
 		manifest: "manifest.json",
 		hologramRenderControllers: "render_controllers/holoprint.hologram.render_controllers.json",
 		hologramGeo: "models/entity/holoprint.hologram.geo.json", // this is where we put all the ghost blocks
-		[_.$]: "materials/entity.material",
 		hologramAnimationControllers: "animation_controllers/holoprint.hologram.animation_controllers.json",
 		hologramAnimations: "animations/holoprint.hologram.animation.json",
-		[_.$]: "particles/bounding_box_outline.json",
 		blockValidationParticle: "particles/block_validation.json",
-		[_.$]: "particles/saving_backup.json",
 		singleWhitePixelTexture: "textures/holoprint/particle/single_white_pixel.png",
-		[_._]: "textures/holoprint/particle/exclamation_mark.png",
-		[_._]: "textures/holoprint/particle/save_icon.png",
 		itemTexture: config.RETEXTURE_CONTROL_ITEMS? "textures/item_texture.json" : undefined,
 		terrainTexture: config.RETEXTURE_CONTROL_ITEMS? "textures/terrain_texture.json" : undefined,
-		...(config.UI_CONTROLS_ENABLED? {
-			[_._]: "textures/holoprint/icons/toggle_rendering.png",
-			[_._]: "textures/holoprint/icons/change_opacity.png",
-			[_._]: "textures/holoprint/icons/increase_opacity.png",
-			[_._]: "textures/holoprint/icons/toggle_tint.png",
-			[_._]: "textures/holoprint/icons/toggle_validating.png",
-			[_._]: "textures/holoprint/icons/change_layer.png",
-			[_._]: "textures/holoprint/icons/increase_layer.png",
-			[_._]: "textures/holoprint/icons/decrease_layer.png",
-			[_._]: "textures/holoprint/icons/change_layer_mode.png",
-			[_._]: "textures/holoprint/icons/move_hologram_x.png",
-			[_._]: "textures/holoprint/icons/move_hologram_y.png",
-			[_._]: "textures/holoprint/icons/move_hologram_z.png",
-			[_._]: "textures/holoprint/icons/rotate_hologram.png",
-			[_._]: "textures/holoprint/icons/change_structure.png",
-			[_._]: "textures/holoprint/icons/backup_hologram.png",
-			[_._]: "textures/holoprint/ui/menu_sliders_icon.png",
-			[_._]: "textures/holoprint/ui/menu_button_unpressed.png",
-			[_._]: "textures/holoprint/ui/menu_button_pressed.png",
-			[_._]: "textures/holoprint/ui/material_list_button_unpressed.png",
-			[_._]: "textures/holoprint/ui/material_list_button_pressed.png",
-			[_._]: "textures/holoprint/ui/quick_input_keyboard_hints.png",
-			[_.$]: "ui/hud_screen.json",
-			[_.$]: "ui/holoprint_keybinds.json",
-			[_.$]: "ui/holoprint_touch_buttons.json"
-		} : {}),
-		[_._]: "textures/holoprint/ui/white_circle.png",
-		[_.$]: "textures/holoprint/ui/white_circle.json",
 		materialListUI: "ui/holoprint_material_list.json",
-		[_.$]: "ui/_ui_defs.json",
-		[_.$]: "ui/_global_variables.json",
-		[_.$]: "ui/holoprint_common.json",
 		infoScreenUI: "ui/holoprint_info_screen.json",
-		[_.$]: "ui/pause_screen.json",
-		[_.$]: "ui/start_screen.json",
-		[_.$]: "ui/tabbed_upsell_screen.json",
-		[_.$]: "ui/win10_trial_conversion_screen.json",
-		[_._]: "textures/holoprint/ui/logo_192.png",
-		[_._]: "textures/holoprint/ui/banner.png",
-		[_._]: "font/glyph_E2.png",
 		languagesDotJson: "texts/languages.json"
 	});
 	let resourcesPromise = loadResources({
@@ -227,7 +222,7 @@ export async function makePack(structureFiles, partialConfig, resourcePackStack 
 	
 	let structureDiagramsAndIndices = await makeStructureDiagrams(config, fullOpacityTextureBlob, unscaledPolyMeshTemplatePalette, allStructureIndicesByLayer, structureSizes);
 	
-	let { manifest, hologramRenderControllers, hologramGeo, hologramAnimationControllers, hologramAnimations, blockValidationParticle, singleWhitePixelTexture, materialListUI, infoScreenUI } = await packTemplatePromise.allValues;
+	let { manifest, hologramRenderControllers, hologramGeo, hologramAnimationControllers, hologramAnimations, blockValidationParticle, singleWhitePixelTexture, materialListUI, infoScreenUI, itemTexture, terrainTexture } = await packTemplatePromise.allValues;
 	
 	let structureGeoTemplate = hologramGeo["minecraft:geometry"][0];
 	hologramGeo["minecraft:geometry"].splice(0, 1);
@@ -482,85 +477,69 @@ export async function makePack(structureFiles, partialConfig, resourcePackStack 
 	
 	console.info("Finished making all pack files!");
 	
-	const zipComment = Symbol("add comment to file entries");
-	let packFiles = await packTemplatePromise.allEntries;
 	if(structureFiles.length == 1) {
-		structureFiles[0][zipComment] = structureFiles[0].name;
-		packFiles[".mcstructure"] = structureFiles[0];
+		packBuilder.addFile(".mcstructure", structureFiles[0], { comment: structureFiles[0].name });
 	} else {
 		structureFiles.forEach((structureFile, i) => {
-			structureFile[zipComment] = structureFile.name;
-			packFiles[`${i}.mcstructure`] = structureFile;
+			packBuilder.addFile(`${i}.mcstructure`, structureFile, { comment: structureFile.name });
 		});
 	}
-	packFiles["pack_icon.png"] = packIcon;
+	packBuilder.addFile("manifest.json", manifest);
+	packBuilder.addFile("render_controllers/holoprint.hologram.render_controllers.json", hologramRenderControllers);
+	packBuilder.addFile("models/entity/holoprint.hologram.geo.json", hologramGeo);
+	packBuilder.addFile("animation_controllers/holoprint.hologram.animation_controllers.json", hologramAnimationControllers);
+	packBuilder.addFile("animations/holoprint.hologram.animation.json", hologramAnimations);
+	packBuilder.addFile("textures/holoprint/particle/single_white_pixel.png", singleWhitePixelTexture);
+	packBuilder.addFile("ui/holoprint_material_list.json", materialListUI);
+	packBuilder.addFile("ui/holoprint_info_screen.json", infoScreenUI);
+	packBuilder.addFile("texts/languages.json", languagesDotJson);
+	
+	packBuilder.addFile("pack_icon.png", packIcon);
 	let regularArmorStandEntityJson = JSON.stringify(armorStandEntityFile);
-	packFiles["subpacks/default/entity/armor_stand.entity.json"] = regularArmorStandEntityJson.replaceAll("HOLOGRAM_INITIAL_ACTIVATION", "true");
-	packFiles["subpacks/punch_to_activate/entity/armor_stand.entity.json"] = regularArmorStandEntityJson.replaceAll("HOLOGRAM_INITIAL_ACTIVATION", "false");
+	packBuilder.addFile("subpacks/default/entity/armor_stand.entity.json", regularArmorStandEntityJson.replaceAll("HOLOGRAM_INITIAL_ACTIVATION", "true"));
+	packBuilder.addFile("subpacks/punch_to_activate/entity/armor_stand.entity.json", regularArmorStandEntityJson.replaceAll("HOLOGRAM_INITIAL_ACTIVATION", "false"));
 	let leashKnotEntityJson = JSON.stringify(leashKnotEntityFile).replaceAll("HOLOGRAM_INITIAL_ACTIVATION", "true");
-	packFiles["subpacks/leash_knot_mode/entity/leash_knot.entity.json"] = leashKnotEntityJson;
+	packBuilder.addFile("subpacks/leash_knot_mode/entity/leash_knot.entity.json", leashKnotEntityJson);
 	let leashKnotModeArmorStandEntityJson = JSON.stringify(leashKnotModeArmorStandEntityFile);
-	packFiles["subpacks/leash_knot_mode/entity/armor_stand.entity.json"] = leashKnotModeArmorStandEntityJson;
+	packBuilder.addFile("subpacks/leash_knot_mode/entity/armor_stand.entity.json", leashKnotModeArmorStandEntityJson);
 	if(config.PLAYER_CONTROLS_ENABLED) {
-		packFiles["render_controllers/player.render_controllers.json"] = playerRenderControllers;
+		packBuilder.addFile("render_controllers/player.render_controllers.json", playerRenderControllers);
 	}
-	delete packFiles["particles/block_validation.json"]; // this one is only a template, used below
 	uniqueBlocksToValidate.forEach(blockName => {
 		let particleName = `validate_${blockName.replace(":", ".")}`; // file names can't have : in them
 		let particle = structuredClone(blockValidationParticle);
 		particle["particle_effect"]["description"]["identifier"] = `holoprint:${particleName}`;
 		particle["particle_effect"]["components"]["minecraft:particle_expire_if_in_blocks"] = [blockName.includes(":")? blockName : `minecraft:${blockName}`]; // add back minecraft: namespace if it's missing
-		packFiles[`particles/${particleName}.json`] = particle;
+		packBuilder.addFile(`particles/${particleName}.json`, particle);
 	});
-	packFiles["textures/holoprint/entity/overlay.png"] = overlayTexture;
+	packBuilder.addFile("textures/holoprint/entity/overlay.png", overlayTexture);
 	textureBlobs.forEach(([textureName, blob]) => {
-		packFiles[`textures/holoprint/entity/${textureName}.png`] = blob;
+		packBuilder.addFile(`textures/holoprint/entity/${textureName}.png`, blob);
 	});
 	structureDiagramsAndIndices.diagrams.forEach((diagramBlob, diagramIndex) => {
-		packFiles[`${getLayerDiagramTextureName(diagramIndex)}.png`] = diagramBlob;
+		packBuilder.addFile(`${getLayerDiagramTextureName(diagramIndex)}.png`, diagramBlob);
 	});
 	if(config.RETEXTURE_CONTROL_ITEMS) {
-		if(!hasModifiedTerrainTexture) {
-			delete packFiles["textures/terrain_texture.json"];
+		packBuilder.addFile("textures/item_texture.json", itemTexture);
+		if(hasModifiedTerrainTexture) {
+			packBuilder.addFile("textures/terrain_texture.json", terrainTexture);
 		}
 		controlItemTextures.forEach(([fileName, imageBlob]) => {
-			packFiles[fileName] = imageBlob;
+			packBuilder.addFile(fileName, imageBlob);
 		});
 	}
 	if(config.UI_CONTROLS_ENABLED && highestItemCount < 1728) {
-		delete packFiles["font/glyph_E2.png"];
+		packBuilder.removeFile("font/glyph_E2.png"); // todo: I'm guessing most structures wouldn't fit this criteria, make the glyph be loaded only when needed
 	}
 	langFiles.forEach(([language, langFile]) => {
-		packFiles[`texts/${language}.lang`] = langFile;
+		packBuilder.addFile(`texts/${language}.lang`, langFile);
 	});
 	
-	let packFileWriter = new BlobWriter();
-	let zipWriter = new ZipWriter(packFileWriter);
-	await Promise.all(Object.entries(packFiles).map(async ([fileName, fileContents]) => {
-		let comment = fileContents[zipComment];
-		/** @type {ZipWriterAddDataOptions} */
-		let options = {
-			comment,
-			level: config.COMPRESSION_LEVEL
-		};
-		if(fileContents instanceof HTMLImageElement) {
-			fileContents = await toBlob(fileContents);
-		}
-		if(fileContents instanceof Blob) {
-			return zipWriter.add(fileName, new BlobReader(fileContents), options);
-		}
-		if(typeof fileContents == "object") {
-			fileContents = JSON.stringify(fileContents)
-		}
-		return zipWriter.add(fileName, new TextReader(fileContents), options);
-	}));
-	let zippedPack = await zipWriter.close();
+	let pack = await packBuilder.export(packName, {
+		zipCompressionLevel: config.COMPRESSION_LEVEL
+	});
 	
 	console.info(`Finished creating pack in ${+(performance.now() - startTime).toFixed(0) / 1000}s!`);
-	
-	let pack = new File([zippedPack], `${packName}.holoprint.mcpack`, {
-		type: "application/mcpack"
-	});
 	let res = {
 		pack,
 		materialList
@@ -820,8 +799,7 @@ const fetchPackTemplateFile = conditionallyCacheUnaryFunc(
 );
 /**
  * @template {string} F
- * @template {string} [N = ""]
- * @typedef {N extends `_${string}`? Blob : F extends `${string}.json` | `${string}.material`? any : F extends `${string}.lang`? string : F extends `${string}.png`? HTMLImageElement : never} GetFileType
+ * @typedef {F extends `${string}.json` | `${string}.material`? any : F extends `${string}.lang`? string : F extends `${string}.png`? HTMLImageElement : never} GetFileType
  */
 /**
  * @template {Record<string, string>} T
@@ -843,12 +821,12 @@ function loadResources(resourceFiles, resourcePackStack) {
  * @template {Record<string, string>} T
  * @param {{ [K in keyof T]: T[K] }} fileNamesAndPaths
  * @param {(filePath: string) => Promise<Response>} fetchFunc
- * @returns {{ [K in keyof T as (K extends string? K : never)]: Promise<GetFileType<T[K], K>> } & { allValues: Promise<{ [K in keyof T]: GetFileType<T[K], K> }>, allEntries: Promise<{ [K in keyof T as T[K]]: GetFileType<T[K], K> }> }}
+ * @returns {{ [K in keyof T]: GetFileType<T[K]> } & { allValues: Promise<{ [K in keyof T]: GetFileType<T[K]> }>, allEntries: Promise<{ [K in keyof T as T[K]]: GetFileType<T[K]> }> }}
  * @areturns {{ [K in keyof T]: T[K] }}
  */
 function multiload(fileNamesAndPaths, fetchFunc) {
 	let entries = Object.entries(fileNamesAndPaths).filter(([, path]) => path);
-	let contents = Object.fromEntries(entries.map(([name, path]) => [name, getResponseContents(fetchFunc(path), path, name.startsWith("_"))]));
+	let contents = Object.fromEntries(entries.map(([name, path]) => [name, getResponseContents(fetchFunc(path), path)]));
 	// @ts-expect-error
 	return {
 		...contents,
@@ -885,20 +863,14 @@ async function loadBedrockMetadataFiles(files) {
 /**
  * Gets the contents of a response based on the requested file extension (e.g. object from .json, image from .png, etc.).
  * @template {string} T
- * @template {boolean} B
  * @param {Promise<Response>} resPromise
  * @param {T} filePath
- * @param {B} [rawBlob] Whether to return a Blob instead of converting to a more usable object.
- * @returns {Promise<B extends true? Blob : GetFileType<T>>}
+ * @returns {Promise<GetFileType<T>>}
  */
-async function getResponseContents(resPromise, filePath, rawBlob) {
+async function getResponseContents(resPromise, filePath) {
 	let res = await resPromise;
 	if(res.status >= 400) {
 		throw new Error(`HTTP error ${res.status} for ${res.url}`);
-	}
-	if(rawBlob) {
-		// @ts-expect-error
-		return await res.blob();
 	}
 	let fileExtension = getFileExtension(filePath);
 	switch(fileExtension) {
@@ -910,6 +882,7 @@ async function getResponseContents(resPromise, filePath, rawBlob) {
 		// @ts-expect-error
 		case "png": return await toImage(res);
 	}
+	throw new Error(`Unknown file extension: ${filePath}`);
 }
 /**
  * Removes ignored blocks from the block palette, updates old blocks, and adds block entities as separate entries.
@@ -1893,7 +1866,7 @@ function expandItemCriteria(itemCriteria, itemTags) {
 }
 
 /** @import * as Data from "./data/schemas" */
-/** @import { ZipWriterAddDataOptions, FileEntry } from "@zip.js/zip.js" */
+/** @import { FileEntry } from "@zip.js/zip.js" */
 /**
  * @typedef {object} HoloPrintConfig An object for storing HoloPrint config options.
  * @property {string[]} IGNORED_BLOCKS
