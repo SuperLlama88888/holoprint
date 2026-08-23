@@ -1,0 +1,37 @@
+// Education Edition has a different pause screen layout
+// Annoyingly, it's not in the vanilla resources so I've had to refer to https://github.com/Xterionix/extended-bedrock-samples/blob/2bf5195248dcfabfe22b80dd8c4afd4283ea5aa3/resource_pack/ui/edu_pause_screen.json so I can see what needs to change
+
+{
+	"namespace": "edu_pause",
+	
+	"edu_skin_panel/change_skin_alignment_panel": {
+		// this cannot be made the stack_panel, because otherwise the contents wouldn't be horizontally centered
+		"controls": [
+			{
+				"buttons": {
+					"type": "stack_panel",
+					"orientation": "horizontal",
+					"size": ["100%c", 24],
+					"controls": [
+						{
+							"change_skin_button@edu_pause.change_skin_button": {}
+						},
+						{
+							"padding": {
+								"type": "panel",
+								"size": [2, 0]
+							}
+						},
+						{
+							"open_holoprint_info_screen_button@holoprint:info_screen.open_button": {}
+						}
+					]
+				}
+			}
+		]
+	},
+	// the existing hangar button is too short otherwise and doesn't align... and it's easier to change this than change the HoloPrint info screen button...
+	"change_skin_button_content": {
+		"size": ["100%c", 14]
+	}
+}

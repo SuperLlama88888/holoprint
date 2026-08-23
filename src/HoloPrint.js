@@ -95,6 +95,7 @@ export async function makePack(structureFiles, partialConfig, resourcePackStack 
 		"ui/_global_variables.json",
 		"ui/holoprint_common.json",
 		"ui/pause_screen.json",
+		"ui/edu_pause_screen.json",
 		"ui/start_screen.json",
 		"ui/tabbed_upsell_screen.json",
 		"ui/win10_trial_conversion_screen.json",
