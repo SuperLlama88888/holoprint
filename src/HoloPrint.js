@@ -721,6 +721,9 @@ export const readStructureNBT = weaklyCacheUnaryFunc(
 	 */
 	async structureFile => {
 		let arrayBuffer = await structureFile.arrayBuffer().catch(e => {
+			if(String(e).includes("NotFoundError")) {
+				throw new UserError("Unknown error when reading structure file! Please restart your browser and try again.\nIf this issue persists, please take a screen recording and create an issue on GitHub.");
+			}
 			throw new Error(`Could not read contents of structure file "${structureFile.name}"!\n${e}`);
 		});
 		if(structureFile.size == 0) { // this check must happen after reading the bytes, otherwise Google Drive files can't be read on Android Chrome: https://issues.chromium.org/issues/40123366#comment104
