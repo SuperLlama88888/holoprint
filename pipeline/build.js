@@ -221,8 +221,8 @@ function rmDir(dir) {
  * @returns {boolean}
  */
 function shouldBeCopiedFromTempToDist(filename) {
-	const filesProcessedByEsbuild = [".js", ".css", ".css.map", ".glsl"];
-	return !filesProcessedByEsbuild.some(ext => filename.endsWith(ext)) || path.basename(filename) == "index.css.map"
+	const filesProcessedByEsbuildOrOtherwiseUnneeded = [".js", ".css", ".css.map", ".glsl", ".ts"];
+	return !filesProcessedByEsbuildOrOtherwiseUnneeded.some(ext => filename.endsWith(ext)) || path.basename(filename) == "index.css.map"
 }
 /**
  * @param {object} importMap
