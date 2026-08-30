@@ -17,7 +17,7 @@ jobs:
       - name: Build
         run: |
           npm ci -w pipeline
-          npm run build -- -- --version=${{ github.ref_name }}
+          npm run build -- -- --version="$GITHUB_REF_NAME"
       - name: Upload files as artifact
         uses: actions/upload-pages-artifact@v5
         with:
