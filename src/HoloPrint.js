@@ -762,6 +762,12 @@ async function readStructureNBTWithOptions(structureFile, arrayBuffer, options =
 		let errorMessage = getInvalidMcstructureErrorMessage(structureFile, nbt);
 		throw new UserError(errorMessage);
 	}
+	// @ts-expect-error
+	if(nbt["format_version"] == 2 && nbt["structure"]["block_indices"].length == 1) {
+		// https://feedback.minecraft.net/hc/en-us/articles/47907593889677-Minecraft-Beta-Preview-26-50-24
+		// very hacky, will fix in next update
+		nbt["structure"]["block_indices"][1] = (new Int32Array(nbt["structure"]["block_indices"][0].length)).fill(-1);
+	}
 	return nbt;
 }
 /**
@@ -770,7 +776,7 @@ async function readStructureNBTWithOptions(structureFile, arrayBuffer, options =
  * @returns {nbt is MCStructure}
  */
 function isNBTValidMcstructure(nbt) {
-	return nbt["format_version"] == 1 && nbt["size"] instanceof Int32Array && nbt["size"].length == 3 && "structure" in nbt && nbt["structure_world_origin"] instanceof Int32Array && nbt["structure_world_origin"].length == 3;
+	return (nbt["format_version"] == 1 || nbt["format_version"] == 2) && nbt["size"] instanceof Int32Array && nbt["size"].length == 3 && "structure" in nbt && nbt["structure_world_origin"] instanceof Int32Array && nbt["structure_world_origin"].length == 3;
 }
 /**
  * Gets the error message for a NBT file that isn't .mcstructures.
