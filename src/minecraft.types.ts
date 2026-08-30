@@ -12,7 +12,7 @@ export type MinecraftAnimation = {
 	bones?: Record<string, object>;
 };
 export type MCStructure = {
-	/** Format version, should be always set to 1. */
+	/** Format version, can be either 1 or 2. */
 	format_version: number;
 	/** Size of the structure in blocks. */
 	size: I32Vec3;
