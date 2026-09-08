@@ -242,7 +242,7 @@ export async function makePack(structureFiles, partialConfig, resourcePackStack 
 						let [block, paletteI] = structure.getBlockAndIndex(coords, layerI);
 						if(!(paletteI in polyMeshTemplatePalette)) {
 							if(block) {
-								console.error(`A poly mesh template wasn't made for blockPalette[${paletteI}] = ${block["name"]}!`);
+								console.error(`A poly mesh template wasn't made for blockPalette[${paletteI}] = ${block.name}!`);
 							}
 							continue;
 						}
@@ -250,7 +250,7 @@ export async function makePack(structureFiles, partialConfig, resourcePackStack 
 						let geoSpaceBlockPos = getGeoSpaceBlockPos(coords);
 						polyMeshMaker.add(paletteI, geoSpaceBlockPos, layerI);
 						
-						if(!config.IGNORED_MATERIAL_LIST_BLOCKS.includes(block["name"])) {
+						if(!config.IGNORED_MATERIAL_LIST_BLOCKS.includes(block.name)) {
 							materialList.add(block);
 						}
 						totalBlockCount++;
@@ -983,7 +983,7 @@ function handleBlockValidation(config, structures, hologramAnimationControllers,
 						continue;
 					}
 					
-					let blockName = block?.["name"] ?? "air";
+					let blockName = block?.name ?? "air";
 					let blockCoordinateLocatorName = `b_${x}_${y}_${z}`;
 					blocksToValidate.push({
 						"locator": blockCoordinateLocatorName,
@@ -1165,7 +1165,7 @@ function makeMaterialListsForEachStructureAndEachLayer(config, structures, block
 				for(let z = 0; z < structure.depth; z++) {
 					for(let layerI = 0; layerI < 2; layerI++) { // WHY is this so verbose?!?!?!?!?
 						let block = structure.getBlock([x, y, z], layerI);
-						if(!block || config.IGNORED_MATERIAL_LIST_BLOCKS.includes(block["name"])) {
+						if(!block || config.IGNORED_MATERIAL_LIST_BLOCKS.includes(block.name)) {
 							continue;
 						}
 						materialListsForThisStructure[0].add(block);

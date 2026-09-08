@@ -467,13 +467,13 @@ export default class PreviewRenderer extends AsyncFactory {
 	 */
 	#checkBlockNameAndStates(stringifiedBlock, block) {
 		let blockName = stringifiedBlock.includes("[")? stringifiedBlock.slice(0, stringifiedBlock.indexOf("[")) : stringifiedBlock;
-		if(blockName != block["name"]) {
+		if(blockName != block.name) {
 			return false;
 		}
 		let allBlockStates = stringifiedBlock.match(/\[(.+)\]/)?.[1];
 		if(allBlockStates) {
 			let blockStates = allBlockStates.split(",").map(stateAndValue => stateAndValue.split("="));
-			if(!blockStates.every(([name, value]) => block["states"]?.[name] == value)) {
+			if(!blockStates.every(([name, value]) => block.states?.[name] == value)) {
 				return false;
 			}
 		}
