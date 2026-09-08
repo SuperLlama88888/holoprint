@@ -109,7 +109,7 @@ export default class BlockGeoMaker {
 	 * @returns {Promise<{ faces: PolyMeshTemplateFace[], centerOfMass: Vec3 }>}
 	 */
 	async #makePolyMeshTemplate(block) {
-		let blockName = block["name"];
+		let blockName = block.name;
 		let blockShape = this.#getBlockShape(blockName);
 		let { faces, centerOfMass } = await this.#makePolyMeshTemplateFaces(block, blockShape);
 		if(!faces) {
@@ -186,7 +186,7 @@ export default class BlockGeoMaker {
 						cube["block_states"][blockStateName] = this.#interpolateInBlockValues(block, cube["block_states"][blockStateName], cube, specialTexture);
 					}
 				}
-				blockOverride["states"] = { ...blockOverride["states"], ...cube["block_states"] };
+				blockOverride.states = { ...blockOverride.states, ...cube["block_states"] };
 				cube["block_override"] = blockOverride;
 				delete cube["block_states"];
 			}
@@ -257,15 +257,15 @@ export default class BlockGeoMaker {
 				/** @type {Block} */
 				let blockToCopy = block.blockEntityData?.[blockEntityProperty];
 				if(!blockToCopy) {
-					console.error(`Cannot find block entity property ${blockEntityProperty} on block ${block["name"]}:`, block);
+					console.error(`Cannot find block entity property ${blockEntityProperty} on block ${block.name}:`, block);
 					continue;
 				}
-				blockToCopy["name"] = blockToCopy["name"].replace(/^minecraft:/, "");
-				if(this.config.IGNORED_BLOCKS.includes(blockToCopy["name"])) {
+				blockToCopy.name = blockToCopy.name.replace(/^minecraft:/, "");
+				if(this.config.IGNORED_BLOCKS.includes(blockToCopy.name)) {
 					continue;
 				}
 				blockToCopy["#copied_via_copy_block"] = true; // I will learn rust if mojang adds this to the structure NBT
-				let newBlockShape = this.#getBlockShape(blockToCopy["name"]);
+				let newBlockShape = this.#getBlockShape(blockToCopy.name);
 				let { faces: newFaces } = await this.#makePolyMeshTemplateFaces(blockToCopy, newBlockShape);
 				if("translate" in cube) {
 					newFaces.forEach(face => {
@@ -288,7 +288,7 @@ export default class BlockGeoMaker {
 		let cubes = this.#optimizeGeometry(filteredCubesWithEasyProperties);
 		cubes.sort((a, b) => a.w * a.h * a.d - b.w * b.h * b.d); // make larger cubes be rendered later. this helps for blocks like slime and honey where the inner cube has to be rendered before the outer cube
 		
-		let blockName = block["name"];
+		let blockName = block.name;
 		let variant = this.#getTextureVariant(block);
 		let variantWithoutEigenvariant;
 		
@@ -478,7 +478,7 @@ export default class BlockGeoMaker {
 	 * @returns {Vec3 | null}
 	 */
 	#getBlockRotation(block, blockShape) {
-		let blockName = block["name"];
+		let blockName = block.name;
 		let blockShapeSpecificRotations = this.#blockShapeBlockStateRotations.get(blockShape);
 		let blockNameSpecificRotations = this.#blockNameBlockStateRotations.get(blockName);
 		let statesAndBlockEntityData = this.#getBlockStatesAndEntityDataEntries(block);
@@ -494,7 +494,7 @@ export default class BlockGeoMaker {
 				return;
 			}
 			if(rotation) {
-				console.debug(`Multiple rotation block states for block ${block["name"]}; adding them all together!`);
+				console.debug(`Multiple rotation block states for block ${block.name}; adding them all together!`);
 				rotation = vec3.add(rotation, rotations[blockStateValue]);
 			} else {
 				rotation = rotations[blockStateValue];
@@ -702,7 +702,7 @@ export default class BlockGeoMaker {
 	 * @returns {number}
 	 */
 	#getTextureVariant(block, ignoreEigenvariant = false) {	
-		let blockName = block["name"];
+		let blockName = block.name;
 		let eigenvariantExists = blockName in this.#eigenvariants;
 		if(!ignoreEigenvariant && eigenvariantExists) {
 			let variant = this.#eigenvariants[blockName];
@@ -760,7 +760,7 @@ export default class BlockGeoMaker {
 			}
 			let newVariant = blockStateVariants[blockStateValue];
 			if(variant != -1) {
-				console.warn(`Multiple texture-variating block states for block ${block["name"]}; using ${blockStateName}`);
+				console.warn(`Multiple texture-variating block states for block ${block.name}; using ${blockStateName}`);
 			}
 			variant = newVariant;
 		});
@@ -962,7 +962,7 @@ export default class BlockGeoMaker {
 				return true;
 			}
 			if(blockStateOperator != "??" && !(blockStateName in dataObject)) {
-				console.error(`Cannot find ${dataObjectName} ${blockStateName} on block ${block["name"]}`);
+				console.error(`Cannot find ${dataObjectName} ${blockStateName} on block ${block.name}`);
 				return true;
 			}
 			let actualBlockState = dataObject[blockStateName];
@@ -1041,7 +1041,7 @@ export default class BlockGeoMaker {
 							console.error(`Cannot find block state ${arrayIndexVar} in ${block.name}:`, block);
 							return "";
 						}
-						arrayIndex = block["states"][arrayIndexVar];
+						arrayIndex = block.states[arrayIndexVar];
 					}
 					if(!(arrayIndex in array)) {
 						console.error(`Array index out of bounds: ${JSON.stringify(array)}[${arrayIndex}]`);
@@ -1057,12 +1057,12 @@ export default class BlockGeoMaker {
 				let [, specialVar, propertyChain, ...slicingAndDefault] = match;
 				let value = function() {
 					switch(specialVar) {
-						case "#block_name": return block["name"];
-						case "#block_states": return block["states"];
+						case "#block_name": return block.name;
+						case "#block_states": return block.states;
 						case "#block_entity_data": return block.blockEntityData;
 						case "#tex": {
 							if(specialTexture == undefined) {
-								console.error(`No #tex for block ${block["name"]}!`);
+								console.error(`No #tex for block ${block.name}!`);
 							}
 							return specialTexture;
 						}

@@ -69,7 +69,7 @@ export default class MaterialList {
 	 * @param {number} [count]
 	 */
 	add(block, count = 1) {
-		let blockName = typeof block == "string"? block : block["name"];
+		let blockName = typeof block == "string"? block : block.name;
 		if(this.#ignoredBlocks.includes(blockName)) {
 			return;
 		}
@@ -84,10 +84,10 @@ export default class MaterialList {
 		}
 		if(itemName in this.#specialBlockEntityProperties && typeof block != "string") {
 			let blockEntityProperty = this.#specialBlockEntityProperties[itemName]["prop"];
-			if(blockEntityProperty in (block["blockEntityData"] ?? {})) {
-				itemName += `+${block["blockEntityData"][blockEntityProperty]}`;
+			if(blockEntityProperty in (block.blockEntityData ?? {})) {
+				itemName += `+${block.blockEntityData[blockEntityProperty]}`;
 			} else {
-				console.error(`Cannot find block entity property ${blockEntityProperty} on block ${block["name"]}!`);
+				console.error(`Cannot find block entity property ${blockEntityProperty} on block ${blockName}!`);
 			}
 		}
 		this.materials.set(itemName, (this.materials.get(itemName) ?? 0) + count);
