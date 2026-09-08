@@ -1305,7 +1305,7 @@ function translateControlItems(config, blockMetadata, itemMetadata, materialList
 		controlsMaterialList.setLanguage(resourceLangFile);
 		Object.entries(config.CONTROLS).forEach(([control, itemCriteria]) => {
 			controlsMaterialList.clear();
-			itemCriteria["names"].forEach(itemName => controlsMaterialList.addItem(itemName));
+			itemCriteria.names.forEach(itemName => controlsMaterialList.addItem(itemName));
 			
 			let itemInfo = controlsMaterialList.export();
 			let translatedControlName = translate(PLAYER_CONTROL_NAMES[control], language);
@@ -1636,9 +1636,9 @@ async function makePackIcon(structureFile) {
  * @returns {string[]}
  */
 function expandItemCriteria(itemCriteria, itemTags) {
-	let minecraftTags = itemCriteria["tags"].filter(tag => !tag.includes(":")); // we can't find which items are used in custom tags
+	let minecraftTags = itemCriteria.tags.filter(tag => !tag.includes(":")); // we can't find which items are used in custom tags
 	let namespacedItemsFromTags = removeFalsies(minecraftTags.map(tag => itemTags[`minecraft:${tag}`]).flat());
-	return [...itemCriteria["names"], ...namespacedItemsFromTags.map(itemName => itemName.replace(/^minecraft:/, ""))];
+	return [...itemCriteria.names, ...namespacedItemsFromTags.map(itemName => itemName.replace(/^minecraft:/, ""))];
 }
 
 /** @import * as Data from "./data/schemas" */
