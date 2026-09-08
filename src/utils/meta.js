@@ -190,10 +190,14 @@ export class AsyncFactory {
 	static async new(...params) {
 		let classes = getClassInheritance(this);
 		classes.forEach(c => AsyncFactory.#allowedConstructors.add(c));
-		let instance = new this(...params);
-		classes.forEach(c => AsyncFactory.#allowedConstructors.delete(c));
-		await instance.init();
-		return instance;
+		try {
+			let instance = new this(...params);
+			classes.forEach(c => AsyncFactory.#allowedConstructors.delete(c));
+			await instance.init();
+			return instance;
+		} finally {
+			classes.forEach(c => AsyncFactory.#allowedConstructors.delete(c));
+		}
 	}
 }
 
