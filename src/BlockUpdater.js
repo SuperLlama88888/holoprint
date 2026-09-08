@@ -17,7 +17,7 @@ export default class BlockUpdater {
 	 * @returns {boolean}
 	 */
 	blockNeedsUpdating(block) {
-		return block["version"] < BlockUpdater.LATEST_VERSION;
+		return block.version < BlockUpdater.LATEST_VERSION;
 	}
 	/**
 	 * Upgrades a block from older Minecraft versions to the latest Minecraft version.
@@ -38,7 +38,7 @@ export default class BlockUpdater {
 		}
 		let schemasToApply = [];
 		Object.entries(this.#schemaIndex).forEach(([version, schemaSkeletons]) => {
-			if(block["version"] > +version || schemaSkeletons.length == 1 && block["version"] == +version) {
+			if(block.version > +version || schemaSkeletons.length == 1 && block.version == +version) {
 				return;
 			}
 			schemasToApply.push(...schemaSkeletons.map(schemaSkeleton => schemaSkeleton.filename));
@@ -55,7 +55,7 @@ export default class BlockUpdater {
 				updated = true;
 			}
 		});
-		block["version"] = BlockUpdater.LATEST_VERSION;
+		block.version = BlockUpdater.LATEST_VERSION;
 		if(updated) {
 			console.debug(`Updated ${oldBlockStringified} to ${BlockUpdater.stringifyBlock(block)}`);
 		}
@@ -70,18 +70,18 @@ export default class BlockUpdater {
 	 */
 	#applyUpdateSchema(schema, block) {
 		let schemaVersion = this.#getSchemaVersion(schema);
-		if(block["version"] > schemaVersion) {
-			console.error(`Trying to upgrade block from ${block["version"]} to ${schemaVersion}!`);
+		if(block.version > schemaVersion) {
+			console.error(`Trying to upgrade block from ${block.version} to ${schemaVersion}!`);
 			return;
 		}
-		if(block.name in (schema["flattenedProperties"] ?? {}) && block.name in (schema["renamedIds"] ?? {})) {
+		if(block.name in (schema.flattenedProperties ?? {}) && block.name in (schema.renamedIds ?? {})) {
 			console.error(`Cannot flatten and rename block ${block.name} at the same time: ${JSON.stringify(schema)}`);
 			return;
 		}
 		
 		// remap block states: when the values change and, in some cases, the block name
-		if(schema["remappedStates"]?.[block.name]?.some(remappedState => {
-			let statesToMatch = remappedState["oldState"];
+		if(schema.remappedStates?.[block.name]?.some(remappedState => {
+			let statesToMatch = remappedState.oldState;
 			if(statesToMatch != null) { // if there are states to match, all states in "oldState" must be the same in the current block states
 				if(Object.keys(statesToMatch).length > Object.keys(block.states).length) {
 					return;
@@ -97,12 +97,12 @@ export default class BlockUpdater {
 				}
 			}
 			if("newName" in remappedState) {
-				block.name = remappedState["newName"];
+				block.name = remappedState.newName;
 			} else {
-				this.#applyFlattenedProperty(remappedState["newFlattenedName"], block);
+				this.#applyFlattenedProperty(remappedState.newFlattenedName, block);
 			}
-			let newStates = Object.fromEntries(Object.entries(remappedState["newState"] ?? {}).map(([blockStateName, blockStateValueProperty]) => [blockStateName, this.#readBlockStateProperty(blockStateValueProperty)]));
-			remappedState["copiedState"]?.forEach(blockStateName => {
+			let newStates = Object.fromEntries(Object.entries(remappedState.newState ?? {}).map(([blockStateName, blockStateValueProperty]) => [blockStateName, this.#readBlockStateProperty(blockStateValueProperty)]));
+			remappedState.copiedState?.forEach(blockStateName => {
 				if(blockStateName in block.states) {
 					newStates[blockStateName] = block.states[blockStateName];
 				}
@@ -110,13 +110,13 @@ export default class BlockUpdater {
 			block.states = newStates;
 			return true; // if states are remapped, there's no need to look at the rest of the schema
 		})) {
-			block["version"] = schemaVersion;
+			block.version = schemaVersion;
 			return true;
 		}
 		
 		let hasBeenUpdated = false;
 		// added properties: add block states and values
-		Object.entries(schema["addedProperties"]?.[block.name] ?? {}).forEach(([blockStateName, blockStateProperty]) => {
+		Object.entries(schema.addedProperties?.[block.name] ?? {}).forEach(([blockStateName, blockStateProperty]) => {
 			let blockStateValue = this.#readBlockStateProperty(blockStateProperty);
 			if(blockStateName in block.states) {
 				console.debug(`Cannot add block state ${blockStateName} = ${blockStateValue} because it already exists on block ${BlockUpdater.stringifyBlock(block)}`);
@@ -126,7 +126,7 @@ export default class BlockUpdater {
 			hasBeenUpdated = true;
 		});
 		// removed properties: remove block states
-		schema["removedProperties"]?.[block.name]?.forEach(blockStateName => {
+		schema.removedProperties?.[block.name]?.forEach(blockStateName => {
 			if(!(blockStateName in block.states)) {
 				console.debug(`Cannot delete block state ${blockStateName} because it doesn't exist on block ${BlockUpdater.stringifyBlock(block)}`);
 				return;
@@ -135,27 +135,27 @@ export default class BlockUpdater {
 			hasBeenUpdated = true;
 		});
 		// remapped property values: change block state values
-		Object.entries(schema["remappedPropertyValues"]?.[block.name] ?? {}).forEach(([blockStateName, remappingName]) => {
+		Object.entries(schema.remappedPropertyValues?.[block.name] ?? {}).forEach(([blockStateName, remappingName]) => {
 			if(!(blockStateName in block.states)) {
 				console.debug(`Cannot remap value for block state ${blockStateName} because the state doesn't exist: ${BlockUpdater.stringifyBlock(block)}`);
 				return;
 			}
 			let currentBlockStateValue = block.states[blockStateName];
-			if(!(remappingName in schema["remappedPropertyValuesIndex"])) {
+			if(!(remappingName in schema.remappedPropertyValuesIndex)) {
 				console.debug(`Block state value remapping ${remappingName} not found in schema!`);
 				return;
 			}
-			let remappings = schema["remappedPropertyValuesIndex"][remappingName];
-			let remapping = remappings.find(remapping => currentBlockStateValue == this.#readBlockStateProperty(remapping["old"]));
+			let remappings = schema.remappedPropertyValuesIndex[remappingName];
+			let remapping = remappings.find(remapping => currentBlockStateValue == this.#readBlockStateProperty(remapping.old));
 			if(remapping == undefined) {
 				console.debug(`Cannot find block state value ${currentBlockStateValue} in remappings for block state ${blockStateName}: ${JSON.stringify(remappings)}`);
 				return;
 			}
-			block.states[blockStateName] = this.#readBlockStateProperty(remapping["new"]);
+			block.states[blockStateName] = this.#readBlockStateProperty(remapping.new);
 			hasBeenUpdated = true;
 		});
 		// renamed properties: rename block states
-		Object.entries(schema["renamedProperties"]?.[block.name] ?? {}).forEach(([oldStateName, newStateName]) => {
+		Object.entries(schema.renamedProperties?.[block.name] ?? {}).forEach(([oldStateName, newStateName]) => {
 			if(!(oldStateName in block.states)) {
 				console.debug(`Cannot rename block state ${oldStateName} -> ${newStateName} because it doesn't exist on block ${BlockUpdater.stringifyBlock(block)}`);
 				return;
@@ -165,17 +165,17 @@ export default class BlockUpdater {
 			hasBeenUpdated = true;
 		});
 		// flattened properties: property value determines new block name
-		if(block.name in (schema["flattenedProperties"] ?? {})) {
-			if(this.#applyFlattenedProperty(schema["flattenedProperties"][block.name], block)) { // this actually does stuff but it returns false if there was an error
+		if(block.name in (schema.flattenedProperties ?? {})) {
+			if(this.#applyFlattenedProperty(schema.flattenedProperties[block.name], block)) { // this actually does stuff but it returns false if there was an error
 				hasBeenUpdated = true;
 			}
 		}
 		// renamed ids: block name changes
-		if(block.name in (schema["renamedIds"] ?? {})) {
-			block.name = schema["renamedIds"][block.name];
+		if(block.name in (schema.renamedIds ?? {})) {
+			block.name = schema.renamedIds[block.name];
 			hasBeenUpdated = true;
 		}
-		block["version"] = schemaVersion;
+		block.version = schemaVersion;
 		return hasBeenUpdated;
 	}
 	/**
@@ -186,14 +186,14 @@ export default class BlockUpdater {
 	 * @returns {boolean} If the block state was successfully flattened
 	 */
 	#applyFlattenedProperty(flattenRule, block) {
-		let blockStateName = flattenRule["flattenedProperty"];
+		let blockStateName = flattenRule.flattenedProperty;
 		if(!(blockStateName in block.states)) {
 			console.debug(`Cannot flatten block state ${blockStateName} because it doesn't exist on block ${BlockUpdater.stringifyBlock(block)}, ${JSON.stringify(flattenRule)}`);
 			return;
 		}
 		let blockStateValue = block.states[blockStateName];
-		let embedValue = flattenRule["flattenedValueRemaps"]?.[blockStateValue] ?? blockStateValue;
-		block.name = flattenRule["prefix"] + embedValue + flattenRule["suffix"];
+		let embedValue = flattenRule.flattenedValueRemaps?.[blockStateValue] ?? blockStateValue;
+		block.name = flattenRule.prefix + embedValue + flattenRule.suffix;
 		delete block.states[blockStateName];
 		return true;
 	}
@@ -209,7 +209,7 @@ export default class BlockUpdater {
 	 * @returns {number}
 	 */
 	#getSchemaVersion(schema) {
-		return (schema["maxVersionMajor"] << 24) | (schema["maxVersionMinor"] << 16) | (schema["maxVersionPatch"] << 8) | schema["maxVersionRevision"];
+		return (schema.maxVersionMajor << 24) | (schema.maxVersionMinor << 16) | (schema.maxVersionPatch << 8) | schema.maxVersionRevision;
 	}
 	/**
 	 * "Stringifies" a block with its name and states.
@@ -224,7 +224,7 @@ export default class BlockUpdater {
 			res += `[${blockStates}]`;
 		}
 		if(includeVersion && "version" in block) {
-			res += `@${BlockUpdater.parseBlockVersion(block["version"]).join(".")}`;
+			res += `@${BlockUpdater.parseBlockVersion(block.version).join(".")}`;
 		}
 		return res;
 	}

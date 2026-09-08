@@ -10,8 +10,8 @@ import { repeatedlyReplaceAll } from "./strings.js";
  * @returns {string}
  */
 export function itemCriteriaToMolang(itemCriteria, slot = "slot.weapon.mainhand") {
-	let names = itemCriteria["names"].map(name => name.includes(":")? name : `minecraft:${name}`);
-	let tags = itemCriteria["tags"].map(tag => tag.includes(":")? tag : `minecraft:${tag}`);
+	let names = itemCriteria.names.map(name => name.includes(":")? name : `minecraft:${name}`);
+	let tags = itemCriteria.tags.map(tag => tag.includes(":")? tag : `minecraft:${tag}`);
 	let nameQuery = names.length > 0? `q.is_item_name_any('${slot}',${names.map(name => `'${name}'`).join(",")})` : undefined;
 	let tagQuery = tags.length > 0? `q.equipped_item_any_tag('${slot}',${tags.map(tag => `'${tag}'`).join(",")})` : undefined;
 	return removeFalsies([nameQuery, tagQuery]).join("||") || "false";

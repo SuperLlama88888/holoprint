@@ -153,10 +153,10 @@ export default class ItemCriteriaInput extends HTMLElement {
 	set value(stringifiedValue) {
 		this.#criteriaInputsCont.innerHTML = "";
 		let itemCriteria = JSON.parse(stringifiedValue.replaceAll("'", `"`));
-		itemCriteria["names"]?.forEach(itemName => {
+		itemCriteria.names?.forEach(itemName => {
 			this.#addNewInput("item", false, itemName);
 		});
-		itemCriteria["tags"]?.forEach(tagName => {
+		itemCriteria.tags?.forEach(tagName => {
 			this.#addNewInput("tag", false, tagName);
 		});
 	}
@@ -181,10 +181,10 @@ export default class ItemCriteriaInput extends HTMLElement {
 		newValue = newValue.split(",");
 		switch(attrName) {
 			case "value-items": {
-				inputValue["names"] = newValue;
+				inputValue.names = newValue;
 			} break;
 			case "value-tags": {
-				inputValue["tags"] = newValue;
+				inputValue.tags = newValue;
 			} break;
 		}
 		this.value = JSON.stringify(inputValue);

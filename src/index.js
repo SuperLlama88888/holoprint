@@ -257,7 +257,7 @@ document[onEvent]("DOMContentLoaded", () => {
 				/** @type {McstructureNbt<1 | 2>[]} */
 				// @ts-expect-error
 				let mcstructures = await Promise.all(structureFiles.map(readNbtFromFile));
-				let worldOrigins = mcstructures.map(mcstructure => mcstructure["structure_world_origin"]);
+				let worldOrigins = mcstructures.map(mcstructure => mcstructure.structure_world_origin);
 				/** @type {Vec3Input[]} */
 				let inputs = coordinateLockCoordsCont[selectEls]("vec-3-input");
 				worldOrigins.forEach((worldOrigin, i) => {
@@ -324,11 +324,11 @@ document[onEvent]("DOMContentLoaded", () => {
 		label.innerHTML = `<span data-translate="${playerControlTranslationKey}">...</span>:`;
 		let input = document.createElement("item-criteria-input");
 		input.setAttribute("name", `control.${control}`);
-		if(itemCriteria["names"].length > 0) {
-			input.setAttribute("value-items", itemCriteria["names"].join(","));
+		if(itemCriteria.names.length > 0) {
+			input.setAttribute("value-items", itemCriteria.names.join(","));
 		}
-		if(itemCriteria["tags"].length > 0) {
-			input.setAttribute("value-tags", itemCriteria["tags"].join(","));
+		if(itemCriteria.tags.length > 0) {
+			input.setAttribute("value-tags", itemCriteria.tags.join(","));
 		}
 		label.appendChild(input);
 		playerControlsInputCont.appendChild(label);
