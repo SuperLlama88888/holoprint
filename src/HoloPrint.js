@@ -1,4 +1,3 @@
-import * as NBT from "nbtify-readonly-typeless";
 import { BlobWriter, BlobReader, ZipReader } from "@zip.js/zip.js";
 
 import BlockGeoMaker from "./BlockGeoMaker.js";
@@ -7,9 +6,9 @@ import MaterialList from "./MaterialList.js";
 import PreviewRenderer from "./PreviewRenderer.js";
 
 import entityScripts from "./entityScripts.molang.js";
-import { addPaddingToImage, array2DToMolang, arrayToMolang, awaitAllEntries, weaklyCacheUnaryFunc, concatenateFiles, createNumericEnum, desparseArray, functionToMolang, getFileExtension, hexColorToClampedTriplet, itemCriteriaToMolang, jsonc, JSONMap, JSONSet, lcm, loadTranslationLanguage, max, min, onEvent, overlaySquareImages, pi, removeFalsies, removeFileExtension, resizeImageToBlob, setImageOpacity, sha256, toImage, translate, transposeMatrix, tuple, UserError, ReplacingPatternMap, conditionallyCacheUnaryFunc, clonePromise, getStructureIndexFromCoordinates, getGeoSpaceBlockPos } from "./utils.js";
+import { addPaddingToImage, array2DToMolang, arrayToMolang, awaitAllEntries, concatenateFiles, createNumericEnum, functionToMolang, getFileExtension, hexColorToClampedTriplet, itemCriteriaToMolang, jsonc, lcm, loadTranslationLanguage, max, min, onEvent, overlaySquareImages, pi, removeFalsies, resizeImageToBlob, setImageOpacity, sha256, toImage, translate, transposeMatrix, tuple, UserError, ReplacingPatternMap, conditionallyCacheUnaryFunc, getGeoSpaceBlockPos } from "./utils.js";
+import { createStructure, mergeStructurePalettes } from "./structure/structureHelpers.js";
 import ResourcePackStack from "./ResourcePackStack.js";
-import BlockUpdater from "./BlockUpdater.js";
 import SpawnAnimationMaker from "./SpawnAnimationMaker.js";
 import PolyMeshMaker from "./PolyMeshMaker.js";
 import fetchers from "./fetchers.js";
@@ -20,7 +19,6 @@ import PackBuilder from "./PackBuilder.js";
 
 export const VERSION = "dev";
 export const IGNORED_BLOCKS = ["air", "piston_arm_collision", "sticky_piston_arm_collision", "light_block", "light_block_0", "light_block_1", "light_block_2", "light_block_3", "light_block_4", "light_block_5", "light_block_6", "light_block_7", "light_block_8", "light_block_9", "light_block_10", "light_block_11", "light_block_12", "light_block_13", "light_block_14", "light_block_15"]; // blocks to be ignored when scanning the structure file
-const IGNORED_BLOCK_ENTITIES = new Set(["Beacon", "Beehive", "Bell", "BrewingStand", "ChiseledBookshelf", "CommandBlock", "Comparator", "Conduit", "CreakingHeart", "EnchantTable", "EndGateway", "JigsawBlock", "Lodestone", "SculkCatalyst", "SculkShrieker", "SculkSensor", "CalibratedSculkSensor", "StructureBlock", "BrushableBlock", "TrialSpawner", "Vault"]);
 export const PLAYER_CONTROL_NAMES = {
 	TOGGLE_RENDERING: "player_controls.toggle_rendering",
 	CHANGE_OPACITY: "player_controls.change_opacity",
@@ -68,10 +66,12 @@ export async function makePack(structureFiles, partialConfig, resourcePackStack 
 	if(!Array.isArray(structureFiles)) {
 		structureFiles = [structureFiles];
 	}
-	let nbts = await Promise.all(structureFiles.map(structureFile => readStructureNBT(structureFile)));
-	console.info("Finished reading structure NBTs!");
-	console.log("NBTs:", nbts);
-	let structureSizes = nbts.map(nbt => nbt["size"]);
+	let structures = await Promise.all(structureFiles.map(structureFile => createStructure(structureFile, config.IGNORED_BLOCKS)));
+	console.info("Finished reading structures!");
+	console.log("Structures:", structures);
+	
+	let blockPalette = mergeStructurePalettes(structures);
+	
 	let packName = config.PACK_NAME ?? getDefaultPackName(structureFiles);
 	
 	// very hacky TypeScript magic. This makes it so that I can have types for all the data after they're fetched.
@@ -184,20 +184,6 @@ export async function makePack(structureFiles, partialConfig, resourcePackStack 
 	}
 	let packIcon = config.PACK_ICON_BLOB ?? await makePackIcon(concatenateFiles(structureFiles));
 	
-	let structures = nbts.map(nbt => nbt["structure"]);
-	
-	let palettesAndIndices = await Promise.all(structures.map(structure => tweakBlockPalette(structure, config.IGNORED_BLOCKS)));
-	let { palette: blockPalette, indices: allStructureIndicesByLayer } = mergeMultiplePalettesAndIndices(palettesAndIndices);
-	if(desparseArray(blockPalette).length == 0) {
-		throw new UserError(`Structure is empty! No blocks are inside the structure.`);
-	}
-	console.log("combined palette: ", blockPalette);
-	console.log("remapped indices: ", allStructureIndicesByLayer);
-	// @ts-expect-error
-	window.blockPalette = blockPalette;
-	// @ts-expect-error
-	window.blockIndices = allStructureIndicesByLayer;
-	
 	let data = await dataPromise.all;
 	let entityGeoMaker = new EntityGeoMaker(resourcePackStack);
 	let blockGeoMaker = new BlockGeoMaker(config, entityGeoMaker, data.blockShapes, data.blockShapeGeos, data.blockStateDefinitions, data.blockEigenvariants);
@@ -221,7 +207,7 @@ export async function makePack(structureFiles, partialConfig, resourcePackStack 
 	let polyMeshTemplatePalette = blockGeoMaker.scalePolyMeshTemplates(unscaledPolyMeshTemplatePalette, centersOfMass);
 	console.log("Poly mesh template palette with resolved UVs:", polyMeshTemplatePalette);
 	
-	let structureDiagramsAndIndices = await makeStructureDiagrams(config, fullOpacityTextureBlob, unscaledPolyMeshTemplatePalette, allStructureIndicesByLayer, structureSizes);
+	let structureDiagramsAndIndices = await makeStructureDiagrams(config, fullOpacityTextureBlob, unscaledPolyMeshTemplatePalette, structures);
 	
 	let { manifest, hologramRenderControllers, hologramGeo, hologramAnimationControllers, hologramAnimations, blockValidationParticle, singleWhitePixelTexture, materialListUI, infoScreenUI, itemTexture, terrainTexture } = await packTemplatePromise.allValues;
 	
@@ -235,13 +221,12 @@ export async function makePack(structureFiles, partialConfig, resourcePackStack 
 	let entityManager = new EntityManager({ armorStandEntityFile, leashKnotEntityFile });
 	
 	let totalBlockCount = 0;
-	let maxHeight = max(...structureSizes.map(structureSize => structureSize[1]));
+	let maxHeight = max(...structures.map(structure => structure.height));
 	let layerIsEmpty = (new Array(maxHeight)).fill(true);
 	
 	let polyMeshMaker = new PolyMeshMaker(polyMeshTemplatePalette);
 	let materialList = new MaterialList(bedrockMetadata.blocks, bedrockMetadata.items, data.materialListMappings);
-	allStructureIndicesByLayer.forEach((structureIndicesByLayer, structureI) => {
-		let structureSize = structureSizes[structureI];
+	structures.forEach((structure, structureI) => {
 		let geoShortName = `hologram_${structureI}`;
 		let geoIdentifier = `geometry.holoprint.hologram_${structureI}`;
 		let geo = structuredClone(structureGeoTemplate);
@@ -249,17 +234,15 @@ export async function makePack(structureFiles, partialConfig, resourcePackStack 
 		entityManager.addGeometry(geoShortName, geoIdentifier);
 		hologramRenderControllers["render_controllers"]["controller.render.holoprint.hologram"]["arrays"]["geometries"]["Array.geometries"].push(`Geometry.${geoShortName}`);
 		
-		for(let y = 0; y < structureSize[1]; y++) {
-			for(let x = 0; x < structureSize[0]; x++) {
-				for(let z = 0; z < structureSize[2]; z++) {
+		for(let y = 0; y < structure.height; y++) {
+			for(let x = 0; x < structure.width; x++) {
+				for(let z = 0; z < structure.depth; z++) {
 					let coords = tuple([x, y, z]);
-					let blockI = getStructureIndexFromCoordinates(coords, structureSize);
 					for(let layerI = 0; layerI < 2; layerI++) {
-						let blockPaletteIndices = structureIndicesByLayer[layerI];
-						let paletteI = blockPaletteIndices[blockI];
+						let [block, paletteI] = structure.getBlockAndIndex(coords, layerI);
 						if(!(paletteI in polyMeshTemplatePalette)) {
-							if(paletteI in blockPalette) {
-								console.error(`A poly mesh template wasn't made for blockPalette[${paletteI}] = ${blockPalette[paletteI]["name"]}!`);
+							if(block) {
+								console.error(`A poly mesh template wasn't made for blockPalette[${paletteI}] = ${block["name"]}!`);
 							}
 							continue;
 						}
@@ -267,7 +250,6 @@ export async function makePack(structureFiles, partialConfig, resourcePackStack 
 						let geoSpaceBlockPos = getGeoSpaceBlockPos(coords);
 						polyMeshMaker.add(paletteI, geoSpaceBlockPos, layerI);
 						
-						let block = blockPalette[paletteI];
 						if(!config.IGNORED_MATERIAL_LIST_BLOCKS.includes(block["name"])) {
 							materialList.add(block);
 						}
@@ -288,12 +270,12 @@ export async function makePack(structureFiles, partialConfig, resourcePackStack 
 		}
 		hologramGeo["minecraft:geometry"].push(geo);
 		
-		addBoundingBoxParticles(hologramAnimationControllers, structureI, structureSize);
+		addBoundingBoxParticles(hologramAnimationControllers, structureI, structure);
 	});
 	
-	let { uniqueBlocksToValidate, totalBlocksToValidateByStructure, totalBlocksToValidateByStructureByLayer } = handleBlockValidation(config, allStructureIndicesByLayer, structureSizes, blockPalette, hologramAnimationControllers, (coords, locatorName) => addCoordinateLocatorToHologramGeo(hologramGeo, coords, locatorName));
+	let { uniqueBlocksToValidate, totalBlocksToValidateByStructure, totalBlocksToValidateByStructureByLayer } = handleBlockValidation(config, structures, hologramAnimationControllers, (coords, locatorName) => addCoordinateLocatorToHologramGeo(hologramGeo, coords, locatorName));
 	
-	makeLayerAnimations(config, structureSizes, entityManager, hologramAnimations, hologramAnimationControllers);
+	makeLayerAnimations(config, structures, entityManager, hologramAnimations, hologramAnimationControllers);
 	if(config.SPAWN_ANIMATION_ENABLED) {
 		let spawnAnimationMaker = new SpawnAnimationMaker(config, [1, maxHeight, 1]);
 		for(let y = 0; y < maxHeight; y++) {
@@ -306,9 +288,9 @@ export async function makePack(structureFiles, partialConfig, resourcePackStack 
 	}
 	
 	let structureSizesMolang = [
-		arrayToMolang(structureSizes.map(structureSize => structureSize[0]), "v.hologram.structure_index"),
-		arrayToMolang(structureSizes.map(structureSize => structureSize[1]), "v.hologram.structure_index"),
-		arrayToMolang(structureSizes.map(structureSize => structureSize[2]), "v.hologram.structure_index")
+		arrayToMolang(structures.map(structure => structure.width), "v.hologram.structure_index"),
+		arrayToMolang(structures.map(structure => structure.height), "v.hologram.structure_index"),
+		arrayToMolang(structures.map(structure => structure.depth), "v.hologram.structure_index")
 	];
 	let coordinateLockAxes = config.COORDINATE_LOCK && transposeMatrix(config.COORDINATE_LOCK);
 	let coordinateLockCoordsMolang = config.COORDINATE_LOCK? coordinateLockAxes.slice(0, 3).map(axis => arrayToMolang(axis, "v.hologram.structure_index")) : ["0", "0", "0"];
@@ -338,7 +320,7 @@ export async function makePack(structureFiles, partialConfig, resourcePackStack 
 	entityManager.setShouldUpdateBonesAndEffectsOffscreen(true); // makes backups work when offscreen (from my testing it helps a bit). this also makes it render when you're facing away, removing the need for visible_bounds_width/visible_bounds_height in the geometry file. (when should_update_effects_offscreen is set, it renders when facing away, but doesn't seem to have access to v. variables.)
 	
 	let initializeScriptBaseConstants = {
-		structureSize: structureSizes[0],
+		structureSize: structures[0].size,
 		initialOffset: config.INITIAL_OFFSET,
 		defaultTextureIndex,
 		singleLayerMode: HOLOGRAM_LAYER_MODES.SINGLE,
@@ -439,8 +421,8 @@ export async function makePack(structureFiles, partialConfig, resourcePackStack 
 		highestItemCount = max(...exportedMaterialListEnglish.map(({ count }) => count));
 	}
 	
-	let materialListsByLayerByStructure = makeMaterialListsForEachStructureAndEachLayer(config, allStructureIndicesByLayer, structureSizes, blockPalette, bedrockMetadata.blocks, bedrockMetadata.items, data.materialListMappings, resourceLangFiles["en_US"]);
-	addInfoScreenUIPages(infoScreenUI, structureSizes, structureDiagramsAndIndices, materialListsByLayerByStructure);
+	let materialListsByLayerByStructure = makeMaterialListsForEachStructureAndEachLayer(config, structures, bedrockMetadata.blocks, bedrockMetadata.items, data.materialListMappings, resourceLangFiles["en_US"]);
+	addInfoScreenUIPages(infoScreenUI, structures, structureDiagramsAndIndices, materialListsByLayerByStructure);
 	
 	manifest["header"]["name"] = packName;
 	manifest["header"]["uuid"] = crypto.randomUUID();
@@ -472,7 +454,7 @@ export async function makePack(structureFiles, partialConfig, resourcePackStack 
 	}
 	
 	let packTemplateLangFiles = await packTemplateLangFilesPromise;
-	let langFiles = makeLangFiles(config, packTemplateLangFiles, packName, materialList, exportedMaterialLists, controlsHaveBeenCustomised, inGameControls, controlItemTranslations, structureSizes);
+	let langFiles = makeLangFiles(config, packTemplateLangFiles, packName, materialList, exportedMaterialLists, controlsHaveBeenCustomised, inGameControls, controlItemTranslations, structures);
 	
 	await retexturingControlItemsPromise;
 	
@@ -548,13 +530,13 @@ export async function makePack(structureFiles, partialConfig, resourcePackStack 
 	
 	if(previewCont) {
 		let showPreview = () => {
-			res.previews = Promise.all(structureSizes.map(async (structureSize, structureI) => {
+			res.previews = Promise.all(structures.map(async (structure, structureI) => {
 				if(structureI > 0) {
 					previewCont.parentNode.appendChild(document.createElement("hr"));
 				}
 				let cont = structureI == 0? previewCont : previewCont.parentNode.appendChild(previewCont.cloneNode());
-				let name = structureSizes.length == 1? packName : getDefaultPackName([structureFiles[structureI]]);
-				return await PreviewRenderer.new(cont, name, fullOpacityTextureBlob, structureSize, blockPalette, polyMeshTemplatePalette, allStructureIndicesByLayer[structureI], {
+				let name = structures.length == 1? packName : getDefaultPackName([structureFiles[structureI]]);
+				return await PreviewRenderer.new(cont, name, fullOpacityTextureBlob, structure, polyMeshTemplatePalette, {
 					showSkybox: config.SHOW_PREVIEW_SKYBOX,
 					showFps: config.SHOW_PREVIEW_WIDGETS,
 					showOptions: config.SHOW_PREVIEW_WIDGETS
@@ -713,92 +695,6 @@ export function addDefaultConfig(config) {
 		}
 	});
 }
-export const readStructureNBT = weaklyCacheUnaryFunc(
-	/**
-	 * Reads the NBT of a structure file, returning a JSON object.
-	 * @param {File} structureFile `*.mcstructure`
-	 * @returns {Promise<MCStructure>}
-	 */
-	async structureFile => {
-		let arrayBuffer = await structureFile.arrayBuffer().catch(e => {
-			if(String(e).includes("NotFoundError")) {
-				throw new UserError("Unknown error when reading structure file! Please restart your browser and try again.\nIf this issue persists, please take a screen recording and create an issue on GitHub.");
-			}
-			throw new Error(`Could not read contents of structure file "${structureFile.name}"!\n${e}`);
-		});
-		if(structureFile.size == 0) { // this check must happen after reading the bytes, otherwise Google Drive files can't be read on Android Chrome: https://issues.chromium.org/issues/40123366#comment104
-			throw new UserError(`"${structureFile.name}" is an empty file! Please try exporting your structure again.\nIf you play on a version below 1.20.50, exporting to OneDrive will cause your structure file to be empty.`);
-		}
-		try {
-			return await readStructureNBTWithOptions(structureFile, arrayBuffer, {
-				endian: "little", // true .mcstructure files are little-endian
-				strict: false // some files have duplicated sections, which makes strict mode throw an error: #68
-			});
-		} catch(e) {
-			console.warn(`Structure file ${structureFile.name} couldn't be read with default .mcstructure NBT read settings. Trying generic settings...`);
-			console.debug(e);
-			return await readStructureNBTWithOptions(structureFile, arrayBuffer); // if the .mcstructure was generated from an external source, it's best to try with generic NBT read settings
-		}
-	},
-	clonePromise
-);
-
-/**
- * Reads the NBT of a structure file, returning a JSON object.
- * @param {File} structureFile `*.mcstructure`
- * @param {ArrayBuffer} arrayBuffer
- * @param {Partial<NBT.ReadOptions>} [options]
- * @returns {Promise<MCStructure>}
- */
-async function readStructureNBTWithOptions(structureFile, arrayBuffer, options = {}) {
-	let nbtRes = await NBT.read(arrayBuffer, options).catch(e => {
-		if(e instanceof NBT.InvalidTagError) {
-			throw new UserError(`"${structureFile.name}" is not a .mcstructure file! Please look at the tutorial on the wiki: https://holoprint-mc.github.io/wiki/creating-packs`);
-		}
-		throw new Error(`Invalid NBT in structure file "${structureFile.name}"!\n${e}`);
-	});
-	let nbt = nbtRes.data;
-	if(!isNBTValidMcstructure(nbt)) {
-		let errorMessage = getInvalidMcstructureErrorMessage(structureFile, nbt);
-		throw new UserError(errorMessage);
-	}
-	// @ts-expect-error
-	if(nbt["format_version"] == 2 && nbt["structure"]["block_indices"].length == 1) {
-		// https://feedback.minecraft.net/hc/en-us/articles/47907593889677-Minecraft-Beta-Preview-26-50-24
-		// very hacky, will fix in next update
-		nbt["structure"]["block_indices"][1] = (new Int32Array(nbt["structure"]["block_indices"][0].length)).fill(-1);
-	}
-	return nbt;
-}
-/**
- * Checks if a NBT object is valid .mcstructure NBT.
- * @param {NBT.RootTag} nbt
- * @returns {nbt is MCStructure}
- */
-function isNBTValidMcstructure(nbt) {
-	return (nbt["format_version"] == 1 || nbt["format_version"] == 2) && nbt["size"] instanceof Int32Array && nbt["size"].length == 3 && "structure" in nbt && nbt["structure_world_origin"] instanceof Int32Array && nbt["structure_world_origin"].length == 3;
-}
-/**
- * Gets the error message for a NBT file that isn't .mcstructures.
- * @param {File} structureFile
- * @param {NBT.RootTag} nbt
- * @returns {string}
- */
-function getInvalidMcstructureErrorMessage(structureFile, nbt) {
-	let offendingStructureName = removeFileExtension(structureFile.name);
-	let errorMessage = `Structure ${offendingStructureName} is not a valid .mcstructure file!`;
-	const otherNBTFileTypes = {
-		"MinecraftDataVersion": "litematic",
-		"TileEntities": "schematic",
-		"Metadata": "schem", // Sponge format
-		"DataVersion": "nbt"
-	};
-	let probableSourceFileExtension = Object.entries(otherNBTFileTypes).find(([key]) => key in nbt)?.[1];
-	if(probableSourceFileExtension) {
-		errorMessage += `\nNote: Renaming .${probableSourceFileExtension} to .mcstructure doesn't work, you must create the structure file from inside Minecraft Bedrock! Minecraft Java structures aren't the same as Minecraft Bedrock structures!`;
-	}
-	return errorMessage;
-}
 const fetchPackTemplateFile = conditionallyCacheUnaryFunc(
 	/** @param {string} path @returns {Promise<Response>} */
 	function(path) { // typescript doesn't detect the template parameter correctly if it's an arrow function
@@ -884,119 +780,16 @@ async function getResponseContents(resPromise, filePath) {
 	throw new Error(`Unknown file extension: ${filePath}`);
 }
 /**
- * Removes ignored blocks from the block palette, updates old blocks, and adds block entities as separate entries.
- * @param {MCStructure["structure"]} structure The de-NBT-ed structure file
- * @param {string[]} ignoredBlocks
- * @returns {Promise<{ palette: Block[], indices: [Int32Array, Int32Array] }>}
- */
-async function tweakBlockPalette(structure, ignoredBlocks) {
-	let palette = structuredClone(structure["palette"]["default"]["block_palette"]);
-	
-	let blockVersions = new Set(); // version should be constant for all blocks. just wanted to test this
-	let blockUpdater = new BlockUpdater();
-	let updatedBlocks = 0;
-	for(let [i, block] of Object.entries(palette)) {
-		blockVersions.add(block["version"]);
-		if(blockUpdater.blockNeedsUpdating(block)) {
-			if(await blockUpdater.update(block)) {
-				updatedBlocks++;
-			}
-		}
-		block["name"] = block["name"].replace(/^minecraft:/, ""); // remove namespace here, right at the start
-		if(ignoredBlocks.includes(block["name"])) {
-			delete palette[i];
-			continue;
-		}
-		delete block["version"];
-		if(!Object.keys(block["states"]).length) {
-			delete block["states"]; // easier viewing
-		}
-	}
-	let blockVersionsStringified = Array.from(blockVersions).map(v => BlockUpdater.parseBlockVersion(v).join("."));
-	if(updatedBlocks > 0) {
-		console.info(`Updated ${updatedBlocks} block${updatedBlocks > 1? "s" : ""} from ${blockVersionsStringified.join(", ")} to ${BlockUpdater.parseBlockVersion(BlockUpdater.LATEST_VERSION).join(".")}!`);
-		console.info(`Note: Updated blocks may not be 100% accurate! If there are some errors, try loading the structure in the latest version of Minecraft then saving it again, so all blocks are up to date.`);
-	}
-	console.log("Block versions:", Array.from(blockVersions), blockVersionsStringified);
-	
-	// add block entities into the block palette (on layer 0)
-	let indices = structure["block_indices"];
-	/** @type {JSONMap<NBTBlock, number>} */
-	let newIndexCache = new JSONMap();
-	let entitylessBlockEntityIndices = new Set(); // contains all the block palette indices for blocks with block entities. since they don't have block entity data yet, and all block entities well be cloned and added to the end of the palette, we can remove all the entries in here from the palette.
-	let blockPositionData = structure["palette"]["default"]["block_position_data"];
-	for(let i in blockPositionData) {
-		let oldPaletteI = indices[0][i];
-		if(!(oldPaletteI in palette)) { // if the block is ignored, it will be deleted already, so there's no need to touch its block entities
-			continue;
-		}
-		if(!("block_entity_data" in blockPositionData[i])) { // observers have tick_queue_data
-			continue;
-		}
-		
-		let blockEntityData = structuredClone(blockPositionData[i]["block_entity_data"]);
-		if(IGNORED_BLOCK_ENTITIES.has(blockEntityData["id"])) {
-			continue;
-		}
-		delete blockEntityData["x"];
-		delete blockEntityData["y"];
-		delete blockEntityData["z"];
-		
-		// clone the old block and add the block entity data
-		let newBlock = structuredClone(palette[oldPaletteI]);
-		newBlock["block_entity_data"] = blockEntityData;
-		
-		// check that we haven't seen this block entity before. since in JS objects are compared by reference we have to stringify it first then check the cache.
-		if(newIndexCache.has(newBlock)) {
-			indices[0][i] = newIndexCache.get(newBlock);
-		} else {
-			let paletteI = palette.length;
-			palette[paletteI] = newBlock;
-			indices[0][i] = paletteI;
-			newIndexCache.set(newBlock, paletteI);
-			entitylessBlockEntityIndices.add(oldPaletteI); // we can schedule to delete the original block palette entry later, as it doesn't have any block entity data and all block entities clone it.
-		}
-	}
-	for(let paletteI of entitylessBlockEntityIndices) {
-		// console.log(`deleting entityless block entity ${paletteI} = ${JSON.stringify(blockPalette[paletteI])}`);
-		delete palette[paletteI]; // this makes the blockPalette array discontinuous; when using native array methods, they skip over the empty slots.
-	}
-	
-	return { palette, indices };
-}
-/**
- * Combines multiple block palettes into one, and updates indices for each.
- * @param {{palette: Block[], indices: [Int32Array, Int32Array]}[]} palettesAndIndices
- * @returns {{palette: Block[], indices: [Int32Array, Int32Array][]}}
- */
-function mergeMultiplePalettesAndIndices(palettesAndIndices) {
-	let mergedPaletteSet = new JSONSet();
-	let remappedIndices = [];
-	palettesAndIndices.forEach(({ palette, indices }) => {
-		let indexRemappings = [];
-		palette.forEach((block, i) => {
-			mergedPaletteSet.add(block);
-			indexRemappings[i] = mergedPaletteSet.indexOf(block);
-		});
-		remappedIndices.push(indices.map(layer => layer.map(i => indexRemappings[i] ?? -1)));
-	});
-	return {
-		palette: Array.from(mergedPaletteSet),
-		indices: remappedIndices
-	};
-}
-/**
  * Makes the layer-by-layer diagrams and the isometric diagram for structures.
  * @param {HoloPrintConfig} config
  * @param {Blob} textureBlob
  * @param {PolyMeshTemplateFaceWithUvs[][]} polyMeshTemplatePalette
- * @param {[Int32Array, Int32Array][]} allStructureIndicesByLayer
- * @param {I32Vec3[]} structureSizes
+ * @param {IStructure[]} structures
  * @returns {Promise<StructureDiagramsAndIndices>}
  */
-async function makeStructureDiagrams(config, textureBlob, polyMeshTemplatePalette, allStructureIndicesByLayer, structureSizes) {
+async function makeStructureDiagrams(config, textureBlob, polyMeshTemplatePalette, structures) {
 	let structureDiagramMaker = new StructureDiagramMaker(config, await toImage(textureBlob));
-	let diagramsAndIndices = await structureDiagramMaker.makeDiagramsForStructures(polyMeshTemplatePalette, allStructureIndicesByLayer, structureSizes);
+	let diagramsAndIndices = await structureDiagramMaker.makeDiagramsForStructures(polyMeshTemplatePalette, structures);
 	structureDiagramMaker.dispose();
 	return diagramsAndIndices;
 }
@@ -1010,14 +803,14 @@ function getLayerDiagramTextureName(index) {
 /**
  * Makes the layer animations and animation controllers. Mutates the original arguments.
  * @param {HoloPrintConfig} config
- * @param {I32Vec3[]} structureSizes
+ * @param {IStructure[]} structures
  * @param {EntityManager} entityManager
  * @param {object} hologramAnimations
  * @param {object} hologramAnimationControllers
  */
-function makeLayerAnimations(config, structureSizes, entityManager, hologramAnimations, hologramAnimationControllers) {
+function makeLayerAnimations(config, structures, entityManager, hologramAnimations, hologramAnimationControllers) {
 	let layerAnimationStates = hologramAnimationControllers["animation_controllers"]["controller.animation.holoprint.hologram.layers"]["states"];
-	let topLayer = max(...structureSizes.map(structureSize => structureSize[1])) - 1;
+	let topLayer = max(...structures.map(structure => structure.height)) - 1;
 	layerAnimationStates["default"]["transitions"].push(
 		{
 			"l_0": `v.hologram.layer > -1 && v.hologram.layer != ${topLayer} && v.hologram.layer_mode == ${HOLOGRAM_LAYER_MODES.SINGLE}`
@@ -1118,22 +911,24 @@ function makeLayerAnimations(config, structureSizes, entityManager, hologramAnim
  * Adds bounding box particles for a single structure to the hologram animation controllers in-place.
  * @param {Record<string, any>} hologramAnimationControllers
  * @param {number} structureI
- * @param {I32Vec3} structureSize
+ * @param {IStructure} structure
  */
-function addBoundingBoxParticles(hologramAnimationControllers, structureI, structureSize) {
+function addBoundingBoxParticles(hologramAnimationControllers, structureI, structure) {
+	let { width, height, depth } = structure;
+	// TODO: migrate to Molang stuff
 	let outlineParticleSettings = [
-		`v.size = ${structureSize[0] / 2}; v.dir = 0; v.r = 1; v.g = 0; v.b = 0;`,
-		`v.size = ${structureSize[1] / 2}; v.dir = 1; v.r = 1 / 255; v.g = 1; v.b = 0;`,
-		`v.size = ${structureSize[2] / 2}; v.dir = 2; v.r = 0; v.g = 162 / 255; v.b = 1;`,
-		`v.size = ${structureSize[0] / 2}; v.dir = 0; v.y = ${structureSize[1]}; v.r = 1; v.g = 1; v.b = 1;`,
-		`v.size = ${structureSize[0] / 2}; v.dir = 0; v.z = ${structureSize[2]}; v.r = 1; v.g = 1; v.b = 1;`,
-		`v.size = ${structureSize[0] / 2}; v.dir = 0; v.y = ${structureSize[1]}; v.z = ${structureSize[2]}; v.r = 1; v.g = 1; v.b = 1;`,
-		`v.size = ${structureSize[1] / 2}; v.dir = 1; v.x = ${structureSize[0]}; v.r = 1; v.g = 1; v.b = 1;`,
-		`v.size = ${structureSize[1] / 2}; v.dir = 1; v.z = ${structureSize[2]}; v.r = 1; v.g = 1; v.b = 1;`,
-		`v.size = ${structureSize[1] / 2}; v.dir = 1; v.x = ${structureSize[0]}; v.z = ${structureSize[2]}; v.r = 1; v.g = 1; v.b = 1;`,
-		`v.size = ${structureSize[2] / 2}; v.dir = 2; v.x = ${structureSize[0]}; v.r = 1; v.g = 1; v.b = 1;`,
-		`v.size = ${structureSize[2] / 2}; v.dir = 2; v.y = ${structureSize[1]}; v.r = 1; v.g = 1; v.b = 1;`,
-		`v.size = ${structureSize[2] / 2}; v.dir = 2; v.x = ${structureSize[0]}; v.y = ${structureSize[1]}; v.r = 1; v.g = 1; v.b = 1;`
+		`v.size = ${width / 2}; v.dir = 0; v.r = 1; v.g = 0; v.b = 0;`,
+		`v.size = ${height / 2}; v.dir = 1; v.r = 1 / 255; v.g = 1; v.b = 0;`,
+		`v.size = ${depth / 2}; v.dir = 2; v.r = 0; v.g = 162 / 255; v.b = 1;`,
+		`v.size = ${width / 2}; v.dir = 0; v.y = ${height}; v.r = 1; v.g = 1; v.b = 1;`,
+		`v.size = ${width / 2}; v.dir = 0; v.z = ${depth}; v.r = 1; v.g = 1; v.b = 1;`,
+		`v.size = ${width / 2}; v.dir = 0; v.y = ${height}; v.z = ${depth}; v.r = 1; v.g = 1; v.b = 1;`,
+		`v.size = ${height / 2}; v.dir = 1; v.x = ${width}; v.r = 1; v.g = 1; v.b = 1;`,
+		`v.size = ${height / 2}; v.dir = 1; v.z = ${depth}; v.r = 1; v.g = 1; v.b = 1;`,
+		`v.size = ${height / 2}; v.dir = 1; v.x = ${width}; v.z = ${depth}; v.r = 1; v.g = 1; v.b = 1;`,
+		`v.size = ${depth / 2}; v.dir = 2; v.x = ${width}; v.r = 1; v.g = 1; v.b = 1;`,
+		`v.size = ${depth / 2}; v.dir = 2; v.y = ${height}; v.r = 1; v.g = 1; v.b = 1;`,
+		`v.size = ${depth / 2}; v.dir = 2; v.x = ${width}; v.y = ${height}; v.r = 1; v.g = 1; v.b = 1;`
 	];
 	let boundingBoxAnimation = {
 		"particle_effects": [],
@@ -1159,14 +954,12 @@ function addBoundingBoxParticles(hologramAnimationControllers, structureI, struc
 /**
  * Handles everything to do with block validation except creating the particle files from the template: Finding all blocks to be validated, getting all the unique blocks to be validated (which need particle files), and counting all the blocks to be validated per structure and per layer per structure for the Molang validation stuff.
  * @param {HoloPrintConfig} config
- * @param {[Int32Array, Int32Array][]} allStructureIndicesByLayer
- * @param {I32Vec3[]} structureSizes
- * @param {Block[]} blockPalette
+ * @param {IStructure[]} structures
  * @param {object} hologramAnimationControllers
  * @param {(coords: Vec3, locatorName: string) => void} addLocator
  * @returns {{ uniqueBlocksToValidate: Set<string>, totalBlocksToValidateByStructure: number[], totalBlocksToValidateByStructureByLayer: number[][] }}
  */
-function handleBlockValidation(config, allStructureIndicesByLayer, structureSizes, blockPalette, hologramAnimationControllers, addLocator) {
+function handleBlockValidation(config, structures, hologramAnimationControllers, addLocator) {
 	/** @type {number[]} */
 	let totalBlocksToValidateByStructure = [];
 	/** @type {number[][]} */
@@ -1174,22 +967,18 @@ function handleBlockValidation(config, allStructureIndicesByLayer, structureSize
 	/** @type {Set<string>} */
 	let uniqueBlocksToValidate = new Set();
 	
-	allStructureIndicesByLayer.forEach((structureIndicesByLayer, structureI) => {
-		let structureSize = structureSizes[structureI];
+	structures.forEach((structure, structureI) => {
 		// particle_expire_if_in_blocks only works on the first layer :(
-		let blockPaletteIndices = structureIndicesByLayer[0];
 		/** @type {BlockToValidate[]} */
 		let blocksToValidate = [];
 		let blocksToValidateByLayer = [];
 		
-		for(let y = 0; y < structureSize[1]; y++) {
+		for(let y = 0; y < structure.height; y++) {
 			let blocksToValidateCurrentLayer = 0; // "layer" in here refers to y-coordinate, NOT structure layer
-			for(let x = 0; x < structureSize[0]; x++) {
-				for(let z = 0; z < structureSize[2]; z++) {
+			for(let x = 0; x < structure.width; x++) {
+				for(let z = 0; z < structure.depth; z++) {
 					let coords = tuple([x, y, z]);
-					let blockI = getStructureIndexFromCoordinates(coords, structureSize);
-					let paletteI = blockPaletteIndices[blockI];
-					let block = blockPalette[paletteI];
+					let block = structure.getBlock(coords, 0);
 					if(!block && !config.VALIDATE_AIR_BLOCKS) {
 						continue;
 					}
@@ -1210,7 +999,7 @@ function handleBlockValidation(config, allStructureIndicesByLayer, structureSize
 			blocksToValidateByLayer.push(blocksToValidateCurrentLayer);
 		}
 		
-		addBlockValidationParticles(hologramAnimationControllers, structureI, blocksToValidate, structureSize);
+		addBlockValidationParticles(hologramAnimationControllers, structureI, blocksToValidate, structure);
 		totalBlocksToValidateByStructure.push(blocksToValidate.length);
 		totalBlocksToValidateByStructureByLayer.push(blocksToValidateByLayer);
 	});
@@ -1231,9 +1020,9 @@ function addCoordinateLocatorToHologramGeo(hologramGeo, coords, locatorName) {
  * @param {Record<string, any>} hologramAnimationControllers
  * @param {number} structureI
  * @param {BlockToValidate[]} blocksToValidate
- * @param {I32Vec3} structureSize
+ * @param {IStructure} structure
  */
-function addBlockValidationParticles(hologramAnimationControllers, structureI, blocksToValidate, structureSize) {
+function addBlockValidationParticles(hologramAnimationControllers, structureI, blocksToValidate, structure) {
 	let validateAllState = {
 		"particle_effects": [],
 		"transitions": [
@@ -1288,7 +1077,7 @@ function addBlockValidationParticles(hologramAnimationControllers, structureI, b
 		validateAllState["particle_effects"].push(particleEffect);
 		validationStates[animationStateName]["particle_effects"].push(particleEffect);
 	});
-	for(let y = 0; y < structureSize[1]; y++) { // layers with no blocks to validate don't have an animation controller state, so transitions to the default state need to be added for when it's on these empty layers
+	for(let y = 0; y < structure.height; y++) { // layers with no blocks to validate don't have an animation controller state, so transitions to the default state need to be added for when it's on these empty layers
 		if(!layersWithBlocksToValidate.includes(y)) {
 			Object.entries(validationStates).forEach(([validationStateName, validationState]) => {
 				if(validationStateName.startsWith(`validate_${structureI}`)) {
@@ -1361,28 +1150,21 @@ function patchRenderControllers(renderControllers, patches) {
 /**
  * Makes material lists for each structure and layer. Returns a 2d array of material lists, indexed by structure then layer, where layer 0 is the full structure, and subsequent layers are the actual layers (1-indexed).
  * @param {HoloPrintConfig} config
- * @param {[Int32Array, Int32Array][]} allStructureIndicesByLayer
- * @param {I32Vec3[]} structureSizes
- * @param {Block[]} blockPalette
+ * @param {IStructure[]} structures
  * @param {object} blockMetadata
  * @param {object} itemMetadata
  * @param {Data.MaterialListMappings} materialListMappings
  * @param {string} langFile
  * @returns {MaterialList[][]}
  */
-function makeMaterialListsForEachStructureAndEachLayer(config, allStructureIndicesByLayer, structureSizes, blockPalette, blockMetadata, itemMetadata, materialListMappings, langFile) {
-	return allStructureIndicesByLayer.map((structureIndicesByLayer, structureI) => {
-		let structureSize = structureSizes[structureI];
-		let materialListsForThisStructure = (new Array(structureSize[1] + 1)).fill(null).map(() => new MaterialList(blockMetadata, itemMetadata, materialListMappings, langFile));
-		for(let y = 0; y < structureSize[1]; y++) {
-			for(let x = 0; x < structureSize[0]; x++) {
-				for(let z = 0; z < structureSize[2]; z++) {
+function makeMaterialListsForEachStructureAndEachLayer(config, structures, blockMetadata, itemMetadata, materialListMappings, langFile) {
+	return structures.map(structure => {
+		let materialListsForThisStructure = (new Array(structure.height + 1)).fill(null).map(() => new MaterialList(blockMetadata, itemMetadata, materialListMappings, langFile));
+		for(let y = 0; y < structure.height; y++) {
+			for(let x = 0; x < structure.width; x++) {
+				for(let z = 0; z < structure.depth; z++) {
 					for(let layerI = 0; layerI < 2; layerI++) { // WHY is this so verbose?!?!?!?!?
-						let blockPaletteIndices = structureIndicesByLayer[layerI];
-						let coords = tuple([x, y, z]);
-						let blockI = getStructureIndexFromCoordinates(coords, structureSize);
-						let paletteI = blockPaletteIndices[blockI];
-						let block = blockPalette[paletteI];
+						let block = structure.getBlock([x, y, z], layerI);
 						if(!block || config.IGNORED_MATERIAL_LIST_BLOCKS.includes(block["name"])) {
 							continue;
 						}
@@ -1424,14 +1206,14 @@ function getInfoScreenSectionHeadingTranslationKey(structureI) {
 /**
  * 
  * @param {object} infoScreenUI
- * @param {I32Vec3[]} structureSizes
+ * @param {IStructure[]} structures
  * @param {StructureDiagramsAndIndices} structureDiagrams
  * @param {MaterialList[][]} materialListsByLayerByStructure
  */
-function addInfoScreenUIPages(infoScreenUI, structureSizes, structureDiagrams, materialListsByLayerByStructure) {
+function addInfoScreenUIPages(infoScreenUI, structures, structureDiagrams, materialListsByLayerByStructure) {
 	let tabSelector = getUIElementFromPath(infoScreenUI, "tab_stack_panel", "selector_pane");
 	let sectionContentPanels = getUIElementFromPath(infoScreenUI, "section_content_panels", "sections");
-	structureSizes.forEach((structureSize, structureI) => {
+	structures.forEach((structure, structureI) => {
 		let structureName = `structure_${structureI}`;
 		let pageContentElementName = `${structureName}_section_content`;
 		let headingTranslationKey = getInfoScreenSectionHeadingTranslationKey(structureI);
@@ -1464,7 +1246,7 @@ function addInfoScreenUIPages(infoScreenUI, structureSizes, structureDiagrams, m
 		}));
 		infoScreenUI[`${pageContentElementName}@structure_section_content_base`] = {
 			"$heading": headingTranslationKey,
-			"$structure_height_plus_1": structureSize[1] + 1, // I'm adding the 1 here rather than inside the JSON UI for +0.000001 fps
+			"$structure_height_plus_1": structure.height + 1, // I'm adding the 1 here rather than inside the JSON UI for +0.000001 fps
 			"$diagram_property_bag": Object.fromEntries(structureDiagramTextureBindings),
 			"$layer_slider_name": `${structureName}_layer_slider`,
 			"$structure_index": structureI,
@@ -1473,7 +1255,7 @@ function addInfoScreenUIPages(infoScreenUI, structureSizes, structureDiagrams, m
 		};
 	});
 	
-	getUIElementFromPath(infoScreenUI, "tab_stack_panel", "selector_pane", "about_section")["$toggle_group_forced_index"] = structureSizes.length;
+	getUIElementFromPath(infoScreenUI, "tab_stack_panel", "selector_pane", "about_section")["$toggle_group_forced_index"] = structures.length;
 }
 /**
  * Gets the element at a specified path from a JSON UI object.
@@ -1557,10 +1339,10 @@ function translateControlItems(config, blockMetadata, itemMetadata, materialList
  * @param {boolean} controlsHaveBeenCustomised
  * @param {Record<string, string>} inGameControls
  * @param {Record<string, string>} controlItemTranslations
- * @param {I32Vec3[]} structureSizes
+ * @param {IStructure[]} structures
  * @returns {[string, string][]}
  */
-function makeLangFiles(config, packTemplateLangFiles, packName, materialList, exportedMaterialLists, controlsHaveBeenCustomised, inGameControls, controlItemTranslations, structureSizes) {
+function makeLangFiles(config, packTemplateLangFiles, packName, materialList, exportedMaterialLists, controlsHaveBeenCustomised, inGameControls, controlItemTranslations, structures) {
 	const disabledFeatureTranslations = { // these look at the .lang RP files
 		"SPAWN_ANIMATION_ENABLED": "spawn_animation_disabled",
 		"PLAYER_CONTROLS_ENABLED": "player_controls_disabled",
@@ -1616,16 +1398,16 @@ function makeLangFiles(config, packTemplateLangFiles, packName, materialList, ex
 			langFile += controlItemTranslations[language];
 		}
 		
-		structureSizes.forEach((structureSize, structureI) => {
+		structures.forEach((structure, structureI) => {
 			// TODO: fix translations. just fix it entirely. throw all this garbage out
 			let structureName = `Structure ${structureI + 1}`; // todo: use file names?
 			let sectionHeadingTranslationKey = getInfoScreenSectionHeadingTranslationKey(structureI);
 			langFile += `\n${sectionHeadingTranslationKey}=${structureName}`;
 			const barSeparator = " §8|§r ";
-			let sizeInfo = `Size: ${structureSize.join("x")}${barSeparator}`;
+			let sizeInfo = `Size: ${structure.size.join("x")}${barSeparator}`;
 			langFile += `\nholoprint.info_screen.structure_${structureI}_layer_0=${sizeInfo}Full structure`;
 			langFile += `\nholoprint.material_list.structure_${structureI}_layer_0=Material list${barSeparator}${structureName}`;
-			for(let layer = 1; layer < structureSize[1] + 1; layer++) {
+			for(let layer = 1; layer < structure.height + 1; layer++) {
 				langFile += `\nholoprint.info_screen.structure_${structureI}_layer_${layer}=${sizeInfo}Layer ${layer}`; // AHHHH IK THIS CAUSES DUPLICATED. I NEED TO GET THIS UPDATE OUT TONIGHTTTTT
 				langFile += `\nholoprint.material_list.structure_${structureI}_layer_${layer}=Material list${barSeparator}${structureName}${barSeparator}Layer ${layer}`;
 			}
@@ -1861,7 +1643,7 @@ function expandItemCriteria(itemCriteria, itemTags) {
 
 /** @import * as Data from "./data/schemas" */
 /** @import { FileEntry } from "@zip.js/zip.js" */
-/** @import { ItemCriteria, I32Vec3, HoloPrintConfig, Block, BlockToValidate, Vec3, StructureDiagramsAndIndices, GetFileType, PathToData } from "./common.types.ts" */
-/** @import { MCStructure, NBTBlock } from "./minecraft.types.ts" */
+/** @import { ItemCriteria, HoloPrintConfig, BlockToValidate, Vec3, StructureDiagramsAndIndices, GetFileType, PathToData } from "./common.types.ts" */
+/** @import IStructure from "./structure/IStructure.ts" */
 /** @import { MaterialListEntry } from "./MaterialList.types.ts" */
 /** @import { PolyMeshTemplateFaceWithUvs } from "./PolyMeshMaker.types.ts" */

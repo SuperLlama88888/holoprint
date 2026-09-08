@@ -47,14 +47,10 @@ export default class PreviewRenderer extends AsyncFactory {
 	cont;
 	/** @readonly @type {string} */
 	packName;
-	/** @readonly @type {I32Vec3} */
-	structureSize;
-	/** @readonly @type {Block[]} */
-	blockPalette;
+	/** @readonly @type {IStructure} */
+	structure;
 	/** @readonly @type {PolyMeshTemplateFaceWithUvs[][]} */
 	polyMeshTemplatePalette;
-	/** @readonly @type {[Int32Array, Int32Array]} */
-	blockIndices;
 	options = {
 		showSkybox: true,
 		maxPointLights: 100, // limited by WebGL uniform limit since Three.js uses uniforms to pass lights to shaders
@@ -116,26 +112,22 @@ export default class PreviewRenderer extends AsyncFactory {
 	 * @param {Node} cont
 	 * @param {string} packName
 	 * @param {Blob} imageBlob
-	 * @param {I32Vec3} structureSize
-	 * @param {Block[]} blockPalette
+	 * @param {IStructure} structure
 	 * @param {PolyMeshTemplateFaceWithUvs[][]} polyMeshTemplatePalette
-	 * @param {[Int32Array, Int32Array]} blockIndices
 	 * @param {Partial<typeof PreviewRenderer.prototype.options>} [options]
 	 */
-	constructor(cont, packName, imageBlob, structureSize, blockPalette, polyMeshTemplatePalette, blockIndices, options = {}) {
+	constructor(cont, packName, imageBlob, structure, polyMeshTemplatePalette, options = {}) {
 		super();
 		this.cont = cont;
 		this.packName = packName;
-		this.structureSize = structureSize;
-		this.blockPalette = blockPalette;
+		this.structure = structure;
 		this.polyMeshTemplatePalette = polyMeshTemplatePalette;
-		this.blockIndices = blockIndices;
 		this.options = { ...this.options, ...options };
 		
 		this.#can = document.createElement("canvas");
 		this.#polyMeshMaker = new PolyMeshMaker(polyMeshTemplatePalette);
 		this.#imageBlob = imageBlob;
-		this.#maxDim = max(...this.structureSize);
+		this.#maxDim = max(...this.structure.size);
 		this.#maxDimPixels = this.#maxDim * 16;
 		
 		this.#loadingMessage = document.createElement("div");
@@ -181,7 +173,7 @@ export default class PreviewRenderer extends AsyncFactory {
 		GLTFExporter ??= (await import("three/examples/jsm/exporters/GLTFExporter.js")).GLTFExporter;
 		BufferGeometryUtils ??= (await import("three/examples/jsm/utils/BufferGeometryUtils.js"));
 		
-		this.#center = new THREE.Vector3(-this.structureSize[0] * 8, this.structureSize[1] * 8, -this.structureSize[2] * 8);
+		this.#center = new THREE.Vector3(-this.structure.width * 8, this.structure.height * 8, -this.structure.depth * 8);
 		this.#imageBlobData = await toImageData(this.#imageBlob);
 		
 		this.#renderer = new THREE.WebGLRenderer({
@@ -408,7 +400,7 @@ export default class PreviewRenderer extends AsyncFactory {
 		
 		// this part is adapted from @bridge-core/model-viewer, itself adapted from https://github.com/mrdoob/three.js/issues/6784#issuecomment-315963625
 		const scale = 1.7;
-		let boundingBox = new THREE.Box3(new THREE.Vector3(this.structureSize[0] * -16, 0, this.structureSize[2] * -16), new THREE.Vector3(0, this.structureSize[1] * 16, 0));
+		let boundingBox = new THREE.Box3(new THREE.Vector3(this.structure.width * -16, 0, this.structure.depth * -16), new THREE.Vector3(0, this.structure.height * 16, 0));
 		let boundingSphere = boundingBox.getBoundingSphere(new THREE.Sphere());
 		let objectAngularSize = this.#camera.fov * scale;
 		let distanceToCamera = boundingSphere.radius / tanDeg(objectAngularSize / 2);
@@ -496,13 +488,14 @@ export default class PreviewRenderer extends AsyncFactory {
 		this.#directionalLight.shadow.needsUpdate = true;
 	}
 	#initPointLights() {
-		let palettePointLights = this.blockPalette.map(block => PreviewRenderer.#POINT_LIGHTS[block["name"]] ?? Object.entries(PreviewRenderer.#POINT_LIGHTS).find(([stringifiedBlock]) => this.#checkBlockNameAndStates(stringifiedBlock, block))?.[1]);
-		for(let x = 0; x < this.structureSize[0]; x++) {
-			for(let y = 0; y < this.structureSize[1]; y++) {
-				for(let z = 0; z < this.structureSize[2]; z++) {
-					let blockI = (x * this.structureSize[1] + y) * this.structureSize[2] + z;
+		let palettePointLights = this.structure.getPalette().map(block => PreviewRenderer.#POINT_LIGHTS[block.name] ?? Object.entries(PreviewRenderer.#POINT_LIGHTS).find(([stringifiedBlock]) => this.#checkBlockNameAndStates(stringifiedBlock, block))?.[1]);
+		let { width, height, depth } = this.structure;
+		for(let x = 0; x < width; x++) {
+			for(let y = 0; y < height; y++) {
+				for(let z = 0; z < depth; z++) {
+					let coords = tuple([x, y, z]);
 					for(let layerI = 0; layerI < 2; layerI++) {
-						let paletteI = this.blockIndices[layerI][blockI];
+						let paletteI = this.structure.getPaletteIndex(coords, layerI);
 						if(!(paletteI in this.polyMeshTemplatePalette)) {
 							continue;
 						}
@@ -732,7 +725,8 @@ export default class PreviewRenderer extends AsyncFactory {
 }
 
 /** @import { PolyMeshTemplateFaceWithUvs } from "./PolyMeshMaker.types.ts" */
-/** @import { Block, I32Vec3, Vec3 } from "./common.types.ts" */
+/** @import { Block, Vec3 } from "./common.types.ts" */
+/** @import IStructure from "./structure/IStructure.ts" */
 /** @import { PreviewPointLight } from "./PreviewRenderer.types.ts" */
 /** @import { Controller, GUI } from "lil-gui" */
 /** @import * as three from "three" */

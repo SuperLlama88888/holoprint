@@ -127,8 +127,8 @@ export function repeatedlyApplyEndofunction(value, func, maxRepetitions = 100) {
 
 /**
  * @template {string | number | boolean} P
- * @template R
- * @template {(x: P) => R} F
+ * @template {(x: P) => any} F
+ * @template {ReturnType<F>} R
  * @param {F} func
  * @param {(x: Parameters<F>[0]) => boolean} conditionFunc
  * @param {(x: R) => R} [preReturnFunc]

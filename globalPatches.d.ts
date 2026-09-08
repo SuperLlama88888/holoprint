@@ -1,5 +1,6 @@
 // Fixes a few issues with TypeScript types.
 
+import { TypedArray } from "three"; // tysm three (smh ts)
 import FileInputTable from "./src/components/FileInputTable";
 import ItemCriteriaInput from "./src/components/ItemCriteriaInput";
 import LilGui from "./src/components/LilGui";
@@ -7,6 +8,7 @@ import ResizingInput from "./src/components/ResizingInput";
 import SimpleLogger from "./src/components/SimpleLogger";
 import Vec3Input from "./src/components/Vec3Input";
 import { onEvent, onEvents, onEventAndNow } from "./src/utils";
+import { Tuple } from "./src/common.types.ts";
 
 type IsNumberLiteral<T> = T extends number? number extends T? false : true : false;
 
@@ -15,6 +17,9 @@ declare global {
 		// the bits at the end indicate that if the array has extra properties, only the numeric ones (the indices) will be in the return object
 		map<U extends any[], This extends readonly unknown[]>(this: This, callbackfn: (value: T, index: number, array: This) => [...U]): { [K in keyof This]: K extends number | `${number}`? U : never };
 		map<U, This extends readonly unknown[]>(this: This, callbackfn: (value: T, index: number, array: This) => U): { [K in keyof This]: K extends number | `${number}`? U : never };
+	}
+	interface ArrayConstructor {
+		from<T extends TypedArray & { length: number }>(typedArray: T): Tuple<number, T["length"]>;
 	}
 	interface Float32ArrayConstructor {
 		new<T extends number[]>(elements: [...T]): Float32Array & (IsNumberLiteral<T["length"]> extends true? { length: T["length"] } : {});

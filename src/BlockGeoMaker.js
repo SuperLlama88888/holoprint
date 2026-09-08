@@ -254,7 +254,8 @@ export default class BlockGeoMaker {
 					continue;
 				}
 				let blockEntityProperty = match[1];
-				let blockToCopy = block["block_entity_data"]?.[blockEntityProperty];
+				/** @type {Block} */
+				let blockToCopy = block.blockEntityData?.[blockEntityProperty];
 				if(!blockToCopy) {
 					console.error(`Cannot find block entity property ${blockEntityProperty} on block ${block["name"]}:`, block);
 					continue;
@@ -522,7 +523,7 @@ export default class BlockGeoMaker {
 	 * @returns {[string, any][]}
 	 */
 	#getBlockStatesAndEntityDataEntries(block) {
-		return [...Object.entries(block["states"] ?? {}), ...Object.entries(block["block_entity_data"] ?? {}).map(([key, value]) => [`entity.${key}`, value])];
+		return [...Object.entries(block.states ?? {}), ...Object.entries(block.blockEntityData ?? {}).map(([key, value]) => [`entity.${key}`, value])];
 	}
 	/**
 	 * Adds x/y/z/w/h/d properties to cubes for easy typing.
@@ -711,7 +712,7 @@ export default class BlockGeoMaker {
 			console.warn(`Cannot ignore eigenvariant of ${blockName} as it doesn't exist!`);
 		}
 		
-		if(!("states" in block || "block_entity_data" in block)) {
+		if(!block.states && !block.blockEntityData) {
 			return -1;
 		}
 		let blockShape = this.#getBlockShape(blockName); // In copied block shapes, we want to look at the original block shape's texture variants, not the copied's. E.g. With candle_cake, we don't want the cake that is copied to look at the texture variants for cake (which includes bite_counter).
@@ -954,12 +955,12 @@ export default class BlockGeoMaker {
 				return true;
 			}
 			let [, usingBlockEntityData, blockStateName, blockStateOperator, blockStateOperandString] = blockStateOperation;
-			let dataObjectName = usingBlockEntityData? "block_entity_data" : "states";
-			if(!(dataObjectName in block)) {
-				console.error(`No ${dataObjectName} in block ${block["name"]}!`);
+			let dataObject = usingBlockEntityData? block.blockEntityData : block.states;
+			let dataObjectName = usingBlockEntityData? "block entity data" : "states";
+			if(!dataObject) {
+				console.error(`No ${dataObjectName} in block ${block.name}!`);
 				return true;
 			}
-			let dataObject = block[dataObjectName];
 			if(blockStateOperator != "??" && !(blockStateName in dataObject)) {
 				console.error(`Cannot find ${dataObjectName} ${blockStateName} on block ${block["name"]}`);
 				return true;
@@ -1030,14 +1031,14 @@ export default class BlockGeoMaker {
 					let arrayIndex;
 					if(arrayIndexVar.startsWith("entity.")) {
 						let blockEntityProperty = arrayIndexVar.slice(7);
-						if(!("block_entity_data" in block) || !(blockEntityProperty in block["block_entity_data"])) {
-							console.error(`Cannot find block entity property ${blockEntityProperty} in ${block["name"]}:`, block);
+						if(!(blockEntityProperty in (block.blockEntityData ?? {}))) {
+							console.error(`Cannot find block entity property ${blockEntityProperty} in ${block.name}:`, block);
 							return "";
 						}
-						arrayIndex = block["block_entity_data"][blockEntityProperty];
+						arrayIndex = block.blockEntityData[blockEntityProperty];
 					} else {
-						if(!("states" in block) || !(arrayIndexVar in block["states"])) {
-							console.error(`Cannot find block state ${arrayIndexVar} in ${block["name"]}:`, block);
+						if(!(arrayIndexVar in (block.states ?? {}))) {
+							console.error(`Cannot find block state ${arrayIndexVar} in ${block.name}:`, block);
 							return "";
 						}
 						arrayIndex = block["states"][arrayIndexVar];
@@ -1058,7 +1059,7 @@ export default class BlockGeoMaker {
 					switch(specialVar) {
 						case "#block_name": return block["name"];
 						case "#block_states": return block["states"];
-						case "#block_entity_data": return block["block_entity_data"];
+						case "#block_entity_data": return block.blockEntityData;
 						case "#tex": {
 							if(specialTexture == undefined) {
 								console.error(`No #tex for block ${block["name"]}!`);

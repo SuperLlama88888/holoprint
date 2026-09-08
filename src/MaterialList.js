@@ -84,8 +84,8 @@ export default class MaterialList {
 		}
 		if(itemName in this.#specialBlockEntityProperties && typeof block != "string") {
 			let blockEntityProperty = this.#specialBlockEntityProperties[itemName]["prop"];
-			if(blockEntityProperty in (block["block_entity_data"] ?? {})) {
-				itemName += `+${block["block_entity_data"][blockEntityProperty]}`;
+			if(blockEntityProperty in (block["blockEntityData"] ?? {})) {
+				itemName += `+${block["blockEntityData"][blockEntityProperty]}`;
 			} else {
 				console.error(`Cannot find block entity property ${blockEntityProperty} on block ${block["name"]}!`);
 			}
