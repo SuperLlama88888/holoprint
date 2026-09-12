@@ -100,7 +100,7 @@
 						},
 						"additionalProperties": false
 					},
-					"uv_sizes": {
+					"uvSizes": {
 						"description": "UV size overrides for each face.",
 						"type": "object",
 						"propertyNames": {
@@ -120,8 +120,8 @@
 						},
 						"additionalProperties": false
 					},
-					"uv_rot": {
-						"description": "Rotates the UV for each face. Processed before `flip_textures_horizontally` and `flip_textures_vertically`",
+					"uvRot": {
+						"description": "Rotates the UV for each face. Processed before `flipTextureHorizontally` and `flipTextureVertically`",
 						"type": "object",
 						"propertyNames": {
 							"enum": ["west", "east", "down", "up", "north", "south", "side", "*"]
@@ -135,7 +135,7 @@
 						},
 						"additionalProperties": false
 					},
-					"box_uv": {
+					"boxUv": {
 						"description": "UV coordinates for box UV.",
 						"type": "array",
 						"items": {
@@ -145,7 +145,7 @@
 						"minItems": 2,
 						"maxItems": 2
 					},
-					"box_uv_size": {
+					"boxUvSize": {
 						"description": "Size override for box UV.",
 						"type": "array",
 						"items": {
@@ -155,8 +155,8 @@
 						"minItems": 3,
 						"maxItems": 3
 					},
-					"box_uv_flip_east_west": {
-						"description": "If true, the east and west faces will be flipped. Requires `box_uv`.",
+					"boxUvFlipEastWest": {
+						"description": "If true, the east and west faces will be flipped. Requires `boxUv`.",
 						"type": "boolean"
 					},
 					"textures": {
@@ -180,7 +180,7 @@
 						},
 						"additionalProperties": false
 					},
-					"texture_size": {
+					"textureSize": {
 						"description": "Defines the expected size of the texture, for use in UV. Defaults to [16, 16].",
 						"type": "array",
 						"items": {
@@ -195,12 +195,12 @@
 						"type": "string",
 						"pattern": "^\\w+$"
 					},
-					"copy_block": {
+					"copyBlock": {
 						"description": "Copies an entire block. Must resolve to an object with the same structure as a block palette entry.",
 						"type": "string",
 						"minLength": 1
 					},
-					"copy_entity_model": {
+					"copyEntityModel": {
 						"description": "Copies an entity's model.",
 						"type": "object",
 						"properties": {
@@ -209,7 +209,7 @@
 								"type": "string",
 								"pattern": "^geometry\\.[\\w.]+$"
 							},
-							"geo_file": {
+							"geoFile": {
 								"description": "A file path to the geometry file which contains the identifier.",
 								"type": "string",
 								"pattern": "^models/.*[^/]$"
@@ -218,9 +218,9 @@
 								"$ref": "#/definitions/textureFilePath"
 							}
 						},
-						"required": ["identifier", "geo_file", "texture"]
+						"required": ["identifier", "geoFile", "texture"]
 					},
-					"block_states": {
+					"blockStates": {
 						"description": "Block states to be passed to the block shape copy specified in the \"copy\" property.",
 						"type": "object",
 						"patternProperties": {
@@ -237,7 +237,7 @@
 							}
 						}
 					},
-					"terrain_texture": {
+					"terrainTexture": {
 						"description": "Forces this cube to use a specific terrain_texture.json key.",
 						"type": "string"
 					},
@@ -246,7 +246,7 @@
 						"type": "integer",
 						"minimum": 0
 					},
-					"ignore_eigenvariant": {
+					"ignoreEigenvariant": {
 						"description": "Makes a cube ignore the eigenvariant associated with this block, and instead rely on block states for variants.",
 						"type": "boolean"
 					},
@@ -259,7 +259,7 @@
 						"description": "Makes the cube appear at maximum brightness by setting the surface normal to be vertical.",
 						"type": "boolean"
 					},
-					"flip_textures_horizontally": {
+					"flipTextureHorizontally": {
 						"description": "An array of faces that will have their textures horizontally flipped.",
 						"type": "array",
 						"items": {
@@ -268,7 +268,7 @@
 						},
 						"uniqueItems": true
 					},
-					"flip_textures_vertically": {
+					"flipTextureVertically": {
 						"description": "An array of faces that will have their textures vertically flipped.",
 						"type": "array",
 						"items": {
@@ -292,7 +292,7 @@
 						},
 						"additionalProperties": false
 					},
-					"disable_merging": {
+					"disableMerging": {
 						"description": "Disables this cube from being automatically merged with any other cubes.",
 						"type": "boolean",
 						"default": true
@@ -306,10 +306,10 @@
 						"required": ["copy"]
 					},
 					{
-						"required": ["copy_block"]
+						"required": ["copyBlock"]
 					},
 					{
-						"required": ["copy_entity_model"]
+						"required": ["copyEntityModel"]
 					}
 				],
 				"default": {

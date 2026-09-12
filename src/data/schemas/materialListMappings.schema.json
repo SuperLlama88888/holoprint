@@ -7,7 +7,7 @@
 		"$schema": {
 			"type": "string"
 		},
-		"ignored_blocks": {
+		"ignoredBlocks": {
 			"description": "An array of blocks that will be ignored and will not be put in material lists.",
 			"type": "array",
 			"items": {
@@ -16,7 +16,7 @@
 				"minLength": 1
 			}
 		},
-		"block_to_item_mappings": {
+		"blockToItemMappings": {
 			"description": "Mappings for blocks that have different item names. If a block isn't found here, the item name is assumed to be the same as the block name. Regular expressions will be checked only if no individual match is found.",
 			"type": "object",
 			"patternProperties": {
@@ -33,7 +33,7 @@
 			},
 			"additionalProperties": false
 		},
-		"item_count_multipliers": {
+		"itemCountMultipliers": {
 			"description": "Items that will have their count multiplied by a certain amount.",
 			"type": "object",
 			"patternProperties": {
@@ -67,7 +67,7 @@
 			},
 			"additionalProperties": false
 		},
-		"special_block_entity_properties": {
+		"specialBlockEntityProperties": {
 			"description": "Definitions for blocks that should be split up based on a numeric block entity property.",
 			"type": "object",
 			"patternProperties": {
@@ -80,7 +80,7 @@
 							"type": "string",
 							"minLength": 1
 						},
-						"serialization_ids": {
+						"serializationIds": {
 							"description": "Serialization ID remappings.",
 							"type": "array",
 							"items": {
@@ -96,8 +96,8 @@
 			},
 			"additionalProperties": false
 		},
-		"serialization_id_patches": {
-			"description": "Remappings for serialization_ids that go to the wrong things in .lang files. Regular expressions will be checked only if no individual match is found.",
+		"serializationIdPatches": {
+			"description": "Remappings for serializationIds that go to the wrong things in .lang files. Regular expressions will be checked only if no individual match is found.",
 			"type": "object",
 			"patternProperties": {
 				"^(tile|item)\\.\\w+$": {
@@ -113,7 +113,7 @@
 			},
 			"additionalProperties": false
 		},
-		"blocks_missing_serialization_ids": {
+		"blocksMissingSerializationIds": {
 			"description": "Patches for blocks that don't have any serialization ID due to not existing in mojang-blocks.json despite existing in-game.",
 			"type": "object",
 			"patternProperties": {
@@ -125,7 +125,7 @@
 			},
 			"additionalProperties": false
 		},
-		"translation_patches": {
+		"translationPatches": {
 			"description": "Translations that don't exist for whatever reason.",
 			"type": "object",
 			"patternProperties": {
@@ -138,6 +138,6 @@
 			"additionalProperties": false
 		}
 	},
-	"required": ["ignored_blocks", "block_to_item_mappings", "item_count_multipliers", "special_block_entity_properties", "serialization_id_patches", "blocks_missing_serialization_ids", "translation_patches"],
+	"required": ["ignoredBlocks", "blockToItemMappings", "itemCountMultipliers", "specialBlockEntityProperties", "serializationIdPatches", "blocksMissingSerializationIds", "translationPatches"],
 	"additionalProperties": false
 }

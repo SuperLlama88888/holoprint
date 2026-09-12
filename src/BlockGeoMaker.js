@@ -15,7 +15,7 @@ export default class BlockGeoMaker {
 	/** @readonly @type {EntityGeoMaker} */
 	#entityGeoMaker;
 	
-	/** @readonly @type {Data.BlockShapes["individual_blocks"]} */
+	/** @readonly @type {Data.BlockShapes["individualBlocks"]} */
 	#individualBlockShapes;
 	/** @readonly @type {[RegExp, string][]} */
 	#blockShapePatterns;
@@ -53,7 +53,7 @@ export default class BlockGeoMaker {
 		this.config = config;
 		this.#entityGeoMaker = entityGeoMaker;
 		
-		this.#individualBlockShapes = blockShapes.individual_blocks;
+		this.#individualBlockShapes = blockShapes.individualBlocks;
 		this.#blockShapePatterns = Object.entries(blockShapes.patterns).map(([rule, blockShape]) => [new RegExp(rule), blockShape]); // store regular expressions from the start to avoid recompiling them every time
 		this.#blockShapeGeos = blockShapeGeos;
 		this.#eigenvariants = eigenvariants;
@@ -62,24 +62,24 @@ export default class BlockGeoMaker {
 		
 		// block-state-driven rotations/texture variants can either be global, based on block shape, based on specific block names, or based on regular expressions for block names, hence the many variables.
 		this.#globalBlockStateRotations = blockStateDefs.rotations["*"];
-		Object.entries(blockStateDefs.rotations.block_shapes ?? {}).forEach(([blockShapes, rotationDefs]) => {
+		Object.entries(blockStateDefs.rotations.blockShapes ?? {}).forEach(([blockShapes, rotationDefs]) => {
 			blockShapes.split(",").forEach(blockShape => {
 				this.#blockShapeBlockStateRotations.set(blockShape, rotationDefs);
 			});
 		});
-		Object.entries(blockStateDefs.rotations.block_names ?? {}).forEach(([blockNames, rotationDefs]) => {
+		Object.entries(blockStateDefs.rotations.blockNames ?? {}).forEach(([blockNames, rotationDefs]) => {
 			blockNames.split(",").forEach(blockName => {
 				this.#blockNameBlockStateRotations.set(blockName, rotationDefs);
 			});
 		});
 		
-		this.#globalBlockStateTextureVariants = blockStateDefs.texture_variants["*"];
-		Object.entries(blockStateDefs.texture_variants.block_shapes ?? {}).forEach(([blockShapes, textureVariantDefs]) => {
+		this.#globalBlockStateTextureVariants = blockStateDefs.textureVariants["*"];
+		Object.entries(blockStateDefs.textureVariants.blockShapes ?? {}).forEach(([blockShapes, textureVariantDefs]) => {
 			blockShapes.split(",").forEach(blockShape => {
 				this.#blockShapeBlockStateTextureVariants.set(blockShape, textureVariantDefs);
 			});
 		});
-		this.#blockNameBlockStateTextureVariants = new PatternMap(Object.entries(blockStateDefs.texture_variants.block_names ?? {}), ",");
+		this.#blockNameBlockStateTextureVariants = new PatternMap(Object.entries(blockStateDefs.textureVariants.blockNames ?? {}), ",");
 	}
 	/**
 	 * Makes poly mesh templates (unscaled) and their centers of mass from a block palette.
@@ -179,25 +179,25 @@ export default class BlockGeoMaker {
 		while(unfilteredCubes.length) {
 			// For each unfiltered cube, we add it to filteredCubes if we've checked the "if" flag. If there are copies, we then add them back to unfilteredCubes.
 			let cube = unfilteredCubes.shift();
-			if("block_states" in cube) {
+			if("blockStates" in cube) {
 				let blockOverride = structuredClone(block);
-				for(let blockStateName in cube.block_states) {
-					if(typeof cube.block_states[blockStateName] == "string") {
-						cube.block_states[blockStateName] = this.#interpolateInBlockValues(block, cube.block_states[blockStateName], cube, specialTexture);
+				for(let blockStateName in cube.blockStates) {
+					if(typeof cube.blockStates[blockStateName] == "string") {
+						cube.blockStates[blockStateName] = this.#interpolateInBlockValues(block, cube.blockStates[blockStateName], cube, specialTexture);
 					}
 				}
-				blockOverride.states = { ...blockOverride.states, ...cube.block_states };
-				cube["block_override"] = blockOverride;
-				delete cube.block_states;
+				blockOverride.states = { ...blockOverride.states, ...cube.blockStates };
+				cube["blockOverride"] = blockOverride;
+				delete cube.blockStates;
 			}
 			if("if" in cube) {
-				if(!this.#checkBlockStateConditional(cube["block_override"] ?? block, cube.if)) {
+				if(!this.#checkBlockStateConditional(cube["blockOverride"] ?? block, cube.if)) {
 					continue;
 				}
 				delete cube.if;
 			}
-			if("terrain_texture" in cube) {
-				cube.terrain_texture = this.#interpolateInBlockValues(cube["block_override"] ?? block, cube.terrain_texture, cube, specialTexture);
+			if("terrainTexture" in cube) {
+				cube.terrainTexture = this.#interpolateInBlockValues(cube["blockOverride"] ?? block, cube.terrainTexture, cube, specialTexture);
 			}
 			if("copy" in cube) {
 				if(cube.copy == blockShape) { // prevent recursion (sometimes)
@@ -215,7 +215,7 @@ export default class BlockGeoMaker {
 						copiedCube.translate = vec3.add(copiedCube.translate ?? [0, 0, 0], cube.translate);
 					}
 					fieldsToCopy.forEach(field => { // copy all fields from this cube onto the new ones
-						if(field == "flip_textures_horizontally" || field == "flip_textures_vertically") { // these ones are arrays but are supposed to represent sets, so we take the XOR/symmetric difference (ik there's a native method but it's very new)
+						if(field == "flipTextureHorizontally" || field == "flipTextureVertically") { // these ones are arrays but are supposed to represent sets, so we take the XOR/symmetric difference (ik there's a native method but it's very new)
 							let facesInCopiedCube = new Set(copiedCube[field] ?? []);
 							cube[field].forEach(face => {
 								if(facesInCopiedCube.has(face)) {
@@ -247,10 +247,10 @@ export default class BlockGeoMaker {
 					}
 				});
 				unfilteredCubes.push(...copiedCubes);
-			} else if("copy_block" in cube) {
-				let match = cube.copy_block.match(/^entity\.(.+)$/);
+			} else if("copyBlock" in cube) {
+				let match = cube.copyBlock.match(/^entity\.(.+)$/);
 				if(!match) {
-					console.error(`Incorrect formatted copy_block property: ${match}`);
+					console.error(`Incorrect formatted copyBlock property: ${match}`);
 					continue;
 				}
 				let blockEntityProperty = match[1];
@@ -275,8 +275,8 @@ export default class BlockGeoMaker {
 					});
 				}
 				allFaces.push(...newFaces);
-			} else if("copy_entity_model" in cube) {
-				unfilteredCubes.push(...await this.#entityGeoMaker.entityModelToCubes(cube.copy_entity_model));
+			} else if("copyEntityModel" in cube) {
+				unfilteredCubes.push(...await this.#entityGeoMaker.entityModelToCubes(cube.copyEntityModel));
 			} else {
 				filteredCubes.push(cube);
 			}
@@ -314,28 +314,28 @@ export default class BlockGeoMaker {
 			let cubeVariant;
 			if("variant" in cube) {
 				cubeVariant = cube.variant;
-			} else if(cube.ignore_eigenvariant) {
-				if("block_override" in cube) {
-					cubeVariant = this.#getTextureVariant(cube.block_override, true);
+			} else if(cube.ignoreEigenvariant) {
+				if("blockOverride" in cube) {
+					cubeVariant = this.#getTextureVariant(cube.blockOverride, true);
 				} else {
 					if(variantWithoutEigenvariant == undefined) {
 						variantWithoutEigenvariant = this.#getTextureVariant(block, true);
 					}
 					cubeVariant = variantWithoutEigenvariant;
 				}
-			} else if("block_override" in cube) {
-				cubeVariant = this.#getTextureVariant(cube.block_override);
+			} else if("blockOverride" in cube) {
+				cubeVariant = this.#getTextureVariant(cube.blockOverride);
 			} else {
 				cubeVariant = variant; // default variant for this block
 			}
 			
 			// if the arrays are undefined, the set will be empty, so no ?? [] is needed here
-			let texturesToFlipHorizontally = new Set(cube.flip_textures_horizontally);
-			let texturesToFlipVertically = new Set(cube.flip_textures_vertically);
+			let texturesToFlipHorizontally = new Set(cube.flipTextureHorizontally);
+			let texturesToFlipVertically = new Set(cube.flipTextureVertically);
 			
 			/** @type {(PolyMeshTemplateFace & { fullbright: boolean })[]} */
 			let faces = [];
-			let textureSize = cube.texture_size ?? [16, 16];
+			let textureSize = cube.textureSize ?? [16, 16];
 			// add generic keys to all faces, and convert texture references into indices
 			Object.entries(uv).forEach(([faceName, face]) => {
 				let isSideFace = ["west", "east", "north", "south"].includes(faceName);
@@ -343,38 +343,38 @@ export default class BlockGeoMaker {
 				if(textureFace == "none") {
 					return;
 				}
-				textureFace = this.#interpolateInBlockValues(cube.block_override ?? block, textureFace, cube, specialTexture);
+				textureFace = this.#interpolateInBlockValues(cube.blockOverride ?? block, textureFace, cube, specialTexture);
 				let textureRef = {
 					uv: face.uv.map((x, i) => x / textureSize[i]),
-					uv_size: face.uv_size.map((x, i) => x / textureSize[i]),
-					block_name: blockName,
-					texture_face: textureFace,
+					uvSize: face.uvSize.map((x, i) => x / textureSize[i]),
+					blockName,
+					textureFace,
 					variant: cubeVariant
 				};
 				if(textureFace == "#tex") {
 					if(specialTexture) {
-						textureRef.texture_path_override = specialTexture;
+						textureRef.texturePathOverride = specialTexture;
 					} else {
 						console.error(`No #tex for block ${blockName} and blockshape ${blockShape}!`);
 					}
 				} else if(/^textures\/.+[^/]$/.test(textureFace)) { // file path
-					textureRef.texture_path_override = textureFace;
+					textureRef.texturePathOverride = textureFace;
 				} else {
-					let terrainTextureOverride = cube.terrain_texture;
+					let terrainTextureOverride = cube.terrainTexture;
 					if(terrainTextureOverride) {
-						delete textureRef.block_name;
-						delete textureRef.texture_face;
-						textureRef.terrain_texture_override = terrainTextureOverride;
+						delete textureRef.blockName;
+						delete textureRef.textureFace;
+						textureRef.terrainTextureOverride = terrainTextureOverride;
 					}
 				}
-				if("texture_path_override" in textureRef) {
-					delete textureRef.block_name;
-					delete textureRef.texture_face;
+				if("texturePathOverride" in textureRef) {
+					delete textureRef.blockName;
+					delete textureRef.textureFace;
 					delete textureRef.variant;
 				}
 				if("tint" in cube) {
 					let tint = cube.tint;
-					tint = this.#interpolateInBlockValues(cube.block_override ?? block, tint, cube, specialTexture);
+					tint = this.#interpolateInBlockValues(cube.blockOverride ?? block, tint, cube, specialTexture);
 					if(tint[0] == "#") {
 						textureRef.tint = hexColorToClampedTriplet(tint);
 					} else {
@@ -386,7 +386,7 @@ export default class BlockGeoMaker {
 				
 				this.textureRefs.add(textureRef);
 				let vertices = this.#getVertices(cube, faceName);
-				let uvRot = cube.uv_rot?.[faceName] ?? (isSideFace? cube.uv_rot?.side : undefined) ?? cube.uv_rot?.["*"];
+				let uvRot = cube.uvRot?.[faceName] ?? (isSideFace? cube.uvRot?.side : undefined) ?? cube.uvRot?.["*"];
 				if(uvRot) {
 					while(uvRot >= 90) {
 						[vertices[0].corner, vertices[1].corner, vertices[3].corner, vertices[2].corner] = [vertices[2].corner, vertices[0].corner, vertices[1].corner, vertices[3].corner];
@@ -409,7 +409,7 @@ export default class BlockGeoMaker {
 					texturesToFlipVertically.has("*"),
 					faceName == "down" || faceName == "up"
 				];
-				if("box_uv" in cube) { // box uv does some flipping automatically
+				if("boxUv" in cube) { // box uv does some flipping automatically
 					flipHorizontallyFactors.push(faceName != "north" && faceName != "south");
 					flipVerticallyFactors.push(faceName == "up");
 				}
@@ -611,10 +611,10 @@ export default class BlockGeoMaker {
 	 * @returns {number | string}
 	 */
 	#getMergingGroup(cube) {
-		if(cube.disable_merging || "translate" in cube || "uv" in cube || "uv_sizes" in cube || "uv_rot" in cube || "box_uv" in cube) {
+		if(cube.disableMerging || "translate" in cube || "uv" in cube || "uvSizes" in cube || "uvRot" in cube || "boxUv" in cube) {
 			return NaN; // in JS, NaN == NaN is false, disabling these cubes from being merged at all
 		} else {
-			return JSON.stringify([cube.textures, cube.texture_size, cube.block_override, cube.terrain_texture, cube.variant, cube.ignore_eigenvariant, cube.tint, cube.fullbright, cube.flip_textures_horizontally, cube.flip_textures_vertically, cube.arrays]); // these are all the properties that could exist on a cube at this point - basically, two cubes have to be identical in all of these in order to be mergeable
+			return JSON.stringify([cube.textures, cube.textureSize, cube.blockOverride, cube.terrainTexture, cube.variant, cube.ignoreEigenvariant, cube.tint, cube.fullbright, cube.flipTextureHorizontally, cube.flipTextureVertically, cube.arrays]); // these are all the properties that could exist on a cube at this point - basically, two cubes have to be identical in all of these in order to be mergeable
 		}
 	}
 	/**
@@ -777,38 +777,38 @@ export default class BlockGeoMaker {
 	 * @returns {CubeUv}
 	 */
 	#calculateUv(cube) {
-		if("box_uv" in cube) { // this is where a singular uv coordinate is specified, and the rest is calculated as below. used primarily in entity models.
-			let boxUvSize = cube.box_uv_size ?? cube.size;
-			let flipEastWest = !!cube.box_uv_flip_east_west;
+		if("boxUv" in cube) { // this is where a singular uv coordinate is specified, and the rest is calculated as below. used primarily in entity models.
+			let boxUvSize = cube.boxUvSize ?? cube.size;
+			let flipEastWest = !!cube.boxUvFlipEastWest;
 			/** @type {CubeUv} */
 			let uv = {
 				up: {
 					uv: [boxUvSize[2], 0],
-					uv_size: [boxUvSize[0], boxUvSize[2]]
+					uvSize: [boxUvSize[0], boxUvSize[2]]
 				},
 				down: {
 					uv: [boxUvSize[0] + boxUvSize[2], 0],
-					uv_size: [boxUvSize[0], boxUvSize[2]]
+					uvSize: [boxUvSize[0], boxUvSize[2]]
 				},
 				west: {
 					uv: [+flipEastWest * (boxUvSize[0] + boxUvSize[2]), boxUvSize[2]],
-					uv_size: [boxUvSize[2], boxUvSize[1]]
+					uvSize: [boxUvSize[2], boxUvSize[1]]
 				},
 				north: {
 					uv: [boxUvSize[2], boxUvSize[2]],
-					uv_size: [boxUvSize[0], boxUvSize[1]]
+					uvSize: [boxUvSize[0], boxUvSize[1]]
 				},
 				east: {
 					uv: [+!flipEastWest * (boxUvSize[0] + boxUvSize[2]), boxUvSize[2]],
-					uv_size: [boxUvSize[2], boxUvSize[1]]
+					uvSize: [boxUvSize[2], boxUvSize[1]]
 				},
 				south: {
 					uv: [boxUvSize[0] + boxUvSize[2] * 2, boxUvSize[2]],
-					uv_size: [boxUvSize[0], boxUvSize[1]]
+					uvSize: [boxUvSize[0], boxUvSize[1]]
 				}
 			};
 			Object.values(uv).forEach(face => {
-				face.uv = vec2.add(face.uv, cube.box_uv);
+				face.uv = vec2.add(face.uv, cube.boxUv);
 			});
 			return uv;
 		} else {
@@ -822,27 +822,27 @@ export default class BlockGeoMaker {
 			return {
 				west: {
 					uv: cube.uv?.west ?? cube.uv?.side ?? cube.uv?.["*"] ?? westUvOffset,
-					uv_size: cube.uv_sizes?.west ?? cube.uv_sizes?.side ?? cube.uv_sizes?.["*"] ?? [cube.d, cube.h]
+					uvSize: cube.uvSizes?.west ?? cube.uvSizes?.side ?? cube.uvSizes?.["*"] ?? [cube.d, cube.h]
 				},
 				east: {
 					uv: cube.uv?.east ?? cube.uv?.side ?? cube.uv?.["*"] ?? eastUvOffset,
-					uv_size: cube.uv_sizes?.east ?? cube.uv_sizes?.side ?? cube.uv_sizes?.["*"] ?? [cube.d, cube.h]
+					uvSize: cube.uvSizes?.east ?? cube.uvSizes?.side ?? cube.uvSizes?.["*"] ?? [cube.d, cube.h]
 				},
 				down: {
 					uv: cube.uv?.down ?? cube.uv?.["*"] ?? downUvOffset,
-					uv_size: cube.uv_sizes?.down ?? cube.uv_sizes?.["*"] ?? [cube.w, cube.d]
+					uvSize: cube.uvSizes?.down ?? cube.uvSizes?.["*"] ?? [cube.w, cube.d]
 				},
 				up: {
 					uv: cube.uv?.up ?? cube.uv?.["*"] ?? upUvOffset,
-					uv_size: cube.uv_sizes?.up ?? cube.uv_sizes?.["*"] ?? [cube.w, cube.d]
+					uvSize: cube.uvSizes?.up ?? cube.uvSizes?.["*"] ?? [cube.w, cube.d]
 				},
 				north: {
 					uv: cube.uv?.north ?? cube.uv?.side ?? cube.uv?.["*"] ?? northUvOffset,
-					uv_size: cube.uv_sizes?.north ?? cube.uv_sizes?.side ?? cube.uv_sizes?.["*"] ?? [cube.w, cube.h]
+					uvSize: cube.uvSizes?.north ?? cube.uvSizes?.side ?? cube.uvSizes?.["*"] ?? [cube.w, cube.h]
 				},
 				south: {
 					uv: cube.uv?.south ?? cube.uv?.side ?? cube.uv?.["*"] ?? southUvOffset,
-					uv_size: cube.uv_sizes?.south ?? cube.uv_sizes?.side ?? cube.uv_sizes?.["*"] ?? [cube.w, cube.h]
+					uvSize: cube.uvSizes?.south ?? cube.uvSizes?.side ?? cube.uvSizes?.["*"] ?? [cube.w, cube.h]
 				}
 			};
 		}
@@ -1128,7 +1128,7 @@ export default class BlockGeoMaker {
 				transparency: imageUv.transparency,
 				vertices: vertices.map(vertex => ({
 					pos: vertex.pos,
-					uv: tuple([+((imageUv.uv[0] + imageUv.uv_size[0] * (vertex.corner & 1)) / textureAtlas.textureWidth).toFixed(4), +(1 - (imageUv.uv[1] + imageUv.uv_size[1] * (vertex.corner >> 1)) / textureAtlas.textureHeight).toFixed(4)])
+					uv: tuple([+((imageUv.uv[0] + imageUv.uvSize[0] * (vertex.corner & 1)) / textureAtlas.textureWidth).toFixed(4), +(1 - (imageUv.uv[1] + imageUv.uvSize[1] * (vertex.corner >> 1)) / textureAtlas.textureHeight).toFixed(4)])
 				}))
 			};
 		});

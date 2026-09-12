@@ -33,7 +33,7 @@
 		{
 			"pos": [0, 0, 0],
 			"size": [16, 8, 16],
-			"disable_merging": true
+			"disableMerging": true
 		},
 		{
 			"pos": [0, 8, 0],
@@ -80,7 +80,7 @@
 				"*": "#tex",
 				"up": "none"
 			},
-			"texture_size": [64, 64],
+			"textureSize": [64, 64],
 			"uv": {
 				"side": [0, 33],
 				"north": [14, 33],
@@ -93,7 +93,7 @@
 			"textures": {
 				"*": "#tex"
 			},
-			"texture_size": [64, 64],
+			"textureSize": [64, 64],
 			"uv": {
 				"side": [0, 14],
 				"north": [14, 14],
@@ -108,7 +108,7 @@
 				"*": "#tex",
 				"south": "none"
 			},
-			"texture_size": [64, 64],
+			"textureSize": [64, 64],
 			"uv": {
 				"*": [0, 1]
 			}
@@ -432,7 +432,7 @@
 				"down": [0, 13],
 				"west": [13, 0]
 			},
-			"flip_textures_horizontally": ["south", "west"]
+			"flipTextureHorizontally": ["south", "west"]
 		},
 		{
 			"if": "upper_block_bit == 0",
@@ -446,7 +446,7 @@
 				"*": [0, 0],
 				"west": [13, 0]
 			},
-			"flip_textures_horizontally": ["south", "west", "up"]
+			"flipTextureHorizontally": ["south", "west", "up"]
 		}
 	],
 	"door": [
@@ -477,8 +477,8 @@
 			"uv": {
 				"side": [0, 0]
 			},
-			"flip_textures_horizontally": ["down"], // when facing east/west the hinges are on the same side on the bottom + top, but when facing north/south they're on different sides
-			"flip_textures_vertically": ["down"]
+			"flipTextureHorizontally": ["down"], // when facing east/west the hinges are on the same side on the bottom + top, but when facing north/south they're on different sides
+			"flipTextureVertically": ["down"]
 		}
 	],
 	"trapdoor": [ // textures are wacky hence the long definition, but in the end it's pixel-perfect!
@@ -491,8 +491,8 @@
 			"if": "upside_down_bit == 0 && direction < 2 && open_bit == 0",
 			"copy": "template_trapdoor",
 			"rot": [180, 0, 0],
-			"flip_textures_horizontally": ["down", "up"], // side changing for the bottom has to be negated here for the down face and added for the up face
-			"flip_textures_vertically": ["down", "up"]
+			"flipTextureHorizontally": ["down", "up"], // side changing for the bottom has to be negated here for the down face and added for the up face
+			"flipTextureVertically": ["down", "up"]
 		},
 		{
 			"if": "upside_down_bit == 1 && open_bit == 0",
@@ -510,8 +510,8 @@
 			"copy": "template_trapdoor",
 			"rot": [-90, 0, 0], // would be fun to animate these
 			"pivot": [8, 14.5, 1.5],
-			"flip_textures_horizontally": ["side"],
-			"flip_textures_vertically": ["side"]
+			"flipTextureHorizontally": ["side"],
+			"flipTextureVertically": ["side"]
 		}
 	],
 	"template_book": [
@@ -526,7 +526,7 @@
 			"uv": {
 				"*": [16, 0]
 			},
-			"texture_size": [64, 32]
+			"textureSize": [64, 32]
 		},
 		{
 			"pos": [9, 0, 3],
@@ -539,7 +539,7 @@
 			"uv": {
 				"*": [0, 0]
 			},
-			"texture_size": [64, 32]
+			"textureSize": [64, 32]
 		},
 		{
 			"pos": [7, 0, 3],
@@ -550,7 +550,7 @@
 			"uv": {
 				"*": [12, 0]
 			},
-			"texture_size": [64, 32]
+			"textureSize": [64, 32]
 		},
 		{
 			"pos": [3, 0, 4],
@@ -564,7 +564,7 @@
 			"uv": {
 				"*": [1, 11]
 			},
-			"texture_size": [64, 32]
+			"textureSize": [64, 32]
 		},
 		{
 			"pos": [8, 0, 4],
@@ -578,7 +578,7 @@
 			"uv": {
 				"*": [1, 11]
 			},
-			"texture_size": [64, 32]
+			"textureSize": [64, 32]
 		},
 		{
 			"pos": [3, 1, 4],
@@ -591,7 +591,7 @@
 			"uv": {
 				"*": [1, 11]
 			},
-			"texture_size": [64, 32]
+			"textureSize": [64, 32]
 		},
 		{
 			"pos": [8, 1, 4],
@@ -604,7 +604,7 @@
 			"uv": {
 				"*": [1, 11]
 			},
-			"texture_size": [64, 32]
+			"textureSize": [64, 32]
 		}
 	],
 	"enchanting_table": [
@@ -621,7 +621,7 @@
 		{
 			"pos": [0, 0, 0],
 			"size": [16, 16, 16],
-			"uv_rot": {
+			"uvRot": {
 				"up": 180
 			}
 		}
@@ -717,7 +717,7 @@
 			"uv": {
 				"*": [0, 0]
 			},
-			"uv_sizes": {
+			"uvSizes": {
 				"*": [16, 16]
 			}
 		},
@@ -733,7 +733,7 @@
 			"uv": {
 				"*": [0, 0]
 			},
-			"uv_sizes": {
+			"uvSizes": {
 				"*": [16, 16]
 			}
 		}
@@ -819,7 +819,7 @@
 			"pos": [0, 3, 0],
 			"size": [3, 0, 3],
 			"variant": 0,
-			"flip_textures_vertically": ["*"]
+			"flipTextureVertically": ["*"]
 		}
 	],
 	"template_pink_petal_small_medium": [
@@ -831,7 +831,7 @@
 			"pos": [0, 2, 0],
 			"size": [3, 0, 3],
 			"variant": 0,
-			"flip_textures_vertically": ["*"]
+			"flipTextureVertically": ["*"]
 		}
 	],
 	"pink_petals": [
@@ -869,7 +869,7 @@
 			"uv": {
 				"*": [1, 8]
 			},
-			"flip_textures_vertically": ["*"]
+			"flipTextureVertically": ["*"]
 		},
 		{
 			"if": "growth >= 2",
@@ -900,7 +900,7 @@
 			"uv": {
 				"*": [10, 12]
 			},
-			"flip_textures_vertically": ["*"]
+			"flipTextureVertically": ["*"]
 		},
 		{
 			"if": "growth >= 3",
@@ -915,7 +915,7 @@
 			"uv": {
 				"*": [8, 0]
 			},
-			"flip_textures_vertically": ["*"]
+			"flipTextureVertically": ["*"]
 		}
 	],
 	"pressure_plate": [
@@ -1214,7 +1214,7 @@
 				"north": [6, 6],
 				"south": [18, 6]
 			},
-			"texture_size": [24, 12]
+			"textureSize": [24, 12]
 		}
 	],
 	"heavy_core": [
@@ -1265,31 +1265,31 @@
 		{
 			"copy": "template_small_redstone_torch",
 			"translate": [7, 2, 2],
-			"terrain_texture": "repeater_torch"
+			"terrainTexture": "repeater_torch"
 		},
 		{
 			"if": "repeater_delay == 0",
 			"copy": "template_small_redstone_torch",
 			"translate": [7, 2, 6],
-			"terrain_texture": "repeater_torch"
+			"terrainTexture": "repeater_torch"
 		},
 		{
 			"if": "repeater_delay == 1",
 			"copy": "template_small_redstone_torch",
 			"translate": [7, 2, 8],
-			"terrain_texture": "repeater_torch"
+			"terrainTexture": "repeater_torch"
 		},
 		{
 			"if": "repeater_delay == 2",
 			"copy": "template_small_redstone_torch",
 			"translate": [7, 2, 10],
-			"terrain_texture": "repeater_torch"
+			"terrainTexture": "repeater_torch"
 		},
 		{
 			"if": "repeater_delay == 3",
 			"copy": "template_small_redstone_torch",
 			"translate": [7, 2, 12],
-			"terrain_texture": "repeater_torch"
+			"terrainTexture": "repeater_torch"
 		}
 	],
 	"comparator": [
@@ -1300,19 +1300,19 @@
 		{
 			"copy": "template_small_redstone_torch",
 			"translate": [4, 2, 11],
-			"terrain_texture": "comparator_torch"
+			"terrainTexture": "comparator_torch"
 		},
 		{
 			"copy": "template_small_redstone_torch",
 			"translate": [10, 2, 11],
-			"terrain_texture": "comparator_torch"
+			"terrainTexture": "comparator_torch"
 		},
 		{
 			"if": "output_subtract_bit == 0",
 			"pos": [7, 2, 2],
 			"size": [2, 2, 2],
-			"terrain_texture": "comparator_torch",
-			"ignore_eigenvariant": true,
+			"terrainTexture": "comparator_torch",
+			"ignoreEigenvariant": true,
 			"uv": {
 				"*": [7, 6]
 			}
@@ -1321,8 +1321,8 @@
 			"if": "output_subtract_bit == 1",
 			"pos": [7, 5, 2],
 			"size": [2, 0, 2],
-			"terrain_texture": "comparator_torch",
-			"ignore_eigenvariant": true,
+			"terrainTexture": "comparator_torch",
+			"ignoreEigenvariant": true,
 			"uv": {
 				"*": [7, 6]
 			}
@@ -1332,32 +1332,32 @@
 			"pos": [0, 7, 7],
 			"size": [16, 16, 0],
 			"translate": [0, -5, -5],
-			"terrain_texture": "comparator_torch",
-			"ignore_eigenvariant": true
+			"terrainTexture": "comparator_torch",
+			"ignoreEigenvariant": true
 		},
 		{
 			"if": "output_subtract_bit == 1",
 			"pos": [0, 7, 9],
 			"size": [16, 16, 0],
 			"translate": [0, -5, -5],
-			"terrain_texture": "comparator_torch",
-			"ignore_eigenvariant": true
+			"terrainTexture": "comparator_torch",
+			"ignoreEigenvariant": true
 		},
 		{
 			"if": "output_subtract_bit == 1",
 			"pos": [7, 7, 0],
 			"size": [0, 16, 16],
 			"translate": [0, -5, -5],
-			"terrain_texture": "comparator_torch",
-			"ignore_eigenvariant": true
+			"terrainTexture": "comparator_torch",
+			"ignoreEigenvariant": true
 		},
 		{
 			"if": "output_subtract_bit == 1",
 			"pos": [9, 7, 0],
 			"size": [0, 16, 16],
 			"translate": [0, -5, -5],
-			"terrain_texture": "comparator_torch",
-			"ignore_eigenvariant": true
+			"terrainTexture": "comparator_torch",
+			"ignoreEigenvariant": true
 		}
 	],
 	"liquid": [
@@ -1525,7 +1525,7 @@
 		{
 			"pos": [0.25, 4.25, 14.25],
 			"size": [15.5, 7.75, 1.5],
-			"texture_size": [64, 32],
+			"textureSize": [64, 32],
 			"uv": {
 				"north": [2, 2],
 				"south": [2, 2],
@@ -1534,7 +1534,7 @@
 				"up": [2, 0],
 				"down": [2, 0]
 			},
-			"uv_sizes": {
+			"uvSizes": {
 				"north": [24, 12],
 				"south": [24, 12],
 				"east": [2, 12],
@@ -1572,11 +1572,11 @@
 		{
 			"pos": [7.25, 0, 7.25],
 			"size": [1.5, 8.25, 1.5],
-			"texture_size": [64, 32],
+			"textureSize": [64, 32],
 			"uv": {
 				"*": [2, 16]
 			},
-			"uv_sizes": {
+			"uvSizes": {
 				"side": [2, 12],
 				"up": [2, 2],
 				"down": [2, 2]
@@ -1585,7 +1585,7 @@
 		{
 			"pos": [0.25, 8.25, 7.25],
 			"size": [15.5, 7.75, 1.5],
-			"texture_size": [64, 32],
+			"textureSize": [64, 32],
 			"uv": {
 				"north": [2, 2],
 				"south": [2, 2],
@@ -1594,7 +1594,7 @@
 				"up": [2, 0],
 				"down": [2, 0]
 			},
-			"uv_sizes": {
+			"uvSizes": {
 				"north": [24, 12],
 				"south": [24, 12],
 				"east": [2, 12],
@@ -1703,11 +1703,11 @@
 			"textures": {
 				"*": "textures/particle/particles"
 			},
-			"texture_size": [128, 128],
+			"textureSize": [128, 128],
 			"uv": {
 				"*": [0, 24]
 			},
-			"uv_sizes": {
+			"uvSizes": {
 				"*": [8, 8]
 			}
 		},
@@ -1719,11 +1719,11 @@
 			"textures": {
 				"*": "textures/particle/particles"
 			},
-			"texture_size": [128, 128],
+			"textureSize": [128, 128],
 			"uv": {
 				"*": [0, 24]
 			},
-			"uv_sizes": {
+			"uvSizes": {
 				"*": [8, 8]
 			}
 		}
@@ -1885,7 +1885,7 @@
 	"candle_cake": [
 		{
 			"copy": "cake",
-			"block_states": {
+			"blockStates": {
 				"bite_counter": 0, // use the full cake model
 				"lit": 0 // without this, lit candle cakes would show the inside texture on the west
 			}
@@ -1893,7 +1893,7 @@
 		{
 			"copy": "template_candle_tall",
 			"translate": [7, 8, 7],
-			"terrain_texture": "${#block_name[:-5]}" // block name is blue_candle_cake, we need to remove _cake
+			"terrainTexture": "${#block_name[:-5]}" // block name is blue_candle_cake, we need to remove _cake
 		}
 	],
 	"stonecutter": [
@@ -2108,7 +2108,7 @@
 			"uv": {
 				"*": [11, 0]
 			},
-			"uv_sizes": {
+			"uvSizes": {
 				"*": [3, 6]
 			}
 		},
@@ -2120,7 +2120,7 @@
 			"uv": {
 				"*": [11, 6]
 			},
-			"uv_sizes": {
+			"uvSizes": {
 				"*": [3, 6]
 			}
 		}
@@ -2215,7 +2215,7 @@
 			"uv": {
 				"*": [0, 0]
 			},
-			"uv_sizes": {
+			"uvSizes": {
 				"*": [16, 16]
 			}
 		},
@@ -2230,7 +2230,7 @@
 			"uv": {
 				"*": [0, 0]
 			},
-			"uv_sizes": {
+			"uvSizes": {
 				"*": [16, 16]
 			}
 		}
@@ -2283,7 +2283,7 @@
 				"down": [0, 0],
 				"up": [0, 0]
 			},
-			"uv_sizes": {
+			"uvSizes": {
 				"side": [4, 7],
 				"down": [4, 4],
 				"up": [4, 4]
@@ -2318,7 +2318,7 @@
 				"down": [0, 11],
 				"up": [0, 11]
 			},
-			"uv_sizes": {
+			"uvSizes": {
 				"*": [4, 4]
 			}
 		}
@@ -2367,8 +2367,8 @@
 			"textures": {
 				"*": "textures/entity/end_portal"
 			},
-			"texture_size": [256, 256],
-			"uv_sizes": {
+			"textureSize": [256, 256],
+			"uvSizes": {
 				"*": [64, 64] // this just scales it up so the little blue specs are more visible
 			},
 			"tint": "#56A5AA" // average colour of textures/environment/end_portal_colors.png
@@ -2381,8 +2381,8 @@
 			"textures": {
 				"*": "textures/entity/end_portal"
 			},
-			"texture_size": [256, 256],
-			"uv_sizes": {
+			"textureSize": [256, 256],
+			"uvSizes": {
 				"*": [64, 64]
 			},
 			"tint": "#56A5AA"
@@ -2395,7 +2395,7 @@
 			"textures": {
 				"up": "none"
 			},
-			"flip_textures_horizontally": ["east"]
+			"flipTextureHorizontally": ["east"]
 		},
 		{
 			"pos": [0, 15, 0],
@@ -2492,8 +2492,8 @@
 			"textures": {
 				"up": "carried.up"
 			},
-			"flip_textures_horizontally": ["up"],
-			"flip_textures_vertically": ["up"]
+			"flipTextureHorizontally": ["up"],
+			"flipTextureVertically": ["up"]
 		},
 		{
 			"if": "entity.State == 1 || entity.State == 2", // pushing or extended
@@ -2507,7 +2507,7 @@
 			"textures": {
 				"*": "#tex"
 			},
-			"texture_size": [128, 32],
+			"textureSize": [128, 32],
 			"uv": {
 				"side": [64, 24],
 				"up": [70, 18],
@@ -2521,7 +2521,7 @@
 			"textures": {
 				"*": "#tex"
 			},
-			"texture_size": [128, 32],
+			"textureSize": [128, 32],
 			"uv": {
 				"side": [64, 4]
 			}
@@ -2533,14 +2533,14 @@
 			"textures": {
 				"*": "#tex"
 			},
-			"texture_size": [128, 32],
+			"textureSize": [128, 32],
 			"uv": {
 				"side": [0, 16],
 				"down": [32, 0],
 				"up": [16, 0]
 			},
-			"flip_textures_horizontally": ["up"],
-			"flip_textures_vertically": ["up"]
+			"flipTextureHorizontally": ["up"],
+			"flipTextureVertically": ["up"]
 		}
 	],
 	"dispenser": [
@@ -2561,7 +2561,7 @@
 				"side": "up",
 				"down": "east"
 			},
-			"flip_textures_vertically": ["side"]
+			"flipTextureVertically": ["side"]
 		}
 	],
 	"barrel": [
@@ -2729,7 +2729,7 @@
 			"pos": [1, 0, 1],
 			"size": [14, 16, 14],
 			"variant": 1,
-			"texture_size": [32, 32],
+			"textureSize": [32, 32],
 			"textures": {
 				"side": "none" // this is just the top and bottom. the texture is stored in a different file which is why it must be split up into 2 cubes :/
 			},
@@ -2742,7 +2742,7 @@
 			"pos": [5, 16, 5],
 			"size": [6, 1, 6],
 			"variant": 1,
-			"texture_size": [32, 32],
+			"textureSize": [32, 32],
 			"textures": {
 				"up": "none",
 				"down": "none"
@@ -2755,7 +2755,7 @@
 			"pos": [4, 17, 4],
 			"size": [8, 3, 8],
 			"variant": 1,
-			"texture_size": [32, 32],
+			"textureSize": [32, 32],
 			"uv": {
 				"side": [0, 8],
 				"up": [8, 0],
@@ -3399,18 +3399,18 @@
 		{ // cauldron contents
 			"if": "cauldron_liquid == lava",
 			"copy": "template_cauldron_liquid",
-			"terrain_texture": "still_lava"
+			"terrainTexture": "still_lava"
 		},
 		{
 			"if": "cauldron_liquid == water", // TODO: add support for potions, currently they just display the water colour
 			"copy": "template_cauldron_liquid",
-			"terrain_texture": "cauldron_water",
+			"terrainTexture": "cauldron_water",
 			"tint": "${#block_entity_data.CustomColor ?? 4280183682}" // 4283196761 = FF 4C 61 56 (ARGB) = water colour in swamp hills, it's the closest I could find to actual cauldron water
 		},
 		{
 			"if": "cauldron_liquid == powder_snow",
 			"copy": "template_cauldron_liquid",
-			"terrain_texture": "powder_snow"
+			"terrainTexture": "powder_snow"
 		}
 	],
 	"coral_fan": [
@@ -3501,15 +3501,15 @@
 				"north": [8, 3],
 				"south": [0, 0]
 			},
-			"uv_sizes": {
+			"uvSizes": {
 				"east": [13, 8],
 				"west": [13, 8]
 			},
-			"uv_rot": {
+			"uvRot": {
 				"east": 90,
 				"west": 90
 			},
-			"flip_textures_horizontally": ["west"]
+			"flipTextureHorizontally": ["west"]
 		},
 		{
 			"pos": [0.0125, 12, 0],
@@ -3524,7 +3524,7 @@
 				"up": [0, 1],
 				"down": [0, 0]
 			},
-			"uv_rot": {
+			"uvRot": {
 				"down": 180
 			}
 		},
@@ -3549,7 +3549,7 @@
 			"uv": {
 				"*": [5, 0]
 			},
-			"uv_sizes": {
+			"uvSizes": {
 				"*": [7, 16]
 			}
 		},
@@ -3565,7 +3565,7 @@
 			"uv": {
 				"*": [5, 0]
 			},
-			"uv_sizes": {
+			"uvSizes": {
 				"*": [7, 16]
 			}
 		},
@@ -3581,7 +3581,7 @@
 			"uv": {
 				"*": [5, 0]
 			},
-			"uv_sizes": {
+			"uvSizes": {
 				"*": [7, 16]
 			}
 		},
@@ -3597,7 +3597,7 @@
 			"uv": {
 				"*": [5, 0]
 			},
-			"uv_sizes": {
+			"uvSizes": {
 				"*": [7, 16]
 			}
 		},
@@ -3612,7 +3612,7 @@
 				"north": "up",
 				"side": "down"
 			},
-			"flip_textures_horizontally": ["east"],
+			"flipTextureHorizontally": ["east"],
 			"translate": [0, -1, 0]
 		}
 	],
@@ -3625,7 +3625,7 @@
 			"uv": {
 				"*": [5, 0]
 			},
-			"uv_sizes": {
+			"uvSizes": {
 				"*": [7, 16]
 			}
 		},
@@ -3637,7 +3637,7 @@
 			"uv": {
 				"*": [5, 0]
 			},
-			"uv_sizes": {
+			"uvSizes": {
 				"*": [7, 16]
 			}
 		}
@@ -3742,7 +3742,7 @@
 			"uv": {
 				"*": [9, 0]
 			},
-			"flip_textures_horizontally": ["*"]
+			"flipTextureHorizontally": ["*"]
 		},
 		{
 			"if": "has_bottle == 1",
@@ -3782,21 +3782,21 @@
 		},
 		{
 			"copy": "template_brewing_stand_side",
-			"block_states": {
+			"blockStates": {
 				"has_bottle": "${#block_states.brewing_stand_slot_a_bit}"
 			}
 		},
 		{
 			"copy": "template_brewing_stand_side",
 			"rot": [0, -135, 0],
-			"block_states": {
+			"blockStates": {
 				"has_bottle": "${#block_states.brewing_stand_slot_b_bit}"
 			}
 		},
 		{
 			"copy": "template_brewing_stand_side",
 			"rot": [0, 135, 0],
-			"block_states": {
+			"blockStates": {
 				"has_bottle": "${#block_states.brewing_stand_slot_c_bit}"
 			}
 		}
@@ -3805,7 +3805,7 @@
 		{
 			"pos": [0, 0, 0],
 			"size": [16, 16, 16],
-			"flip_textures_vertically": ["up"]
+			"flipTextureVertically": ["up"]
 		}
 	],
 	"tripwire_hook": [
@@ -3828,7 +3828,7 @@
 			"uv": {
 				"*": [5, 3]
 			},
-			"uv_sizes": {
+			"uvSizes": {
 				"*": [6, 1],
 				"up": [6, 6],
 				"down": [6, 6]
@@ -3847,7 +3847,7 @@
 			"uv": {
 				"*": [7, 9]
 			},
-			"uv_sizes": {
+			"uvSizes": {
 				"down": [2, 7],
 				"up": [2, 7],
 				"north": [2, 2],
@@ -3868,7 +3868,7 @@
 			"uv": {
 				"*": [5, 3]
 			},
-			"uv_sizes": {
+			"uvSizes": {
 				"*": [6, 1],
 				"up": [6, 6],
 				"down": [6, 6]
@@ -3887,7 +3887,7 @@
 			"uv": {
 				"*": [7, 9]
 			},
-			"uv_sizes": {
+			"uvSizes": {
 				"down": [2, 7],
 				"up": [2, 7],
 				"north": [2, 2],
@@ -3906,7 +3906,7 @@
 			"uv": {
 				"*": [5, 3]
 			},
-			"uv_sizes": {
+			"uvSizes": {
 				"*": [6, 1],
 				"up": [6, 6],
 				"down": [6, 6]
@@ -3925,7 +3925,7 @@
 			"uv": {
 				"*": [7, 9]
 			},
-			"uv_sizes": {
+			"uvSizes": {
 				"down": [2, 7],
 				"up": [2, 7],
 				"north": [2, 2],
@@ -3939,28 +3939,28 @@
 		{
 			"pos": [0, 4, 7.75],
 			"size": [4, 0, 0.5],
-			"uv_sizes": {
+			"uvSizes": {
 				"*": [16, 2]
 			}
 		},
 		{
 			"pos": [4, 4, 7.75],
 			"size": [4, 0, 0.5],
-			"uv_sizes": {
+			"uvSizes": {
 				"*": [16, 2]
 			}
 		},
 		{
 			"pos": [8, 4, 7.75],
 			"size": [4, 0, 0.5],
-			"uv_sizes": {
+			"uvSizes": {
 				"*": [16, 2]
 			}
 		},
 		{
 			"pos": [12, 4, 7.75],
 			"size": [4, 0, 0.5],
-			"uv_sizes": {
+			"uvSizes": {
 				"*": [16, 2]
 			}
 		}
@@ -4092,7 +4092,7 @@
 				"*": "carried"
 			},
 			"variant": 0,
-			"flip_textures_horizontally": ["*"]
+			"flipTextureHorizontally": ["*"]
 		},
 		{
 			"if": "pale_moss_carpet_side_north == short",
@@ -4102,7 +4102,7 @@
 				"*": "carried"
 			},
 			"variant": 1,
-			"flip_textures_horizontally": ["*"]
+			"flipTextureHorizontally": ["*"]
 		},
 		{
 			"if": "pale_moss_carpet_side_south == tall",
@@ -4274,7 +4274,7 @@
 			"uv": {
 				"*": [1, 0]
 			},
-			"uv_sizes": {
+			"uvSizes": {
 				"*": [2, 5]
 			}
 		},
@@ -4286,7 +4286,7 @@
 			"uv": {
 				"*": [13, 0]
 			},
-			"uv_sizes": {
+			"uvSizes": {
 				"*": [2, 5]
 			}
 		}
@@ -4588,7 +4588,7 @@
 			"uv": {
 				"*": [0, 0]
 			},
-			"uv_sizes": {
+			"uvSizes": {
 				"*": [16, 16]
 			}
 		},
@@ -4603,7 +4603,7 @@
 			"uv": {
 				"*": [0, 0]
 			},
-			"uv_sizes": {
+			"uvSizes": {
 				"*": [16, 16]
 			}
 		},
@@ -4666,7 +4666,7 @@
 				"up": [0, 0],
 				"down": [0, 0]
 			},
-			"uv_sizes": { // top/bottom texture is streched from 7x7 to 8x8 on fully grown cocoa beans
+			"uvSizes": { // top/bottom texture is streched from 7x7 to 8x8 on fully grown cocoa beans
 				"up": [7, 7],
 				"down": [7, 7]
 			}
@@ -4717,12 +4717,12 @@
 			"textures": {
 				"*": "textures/blocks/dirt"
 			},
-			"flip_textures_vertically": ["*"],
+			"flipTextureVertically": ["*"],
 			"tint": "#999999"
 		},
 		{
 			"if": "update_bit == 1",
-			"copy_block": "entity.PlantBlock", // I know this is inconsistent with other syntax in this file but this property is only used for flower pots so I couldn't care less
+			"copyBlock": "entity.PlantBlock", // I know this is inconsistent with other syntax in this file but this property is only used for flower pots so I couldn't care less
 			"translate": [0, 4, 0]
 		}
 	],
@@ -4734,8 +4734,8 @@
 				"north": "none",
 				"south": "none"
 			},
-			"flip_textures_horizontally": ["up", "down", "west"],
-			"flip_textures_vertically": ["up", "down", "west"]
+			"flipTextureHorizontally": ["up", "down", "west"],
+			"flipTextureVertically": ["up", "down", "west"]
 		},
 		{
 			"pos": [0, 0, 0],
@@ -4851,7 +4851,7 @@
 			"textures": {
 				"*": "textures/entity/${#block_name}"
 			},
-			"texture_size": [64, 32],
+			"textureSize": [64, 32],
 			"uv": {
 				"*": [0, 6]
 			}
@@ -4864,7 +4864,7 @@
 			"textures": {
 				"*": "textures/entity/${#block_name}"
 			},
-			"texture_size": [64, 32],
+			"textureSize": [64, 32],
 			"uv": {
 				"*": [6, 6]
 			}
@@ -4877,7 +4877,7 @@
 			"textures": {
 				"*": "textures/entity/${#block_name}"
 			},
-			"texture_size": [64, 32],
+			"textureSize": [64, 32],
 			"uv": {
 				"north": [2, 14],
 				"south": [2, 14],
@@ -4903,7 +4903,7 @@
 			"textures": {
 				"*": "textures/entity/${#block_name}"
 			},
-			"texture_size": [64, 32],
+			"textureSize": [64, 32],
 			"uv": {
 				"north": [4, 4],
 				"south": [4, 4],
@@ -4920,7 +4920,7 @@
 			"textures": {
 				"*": "textures/entity/${#block_name}"
 			},
-			"texture_size": [64, 32],
+			"textureSize": [64, 32],
 			"uv": {
 				"*": [12, 6]
 			}
@@ -4932,7 +4932,7 @@
 			"size": [13, 26, 0.65],
 			"rot": [-1.5, 0, 0],
 			"pivot": [8, 13, 14.75],
-			"texture_size": [64, 64],
+			"textureSize": [64, 64],
 			"uv": {
 				"north": [1, 1],
 				"south": [22, 1],
@@ -4941,7 +4941,7 @@
 				"up": [1, 0],
 				"down": [21, 0]
 			},
-			"uv_sizes": {
+			"uvSizes": {
 				"north": [20, 40],
 				"south": [20, 40],
 				"east": [1, 20],
@@ -4957,7 +4957,7 @@
 		{
 			"pos": [1.5, 11.7, 14.2],
 			"size": [13, 1.3, 1.3],
-			"texture_size": [64, 64],
+			"textureSize": [64, 64],
 			"uv": {
 				"north": [2, 44],
 				"south": [2, 44],
@@ -4966,7 +4966,7 @@
 				"up": [2, 42],
 				"down": [2, 42]
 			},
-			"uv_sizes": {
+			"uvSizes": {
 				"north": [20, 2],
 				"south": [20, 2],
 				"east": [2, 2],
@@ -5006,12 +5006,12 @@
 				"*": "textures/entity/banner/banner_base",
 				"up": "none"
 			},
-			"texture_size": [64, 64],
+			"textureSize": [64, 64],
 			"uv": {
 				"side": [50, 2],
 				"down": [48, 0]
 			},
-			"uv_sizes": {
+			"uvSizes": {
 				"side": [2, 42],
 				"down": [2, 2]
 			}
@@ -5039,14 +5039,14 @@
 				"side": [0, 44],
 				"down": [32, 28]
 			},
-			"uv_sizes": {
+			"uvSizes": {
 				"side": [16, 8],
 				"down": [16, 16]
 			},
 			"textures": {
 				"up": "none"
 			},
-			"texture_size": [64, 64]
+			"textureSize": [64, 64]
 		},
 		{
 			"pos": [0.05, 4, 0.05], // top part must be slightly inset to avoid z-fighting
@@ -5058,7 +5058,7 @@
 			"textures": {
 				"down": "none"
 			},
-			"texture_size": [64, 64]
+			"textureSize": [64, 64]
 		}
 	],
 	"shulker_box": [ // this is for all shulker boxes but light grey; the texture path can be extracted from the block name
@@ -5105,7 +5105,7 @@
 				"north": [3, 38],
 				"south": [0, 41]
 			},
-			"texture_size": [64, 64]
+			"textureSize": [64, 64]
 		}
 	],
 	"template_bed": [ // todo: make this read from models/mobs.json so resource packs that customise beds work. the problem is that if we take the geometry straight from there the bed will be standing up (I think it's because the side textures have to be rotated)
@@ -5124,9 +5124,9 @@
 				"north": [6, 0],
 				"south": [22, 0]
 			},
-			"flip_textures_horizontally": ["north", "south", "down"],
-			"flip_textures_vertically": ["north", "south", "down"],
-			"texture_size": [64, 64]
+			"flipTextureHorizontally": ["north", "south", "down"],
+			"flipTextureVertically": ["north", "south", "down"],
+			"textureSize": [64, 64]
 		},
 		{
 			"pos": [0, 3, 0],
@@ -5143,9 +5143,9 @@
 				"west": [0, 6],
 				"east": [0, 6]
 			},
-			"flip_textures_horizontally": ["west"],
-			"flip_textures_vertically": ["west", "east"],
-			"texture_size": [64, 64]
+			"flipTextureHorizontally": ["west"],
+			"flipTextureVertically": ["west", "east"],
+			"textureSize": [64, 64]
 		},
 		{
 			"copy": "template_bed_leg"
@@ -5182,7 +5182,7 @@
 		{
 			"pos": [4, 0, 4],
 			"size": [8, 8, 8],
-			"box_uv": [0, 0],
+			"boxUv": [0, 0],
 			"textures": {
 				"*": "#tex"
 			}
@@ -5202,37 +5202,37 @@
 	"skull": [
 		{
 			"copy": "template_skull",
-			"texture_size": [64, 32]
+			"textureSize": [64, 32]
 		}
 	],
 	"player_head": [
 		{
 			"copy": "template_skull",
-			"texture_size": [64, 64]
+			"textureSize": [64, 64]
 		}
 	],
 	"template_dragon_head_ear": [
 		{
 			"pos": [0, 0, 0],
 			"size": [1.5, 3, 4.5],
-			"box_uv": [0, 0],
-			"box_uv_size": [2, 4, 6]
+			"boxUv": [0, 0],
+			"boxUvSize": [2, 4, 6]
 		}
 	],
 	"template_dragon_head_nostril": [
 		{
 			"pos": [0, 0, 0],
 			"size": [1.5, 1.5, 3],
-			"box_uv": [112, 0],
-			"box_uv_size": [2, 2, 4]
+			"boxUv": [112, 0],
+			"boxUvSize": [2, 2, 4]
 		}
 	],
 	"template_dragon_head": [
 		{
 			"pos": [2, 0, 0.5],
 			"size": [12, 12, 12],
-			"box_uv": [112, 30],
-			"box_uv_size": [16, 16, 16]
+			"boxUv": [112, 30],
+			"boxUvSize": [16, 16, 16]
 		},
 		{
 			"copy": "template_dragon_head_ear",
@@ -5245,8 +5245,8 @@
 		{
 			"pos": [3.5, 3, -10],
 			"size": [9, 3.75, 12],
-			"box_uv": [176, 44],
-			"box_uv_size": [12, 5, 16]
+			"boxUv": [176, 44],
+			"boxUvSize": [12, 5, 16]
 		},
 		{
 			"copy": "template_dragon_head_nostril",
@@ -5264,8 +5264,8 @@
 			"textures": {
 				"south": "none"
 			},
-			"box_uv": [176, 65],
-			"box_uv_size": [12, 4, 16]
+			"boxUv": [176, 65],
+			"boxUvSize": [12, 4, 16]
 		}
 	],
 	"dragon_head": [
@@ -5275,7 +5275,7 @@
 			"textures": {
 				"*": "textures/entity/dragon/dragon"
 			},
-			"texture_size": [256, 256]
+			"textureSize": [256, 256]
 		},
 		{
 			"if": "facing_direction > 1",
@@ -5284,29 +5284,29 @@
 			"textures": {
 				"*": "textures/entity/dragon/dragon"
 			},
-			"texture_size": [256, 256]
+			"textureSize": [256, 256]
 		}
 	],
 	"template_piglin_head": [
 		{
 			"pos": [3, 0, 4],
 			"size": [10, 8, 8],
-			"box_uv": [0, 0]
+			"boxUv": [0, 0]
 		},
 		{
 			"pos": [6, 0, 3],
 			"size": [4, 4, 1],
-			"box_uv": [31, 1]
+			"boxUv": [31, 1]
 		},
 		{
 			"pos": [5, 0, 3],
 			"size": [1, 2, 1],
-			"box_uv": [2, 0]
+			"boxUv": [2, 0]
 		},
 		{
 			"pos": [10, 0, 3],
 			"size": [1, 2, 1],
-			"box_uv": [2, 4]
+			"boxUv": [2, 4]
 		},
 		{
 			"pos": [3, 1, 6],
@@ -5316,7 +5316,7 @@
 			"textures": {
 				"up": "none"
 			},
-			"box_uv": [39, 6]
+			"boxUv": [39, 6]
 		},
 		{
 			"pos": [12, 1, 6],
@@ -5326,7 +5326,7 @@
 			"textures": {
 				"up": "none"
 			},
-			"box_uv": [51, 6]
+			"boxUv": [51, 6]
 		}
 	],
 	"piglin_head": [
@@ -5336,7 +5336,7 @@
 			"textures": {
 				"*": "textures/entity/piglin/piglin"
 			},
-			"texture_size": [64, 64]
+			"textureSize": [64, 64]
 		},
 		{
 			"if": "facing_direction > 1",
@@ -5345,7 +5345,7 @@
 			"textures": {
 				"*": "textures/entity/piglin/piglin"
 			},
-			"texture_size": [64, 64]
+			"textureSize": [64, 64]
 		}
 	],
 	"template_leaf_litter_unflipped": [
@@ -5385,8 +5385,8 @@
 				"*": "carried",
 				"west": "none"
 			},
-			"box_uv": [10, 0],
-			"texture_size": [32, 32]
+			"boxUv": [10, 0],
+			"textureSize": [32, 32]
 		}
 	],
 	"dried_ghast": [
@@ -5441,8 +5441,8 @@
 				"down": [16, 9],
 				"up": [16, 7]
 			},
-			"texture_size": [32, 32],
-			"uv_rot": {
+			"textureSize": [32, 32],
+			"uvRot": {
 				"down": 180,
 				"up": 180
 			}
@@ -5457,10 +5457,10 @@
 				"up": [16, 7],
 				"down": [16, 7]
 			},
-			"uv_rot": {
+			"uvRot": {
 				"down": 180
 			},
-			"texture_size": [32, 32]
+			"textureSize": [32, 32]
 		},
 		{
 			"pos": [0, 12, 11],
@@ -5472,10 +5472,10 @@
 				"up": [16, 10],
 				"down": [16, 10]
 			},
-			"uv_rot": {
+			"uvRot": {
 				"up": 180
 			},
-			"texture_size": [32, 32]
+			"textureSize": [32, 32]
 		},
 		{
 			"if": "powered_bit == 0",
@@ -5484,7 +5484,7 @@
 			"uv": {
 				"*": [0, 4]
 			},
-			"texture_size": [32, 32]
+			"textureSize": [32, 32]
 		},
 		{
 			"if": "powered_bit == 1 && powered_shelf_type == 0",
@@ -5493,7 +5493,7 @@
 			"uv": {
 				"*": [16, 24]
 			},
-			"texture_size": [32, 32]
+			"textureSize": [32, 32]
 		},
 		{
 			"if": "powered_bit == 1 && powered_shelf_type == 2", // center??
@@ -5502,7 +5502,7 @@
 			"uv": {
 				"*": [0, 24]
 			},
-			"texture_size": [32, 32]
+			"textureSize": [32, 32]
 		},
 		{
 			"if": "powered_bit == 1 && powered_shelf_type == 1", // right??
@@ -5511,7 +5511,7 @@
 			"uv": {
 				"*": [16, 16]
 			},
-			"texture_size": [32, 32]
+			"textureSize": [32, 32]
 		},
 		{
 			"if": "powered_bit == 1 && powered_shelf_type == 3", // left??
@@ -5520,39 +5520,39 @@
 			"uv": {
 				"*": [0, 16]
 			},
-			"texture_size": [32, 32]
+			"textureSize": [32, 32]
 		}
 	],
 	"copper_golem_statue": [
 		{
 			"if": "entity.Pose == 0",
-			"copy_entity_model": {
+			"copyEntityModel": {
 				"identifier": "geometry.copper_golem",
-				"geo_file": "models/entity/copper_golem.geo.json",
+				"geoFile": "models/entity/copper_golem.geo.json",
 				"texture": "textures/entity/copper_golem/${#tex}"
 			}
 		},
 		{
 			"if": "entity.Pose == 1",
-			"copy_entity_model": {
+			"copyEntityModel": {
 				"identifier": "geometry.copper_golem.sitting",
-				"geo_file": "models/entity/copper_golem_sitting.geo.json",
+				"geoFile": "models/entity/copper_golem_sitting.geo.json",
 				"texture": "textures/entity/copper_golem/${#tex}"
 			}
 		},
 		{
 			"if": "entity.Pose == 2",
-			"copy_entity_model": {
+			"copyEntityModel": {
 				"identifier": "geometry.copper_golem.running",
-				"geo_file": "models/entity/copper_golem_running.geo.json",
+				"geoFile": "models/entity/copper_golem_running.geo.json",
 				"texture": "textures/entity/copper_golem/${#tex}"
 			}
 		},
 		{
 			"if": "entity.Pose == 3",
-			"copy_entity_model": {
+			"copyEntityModel": {
 				"identifier": "geometry.copper_golem.star",
-				"geo_file": "models/entity/copper_golem_star.geo.json",
+				"geoFile": "models/entity/copper_golem_star.geo.json",
 				"texture": "textures/entity/copper_golem/${#tex}"
 			}
 		}

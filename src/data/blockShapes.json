@@ -38,7 +38,7 @@
 		"copper_golem_statue$": "copper_golem_statue<copper_golem>",
 		"_shelf$": "shelf"
 	},
-	"individual_blocks": {
+	"individualBlocks": {
 		"bamboo_sapling": "cross_texture",
 		"bamboo": "bamboo",
 		"beacon": "beacon",

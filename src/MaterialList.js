@@ -14,19 +14,19 @@ export default class MaterialList {
 	#translations;
 	
 	// I wish I could use import...with to import these from materialListMappings.json, which would have worked with esbuild, but it doesn't let me load JSONC... sad...
-	/** @readonly @type {Data.MaterialListMappings["ignored_blocks"]} */
+	/** @readonly @type {Data.MaterialListMappings["ignoredBlocks"]} */
 	#ignoredBlocks;
 	/** @readonly @type {ReplacingPatternMap} */
 	#blockToItemMappings;
 	/** @readonly @type {PatternMap<[number, string]>} */
 	#itemCountMultipliers;
-	/** @readonly @type {Data.MaterialListMappings["special_block_entity_properties"]} */
+	/** @readonly @type {Data.MaterialListMappings["specialBlockEntityProperties"]} */
 	#specialBlockEntityProperties;
 	/** @readonly @type {ReplacingPatternMap} */
 	#serializationIdPatches;
-	/** @readonly @type {Data.MaterialListMappings["blocks_missing_serialization_ids"]} */
+	/** @readonly @type {Data.MaterialListMappings["blocksMissingSerializationIds"]} */
 	#blocksMissingSerializationIds;
-	/** @readonly @type {Data.MaterialListMappings["translation_patches"]} */
+	/** @readonly @type {Data.MaterialListMappings["translationPatches"]} */
 	#translationPatches;
 	/** @readonly @type {number} */
 	#missingItemAux;
@@ -41,20 +41,20 @@ export default class MaterialList {
 	constructor(blockMetadata, itemMetadata, materialListMappings, translations) {
 		this.#blockMetadata = new Map(blockMetadata["data_items"].map(block => [block["name"], block]));
 		this.#itemMetadata = new Map(itemMetadata["data_items"].map(item => [item["name"], item]));
-		this.#ignoredBlocks = materialListMappings.ignored_blocks;
-		this.#blockToItemMappings = new ReplacingPatternMap(Object.entries(materialListMappings.block_to_item_mappings));
-		this.#itemCountMultipliers = new PatternMap(Object.entries(materialListMappings.item_count_multipliers).map(([key, value]) => {
+		this.#ignoredBlocks = materialListMappings.ignoredBlocks;
+		this.#blockToItemMappings = new ReplacingPatternMap(Object.entries(materialListMappings.blockToItemMappings));
+		this.#itemCountMultipliers = new PatternMap(Object.entries(materialListMappings.itemCountMultipliers).map(([key, value]) => {
 			if(typeof value == "number") {
 				return [key, tuple([value, ""])];
 			} else {
 				return [key, tuple([value.multiplier, value.remove])];
 			}
 		}));
-		this.#specialBlockEntityProperties = materialListMappings.special_block_entity_properties;
-		let serializationIdPatches = Object.entries(materialListMappings.serialization_id_patches);
+		this.#specialBlockEntityProperties = materialListMappings.specialBlockEntityProperties;
+		let serializationIdPatches = Object.entries(materialListMappings.serializationIdPatches);
 		this.#serializationIdPatches = new ReplacingPatternMap(serializationIdPatches);
-		this.#blocksMissingSerializationIds = materialListMappings.blocks_missing_serialization_ids;
-		this.#translationPatches = materialListMappings.translation_patches;
+		this.#blocksMissingSerializationIds = materialListMappings.blocksMissingSerializationIds;
+		this.#translationPatches = materialListMappings.translationPatches;
 		
 		let missingItemId = blockMetadata["data_items"].find(block => block.name == "minecraft:reserved6")?.["raw_id"] ?? 0;
 		this.#missingItemAux = missingItemId * 65536;
@@ -117,7 +117,7 @@ export default class MaterialList {
 				let match = itemName.match(/^([^+]+)\+(\d+)$/);
 				itemName = match[1];
 				blockEntityPropertyValue = +match[2];
-				serializationId = this.#specialBlockEntityProperties[itemName].serialization_ids?.[blockEntityPropertyValue];
+				serializationId = this.#specialBlockEntityProperties[itemName].serializationIds?.[blockEntityPropertyValue];
 			}
 			// try item translation key; if that doesn't work, try block translation key
 			serializationId ??= this.#blocksMissingSerializationIds[itemName] ?? this.#findItemSerializationId(itemName);

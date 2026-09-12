@@ -1,49 +1,49 @@
 // These are patches and other things for TextureAtlas.js
 {
-	"blocks_dot_json_patches": { // just a few inconsistencies here. ideally this doesn't exist. can be generated with: const missingFromBlocksDotJson=async VER=>[...(new Set((await fetch(`https://raw.githubusercontent.com/Mojang/bedrock-samples/${VER}/metadata/vanilladata_modules/mojang-blocks.json`).then(r=>r.json())).data_items.map(x=>x.name.replace("minecraft:","")))).difference(new Set(Object.keys(await fetch(`https://raw.githubusercontent.com/Mojang/bedrock-samples/${VER}/resource_pack/blocks.json`).then(res=>res.json()))))].filter(blockName=>!(["hard_","element_","colored_torch_"].some(prefix=>blockName.startsWith(prefix))||["chemical_heat","compound_creator","lab_table","material_reducer","underwater_torch"].includes(blockName)))
+	"blocksDotJsonPatches": { // just a few inconsistencies here. ideally this doesn't exist. can be generated with: const missingFromBlocksDotJson=async VER=>[...(new Set((await fetch(`https://raw.githubusercontent.com/Mojang/bedrock-samples/${VER}/metadata/vanilladata_modules/mojang-blocks.json`).then(r=>r.json())).data_items.map(x=>x.name.replace("minecraft:","")))).difference(new Set(Object.keys(await fetch(`https://raw.githubusercontent.com/Mojang/bedrock-samples/${VER}/resource_pack/blocks.json`).then(res=>res.json()))))].filter(blockName=>!(["hard_","element_","colored_torch_"].some(prefix=>blockName.startsWith(prefix))||["chemical_heat","compound_creator","lab_table","material_reducer","underwater_torch"].includes(blockName)))
 		"grass_block": "grass",
 		"trip_wire": "tripWire",
 		"sea_lantern": "seaLantern",
 		"iron_chain": "chain",
 		"unknown": "info_update" // shows missing_tile.png
 	},
-	"blocks_to_use_carried_textures": ["acacia_leaves", "birch_leaves", "bush", "dark_oak_leaves", "fern", "firefly_bush", "leaves", "leaves2", "mangrove_leaves", "oak_leaves", "open_eyeblossom", "short_grass", "spruce_leaves", "vine", "waterlily"],
-	"transparent_blocks": {
+	"blocksToUseCarriedTextures": ["acacia_leaves", "birch_leaves", "bush", "dark_oak_leaves", "fern", "firefly_bush", "leaves", "leaves2", "mangrove_leaves", "oak_leaves", "open_eyeblossom", "short_grass", "spruce_leaves", "vine", "waterlily"],
+	"transparentBlocks": {
 		"water": 0.65,
 		"flowing_water": 0.65,
 		"slime": 0.8,
 		"respawn_anchor": 2 // the nether portal in the top of respawn anchors is slightly transparent in the texture for some reason; this just makes it fully opaque
 	},
-	"terrain_texture_tints": {
+	"terrainTextureTints": {
 		"colors": {
 			"foliage": "#79C05A",
 			"water": "#44AFF5"
 		},
-		"terrain_texture_keys": {
+		"terrainTextureKeys": {
 			"grass_top": "foliage", // the tinting in terrain_texture.json is only for grass_side...
 			"tall_grass_bottom": {
 				"tint": "foliage",
-				"tint_like_png": true
+				"tintLikePng": true
 			},
 			"tall_grass_top": {
 				"tint": "foliage",
-				"tint_like_png": true
+				"tintLikePng": true
 			},
 			"large_fern_bottom": {
 				"tint": "foliage",
-				"tint_like_png": true
+				"tintLikePng": true
 			},
 			"large_fern_top": {
 				"tint": "foliage",
-				"tint_like_png": true
+				"tintLikePng": true
 			},
 			"reeds": {
 				"tint": "foliage",
-				"tint_like_png": true
+				"tintLikePng": true
 			},
 			"jungle_leaves": {
 				"tint": "#57BE08",
-				"tint_like_png": true
+				"tintLikePng": true
 			},
 			"leaf_litter": "#A36D46", // forest biome: https://minecraft.wiki/w/Block_colors#Dry_foliage_colors
 			"flowing_water_grey": "water",
@@ -52,7 +52,7 @@
 			"still_water": "water"
 		}
 	},
-	"missing_flipbook_textures": [],
+	"missingFlipbookTextures": [],
 	
 	"$schema": "schemas/textureAtlasMappings.schema.json"
 }
