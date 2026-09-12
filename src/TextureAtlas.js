@@ -59,12 +59,12 @@ export default class TextureAtlas {
 		this.blocksDotJson = blocksDotJson;
 		this.terrainTexture = terrainTexture;
 		
-		this.#blocksDotJsonPatches = textureAtlasMappings["blocks_dot_json_patches"];
-		this.#blocksToUseCarriedTextures = textureAtlasMappings["blocks_to_use_carried_textures"];
-		this.#transparentBlocks = textureAtlasMappings["transparent_blocks"];
-		this.#terrainTextureTints = textureAtlasMappings["terrain_texture_tints"];
+		this.#blocksDotJsonPatches = textureAtlasMappings.blocks_dot_json_patches;
+		this.#blocksToUseCarriedTextures = textureAtlasMappings.blocks_to_use_carried_textures;
+		this.#transparentBlocks = textureAtlasMappings.transparent_blocks;
+		this.#terrainTextureTints = textureAtlasMappings.terrain_texture_tints;
 		
-		textureAtlasMappings["missing_flipbook_textures"].forEach(terrainTextureKey => {
+		textureAtlasMappings.missing_flipbook_textures.forEach(terrainTextureKey => {
 			this.#flipbookTexturesAndSizes.set(terrainTextureKey, 1);
 		});
 		flipbookTextures.map(entry => {
@@ -84,7 +84,7 @@ export default class TextureAtlas {
 		let allTextureFragments = new JSONSet();
 		textureRefs.forEach(textureRef => {
 			let texturePath;
-			let tint = textureRef["tint"];
+			let tint = textureRef.tint;
 			let tintLikePng = false;
 			let opacity = 1;
 			if("texture_path_override" in textureRef) {
@@ -96,23 +96,23 @@ export default class TextureAtlas {
 				let texturePathAndTint = this.#getTexturePathAndTint(terrainTextureKey, variant);
 				texturePath = texturePathAndTint["texturePath"];
 				if(tint == undefined && "tint" in texturePathAndTint) {
-					tint = hexColorToClampedTriplet(texturePathAndTint["tint"]);
+					tint = hexColorToClampedTriplet(texturePathAndTint.tint);
 				}
 				if(!texturePath) {
 					console.error(`No texture for block ${blockName} on side ${textureRef["texture_face"]}!`);
 					texturePath = this.#getTexturePathAndTint("missing", -1)["texturePath"];
 				}
 				
-				if(tint == undefined && terrainTextureKey in this.#terrainTextureTints["terrain_texture_keys"]) {
-					let tintColor = this.#terrainTextureTints["terrain_texture_keys"][terrainTextureKey];
+				if(tint == undefined && terrainTextureKey in this.#terrainTextureTints.terrain_texture_keys) {
+					let tintColor = this.#terrainTextureTints.terrain_texture_keys[terrainTextureKey];
 					if(typeof tintColor == "object") {
-						tintLikePng = tintColor["tint_like_png"];
-						tintColor = tintColor["tint"];
+						tintLikePng = tintColor.tint_like_png;
+						tintColor = tintColor.tint;
 					}
 					if(tintColor.startsWith("#")) {
 						tint = hexColorToClampedTriplet(tintColor);
-					} else if(tintColor in this.#terrainTextureTints["colors"]) {
-						tint = hexColorToClampedTriplet(this.#terrainTextureTints["colors"][tintColor]);
+					} else if(tintColor in this.#terrainTextureTints.colors) {
+						tint = hexColorToClampedTriplet(this.#terrainTextureTints.colors[tintColor]);
 					} else {
 						console.error(`No tint color ${tintColor}`);
 					}
