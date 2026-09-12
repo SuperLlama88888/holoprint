@@ -40,19 +40,20 @@ export default class PolyMeshMaker {
 		
 		let usedPaletteEntries = Object.entries(this.#blocks).filter(([, val]) => val.length);
 		usedPaletteEntries.sort(([, a], [, b]) => b.length - a.length); // makes more common blocks have smaller indices
+		/** @type {{ polys: PolyMeshFace[], transparency: number }[]} */
 		let polysAndTransparencies = [];
 		let facesToBeReordered = [];
 		usedPaletteEntries.forEach(([paletteI, blockPositions]) => {
 			let faces = this.templatePalette[+paletteI];
 			for(let faceI = 0; faceI < faces.length; faceI++) {
 				let face = faces[faceI];
-				let normalIndex = normals.add(face["normal"]);
-				let uvIndices = face["vertices"].map(vertex => uvs.add(vertex["uv"]));
+				let normalIndex = normals.add(face.normal);
+				let uvIndices = face.vertices.map(vertex => uvs.add(vertex.uv));
 				let polys = [];
 				blockPositions.forEach(([blockPos, layer]) => {
 					let facePolys = [];
 					for(let vertexI = 0; vertexI < 4; vertexI++) {
-						let pos = vec3.toFixed(vec3.add(blockPos, face["vertices"][vertexI]["pos"]), 4);
+						let pos = vec3.toFixed(vec3.add(blockPos, face.vertices[vertexI].pos), 4);
 						let positionIndex = positions.add(pos);
 						facePolys.push([positionIndex, normalIndex, uvIndices[vertexI]]);
 					}
@@ -65,13 +66,13 @@ export default class PolyMeshMaker {
 					}
 				});
 				polysAndTransparencies.push({
-					"transparency": face["transparency"],
-					"polys": polys
+					transparency: face.transparency,
+					polys
 				});
 			}
 		});
-		polysAndTransparencies.sort((a, b) => a["transparency"] - b["transparency"]); // transparent blocks rendered later
-		let polys = [].concat(...polysAndTransparencies.map(a => a["polys"])); // this is faster than .flat: https://stackoverflow.com/questions/61411776/is-js-native-array-flat-slow-for-depth-1
+		polysAndTransparencies.sort((a, b) => a.transparency - b.transparency); // transparent blocks rendered later
+		let polys = [].concat(...polysAndTransparencies.map(a => a.polys)); // this is faster than .flat: https://stackoverflow.com/questions/61411776/is-js-native-array-flat-slow-for-depth-1
 		facesToBeReordered.forEach(([primaryLayerFaces, secondaryLayerFaces]) => {
 			let earliestSecondaryLayerFaceI = min(...secondaryLayerFaces.map(face => polys.indexOf(face)));
 			primaryLayerFaces?.forEach(face => {
@@ -84,11 +85,11 @@ export default class PolyMeshMaker {
 			});
 		});
 		return {
-			"normalized_uvs": true, // UV coords are really messed up if this is false, I haven't found a way to get it working.
-			"positions": positions.values,
-			"normals": normals.values,
-			"uvs": uvs.values,
-			"polys": polys
+			normalized_uvs: true, // UV coords are really messed up if this is false, I haven't found a way to get it working.
+			positions: positions.values,
+			normals: normals.values,
+			uvs: uvs.values,
+			polys
 		};
 	}
 	clear() {
@@ -100,4 +101,4 @@ export default class PolyMeshMaker {
 }
 
 /** @import { Vec3 } from "./common.types.ts" */
-/** @import { PolyMeshTemplateFaceWithUvs, PolyMesh } from "./PolyMeshMaker.types.ts" */
+/** @import { PolyMeshTemplateFaceWithUvs, PolyMesh, PolyMeshFace } from "./PolyMeshMaker.types.ts" */

@@ -260,10 +260,10 @@ export async function makePack(structureFiles, partialConfig, resourcePackStack 
 			}
 			let layerName = `l_${y}`;
 			let layerBone = {
-				"name": layerName,
-				"parent": "hologram_offset_wrapper",
-				"pivot": [8, 0, -8],
-				"poly_mesh": polyMeshMaker.export()
+				name: layerName,
+				parent: "hologram_offset_wrapper",
+				pivot: [8, 0, -8],
+				poly_mesh: polyMeshMaker.export()
 			};
 			geo["bones"].push(layerBone);
 			polyMeshMaker.clear();
@@ -389,10 +389,10 @@ export async function makePack(structureFiles, partialConfig, resourcePackStack 
 	
 	let tintColorChannels = hexColorToClampedTriplet(config.TINT_COLOR);
 	hologramRenderControllers["render_controllers"]["controller.render.holoprint.hologram"]["overlay_color"] = {
-		"r": +tintColorChannels[0].toFixed(4),
-		"g": +tintColorChannels[1].toFixed(4),
-		"b": +tintColorChannels[2].toFixed(4),
-		"a": `v.hologram.show_tint? ${config.TINT_OPACITY} : 0`
+		r: +tintColorChannels[0].toFixed(4),
+		g: +tintColorChannels[1].toFixed(4),
+		b: +tintColorChannels[2].toFixed(4),
+		a: `v.hologram.show_tint? ${config.TINT_OPACITY} : 0`
 	};
 	
 	let overlayTexture = await setImageOpacity(singleWhitePixelTexture, config.WRONG_BLOCK_OVERLAY_COLOR[3]);
@@ -438,10 +438,10 @@ export async function makePack(structureFiles, partialConfig, resourcePackStack 
 		let labelsAndLinks = findLinksInDescription(config.DESCRIPTION);
 		labelsAndLinks.forEach(([label, link], i) => {
 			manifest["settings"].push({
-				"type": "input",
-				"text": label,
-				"default": link,
-				"name": `link_${i}`
+				type: "input",
+				text: label,
+				default: link,
+				name: `link_${i}`
 			});
 		});
 	}
@@ -813,7 +813,7 @@ function makeLayerAnimations(config, structures, entityManager, hologramAnimatio
 	let topLayer = max(...structures.map(structure => structure.height)) - 1;
 	layerAnimationStates["default"]["transitions"].push(
 		{
-			"l_0": `v.hologram.layer > -1 && v.hologram.layer != ${topLayer} && v.hologram.layer_mode == ${HOLOGRAM_LAYER_MODES.SINGLE}`
+			l_0: `v.hologram.layer > -1 && v.hologram.layer != ${topLayer} && v.hologram.layer_mode == ${HOLOGRAM_LAYER_MODES.SINGLE}`
 		},
 		{
 			[`l_${topLayer}`]: `v.hologram.layer == ${topLayer} && v.hologram.layer_mode == ${HOLOGRAM_LAYER_MODES.SINGLE}`
@@ -833,10 +833,10 @@ function makeLayerAnimations(config, structures, entityManager, hologramAnimatio
 	for(let y = 0; y <= topLayer; y++) {
 		let layerName = `l_${y}`;
 		layerAnimationStates[layerName] = {
-			"animations": [`hologram.l_${y}`],
-			"blend_transition": 0.1,
-			"blend_via_shortest_path": true,
-			"transitions": [
+			animations: [`hologram.l_${y}`],
+			blend_transition: 0.1,
+			blend_via_shortest_path: true,
+			transitions: [
 				{
 					[y == topLayer? "default" : `${layerName}-`]: `v.hologram.layer_mode == ${HOLOGRAM_LAYER_MODES.ALL_BELOW}`
 				},
@@ -844,22 +844,22 @@ function makeLayerAnimations(config, structures, entityManager, hologramAnimatio
 					[y == 0? "default" : `l_${y - 1}`]: `v.hologram.layer < ${y}${y == topLayer? " && v.hologram.layer != -1" : ""}`
 				},
 				(y == topLayer? {
-					"default": "v.hologram.layer == -1"
+					default: "v.hologram.layer == -1"
 				} : {
 					[`l_${y + 1}`]: `v.hologram.layer > ${y}`
 				})
 			]
 		};
 		let layerAnimation = {
-			"loop": "hold_on_last_frame",
-			"bones": {}
+			loop: "hold_on_last_frame",
+			bones: {}
 		};
 		for(let otherLayerY = 0; otherLayerY <= topLayer; otherLayerY++) {
 			if(otherLayerY == y) {
 				continue;
 			}
 			layerAnimation["bones"][`l_${otherLayerY}`] = {
-				"scale": config.MINI_SCALE
+				scale: config.MINI_SCALE
 			};
 		}
 		if(Object.entries(layerAnimation["bones"]).length == 0) {
@@ -870,10 +870,10 @@ function makeLayerAnimations(config, structures, entityManager, hologramAnimatio
 		entityManager.addAnimation(`hologram.l_${y}`, animationFullName);
 		if(y < topLayer) { // top layer with all layers below is the default view, so the animation + animation controller state doesn't need to be made for it
 			layerAnimationStates[`${layerName}-`] = {
-				"animations": [`hologram.l_${y}-`],
-				"blend_transition": 0.1,
-				"blend_via_shortest_path": true,
-				"transitions": [
+				animations: [`hologram.l_${y}-`],
+				blend_transition: 0.1,
+				blend_via_shortest_path: true,
+				transitions: [
 					{
 						[layerName]: `v.hologram.layer_mode == ${HOLOGRAM_LAYER_MODES.SINGLE}`
 					},
@@ -881,22 +881,22 @@ function makeLayerAnimations(config, structures, entityManager, hologramAnimatio
 						[y == 0? "default" : `l_${y - 1}-`]: `v.hologram.layer < ${y}${y == topLayer - 1? " && v.hologram.layer != -1" : ""}`
 					},
 					(y >= topLayer - 1? {
-						"default": "v.hologram.layer == -1"
+						default: "v.hologram.layer == -1"
 					} : {
 						[`l_${y + 1}-`]: `v.hologram.layer > ${y}`
 					})
 				]
 			};
 			let layerAnimationAllBelow = {
-				"loop": "hold_on_last_frame",
-				"bones": {}
+				loop: "hold_on_last_frame",
+				bones: {}
 			};
 			for(let otherLayerY = 0; otherLayerY <= topLayer; otherLayerY++) {
 				if(otherLayerY <= y) {
 					continue;
 				}
 				layerAnimationAllBelow["bones"][`l_${otherLayerY}`] = {
-					"scale": config.MINI_SCALE
+					scale: config.MINI_SCALE
 				};
 			}
 			if(Object.entries(layerAnimationAllBelow["bones"]).length == 0) {
@@ -931,18 +931,18 @@ function addBoundingBoxParticles(hologramAnimationControllers, structureI, struc
 		`v.size = ${depth / 2}; v.dir = 2; v.x = ${width}; v.y = ${height}; v.r = 1; v.g = 1; v.b = 1;`
 	];
 	let boundingBoxAnimation = {
-		"particle_effects": [],
-		"transitions": [
+		particle_effects: [],
+		transitions: [
 			{
-				"hidden": `!v.hologram.rendering || v.hologram.structure_index != ${structureI}`
+				hidden: `!v.hologram.rendering || v.hologram.structure_index != ${structureI}`
 			}
 		]
 	};
 	outlineParticleSettings.forEach(particleMolang => {
 		boundingBoxAnimation["particle_effects"].push({
-			"effect": "bounding_box_outline",
-			"locator": "hologram_root",
-			"pre_effect_script": particleMolang.replaceAll(/\s/g, "")
+			effect: "bounding_box_outline",
+			locator: "hologram_root",
+			pre_effect_script: particleMolang.replaceAll(/\s/g, "")
 		});
 	});
 	let animationStateName = `visible_${structureI}`;
@@ -986,9 +986,9 @@ function handleBlockValidation(config, structures, hologramAnimationControllers,
 					let blockName = block?.name ?? "air";
 					let blockCoordinateLocatorName = `b_${x}_${y}_${z}`;
 					blocksToValidate.push({
-						"locator": blockCoordinateLocatorName,
-						"block": blockName,
-						"pos": coords
+						locator: blockCoordinateLocatorName,
+						block: blockName,
+						pos: coords
 					});
 					blocksToValidateCurrentLayer++;
 					uniqueBlocksToValidate.add(blockName);
@@ -1024,10 +1024,10 @@ function addCoordinateLocatorToHologramGeo(hologramGeo, coords, locatorName) {
  */
 function addBlockValidationParticles(hologramAnimationControllers, structureI, blocksToValidate, structure) {
 	let validateAllState = {
-		"particle_effects": [],
-		"transitions": [
+		particle_effects: [],
+		transitions: [
 			{
-				"default": "!v.hologram.validating" // when changing structure it will always stop validating, so there's no need to check v.hologram.structure_index
+				default: "!v.hologram.validating" // when changing structure it will always stop validating, so there's no need to check v.hologram.structure_index
 			}
 		]
 	};
@@ -1040,14 +1040,14 @@ function addBlockValidationParticles(hologramAnimationControllers, structureI, b
 	validationStates["default"]["transitions"].push(validateAllStateTransition);
 	let layersWithBlocksToValidate = [];
 	blocksToValidate.forEach(blockToValidate => {
-		let [x, y, z] = blockToValidate["pos"];
+		let [x, y, z] = blockToValidate.pos;
 		let animationStateName = `validate_${structureI}_l_${y}`;
 		if(!(animationStateName in validationStates)) {
 			let layerAnimationState = {
-				"particle_effects": [],
-				"transitions": [
+				particle_effects: [],
+				transitions: [
 					{
-						"default": "!v.hologram.validating"
+						default: "!v.hologram.validating"
 					},
 					validateAllStateTransition
 				]
@@ -1066,9 +1066,9 @@ function addBlockValidationParticles(hologramAnimationControllers, structureI, b
 			layersWithBlocksToValidate.push(y);
 		}
 		let particleEffect = {
-			"effect": `validate_${blockToValidate["block"].replace(":", ".")}`,
-			"locator": blockToValidate["locator"],
-			"pre_effect_script": `
+			effect: `validate_${blockToValidate["block"].replace(":", ".")}`,
+			locator: blockToValidate["locator"],
+			pre_effect_script: `
 				v.x = ${x};
 				v.y = ${y};
 				v.z = ${z};
@@ -1126,8 +1126,8 @@ function addPlayerControlsToRenderControllers(config, defaultPlayerRenderControl
  */
 function patchRenderControllers(renderControllers, patches) {
 	return {
-		"format_version": renderControllers["format_version"],
-		"render_controllers": Object.fromEntries(removeFalsies(Object.entries(patches).map(([controllerId, patch]) => {
+		format_version: renderControllers["format_version"],
+		render_controllers: Object.fromEntries(removeFalsies(Object.entries(patches).map(([controllerId, patch]) => {
 			let controller = renderControllers["render_controllers"][controllerId];
 			if(!controller) {
 				console.error(`No render controller ${controllerId} found!`, renderControllers);
@@ -1142,7 +1142,7 @@ function patchRenderControllers(renderControllers, patches) {
 			}
 			return [controllerId, {
 				...controller,
-				"textures": [patch, ...controller["textures"].slice(1)]
+				textures: [patch, ...controller["textures"].slice(1)]
 			}];
 		})))
 	};
@@ -1344,11 +1344,11 @@ function translateControlItems(config, blockMetadata, itemMetadata, materialList
  */
 function makeLangFiles(config, packTemplateLangFiles, packName, materialList, exportedMaterialLists, controlsHaveBeenCustomised, inGameControls, controlItemTranslations, structures) {
 	const disabledFeatureTranslations = { // these look at the .lang RP files
-		"SPAWN_ANIMATION_ENABLED": "spawn_animation_disabled",
-		"PLAYER_CONTROLS_ENABLED": "player_controls_disabled",
-		"UI_CONTROLS_ENABLED": "ui_controls_disabled",
-		"RETEXTURE_CONTROL_ITEMS": "retextured_control_items_disabled",
-		"RENAME_CONTROL_ITEMS": "renamed_control_items_disabled"
+		SPAWN_ANIMATION_ENABLED: "spawn_animation_disabled",
+		PLAYER_CONTROLS_ENABLED: "player_controls_disabled",
+		UI_CONTROLS_ENABLED: "ui_controls_disabled",
+		RETEXTURE_CONTROL_ITEMS: "retextured_control_items_disabled",
+		RENAME_CONTROL_ITEMS: "renamed_control_items_disabled"
 	};
 	let packGenerationTime = (new Date()).toLocaleString();
 	let totalMaterialCount = materialList.totalMaterialCount;
@@ -1514,7 +1514,7 @@ async function retextureControlItems(config, itemIcons, itemTags, resourceItemTe
 					return;
 				}
 				itemTexture["texture_data"][itemName] ??= {
-					"textures": Array.from(originalTexturePath) // clone the whole thing here. this is so we can edit it directly, which means that if we're modifying multiple textures in the same array all can be applied.
+					textures: Array.from(originalTexturePath) // clone the whole thing here. this is so we can edit it directly, which means that if we're modifying multiple textures in the same array all can be applied.
 				};
 				let specificOriginalTexturePath = `${itemTexture["texture_data"][itemName]["textures"][variant]}.png`;
 				let originalImage;
@@ -1542,8 +1542,8 @@ async function retextureControlItems(config, itemIcons, itemTags, resourceItemTe
 				let safeSize = lcm((await paddedTexturePromise).width, itemTextureSize) * config.CONTROL_ITEM_TEXTURE_SCALE; // When compositing textures, MCBE scales all textures to the maximum, so the size of the overlay control texture has to be the LCM of itself and in-game items. Hence, if in-game items have a higher resolution than expected, they will probably be scaled wrong. The control item texture scale setting will scale them more (but they get reaaaaally big and make the item texture atlas huuuge)
 				controlItemTextureSizes.add(safeSize);
 				(usingTerrainAtlas? terrainTexture : itemTexture)["texture_data"][itemName] = {
-					"textures": [originalTexturePath, `${controlTexturePath}_${safeSize}`],
-					"additive": true // texture compositing means resource packs that change the item textures will still work
+					textures: [originalTexturePath, `${controlTexturePath}_${safeSize}`],
+					additive: true // texture compositing means resource packs that change the item textures will still work
 				};
 			}
 		}));

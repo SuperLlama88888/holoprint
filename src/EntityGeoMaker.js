@@ -34,16 +34,16 @@ export default class EntityGeoMaker {
 			bone["cubes"]?.forEach(geoCube => {
 				/** @type {Data.Cube} */
 				let cube = {
-					"pos": geoCube["origin"],
-					"size": geoCube["size"],
-					"translate": [8, 0, 8],
-					"box_uv": geoCube["uv"],
-					"box_uv_size": geoCube["size"],
-					"box_uv_flip_east_west": true,
-					"textures": {
+					pos: geoCube["origin"],
+					size: geoCube["size"],
+					translate: [8, 0, 8],
+					box_uv: geoCube.uv,
+					box_uv_size: geoCube["size"],
+					box_uv_flip_east_west: true,
+					textures: {
 						"*": entityModelInfo.texture
 					},
-					"texture_size": [textureWidth, textureHeight]
+					texture_size: [textureWidth, textureHeight]
 				};
 				if("inflate" in geoCube) {
 					let { inflate } = geoCube;

@@ -18,21 +18,21 @@ export default class PreviewRenderer extends AsyncFactory {
 	static #CAMERA_FOV = 70; // degrees
 	static #POINT_LIGHT_MAX_DISTANCE = 30; // pixels
 	static #POINT_LIGHTS = {
-		"lantern": 0xFFAA55,
-		"redstone_torch": 0x990000,
-		"powered_repeater": 0x330000,
-		"powered_comparator": 0x330000,
-		"end_rod": [0xD0C9BE, 67.5],
-		"fire": 0xFF9955,
-		"lava": 0xFF9955,
+		lantern: 0xFFAA55,
+		redstone_torch: 0x990000,
+		powered_repeater: 0x330000,
+		powered_comparator: 0x330000,
+		end_rod: [0xD0C9BE, 67.5],
+		fire: 0xFF9955,
+		lava: 0xFF9955,
 		"campfire[extinguished=0]": [0xFF9955, 37.5],
 		"soul_campfire[extinguished=0]": [0x00FFFF, 25],
-		"cave_vines_body_with_berries": [0xFFAA66, 37.5],
-		"cave_vines_head_with_berries": [0xFFAA66, 37.5],
+		cave_vines_body_with_berries: [0xFFAA66, 37.5],
+		cave_vines_head_with_berries: [0xFFAA66, 37.5],
 		
-		"torch": 0xEFE39D, // source: https://learn.microsoft.com/en-us/minecraft/creator/documents/deferredlighting/lightingcustomization?view=minecraft-bedrock-stable
-		"soul_lantern": 0x00FFFF,
-		"soul_torch": 0x00FFFF
+		torch: 0xEFE39D, // source: https://learn.microsoft.com/en-us/minecraft/creator/documents/deferredlighting/lightingcustomization?view=minecraft-bedrock-stable
+		soul_lantern: 0x00FFFF,
+		soul_torch: 0x00FFFF
 	};
 	static #POINT_LIGHT_DEFAULT_INTENSITY = 75;
 	static #DIRECTIONAL_LIGHT_STRENGTH = 1.57;
@@ -506,9 +506,9 @@ export default class PreviewRenderer extends AsyncFactory {
 						if(lightInfo) {
 							let [col, intensity] = Array.isArray(lightInfo)? lightInfo : [lightInfo, PreviewRenderer.#POINT_LIGHT_DEFAULT_INTENSITY];
 							this.#pointLights.push({
-								"pos": [-16 * x - 8, 16 * y + 8, -16 * z - 8],
-								"col": new THREE.Color(col),
-								"intensity": intensity
+								pos: [-16 * x - 8, 16 * y + 8, -16 * z - 8],
+								col: new THREE.Color(col),
+								intensity
 							});
 						}
 					}
@@ -555,8 +555,8 @@ export default class PreviewRenderer extends AsyncFactory {
 		closestSortedLights.forEach((lightInfo, i) => {
 			this.#pointLightsInScene[i].visible = true;
 			this.#pointLightsInScene[i].position.set(...lightInfo.pos);
-			this.#pointLightsInScene[i].intensity = lightInfo["intensity"];
-			this.#pointLightsInScene[i].color.copy(lightInfo["col"])
+			this.#pointLightsInScene[i].intensity = lightInfo.intensity;
+			this.#pointLightsInScene[i].color.copy(lightInfo.col)
 		});
 		if(closestSortedLights.length < maxLightsInScene) {
 			for(let i = closestSortedLights.length; i < maxLightsInScene; i++) {
@@ -574,7 +574,7 @@ export default class PreviewRenderer extends AsyncFactory {
 		projMatrix.multiplyMatrices(this.#camera.projectionMatrix, this.#camera.matrixWorldInverse);
 		cameraFrustum.setFromProjectionMatrix(projMatrix);
 		return this.#pointLights.filter(light => {
-			let lightSphere = new THREE.Sphere(new THREE.Vector3(...light["pos"]), PreviewRenderer.#POINT_LIGHT_MAX_DISTANCE);
+			let lightSphere = new THREE.Sphere(new THREE.Vector3(...light.pos), PreviewRenderer.#POINT_LIGHT_MAX_DISTANCE);
 			return cameraFrustum.intersectsSphere(lightSphere);
 		});
 	}
@@ -618,7 +618,7 @@ export default class PreviewRenderer extends AsyncFactory {
 		this.#polyMeshMaker.clear();
 		let i = 0; // this bit is adapted from https://github.com/bridge-core/model-viewer/blob/main/lib/PolyMesh.ts#L45
 		let positions = [], normals = [], uvs = [], indices = [];
-		polyMesh["polys"].forEach(face => {
+		polyMesh.polys.forEach(face => {
 			face.forEach(([posIndex, normalIndex, uvIndex]) => {
 				let pos = polyMesh.positions[posIndex];
 				positions.push(pos[0], pos[1], 16 - pos[2]);
@@ -643,7 +643,7 @@ export default class PreviewRenderer extends AsyncFactory {
 	 */
 	#isPolyMeshTemplateTranslucent(polyMeshTemplate) {
 		let allUvs = polyMeshTemplate.map(face => {
-			let uvCoords = face["vertices"].map(v => v["uv"]);
+			let uvCoords = face.vertices.map(v => v.uv);
 			let xs = uvCoords.map(([x]) => round(x * this.#imageBlobData.width));
 			let ys = uvCoords.map(([, y]) => round((1 - y) * this.#imageBlobData.height));
 			let minUvCoords = tuple([min(...xs), min(...ys)]);

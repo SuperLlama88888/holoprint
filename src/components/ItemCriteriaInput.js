@@ -191,8 +191,8 @@ export default class ItemCriteriaInput extends HTMLElement {
 	}
 	#addNewInput(type, autofocus = true, initialValue) {
 		const attributesByType = {
-			"item": `placeholder="Item name" list="itemNamesDatalist" class="itemNameInput" data-translate-placeholder="item_criteria_input.item_name"`,
-			"tag": `placeholder="Tag name" list="itemTagsDatalist" class="itemTagInput" data-translate-placeholder="item_criteria_input.item_tag"`
+			item: `placeholder="Item name" list="itemNamesDatalist" class="itemNameInput" data-translate-placeholder="item_criteria_input.item_name"`,
+			tag: `placeholder="Tag name" list="itemTagsDatalist" class="itemTagInput" data-translate-placeholder="item_criteria_input.item_tag"`
 		}
 		this.#criteriaInputsCont[selectEl](`input:last-child:placeholder-shown`)?.remove();
 		let lastNode = Array.from(this.#criteriaInputsCont.childNodes).at(-1);
