@@ -4,13 +4,13 @@ import potpack from "potpack";
 import ResourcePackStack from "./ResourcePackStack.js";
 
 export default class TextureAtlas {
-	/** @readonly @type {Data.TextureAtlasMappings["blocks_dot_json_patches"]} */
+	/** @readonly @type {Data.TextureAtlasMappings["blocksDotJsonPatches"]} */
 	#blocksDotJsonPatches;
-	/** @readonly @type {Data.TextureAtlasMappings["blocks_to_use_carried_textures"]} */
+	/** @readonly @type {Data.TextureAtlasMappings["blocksToUseCarriedTextures"]} */
 	#blocksToUseCarriedTextures;
-	/** @readonly @type {Data.TextureAtlasMappings["transparent_blocks"]} */
+	/** @readonly @type {Data.TextureAtlasMappings["transparentBlocks"]} */
 	#transparentBlocks;
-	/** @readonly @type {Data.TextureAtlasMappings["terrain_texture_tints"]} */
+	/** @readonly @type {Data.TextureAtlasMappings["terrainTextureTints"]} */
 	#terrainTextureTints;
 	
 	/** @readonly @type {object} */
@@ -59,12 +59,12 @@ export default class TextureAtlas {
 		this.blocksDotJson = blocksDotJson;
 		this.terrainTexture = terrainTexture;
 		
-		this.#blocksDotJsonPatches = textureAtlasMappings.blocks_dot_json_patches;
-		this.#blocksToUseCarriedTextures = textureAtlasMappings.blocks_to_use_carried_textures;
-		this.#transparentBlocks = textureAtlasMappings.transparent_blocks;
-		this.#terrainTextureTints = textureAtlasMappings.terrain_texture_tints;
+		this.#blocksDotJsonPatches = textureAtlasMappings.blocksDotJsonPatches;
+		this.#blocksToUseCarriedTextures = textureAtlasMappings.blocksToUseCarriedTextures;
+		this.#transparentBlocks = textureAtlasMappings.transparentBlocks;
+		this.#terrainTextureTints = textureAtlasMappings.terrainTextureTints;
 		
-		textureAtlasMappings.missing_flipbook_textures.forEach(terrainTextureKey => {
+		textureAtlasMappings.missingFlipbookTextures.forEach(terrainTextureKey => {
 			this.#flipbookTexturesAndSizes.set(terrainTextureKey, 1);
 		});
 		flipbookTextures.map(entry => {
@@ -87,11 +87,11 @@ export default class TextureAtlas {
 			let tint = textureRef.tint;
 			let tintLikePng = false;
 			let opacity = 1;
-			if("texture_path_override" in textureRef) {
-				texturePath = textureRef.texture_path_override;
+			if("texturePathOverride" in textureRef) {
+				texturePath = textureRef.texturePathOverride;
 			} else {
 				let terrainTextureKey = this.#getTerrainTextureKeyFromTextureReference(textureRef);
-				let blockName = textureRef.block_name;
+				let blockName = textureRef.blockName;
 				let variant = textureRef.variant;
 				let texturePathAndTint = this.#getTexturePathAndTint(terrainTextureKey, variant);
 				texturePath = texturePathAndTint.texturePath;
@@ -99,14 +99,14 @@ export default class TextureAtlas {
 					tint = hexColorToClampedTriplet(texturePathAndTint.tint);
 				}
 				if(!texturePath) {
-					console.error(`No texture for block ${blockName} on side ${textureRef.texture_face}!`);
+					console.error(`No texture for block ${blockName} on side ${textureRef.textureFace}!`);
 					texturePath = this.#getTexturePathAndTint("missing", -1).texturePath;
 				}
 				
-				if(tint == undefined && terrainTextureKey in this.#terrainTextureTints.terrain_texture_keys) {
-					let tintColor = this.#terrainTextureTints.terrain_texture_keys[terrainTextureKey];
+				if(tint == undefined && terrainTextureKey in this.#terrainTextureTints.terrainTextureKeys) {
+					let tintColor = this.#terrainTextureTints.terrainTextureKeys[terrainTextureKey];
 					if(typeof tintColor == "object") {
-						tintLikePng = tintColor.tint_like_png;
+						tintLikePng = tintColor.tintLikePng;
 						tintColor = tintColor.tint;
 					}
 					if(tintColor.startsWith("#")) {
@@ -124,17 +124,17 @@ export default class TextureAtlas {
 			let textureFragment = {
 				texturePath,
 				tint,
-				tint_like_png: tintLikePng,
+				tintLikePng,
 				opacity,
 				uv: textureRef.uv,
-				uv_size: textureRef.uv_size
+				uvSize: textureRef.uvSize
 			};
 			allTextureFragments.add(textureFragment);
 			textureImageIndices.push(allTextureFragments.indexOf(textureFragment));
 			// console.table({
 			// 	index: tintedTexturePaths.indexOf(pathAndTint),
 			// 	uv: textureRef.uv,
-			// 	uv_size: textureRef.uv_size
+			// 	uvSize: textureRef.uvSize
 			// })
 		});
 		
@@ -156,10 +156,10 @@ export default class TextureAtlas {
 	 * @returns {string}
 	 */
 	#getTerrainTextureKeyFromTextureReference(textureRef) {
-		if("terrain_texture_override" in textureRef) {
-			return textureRef.terrain_texture_override;
+		if("terrainTextureOverride" in textureRef) {
+			return textureRef.terrainTextureOverride;
 		}
-		let blockName = textureRef.block_name;
+		let blockName = textureRef.blockName;
 		if(!(blockName in this.blocksDotJson) && blockName in this.#blocksDotJsonPatches) {
 			blockName = this.#blocksDotJsonPatches[blockName];
 			if(blockName?.includes(".")) {
@@ -171,12 +171,12 @@ export default class TextureAtlas {
 		let blockEntry = this.blocksDotJson[blockName];
 		let terrainTextureKeys;
 		if(!blockEntry) {
-			// console.log(textureRef, blockName, textureRef.block_name);
+			// console.log(textureRef, blockName, textureRef.blockName);
 			console.error(`No blocks.json entry for ${blockName}`);
 			return "missing";
 		}
 		
-		let textureFace = textureRef.texture_face;
+		let textureFace = textureRef.textureFace;
 		if(textureFace.startsWith("carried")) {
 			if("carried_textures" in blockEntry) {
 				if(textureFace == "carried") {
@@ -301,7 +301,7 @@ export default class TextureAtlas {
 			return { imageData, imageIsTga, imageNotFound };
 		}));
 		let imageDataByTexturePath = new Map(allTexturePaths.map((texturePath, i) => [texturePath, allImageData[i]]));
-		return await Promise.all(Array.from(textureFragments).map(async ({ texturePath, tint, tint_like_png: tintLikePng, opacity, uv: sourceUv, uv_size: uvSize }) => {
+		return await Promise.all(Array.from(textureFragments).map(async ({ texturePath, tint, tintLikePng, opacity, uv: sourceUv, uvSize }) => {
 			let { imageData, imageIsTga, imageNotFound } = imageDataByTexturePath.get(texturePath);
 			if(imageNotFound) {
 				sourceUv = [0, 0];
@@ -431,7 +431,7 @@ export default class TextureAtlas {
 			ctx.putImageData(imageFragment.imageData, ...vec2.sub(destPos, sourcePos), ...sourcePos, ...textureSize); // when drawing image data, the source position and size crop it but don't move it back to the original destination position, meaning it must be offset.
 			let imageUv = {
 				uv: vec2.add(destPos, imageFragment["offset"]),
-				uv_size: imageFragment["actualSize"],
+				uvSize: imageFragment["actualSize"],
 				transparency: NaN
 			};
 			if("crop" in imageFragment) {

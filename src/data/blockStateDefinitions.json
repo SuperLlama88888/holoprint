@@ -1,7 +1,7 @@
 // Contains definitions for block states that control texture variants and rotations.
 // Note: Block states that control geometry are used in blockShapeGeos.json
 {
-	"texture_variants": {
+	"textureVariants": {
 		"*": {
 			// When a block has a block state in here, it will check the value and look at the corresponding texture variant in terrain_texture.json
 			// E.g. When cake's bite_counter is 0, it will look at the 0th texture variant in terrain_texture.json, and when it's 1-6, it will look at the 1st texture variant. This makes it show the inner texture when necessary.
@@ -32,7 +32,7 @@
 			"brushed_progress": [0, 1, 2, 3], // suspicious sand/gravel
 			"rehydration_level": [0, 1, 2, 3] // dried ghasts
 		},
-		"block_shapes": {
+		"blockShapes": {
 			"cake": {
 				"bite_counter": [0, 1, 1, 1, 1, 1, 1]
 			},
@@ -68,7 +68,7 @@
 				"age": [0, 1, 2]
 			}
 		},
-		"block_names": {
+		"blockNames": {
 			"/copper_bulb/": { // test regular expression on block names
 				"#exclusive_add": true,
 				"lit": [0, 1],
@@ -222,7 +222,7 @@
 			},
 			"coral_direction": [[0, 90, 0], [0, -90, 0], [0, 180, 0], [0, 0, 0]]
 		},
-		"block_shapes": {
+		"blockShapes": {
 			"button,lightning_rod,command_block": {
 				"facing_direction": { // button/lightning rod/command block orientation for north/south/east/west is mirrored to that of pistons, which also use facing_direction
 					"0": [180, 0, 0], // down
@@ -336,7 +336,7 @@
 				"facing_direction": [[42, 42, 42], [0, 0, 0], [0, 0, 0], [0, 180, 0], [0, -90, 0], [0, 90, 0]]			
 			}
 		},
-		"block_names": {
+		"blockNames": {
 			"carved_pumpkin,lit_pumpkin,lectern": {
 				"minecraft:cardinal_direction": { // this is opposite to how it is usually
 					"north": [0, 180, 0],

@@ -27,7 +27,7 @@
 			},
 			"additionalProperties": false
 		},
-		"individual_blocks": {
+		"individualBlocks": {
 			"description": "Block shape mappings for individual blocks.",
 			"type": "object",
 			"patternProperties": {
@@ -48,6 +48,6 @@
 			"additionalProperties": false
 		}
 	},
-	"required": ["patterns", "individual_blocks"],
+	"required": ["patterns", "individualBlocks"],
 	"additionalProperties": false
 }
