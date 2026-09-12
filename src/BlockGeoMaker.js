@@ -53,33 +53,33 @@ export default class BlockGeoMaker {
 		this.config = config;
 		this.#entityGeoMaker = entityGeoMaker;
 		
-		this.#individualBlockShapes = blockShapes["individual_blocks"];
-		this.#blockShapePatterns = Object.entries(blockShapes["patterns"]).map(([rule, blockShape]) => [new RegExp(rule), blockShape]); // store regular expressions from the start to avoid recompiling them every time
+		this.#individualBlockShapes = blockShapes.individual_blocks;
+		this.#blockShapePatterns = Object.entries(blockShapes.patterns).map(([rule, blockShape]) => [new RegExp(rule), blockShape]); // store regular expressions from the start to avoid recompiling them every time
 		this.#blockShapeGeos = blockShapeGeos;
 		this.#eigenvariants = eigenvariants;
 		
 		// console.log(this.#blockShapeGeos)
 		
 		// block-state-driven rotations/texture variants can either be global, based on block shape, based on specific block names, or based on regular expressions for block names, hence the many variables.
-		this.#globalBlockStateRotations = blockStateDefs["rotations"]["*"];
-		Object.entries(blockStateDefs["rotations"]["block_shapes"] ?? {}).forEach(([blockShapes, rotationDefs]) => {
+		this.#globalBlockStateRotations = blockStateDefs.rotations["*"];
+		Object.entries(blockStateDefs.rotations.block_shapes ?? {}).forEach(([blockShapes, rotationDefs]) => {
 			blockShapes.split(",").forEach(blockShape => {
 				this.#blockShapeBlockStateRotations.set(blockShape, rotationDefs);
 			});
 		});
-		Object.entries(blockStateDefs["rotations"]["block_names"] ?? {}).forEach(([blockNames, rotationDefs]) => {
+		Object.entries(blockStateDefs.rotations.block_names ?? {}).forEach(([blockNames, rotationDefs]) => {
 			blockNames.split(",").forEach(blockName => {
 				this.#blockNameBlockStateRotations.set(blockName, rotationDefs);
 			});
 		});
 		
-		this.#globalBlockStateTextureVariants = blockStateDefs["texture_variants"]["*"];
-		Object.entries(blockStateDefs["texture_variants"]["block_shapes"] ?? {}).forEach(([blockShapes, textureVariantDefs]) => {
+		this.#globalBlockStateTextureVariants = blockStateDefs.texture_variants["*"];
+		Object.entries(blockStateDefs.texture_variants.block_shapes ?? {}).forEach(([blockShapes, textureVariantDefs]) => {
 			blockShapes.split(",").forEach(blockShape => {
 				this.#blockShapeBlockStateTextureVariants.set(blockShape, textureVariantDefs);
 			});
 		});
-		this.#blockNameBlockStateTextureVariants = new PatternMap(Object.entries(blockStateDefs["texture_variants"]["block_names"] ?? {}), ",");
+		this.#blockNameBlockStateTextureVariants = new PatternMap(Object.entries(blockStateDefs.texture_variants.block_names ?? {}), ",");
 	}
 	/**
 	 * Makes poly mesh templates (unscaled) and their centers of mass from a block palette.
