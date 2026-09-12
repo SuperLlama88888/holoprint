@@ -122,20 +122,20 @@ export default class BlockGeoMaker {
 		let rotation = this.#getBlockRotation(block, blockShape);
 		if(rotation) {
 			faces.forEach(face => {
-				face["normal"] = this.#applyEulerRotation(face["normal"], rotation, [0, 0, 0]);
-				face["vertices"].forEach(vertex => {
-					vertex["pos"] = this.#applyEulerRotation(vertex["pos"], rotation, [8, 8, 8]); // (8, 8, 8) is the block center and the pivot for all block-wide rotations
+				face.normal = this.#applyEulerRotation(face.normal, rotation, [0, 0, 0]);
+				face.vertices.forEach(vertex => {
+					vertex.pos = this.#applyEulerRotation(vertex.pos, rotation, [8, 8, 8]); // (8, 8, 8) is the block center and the pivot for all block-wide rotations
 				});
 			});
 			centerOfMass = this.#applyEulerRotation(centerOfMass, rotation, [8, 8, 8]);
 		}
 		faces.forEach(face => {
-			if(face["fullbright"]) {
-				face["normal"] = [0, 1, 0];
+			if(face.fullbright) {
+				face.normal = [0, 1, 0];
 			} else {
-				face["normal"] = vec3.toFixed(face["normal"], 4);
+				face.normal = vec3.toFixed(face.normal, 4);
 			}
-			delete face["fullbright"];
+			delete face.fullbright;
 		});
 		return { faces, centerOfMass };
 	}
@@ -237,8 +237,8 @@ export default class BlockGeoMaker {
 							// HoloPrint.js will create a wrapper bone for each rotation
 							copiedCube["extra_rots"] ??= [];
 							copiedCube["extra_rots"].unshift({
-								"rot": cube.rot,
-								"pivot": cube.pivot ?? [8, 8, 8]
+								rot: cube.rot,
+								pivot: cube.pivot ?? [8, 8, 8]
 							});
 						} else {
 							copiedCube.rot = cube.rot;
@@ -270,7 +270,7 @@ export default class BlockGeoMaker {
 				if("translate" in cube) {
 					newFaces.forEach(face => {
 						for(let i = 0; i < 4; i++) {
-							face["vertices"][i]["pos"] = vec3.add(face["vertices"][i]["pos"], cube.translate);
+							face.vertices[i].pos = vec3.add(face.vertices[i].pos, cube.translate);
 						}
 					});
 				}
@@ -316,7 +316,7 @@ export default class BlockGeoMaker {
 				cubeVariant = cube.variant;
 			} else if(cube.ignore_eigenvariant) {
 				if("block_override" in cube) {
-					cubeVariant = this.#getTextureVariant(cube["block_override"], true);
+					cubeVariant = this.#getTextureVariant(cube.block_override, true);
 				} else {
 					if(variantWithoutEigenvariant == undefined) {
 						variantWithoutEigenvariant = this.#getTextureVariant(block, true);
@@ -324,7 +324,7 @@ export default class BlockGeoMaker {
 					cubeVariant = variantWithoutEigenvariant;
 				}
 			} else if("block_override" in cube) {
-				cubeVariant = this.#getTextureVariant(cube["block_override"]);
+				cubeVariant = this.#getTextureVariant(cube.block_override);
 			} else {
 				cubeVariant = variant; // default variant for this block
 			}
@@ -343,44 +343,44 @@ export default class BlockGeoMaker {
 				if(textureFace == "none") {
 					return;
 				}
-				textureFace = this.#interpolateInBlockValues(cube["block_override"] ?? block, textureFace, cube, specialTexture);
+				textureFace = this.#interpolateInBlockValues(cube.block_override ?? block, textureFace, cube, specialTexture);
 				let textureRef = {
-					"uv": face["uv"].map((x, i) => x / textureSize[i]),
-					"uv_size": face["uv_size"].map((x, i) => x / textureSize[i]),
-					"block_name": blockName,
-					"texture_face": textureFace,
-					"variant": cubeVariant
+					uv: face.uv.map((x, i) => x / textureSize[i]),
+					uv_size: face.uv_size.map((x, i) => x / textureSize[i]),
+					block_name: blockName,
+					texture_face: textureFace,
+					variant: cubeVariant
 				};
 				if(textureFace == "#tex") {
 					if(specialTexture) {
-						textureRef["texture_path_override"] = specialTexture;
+						textureRef.texture_path_override = specialTexture;
 					} else {
 						console.error(`No #tex for block ${blockName} and blockshape ${blockShape}!`);
 					}
 				} else if(/^textures\/.+[^/]$/.test(textureFace)) { // file path
-					textureRef["texture_path_override"] = textureFace;
+					textureRef.texture_path_override = textureFace;
 				} else {
 					let terrainTextureOverride = cube.terrain_texture;
 					if(terrainTextureOverride) {
-						delete textureRef["block_name"];
-						delete textureRef["texture_face"];
-						textureRef["terrain_texture_override"] = terrainTextureOverride;
+						delete textureRef.block_name;
+						delete textureRef.texture_face;
+						textureRef.terrain_texture_override = terrainTextureOverride;
 					}
 				}
 				if("texture_path_override" in textureRef) {
-					delete textureRef["block_name"];
-					delete textureRef["texture_face"];
-					delete textureRef["variant"];
+					delete textureRef.block_name;
+					delete textureRef.texture_face;
+					delete textureRef.variant;
 				}
 				if("tint" in cube) {
 					let tint = cube.tint;
-					tint = this.#interpolateInBlockValues(cube["block_override"] ?? block, tint, cube, specialTexture);
+					tint = this.#interpolateInBlockValues(cube.block_override ?? block, tint, cube, specialTexture);
 					if(tint[0] == "#") {
-						textureRef["tint"] = hexColorToClampedTriplet(tint);
+						textureRef.tint = hexColorToClampedTriplet(tint);
 					} else {
 						// this is from cauldrons; colour is a 32-bit ARGB colour
 						let colorCode = 2 ** 32 + Number(tint);
-						textureRef["tint"] = [colorCode >> 16 & 0xFF, colorCode >> 8 & 0xFF, colorCode & 0xFF].map(x => x / 255);
+						textureRef.tint = [colorCode >> 16 & 0xFF, colorCode >> 8 & 0xFF, colorCode & 0xFF].map(x => x / 255);
 					}
 				}
 				
@@ -389,11 +389,11 @@ export default class BlockGeoMaker {
 				let uvRot = cube.uv_rot?.[faceName] ?? (isSideFace? cube.uv_rot?.side : undefined) ?? cube.uv_rot?.["*"];
 				if(uvRot) {
 					while(uvRot >= 90) {
-						[vertices[0]["corner"], vertices[1]["corner"], vertices[3]["corner"], vertices[2]["corner"]] = [vertices[2]["corner"], vertices[0]["corner"], vertices[1]["corner"], vertices[3]["corner"]];
+						[vertices[0].corner, vertices[1].corner, vertices[3].corner, vertices[2].corner] = [vertices[2].corner, vertices[0].corner, vertices[1].corner, vertices[3].corner];
 						uvRot -= 90;
 					}
 					while(uvRot <= -90) {
-						[vertices[2]["corner"], vertices[0]["corner"], vertices[1]["corner"], vertices[3]["corner"]] = [vertices[0]["corner"], vertices[1]["corner"], vertices[3]["corner"], vertices[2]["corner"]];
+						[vertices[2].corner, vertices[0].corner, vertices[1].corner, vertices[3].corner] = [vertices[0].corner, vertices[1].corner, vertices[3].corner, vertices[2].corner];
 						uvRot += 90;
 					}
 				}
@@ -418,40 +418,40 @@ export default class BlockGeoMaker {
 				let flipTextureVertically = flipVerticallyFactors.reduce((a, b) => a != b, false);
 				
 				if(flipTextureHorizontally) {
-					[vertices[0]["corner"], vertices[1]["corner"]] = [vertices[1]["corner"], vertices[0]["corner"]];
-					[vertices[2]["corner"], vertices[3]["corner"]] = [vertices[3]["corner"], vertices[2]["corner"]];
+					[vertices[0].corner, vertices[1].corner] = [vertices[1].corner, vertices[0].corner];
+					[vertices[2].corner, vertices[3].corner] = [vertices[3].corner, vertices[2].corner];
 				}
 				if(flipTextureVertically) {
-					[vertices[0]["corner"], vertices[2]["corner"]] = [vertices[2]["corner"], vertices[0]["corner"]];
-					[vertices[1]["corner"], vertices[3]["corner"]] = [vertices[3]["corner"], vertices[1]["corner"]];
+					[vertices[0].corner, vertices[2].corner] = [vertices[2].corner, vertices[0].corner];
+					[vertices[1].corner, vertices[3].corner] = [vertices[3].corner, vertices[1].corner];
 				}
 				for(let i = 0; i < 4; i++) {
 					let vertex = vertices[i];
 					if("rot" in cube) {
-						vertex["pos"] = this.#applyEulerRotation(vertex["pos"], cube.rot, cube.pivot ?? [8, 8, 8]);
+						vertex.pos = this.#applyEulerRotation(vertex.pos, cube.rot, cube.pivot ?? [8, 8, 8]);
 					}
 					cube["extra_rots"]?.slice()?.reverse()?.forEach(extraRot => {
-						vertex["pos"] = this.#applyEulerRotation(vertex["pos"], extraRot.rot, extraRot.pivot);
+						vertex.pos = this.#applyEulerRotation(vertex.pos, extraRot.rot, extraRot.pivot);
 					});
 					if("translate" in cube) {
-						vertex["pos"] = vec3.add(vertex["pos"], cube.translate);
+						vertex.pos = vec3.add(vertex.pos, cube.translate);
 					}
 					if("transform" in cube) {
-						let transformed = mulMat4(cube.transform, vertex["pos"]);
+						let transformed = mulMat4(cube.transform, vertex.pos);
 						let newPos = vec3.mul([transformed[0], transformed[1], transformed[2]], 1 / transformed[3]);
-						vertex["pos"] = newPos;
+						vertex.pos = newPos;
 					}
 				}
 				faces.push({
-					"normal": this.#getSurfaceNormal(vertices),
-					"textureRefI": this.textureRefs.indexOf(textureRef),
-					"vertices": vertices,
-					"fullbright": Boolean(cube.fullbright)
+					normal: this.#getSurfaceNormal(vertices),
+					textureRefI: this.textureRefs.indexOf(textureRef),
+					vertices,
+					fullbright: Boolean(cube.fullbright)
 				});
 			});
 			if(faces.length == 1 && !("culled_faces" in cube)) {
-				if(faces[0]["normal"][1] < 0) {
-					faces[0]["normal"] = vec3.mul(faces[0]["normal"], -1);
+				if(faces[0].normal[1] < 0) {
+					faces[0].normal = vec3.mul(faces[0].normal, -1);
 				}
 			} else {
 				allCubesAreFlat = false;
@@ -461,7 +461,7 @@ export default class BlockGeoMaker {
 		});
 		if(allCubesAreFlat) {
 			allFaces.forEach(face => {
-				face["fullbright"] = true; // blocks with only flat textures always appear at maximum brightness. source: me
+				face.fullbright = true; // blocks with only flat textures always appear at maximum brightness. source: me
 			});
 			// console.debug(`Making ${blockName} full bright!`);
 		}
@@ -607,14 +607,14 @@ export default class BlockGeoMaker {
 	}
 	/**
 	 * Returns a "merging group" for a cube. Cubes in the same merging group can be merged together. It doesn't affect face culling.
-	 * @param {Data.Cube} cube
+	 * @param {CubeWithEasyProperties} cube
 	 * @returns {number | string}
 	 */
 	#getMergingGroup(cube) {
 		if(cube.disable_merging || "translate" in cube || "uv" in cube || "uv_sizes" in cube || "uv_rot" in cube || "box_uv" in cube) {
 			return NaN; // in JS, NaN == NaN is false, disabling these cubes from being merged at all
 		} else {
-			return JSON.stringify([cube.textures, cube.texture_size, cube["block_override"], cube.terrain_texture, cube.variant, cube.ignore_eigenvariant, cube.tint, cube.fullbright, cube.flip_textures_horizontally, cube.flip_textures_vertically, cube.arrays]); // these are all the properties that could exist on a cube at this point - basically, two cubes have to be identical in all of these in order to be mergeable
+			return JSON.stringify([cube.textures, cube.texture_size, cube.block_override, cube.terrain_texture, cube.variant, cube.ignore_eigenvariant, cube.tint, cube.fullbright, cube.flip_textures_horizontally, cube.flip_textures_vertically, cube.arrays]); // these are all the properties that could exist on a cube at this point - basically, two cubes have to be identical in all of these in order to be mergeable
 		}
 	}
 	/**
@@ -782,33 +782,33 @@ export default class BlockGeoMaker {
 			let flipEastWest = !!cube.box_uv_flip_east_west;
 			/** @type {CubeUv} */
 			let uv = {
-				"up": {
-					"uv": [boxUvSize[2], 0],
-					"uv_size": [boxUvSize[0], boxUvSize[2]]
+				up: {
+					uv: [boxUvSize[2], 0],
+					uv_size: [boxUvSize[0], boxUvSize[2]]
 				},
-				"down": {
-					"uv": [boxUvSize[0] + boxUvSize[2], 0],
-					"uv_size": [boxUvSize[0], boxUvSize[2]]
+				down: {
+					uv: [boxUvSize[0] + boxUvSize[2], 0],
+					uv_size: [boxUvSize[0], boxUvSize[2]]
 				},
-				"west": {
-					"uv": [+flipEastWest * (boxUvSize[0] + boxUvSize[2]), boxUvSize[2]],
-					"uv_size": [boxUvSize[2], boxUvSize[1]]
+				west: {
+					uv: [+flipEastWest * (boxUvSize[0] + boxUvSize[2]), boxUvSize[2]],
+					uv_size: [boxUvSize[2], boxUvSize[1]]
 				},
-				"north": {
-					"uv": [boxUvSize[2], boxUvSize[2]],
-					"uv_size": [boxUvSize[0], boxUvSize[1]]
+				north: {
+					uv: [boxUvSize[2], boxUvSize[2]],
+					uv_size: [boxUvSize[0], boxUvSize[1]]
 				},
-				"east": {
-					"uv": [+!flipEastWest * (boxUvSize[0] + boxUvSize[2]), boxUvSize[2]],
-					"uv_size": [boxUvSize[2], boxUvSize[1]]
+				east: {
+					uv: [+!flipEastWest * (boxUvSize[0] + boxUvSize[2]), boxUvSize[2]],
+					uv_size: [boxUvSize[2], boxUvSize[1]]
 				},
-				"south": {
-					"uv": [boxUvSize[0] + boxUvSize[2] * 2, boxUvSize[2]],
-					"uv_size": [boxUvSize[0], boxUvSize[1]]
+				south: {
+					uv: [boxUvSize[0] + boxUvSize[2] * 2, boxUvSize[2]],
+					uv_size: [boxUvSize[0], boxUvSize[1]]
 				}
 			};
 			Object.values(uv).forEach(face => {
-				face["uv"] = vec2.add(face["uv"], cube.box_uv);
+				face.uv = vec2.add(face.uv, cube.box_uv);
 			});
 			return uv;
 		} else {
@@ -820,29 +820,29 @@ export default class BlockGeoMaker {
 			let northUvOffset = tuple([cube.x, 16 - cube.y - cube.h]);
 			let southUvOffset = tuple([16 - cube.x - cube.w, 16 - cube.y - cube.h]);
 			return {
-				"west": {
-					"uv": cube.uv?.west ?? cube.uv?.side ?? cube.uv?.["*"] ?? westUvOffset,
-					"uv_size": cube.uv_sizes?.west ?? cube.uv_sizes?.side ?? cube.uv_sizes?.["*"] ?? [cube.d, cube.h]
+				west: {
+					uv: cube.uv?.west ?? cube.uv?.side ?? cube.uv?.["*"] ?? westUvOffset,
+					uv_size: cube.uv_sizes?.west ?? cube.uv_sizes?.side ?? cube.uv_sizes?.["*"] ?? [cube.d, cube.h]
 				},
-				"east": {
-					"uv": cube.uv?.east ?? cube.uv?.side ?? cube.uv?.["*"] ?? eastUvOffset,
-					"uv_size": cube.uv_sizes?.east ?? cube.uv_sizes?.side ?? cube.uv_sizes?.["*"] ?? [cube.d, cube.h]
+				east: {
+					uv: cube.uv?.east ?? cube.uv?.side ?? cube.uv?.["*"] ?? eastUvOffset,
+					uv_size: cube.uv_sizes?.east ?? cube.uv_sizes?.side ?? cube.uv_sizes?.["*"] ?? [cube.d, cube.h]
 				},
-				"down": {
-					"uv": cube.uv?.down ?? cube.uv?.["*"] ?? downUvOffset,
-					"uv_size": cube.uv_sizes?.down ?? cube.uv_sizes?.["*"] ?? [cube.w, cube.d]
+				down: {
+					uv: cube.uv?.down ?? cube.uv?.["*"] ?? downUvOffset,
+					uv_size: cube.uv_sizes?.down ?? cube.uv_sizes?.["*"] ?? [cube.w, cube.d]
 				},
-				"up": {
-					"uv": cube.uv?.up ?? cube.uv?.["*"] ?? upUvOffset,
-					"uv_size": cube.uv_sizes?.up ?? cube.uv_sizes?.["*"] ?? [cube.w, cube.d]
+				up: {
+					uv: cube.uv?.up ?? cube.uv?.["*"] ?? upUvOffset,
+					uv_size: cube.uv_sizes?.up ?? cube.uv_sizes?.["*"] ?? [cube.w, cube.d]
 				},
-				"north": {
-					"uv": cube.uv?.north ?? cube.uv?.side ?? cube.uv?.["*"] ?? northUvOffset,
-					"uv_size": cube.uv_sizes?.north ?? cube.uv_sizes?.side ?? cube.uv_sizes?.["*"] ?? [cube.w, cube.h]
+				north: {
+					uv: cube.uv?.north ?? cube.uv?.side ?? cube.uv?.["*"] ?? northUvOffset,
+					uv_size: cube.uv_sizes?.north ?? cube.uv_sizes?.side ?? cube.uv_sizes?.["*"] ?? [cube.w, cube.h]
 				},
-				"south": {
-					"uv": cube.uv?.south ?? cube.uv?.side ?? cube.uv?.["*"] ?? southUvOffset,
-					"uv_size": cube.uv_sizes?.south ?? cube.uv_sizes?.side ?? cube.uv_sizes?.["*"] ?? [cube.w, cube.h]
+				south: {
+					uv: cube.uv?.south ?? cube.uv?.side ?? cube.uv?.["*"] ?? southUvOffset,
+					uv_size: cube.uv_sizes?.south ?? cube.uv_sizes?.side ?? cube.uv_sizes?.["*"] ?? [cube.w, cube.h]
 				}
 			};
 		}
@@ -856,17 +856,17 @@ export default class BlockGeoMaker {
 	#getVertices(cube, faceName) {
 		let { pos, size } = cube;
 		const cubeFaces = {
-			"west": tuple([[1, 1, 0], [1, 1, 1], [1, 0, 0], [1, 0, 1]]),
-			"east": tuple([[0, 1, 1], [0, 1, 0], [0, 0, 1], [0, 0, 0]]),
-			"down": tuple([[0, 0, 0], [1, 0, 0], [0, 0, 1], [1, 0, 1]]),
-			"up": tuple([[0, 1, 1], [1, 1, 1], [0, 1, 0], [1, 1, 0]]),
-			"north": tuple([[0, 1, 0], [1, 1, 0], [0, 0, 0], [1, 0, 0]]),
-			"south": tuple([[1, 1, 1], [0, 1, 1], [1, 0, 1], [0, 0, 1]])
+			west: tuple([[1, 1, 0], [1, 1, 1], [1, 0, 0], [1, 0, 1]]),
+			east: tuple([[0, 1, 1], [0, 1, 0], [0, 0, 1], [0, 0, 0]]),
+			down: tuple([[0, 0, 0], [1, 0, 0], [0, 0, 1], [1, 0, 1]]),
+			up: tuple([[0, 1, 1], [1, 1, 1], [0, 1, 0], [1, 1, 0]]),
+			north: tuple([[0, 1, 0], [1, 1, 0], [0, 0, 0], [1, 0, 0]]),
+			south: tuple([[1, 1, 1], [0, 1, 1], [1, 0, 1], [0, 0, 1]])
 		};
 		return cubeFaces[faceName].map(([a, b, c], i) => {
 			return {
-				"pos": tuple([pos[0] + size[0] * a, pos[1] + size[1] * b, pos[2] + size[2] * c]),
-				"corner": i
+				pos: tuple([pos[0] + size[0] * a, pos[1] + size[1] * b, pos[2] + size[2] * c]),
+				corner: i
 			};
 		});
 	}
@@ -876,8 +876,8 @@ export default class BlockGeoMaker {
 	 * @returns {Vec3}
 	 */
 	#getSurfaceNormal(vertices) {
-		let dir1 = vec3.sub(vertices[1]["pos"], vertices[0]["pos"]);
-		let dir2 = vec3.sub(vertices[2]["pos"], vertices[0]["pos"]);
+		let dir1 = vec3.sub(vertices[1].pos, vertices[0].pos);
+		let dir2 = vec3.sub(vertices[2].pos, vertices[0].pos);
 		let normal = vec3.normalize(vec3.crossProduct(dir1, dir2));
 		return normal;
 	}
@@ -926,9 +926,9 @@ export default class BlockGeoMaker {
 	#scaleFaces(faces, centerOfMass) {
 		return faces.map(face => {
 			for(let i = 0; i < 4; i++) {
-				let v = face["vertices"][i];
-				let translated = vec3.add(v["pos"], vec3.mul(centerOfMass, -1));
-				v["pos"] = vec3.add(vec3.mul(translated, this.config.SCALE), centerOfMass); // I long for the day when ECMAScript has native vector types like in GLSL. This is equivalent to (v["pos"] - centerOfMass) * scale + centerOfMass
+				let v = face.vertices[i];
+				let translated = vec3.add(v.pos, vec3.mul(centerOfMass, -1));
+				v.pos = vec3.add(vec3.mul(translated, this.config.SCALE), centerOfMass); // I long for the day when ECMAScript has native vector types like in GLSL. This is equivalent to (v.pos - centerOfMass) * scale + centerOfMass
 			}
 			return face;
 		});
@@ -1118,17 +1118,17 @@ export default class BlockGeoMaker {
 	static resolveTemplateFaceUvs(faces, textureAtlas) {
 		return faces.map(face => {
 			let imageUv = textureAtlas.uvs[face["textureRefI"]];
-			face["vertices"].sort((a, b) => a["corner"] - b["corner"]);
+			face.vertices.sort((a, b) => a.corner - b.corner);
 			if("crop" in imageUv) {
-				this.#applyFaceCropping(face, imageUv["crop"]);
+				this.#applyFaceCropping(face, imageUv.crop);
 			}
-			let vertices = tuple([face["vertices"][0], face["vertices"][1], face["vertices"][3], face["vertices"][2]]); // go around in a square
+			let vertices = tuple([face.vertices[0], face.vertices[1], face.vertices[3], face.vertices[2]]); // go around in a square
 			return {
-				"normal": face["normal"],
-				"transparency": imageUv["transparency"],
-				"vertices": vertices.map(vertex => ({
-					"pos": vertex["pos"],
-					"uv": tuple([+((imageUv["uv"][0] + imageUv["uv_size"][0] * (vertex["corner"] & 1)) / textureAtlas.textureWidth).toFixed(4), +(1 - (imageUv["uv"][1] + imageUv["uv_size"][1] * (vertex["corner"] >> 1)) / textureAtlas.textureHeight).toFixed(4)])
+				normal: face.normal,
+				transparency: imageUv.transparency,
+				vertices: vertices.map(vertex => ({
+					pos: vertex.pos,
+					uv: tuple([+((imageUv.uv[0] + imageUv.uv_size[0] * (vertex.corner & 1)) / textureAtlas.textureWidth).toFixed(4), +(1 - (imageUv.uv[1] + imageUv.uv_size[1] * (vertex.corner >> 1)) / textureAtlas.textureHeight).toFixed(4)])
 				}))
 			};
 		});
@@ -1139,22 +1139,22 @@ export default class BlockGeoMaker {
 	 * @param {Rectangle} crop
 	 */
 	static #applyFaceCropping(face, crop) {
-		let v0 = face["vertices"][0];
-		let v1 = face["vertices"][1];
-		let v2 = face["vertices"][2];
-		let v3 = face["vertices"][3];
-		let v0pos = v0["pos"];
-		let v1pos = v1["pos"];
-		let v2pos = v2["pos"];
-		let v3pos = v3["pos"];
+		let v0 = face.vertices[0];
+		let v1 = face.vertices[1];
+		let v2 = face.vertices[2];
+		let v3 = face.vertices[3];
+		let v0pos = v0.pos;
+		let v1pos = v1.pos;
+		let v2pos = v2.pos;
+		let v3pos = v3.pos;
 		let textureXDir = vec3.sub(v1pos, v0pos);
 		let textureYDir = vec3.sub(v2pos, v0pos);
-		let cropXRem = 1 - crop["w"] - crop["x"]; // remaining horizontal space on the other side of the cropped region
-		let cropYRem = 1 - crop["h"] - crop["y"];
-		v0["pos"] = vec3.add(v0pos, [textureXDir[0] * crop["x"] + textureYDir[0] * crop["y"], textureXDir[1] * crop["x"] + textureYDir[1] * crop["y"], textureXDir[2] * crop["x"] + textureYDir[2] * crop["y"]]);
-		v1["pos"] = vec3.add(v1pos, [-textureXDir[0] * cropXRem + textureYDir[0] * crop["y"], -textureXDir[1] * cropXRem + textureYDir[1] * crop["y"], -textureXDir[2] * cropXRem + textureYDir[2] * crop["y"]]);
-		v2["pos"] = vec3.add(v2pos, [textureXDir[0] * crop["x"] - textureYDir[0] * cropYRem, textureXDir[1] * crop["x"] - textureYDir[1] * cropYRem, textureXDir[2] * crop["x"] - textureYDir[2] * cropYRem]);
-		v3["pos"] = vec3.add(v3pos, [-textureXDir[0] * cropXRem - textureYDir[0] * cropYRem, -textureXDir[1] * cropXRem - textureYDir[1] * cropYRem, -textureXDir[2] * cropXRem - textureYDir[2] * cropYRem]);
+		let cropXRem = 1 - crop.w - crop.x; // remaining horizontal space on the other side of the cropped region
+		let cropYRem = 1 - crop.h - crop.y;
+		v0.pos = vec3.add(v0pos, [textureXDir[0] * crop.x + textureYDir[0] * crop.y, textureXDir[1] * crop.x + textureYDir[1] * crop.y, textureXDir[2] * crop.x + textureYDir[2] * crop.y]);
+		v1.pos = vec3.add(v1pos, [-textureXDir[0] * cropXRem + textureYDir[0] * crop.y, -textureXDir[1] * cropXRem + textureYDir[1] * crop.y, -textureXDir[2] * cropXRem + textureYDir[2] * crop.y]);
+		v2.pos = vec3.add(v2pos, [textureXDir[0] * crop.x - textureYDir[0] * cropYRem, textureXDir[1] * crop.x - textureYDir[1] * cropYRem, textureXDir[2] * crop.x - textureYDir[2] * cropYRem]);
+		v3.pos = vec3.add(v3pos, [-textureXDir[0] * cropXRem - textureYDir[0] * cropYRem, -textureXDir[1] * cropXRem - textureYDir[1] * cropYRem, -textureXDir[2] * cropXRem - textureYDir[2] * cropYRem]);
 	}
 }
 

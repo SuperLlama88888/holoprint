@@ -34,13 +34,13 @@ export default class SupabaseLogger extends AsyncFactory {
 		console.debug(`Finished hashing structure files! Together: ${combinedFileHash}, individually:`, shortFileHashes);
 		
 		let res = await this.supabase.rpc("record_structure_usage_v2", {
-			"file_hashes": shortFileHashes,
-			"combined_file_hash": combinedFileHash
+			file_hashes: shortFileHashes,
+			combined_file_hash: combinedFileHash
 		});
-		if(res["status"] == 200) {
-			console.info(`Successfully logged structure hash to database!\nThis is the ${addOrdinalSuffix(res["data"])} time this structure has been used.`);
+		if(res.status == 200) {
+			console.info(`Successfully logged structure hash to database!\nThis is the ${addOrdinalSuffix(res.data)} time this structure has been used.`);
 		} else {
-			throw new Error(`SupabaseLogger error ${res["error"]["code"]}: ${res["error"]["message"]}`);
+			throw new Error(`SupabaseLogger error ${res.error.code}: ${res.error.message}`);
 		}
 	}
 }

@@ -453,11 +453,11 @@ window[onEvent]("load", () => { // shadow DOMs aren't populated in the DOMConten
  */
 async function handleInputFiles(files) {
 	let {
-		"mcstructure": structureFiles = [],
-		"mcworld": worldFiles = [],
-		"mctemplate": templateFiles = [],
-		"zip": zipFiles = [],
-		"mcpack": resourcePackFiles = []
+		mcstructure: structureFiles = [],
+		mcworld: worldFiles = [],
+		mctemplate: templateFiles = [],
+		zip: zipFiles = [],
+		mcpack: resourcePackFiles = []
 	} = groupByFileExtension(files);
 	let allWorldFiles = [...worldFiles, ...templateFiles, ...zipFiles];
 	

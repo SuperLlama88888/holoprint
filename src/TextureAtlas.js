@@ -88,19 +88,19 @@ export default class TextureAtlas {
 			let tintLikePng = false;
 			let opacity = 1;
 			if("texture_path_override" in textureRef) {
-				texturePath = textureRef["texture_path_override"];
+				texturePath = textureRef.texture_path_override;
 			} else {
 				let terrainTextureKey = this.#getTerrainTextureKeyFromTextureReference(textureRef);
-				let blockName = textureRef["block_name"];
-				let variant = textureRef["variant"];
+				let blockName = textureRef.block_name;
+				let variant = textureRef.variant;
 				let texturePathAndTint = this.#getTexturePathAndTint(terrainTextureKey, variant);
-				texturePath = texturePathAndTint["texturePath"];
+				texturePath = texturePathAndTint.texturePath;
 				if(tint == undefined && "tint" in texturePathAndTint) {
 					tint = hexColorToClampedTriplet(texturePathAndTint.tint);
 				}
 				if(!texturePath) {
-					console.error(`No texture for block ${blockName} on side ${textureRef["texture_face"]}!`);
-					texturePath = this.#getTexturePathAndTint("missing", -1)["texturePath"];
+					console.error(`No texture for block ${blockName} on side ${textureRef.texture_face}!`);
+					texturePath = this.#getTexturePathAndTint("missing", -1).texturePath;
 				}
 				
 				if(tint == undefined && terrainTextureKey in this.#terrainTextureTints.terrain_texture_keys) {
@@ -122,19 +122,19 @@ export default class TextureAtlas {
 				}
 			}
 			let textureFragment = {
-				"texturePath": texturePath,
-				"tint": tint,
-				"tint_like_png": tintLikePng,
-				"opacity": opacity,
-				"uv": textureRef["uv"],
-				"uv_size": textureRef["uv_size"]
+				texturePath,
+				tint,
+				tint_like_png: tintLikePng,
+				opacity,
+				uv: textureRef.uv,
+				uv_size: textureRef.uv_size
 			};
 			allTextureFragments.add(textureFragment);
 			textureImageIndices.push(allTextureFragments.indexOf(textureFragment));
 			// console.table({
-			// 	"index": tintedTexturePaths.indexOf(pathAndTint),
-			// 	"uv": textureRef["uv"],
-			// 	"uv_size": textureRef["uv_size"]
+			// 	index: tintedTexturePaths.indexOf(pathAndTint),
+			// 	uv: textureRef.uv,
+			// 	uv_size: textureRef.uv_size
 			// })
 		});
 		
@@ -157,26 +157,26 @@ export default class TextureAtlas {
 	 */
 	#getTerrainTextureKeyFromTextureReference(textureRef) {
 		if("terrain_texture_override" in textureRef) {
-			return textureRef["terrain_texture_override"];
+			return textureRef.terrain_texture_override;
 		}
-		let blockName = textureRef["block_name"];
+		let blockName = textureRef.block_name;
 		if(!(blockName in this.blocksDotJson) && blockName in this.#blocksDotJsonPatches) {
 			blockName = this.#blocksDotJsonPatches[blockName];
 			if(blockName?.includes(".")) {
 				// This is only from this.blocksDotJsonPatches to indicate patches
-				textureRef["variant"] = +blockName.split(".")[1]; // Hacky but that's a future me problem
+				textureRef.variant = +blockName.split(".")[1]; // Hacky but that's a future me problem
 				blockName = blockName.split(".")[0];
 			}
 		}
 		let blockEntry = this.blocksDotJson[blockName];
 		let terrainTextureKeys;
 		if(!blockEntry) {
-			// console.log(textureRef, blockName, textureRef["block_name"]);
+			// console.log(textureRef, blockName, textureRef.block_name);
 			console.error(`No blocks.json entry for ${blockName}`);
 			return "missing";
 		}
 		
-		let textureFace = textureRef["texture_face"];
+		let textureFace = textureRef.texture_face;
 		if(textureFace.startsWith("carried")) {
 			if("carried_textures" in blockEntry) {
 				if(textureFace == "carried") {
@@ -262,8 +262,8 @@ export default class TextureAtlas {
 			return { texturePath };
 		} else {
 			return {
-				"texturePath": texturePath["path"],
-				"tint": texturePath["overlay_color"] ?? texturePath["tint_color"] // grass uses overlay_color, lilypads use tint_color :/
+				texturePath: texturePath["path"],
+				tint: texturePath["overlay_color"] ?? texturePath["tint_color"] // grass uses overlay_color, lilypads use tint_color :/
 			};
 		}
 	}
@@ -329,17 +329,17 @@ export default class TextureAtlas {
 			if(Number.isInteger(sourceX) && Number.isInteger(sourceY) && Number.isInteger(w) && Number.isInteger(h)) { // textures with non-integral dimensions are wacky so I'm just going to say they can't be cropped... there aren't many blocks like this fortunately
 				let old = { sourceX, sourceY, w, h };
 				let extremePixels = this.#findMostExtremePixels(imageData, sourceX, sourceY, w, h);
-				sourceX = extremePixels["minX"];
-				w = extremePixels["maxX"] - extremePixels["minX"] + 1;
-				sourceY = extremePixels["minY"];
-				h = extremePixels["maxY"] - extremePixels["minY"] + 1;
+				sourceX = extremePixels.minX;
+				w = extremePixels.maxX - extremePixels.minX + 1;
+				sourceY = extremePixels.minY;
+				h = extremePixels.maxY - extremePixels.minY + 1;
 				crop = {
-					"x": (sourceX - old.sourceX) / old.w,
-					"y": (sourceY - old.sourceY) / old.h,
-					"w": w / old.w,
-					"h": h / old.h
+					x: (sourceX - old.sourceX) / old.w,
+					y: (sourceY - old.sourceY) / old.h,
+					w: w / old.w,
+					h: h / old.h
 				};
-				if(crop["x"] != 0 || crop["y"] != 0 || crop["w"] != 1 || crop["h"] != 1) {
+				if(crop.x != 0 || crop.y != 0 || crop.w != 1 || crop.h != 1) {
 					console.debug(`Cropped part of image ${texturePath} to`, crop);
 				} else {
 					crop = null;
@@ -347,7 +347,7 @@ export default class TextureAtlas {
 			}
 			let imageFragment = { imageData, sourceX, sourceY, w, h };
 			if(crop) {
-				imageFragment["crop"] = crop;
+				imageFragment.crop = crop;
 			}
 			return imageFragment;
 		}));
@@ -370,32 +370,32 @@ export default class TextureAtlas {
 				if(oldFrag.w == imageFragment.w && oldFrag.h == imageFragment.h) {
 					if(this.#checkImageDataEquivalence(oldFrag.imageData, imageFragment.imageData, oldFrag.sourceX, oldFrag.sourceY, imageFragment.sourceX, imageFragment.sourceY, imageFragment.w, imageFragment.h)) {
 						identicalFragmentIndices.set(i, oldI);
-						imageFragment["w"] = 0; // prevent potpack from giving space to them (these fragments aren't used anyway)
-						imageFragment["h"] = 0;
+						imageFragment.w = 0; // prevent potpack from giving space to them (these fragments aren't used anyway)
+						imageFragment.h = 0;
 						return;
 					}
 					console.debug("Extremely rare hash collision! 0.000000023283% chance!");
 				}
 			}
 			hashBuckets.set(pixelsHash, [imageFragment, i]);
-			imageFragment["actualSize"] = [imageFragment["w"], imageFragment["h"]]; // since we're modifying w/h, we need to keep references to everything before.
+			imageFragment["actualSize"] = [imageFragment.w, imageFragment.h]; // since we're modifying w/h, we need to keep references to everything before.
 			imageFragment["offset"] = [0, 0];
 			// fractional dimensions don't work with js canvas, so we need to extract the full part of the texture we need, but keep the uv positions fractional
-			if(!Number.isInteger(imageFragment["sourceX"])) {
-				imageFragment["offset"][0] = imageFragment["sourceX"] % 1;
-				imageFragment["w"] += imageFragment["offset"][0];
-				imageFragment["sourceX"] = floor(imageFragment["sourceX"]);
+			if(!Number.isInteger(imageFragment.sourceX)) {
+				imageFragment["offset"][0] = imageFragment.sourceX % 1;
+				imageFragment.w += imageFragment["offset"][0];
+				imageFragment.sourceX = floor(imageFragment.sourceX);
 			}
-			if(!Number.isInteger(imageFragment["sourceY"])) {
-				imageFragment["offset"][1] = imageFragment["sourceY"] % 1;
-				imageFragment["h"] += imageFragment["offset"][1];
-				imageFragment["sourceY"] = floor(imageFragment["sourceY"]);
+			if(!Number.isInteger(imageFragment.sourceY)) {
+				imageFragment["offset"][1] = imageFragment.sourceY % 1;
+				imageFragment.h += imageFragment["offset"][1];
+				imageFragment.sourceY = floor(imageFragment.sourceY);
 			}
-			if(!Number.isInteger(imageFragment["w"])) {
-				imageFragment["w"] = ceil(imageFragment["w"]);
+			if(!Number.isInteger(imageFragment.w)) {
+				imageFragment.w = ceil(imageFragment.w);
 			}
-			if(!Number.isInteger(imageFragment["h"])) {
-				imageFragment["h"] = ceil(imageFragment["h"]);
+			if(!Number.isInteger(imageFragment.h)) {
+				imageFragment.h = ceil(imageFragment.h);
 			}
 		});
 		let imageFragments2 = imageFragments.map(imageFragment => ({ ...imageFragment }));
@@ -430,19 +430,19 @@ export default class TextureAtlas {
 			// console.table({sourcePos,textureSize,destPos})
 			ctx.putImageData(imageFragment.imageData, ...vec2.sub(destPos, sourcePos), ...sourcePos, ...textureSize); // when drawing image data, the source position and size crop it but don't move it back to the original destination position, meaning it must be offset.
 			let imageUv = {
-				"uv": vec2.add(destPos, imageFragment["offset"]),
-				"uv_size": imageFragment["actualSize"],
-				"transparency": NaN
+				uv: vec2.add(destPos, imageFragment["offset"]),
+				uv_size: imageFragment["actualSize"],
+				transparency: NaN
 			};
 			if("crop" in imageFragment) {
-				imageUv["crop"] = imageFragment["crop"];
+				imageUv.crop = imageFragment.crop;
 			}
 			imageUvs.push(imageUv);
 		});
 		let canImageData = can.getContext("2d").getImageData(0, 0, can.width, can.height);
 		let transparencies = this.#getImageFragmentTransparencies(canImageData, packedImageFragments);
 		transparencies.forEach((transparency, i) => {
-			imageUvs[i]["transparency"] = transparency;
+			imageUvs[i].transparency = transparency;
 		});
 		
 		// ctx = can.getContext("2d");

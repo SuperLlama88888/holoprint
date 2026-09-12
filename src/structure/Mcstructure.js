@@ -126,10 +126,10 @@ export default class Mcstructure extends AsyncFactory {
 		let offendingStructureName = removeFileExtension(structureFileName);
 		let errorMessage = `Structure ${offendingStructureName} is not a valid .mcstructure file!`;
 		const otherNBTFileTypes = {
-			"MinecraftDataVersion": "litematic",
-			"TileEntities": "schematic",
-			"Metadata": "schem", // Sponge format
-			"DataVersion": "nbt"
+			MinecraftDataVersion: "litematic",
+			TileEntities: "schematic",
+			Metadata: "schem", // Sponge format
+			DataVersion: "nbt"
 		};
 		let probableSourceFileExtension = Object.entries(otherNBTFileTypes).find(([key]) => key in nbt)?.[1];
 		if(probableSourceFileExtension) {
