@@ -41,20 +41,20 @@ export default class MaterialList {
 	constructor(blockMetadata, itemMetadata, materialListMappings, translations) {
 		this.#blockMetadata = new Map(blockMetadata["data_items"].map(block => [block["name"], block]));
 		this.#itemMetadata = new Map(itemMetadata["data_items"].map(item => [item["name"], item]));
-		this.#ignoredBlocks = materialListMappings["ignored_blocks"];
-		this.#blockToItemMappings = new ReplacingPatternMap(Object.entries(materialListMappings["block_to_item_mappings"]));
-		this.#itemCountMultipliers = new PatternMap(Object.entries(materialListMappings["item_count_multipliers"]).map(([key, value]) => {
+		this.#ignoredBlocks = materialListMappings.ignored_blocks;
+		this.#blockToItemMappings = new ReplacingPatternMap(Object.entries(materialListMappings.block_to_item_mappings));
+		this.#itemCountMultipliers = new PatternMap(Object.entries(materialListMappings.item_count_multipliers).map(([key, value]) => {
 			if(typeof value == "number") {
 				return [key, tuple([value, ""])];
 			} else {
-				return [key, tuple([value["multiplier"], value["remove"]])];
+				return [key, tuple([value.multiplier, value.remove])];
 			}
 		}));
-		this.#specialBlockEntityProperties = materialListMappings["special_block_entity_properties"];
-		let serializationIdPatches = Object.entries(materialListMappings["serialization_id_patches"]);
+		this.#specialBlockEntityProperties = materialListMappings.special_block_entity_properties;
+		let serializationIdPatches = Object.entries(materialListMappings.serialization_id_patches);
 		this.#serializationIdPatches = new ReplacingPatternMap(serializationIdPatches);
-		this.#blocksMissingSerializationIds = materialListMappings["blocks_missing_serialization_ids"];
-		this.#translationPatches = materialListMappings["translation_patches"];
+		this.#blocksMissingSerializationIds = materialListMappings.blocks_missing_serialization_ids;
+		this.#translationPatches = materialListMappings.translation_patches;
 		
 		let missingItemId = blockMetadata["data_items"].find(block => block.name == "minecraft:reserved6")?.["raw_id"] ?? 0;
 		this.#missingItemAux = missingItemId * 65536;
@@ -83,7 +83,7 @@ export default class MaterialList {
 			}
 		}
 		if(itemName in this.#specialBlockEntityProperties && typeof block != "string") {
-			let blockEntityProperty = this.#specialBlockEntityProperties[itemName]["prop"];
+			let blockEntityProperty = this.#specialBlockEntityProperties[itemName].prop;
 			if(blockEntityProperty in (block.blockEntityData ?? {})) {
 				itemName += `+${block.blockEntityData[blockEntityProperty]}`;
 			} else {
@@ -117,7 +117,7 @@ export default class MaterialList {
 				let match = itemName.match(/^([^+]+)\+(\d+)$/);
 				itemName = match[1];
 				blockEntityPropertyValue = +match[2];
-				serializationId = this.#specialBlockEntityProperties[itemName]["serialization_ids"]?.[blockEntityPropertyValue];
+				serializationId = this.#specialBlockEntityProperties[itemName].serialization_ids?.[blockEntityPropertyValue];
 			}
 			// try item translation key; if that doesn't work, try block translation key
 			serializationId ??= this.#blocksMissingSerializationIds[itemName] ?? this.#findItemSerializationId(itemName);
