@@ -1,5 +1,5 @@
 import BlockUpdater from "../BlockUpdater.js";
-import { AsyncFactory, JSONMap, MonotonicBitset, removeFileExtension, tuple, UserError } from "../utils.js";
+import { AsyncFactory, JSONMap, MonotonicBitset, removeFileExtension, tuple, UserError, vec3 } from "../utils.js";
 
 const IGNORED_BLOCK_ENTITIES = new Set(["Beacon", "Beehive", "Bell", "BrewingStand", "ChiseledBookshelf", "CommandBlock", "Comparator", "Conduit", "CreakingHeart", "EnchantTable", "EndGateway", "JigsawBlock", "Lodestone", "SculkCatalyst", "SculkShrieker", "SculkSensor", "CalibratedSculkSensor", "StructureBlock", "BrushableBlock", "TrialSpawner", "Vault"]);
 
@@ -143,6 +143,9 @@ export default class Mcstructure extends AsyncFactory {
 	 * @returns {number}
 	 */
 	#getStructureIndexFromCoordinates([x, y, z]) {
+		if(x < 0 || x >= this.width || y < 0 || y >= this.height || z < 0 || z >= this.depth) {
+			throw new RangeError(`Position ${vec3.stringify([x, y, z])} is out of bounds of the structure! Must be within (0, 0, 0) and ${vec3.stringify(this.size)}.`);
+		}
 		return (x * this.height + y) * this.depth + z;
 	}
 	/**
