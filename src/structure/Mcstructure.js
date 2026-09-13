@@ -1,5 +1,5 @@
 import BlockUpdater from "../BlockUpdater.js";
-import { AsyncFactory, JSONMap, MonotonicBitset, removeFileExtension, tuple, UserError } from "../utils.js";
+import { AsyncFactory, JSONMap, MonotonicBitset, removeFileExtension, tuple, UserError, vec3 } from "../utils.js";
 
 const IGNORED_BLOCK_ENTITIES = new Set(["Beacon", "Beehive", "Bell", "BrewingStand", "ChiseledBookshelf", "CommandBlock", "Comparator", "Conduit", "CreakingHeart", "EnchantTable", "EndGateway", "JigsawBlock", "Lodestone", "SculkCatalyst", "SculkShrieker", "SculkSensor", "CalibratedSculkSensor", "StructureBlock", "BrushableBlock", "TrialSpawner", "Vault"]);
 
@@ -84,6 +84,9 @@ export default class Mcstructure extends AsyncFactory {
 			return -1;
 		}
 		let index = this.#getStructureIndexFromCoordinates(coords);
+		if(index < 0 || index >= this.#blockIndices[layer].length) {
+			throw new RangeError(`Cannot get palette index of block at ${vec3.stringify(coords)}; out of range!`);
+		}
 		return this.#blockIndices[layer][index];
 	}
 	/**

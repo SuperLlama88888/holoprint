@@ -48,5 +48,12 @@ export function toFixed(vec, decimals) {
 	let power = 10 ** decimals;
 	return [round(vec[0] * power) / power, round(vec[1] * power) / power, round(vec[2] * power) / power];
 }
+/**
+ * @param {Vec3} vec
+ * @returns {string}
+ */
+export function stringify(vec) {
+	return `(${vec[0]}, ${vec[1]}, ${vec[2]})`;
+}
 
 /** @import { Vec3 } from "../common.types.ts" */
