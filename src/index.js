@@ -597,15 +597,16 @@ async function temporarilyChangeText(el, translationKey, duration = 2000) {
  * @returns {boolean}
  */
 function validateFileInputFileTypes(fileInput) {
-	let acceptableFileExtensions = fileInput.accept.split(",");
-	let valid = Array.from(fileInput.files).every(file => acceptableFileExtensions.some(fileExtension => file.name.toLowerCase().endsWith(fileExtension)));
+	let fileInputAccept = fileInput.accept.split(",").map(fileExtensionWithDot => fileExtensionWithDot.trim());
+	let acceptableFileExtensions = new Set(fileInputAccept.map(fileExtensionWithDot => fileExtensionWithDot.slice(1)));
+	let valid = Array.from(fileInput.files).every(file => acceptableFileExtensions.has(getFileExtension(file)));
 	if(valid) {
 		fileInput.setCustomValidity("");
 	} else {
 		if(languageSelector) {
-			fileInput.setCustomValidity(translateCurrentLanguage("upload.error.wrong_file_type").replace("{FILE_TYPE}", joinOr(acceptableFileExtensions, languageSelector.value)));
+			fileInput.setCustomValidity(translateCurrentLanguage("upload.error.wrong_file_type").replace("{FILE_TYPE}", joinOr(fileInputAccept, languageSelector.value)));
 		} else {
-			fileInput.setCustomValidity(`Please upload only ${joinOr(acceptableFileExtensions)} files.`);
+			fileInput.setCustomValidity(`Please upload only ${joinOr(fileInputAccept)} files.`);
 		}
 	}
 	return valid;
