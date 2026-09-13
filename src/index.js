@@ -1,5 +1,6 @@
 import { extractStructureFilesFromMcworld } from "mcbe-leveldb-reader";
 import { selectEl, downloadFile, sleep, selectEls, loadTranslationLanguage, translate, getStackTrace, random, UserError, joinOr, conditionallyGroup, groupByFileExtension, addFilesToFileInput, setFileInputFiles, dispatchInputEvents, getAllChildren, jsonc, toImage, removeFalsies, clearCacheStorage, onEvent, onEventAndNow, cast, clearFileInput, html, removeFileExtension, tuple, assertAs, getFileExtension } from "./utils.js";
+import { readNbtFromFile } from "./structure/structureHelpers.js";
 import * as HoloPrint from "./HoloPrint.js";
 import SupabaseLogger from "./SupabaseLogger.js";
 
@@ -124,6 +125,7 @@ document[onEvent]("DOMContentLoaded", () => {
 		worldExtractionMessage.scrollIntoView({
 			block: "center"
 		});
+		/** @type {Map<string, File>} */
 		let structureFiles;
 		try {
 			structureFiles = await extractStructureFilesFromMcworld(worldFile);
@@ -252,10 +254,16 @@ document[onEvent]("DOMContentLoaded", () => {
 		button[onEvent]("click", async () => {
 			if(i == 0) { // get global coordinates button
 				let structureFiles = Array.from(structureFilesList.files);
-				let mcstructures = await Promise.all(structureFiles.map(HoloPrint.readStructureNBT));
-				let worldOrigins = mcstructures.map(mcstructure => mcstructure["structure_world_origin"]);
+				/** @type {McstructureNbt<1 | 2>[]} */
+				// @ts-expect-error
+				let mcstructures = await Promise.all(structureFiles.map(readNbtFromFile));
+				let worldOrigins = mcstructures.map(mcstructure => mcstructure.structure_world_origin);
+				/** @type {Vec3Input[]} */
 				let inputs = coordinateLockCoordsCont[selectEls]("vec-3-input");
 				worldOrigins.forEach((worldOrigin, i) => {
+					if(!worldOrigin) {
+						return;
+					}
 					inputs[i].xyz = worldOrigin;
 				});
 			} else {
@@ -316,11 +324,11 @@ document[onEvent]("DOMContentLoaded", () => {
 		label.innerHTML = `<span data-translate="${playerControlTranslationKey}">...</span>:`;
 		let input = document.createElement("item-criteria-input");
 		input.setAttribute("name", `control.${control}`);
-		if(itemCriteria["names"].length > 0) {
-			input.setAttribute("value-items", itemCriteria["names"].join(","));
+		if(itemCriteria.names.length > 0) {
+			input.setAttribute("value-items", itemCriteria.names.join(","));
 		}
-		if(itemCriteria["tags"].length > 0) {
-			input.setAttribute("value-tags", itemCriteria["tags"].join(","));
+		if(itemCriteria.tags.length > 0) {
+			input.setAttribute("value-tags", itemCriteria.tags.join(","));
 		}
 		label.appendChild(input);
 		playerControlsInputCont.appendChild(label);
@@ -445,11 +453,11 @@ window[onEvent]("load", () => { // shadow DOMs aren't populated in the DOMConten
  */
 async function handleInputFiles(files) {
 	let {
-		"mcstructure": structureFiles = [],
-		"mcworld": worldFiles = [],
-		"mctemplate": templateFiles = [],
-		"zip": zipFiles = [],
-		"mcpack": resourcePackFiles = []
+		mcstructure: structureFiles = [],
+		mcworld: worldFiles = [],
+		mctemplate: templateFiles = [],
+		zip: zipFiles = [],
+		mcpack: resourcePackFiles = []
 	} = groupByFileExtension(files);
 	let allWorldFiles = [...worldFiles, ...templateFiles, ...zipFiles];
 	
@@ -589,15 +597,16 @@ async function temporarilyChangeText(el, translationKey, duration = 2000) {
  * @returns {boolean}
  */
 function validateFileInputFileTypes(fileInput) {
-	let acceptableFileExtensions = fileInput.accept.split(",");
-	let valid = Array.from(fileInput.files).every(file => acceptableFileExtensions.some(fileExtension => file.name.toLowerCase().endsWith(fileExtension)));
+	let fileInputAccept = fileInput.accept.split(",").map(fileExtensionWithDot => fileExtensionWithDot.trim());
+	let acceptableFileExtensions = new Set(fileInputAccept.map(fileExtensionWithDot => fileExtensionWithDot.slice(1)));
+	let valid = Array.from(fileInput.files).every(file => acceptableFileExtensions.has(getFileExtension(file)));
 	if(valid) {
 		fileInput.setCustomValidity("");
 	} else {
 		if(languageSelector) {
-			fileInput.setCustomValidity(translateCurrentLanguage("upload.error.wrong_file_type").replace("{FILE_TYPE}", joinOr(acceptableFileExtensions, languageSelector.value)));
+			fileInput.setCustomValidity(translateCurrentLanguage("upload.error.wrong_file_type").replace("{FILE_TYPE}", joinOr(fileInputAccept, languageSelector.value)));
 		} else {
-			fileInput.setCustomValidity(`Please upload only ${joinOr(acceptableFileExtensions)} files.`);
+			fileInput.setCustomValidity(`Please upload only ${joinOr(fileInputAccept)} files.`);
 		}
 	}
 	return valid;
@@ -722,3 +731,4 @@ async function makePack(structureFiles, localResourcePacks) {
 }
 
 /** @import { HoloPrintConfig, Vec3 } from "./common.types.ts" */
+/** @import { McstructureNbt } from "./structure/Mcstructure.types.ts" */

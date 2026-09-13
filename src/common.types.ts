@@ -73,7 +73,7 @@ export type Block = {
 	/** Block states */
 	states?: Record<string, number | string>;
 	/** Block entity data */
-	block_entity_data?: object;
+	blockEntityData?: object;
 };
 export type ItemCriteria = {
 	/** Item names the matching item could have. The `minecraft:` namespace will be used if no namespace is specified. */

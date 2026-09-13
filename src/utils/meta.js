@@ -127,8 +127,8 @@ export function repeatedlyApplyEndofunction(value, func, maxRepetitions = 100) {
 
 /**
  * @template {string | number | boolean} P
- * @template R
- * @template {(x: P) => R} F
+ * @template {(x: P) => any} F
+ * @template {ReturnType<F>} R
  * @param {F} func
  * @param {(x: Parameters<F>[0]) => boolean} conditionFunc
  * @param {(x: R) => R} [preReturnFunc]
@@ -190,10 +190,14 @@ export class AsyncFactory {
 	static async new(...params) {
 		let classes = getClassInheritance(this);
 		classes.forEach(c => AsyncFactory.#allowedConstructors.add(c));
-		let instance = new this(...params);
-		classes.forEach(c => AsyncFactory.#allowedConstructors.delete(c));
-		await instance.init();
-		return instance;
+		try {
+			let instance = new this(...params);
+			classes.forEach(c => AsyncFactory.#allowedConstructors.delete(c));
+			await instance.init();
+			return instance;
+		} finally {
+			classes.forEach(c => AsyncFactory.#allowedConstructors.delete(c));
+		}
 	}
 }
 

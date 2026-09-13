@@ -25,7 +25,7 @@ testOnSourceCode(async page => {
 		]);
 		let blockNames = [];
 		blockMetadata["data_items"].forEach(block => {
-			let blockName = block["name"].replace(/^minecraft:/, "");
+			let blockName = block.name.replace(/^minecraft:/, "");
 			if(["hard_", "element_", "colored_torch_"].some(prefix => blockName.startsWith(prefix)) || ["chemical_heat", "compound_creator", "lab_table", "material_reducer", "underwater_torch"].includes(blockName)) { // chemistry features
 				return;
 			}

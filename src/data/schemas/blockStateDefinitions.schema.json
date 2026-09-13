@@ -7,7 +7,7 @@
 		"$schema": {
 			"type": "string"
 		},
-		"texture_variants": {
+		"textureVariants": {
 			"description": "Texture-variating block state definitions.",
 			"type": "object",
 			"properties": {
@@ -15,7 +15,7 @@
 					"description": "Texture-variating block state definitions for all blocks.",
 					"$ref": "#/definitions/variant"
 				},
-				"block_shapes": {
+				"blockShapes": {
 					"description": "Texture-variating block state definitions for specific block shapes.",
 					"type": "object",
 					"patternProperties": {
@@ -26,7 +26,7 @@
 					},
 					"additionalProperties": false
 				},
-				"block_names": {
+				"blockNames": {
 					"description": "Texture-variating block state definitions for specific blocks.",
 					"type": "object",
 					"patternProperties": {
@@ -52,7 +52,7 @@
 					"description": "Block state rotation definitions for all blocks.",
 					"$ref": "#/definitions/rotation"
 				},
-				"block_shapes": {
+				"blockShapes": {
 					"description": "Block state rotation definitions for specific block shapes.",
 					"type": "object",
 					"patternProperties": {
@@ -63,7 +63,7 @@
 					},
 					"additionalProperties": false
 				},
-				"block_names": {
+				"blockNames": {
 					"description": "Block state rotation definitions for specific blocks.",
 					"type": "object",
 					"patternProperties": {
@@ -82,7 +82,7 @@
 			"additionalProperties": false
 		}
 	},
-	"required": ["texture_variants", "rotations"],
+	"required": ["textureVariants", "rotations"],
 	"additionalProperties": false,
 	
 	"definitions": {

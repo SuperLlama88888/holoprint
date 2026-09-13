@@ -1,4 +1,4 @@
-import { areArraysEqual, average, ceil, fnv1a, getOffscreenCanvasContext, getStructureIndexFromCoordinates, HashMap, sqrt, stringToImageData, toBlob, tuple, vec2 } from "./utils.js";
+import { areArraysEqual, average, ceil, fnv1a, getOffscreenCanvasContext, HashMap, sqrt, stringToImageData, toBlob, tuple, vec2 } from "./utils.js";
 import WebGL2QuadRenderer from "./WebGL2QuadRenderer.js"; // dependency injection coming soon^tm
 
 /** Padding in pixels to be added around the edges of isometric diagrams. */
@@ -61,14 +61,13 @@ export default class StructureDiagramMaker {
 	/**
 	 * Makes all the diagrams (3D isometric at index 0, 2D layers at index 1+) for an array of structures.
 	 * @param {PolyMeshTemplateFaceWithUvs[][]} polyMeshTemplatePalette
-	 * @param {[Int32Array, Int32Array][]} structureIndicesByLayerByStructure
-	 * @param {I32Vec3[]} structureSizes
+	 * @param {IStructure[]} structures
 	 * @returns {Promise<{ diagrams: Blob[], indices: number[][] }>}
 	 */
-	async makeDiagramsForStructures(polyMeshTemplatePalette, structureIndicesByLayerByStructure, structureSizes) {
+	async makeDiagramsForStructures(polyMeshTemplatePalette, structures) {
 		if(!this.#renderer) {
 			let errorImage = await toBlob(stringToImageData("Couldn't create diagrams"));
-			let indices = structureSizes.map(structureSize => (new Array(structureSize[1] + 1)).fill(0));
+			let indices = structures.map(structure => (new Array(structure.height + 1)).fill(0));
 			return {
 				diagrams: [errorImage],
 				indices
@@ -84,30 +83,28 @@ export default class StructureDiagramMaker {
 		let diagramIndicesHashMap = new HashMap(indices => fnv1a(indices), areArraysEqual);
 		/** @type {number[][]} */
 		let diagramBlobIndices = [];
-		structureSizes.forEach((structureSize, structureI) => {
-			let structureIndicesByLayer = structureIndicesByLayerByStructure[structureI];
+		structures.forEach(structure => {
 			/** @type {number[]} */
 			let diagramBlobIndicesForStructure = [];
 			
 			diagramBlobIndicesForStructure.push(diagramBlobPromises.length);
-			diagramBlobPromises.push(this.#makeIsometricDiagramForStructure(isometricBlockIconPalette, structureIndicesByLayer, structureSize));
+			diagramBlobPromises.push(this.#makeIsometricDiagramForStructure(isometricBlockIconPalette, structure));
 			
 			// layer-by-layer diagrams are cached based on the hash of the palette indices on each layer. (Can't believe I had to implement a hash map myself in the big 26)
-			for(let y = 0; y < structureSize[1]; y++) {
+			for(let y = 0; y < structure.height; y++) {
 				/** @type {number[]} */
 				let indices = [];
-				for(let x = 0; x < structureSize[0]; x++) {
-					for(let z = 0; z < structureSize[2]; z++) {
-						let blockI = getStructureIndexFromCoordinates([x, y, z], structureSize);
-						indices.push(structureIndicesByLayer[0][blockI], structureIndicesByLayer[1][blockI]);
+				for(let x = 0; x < structure.width; x++) {
+					for(let z = 0; z < structure.depth; z++) {
+						indices.push(...structure.getPaletteIndicesForBothLayers([x, y, z]));
 					}
 				}
-				let layerKey = [structureSize[0], structureSize[2], ...indices];
+				let layerKey = [structure.width, structure.depth, ...indices];
 				let index = diagramIndicesHashMap.get(layerKey);
 				if(index == undefined) {
 					index = diagramBlobPromises.length;
 					diagramIndicesHashMap.set(layerKey, index);
-					diagramBlobPromises.push(this.#makeDiagramForLayer(blockIconPalette, indices, structureSize));
+					diagramBlobPromises.push(this.#makeDiagramForLayer(blockIconPalette, indices, structure));
 				}
 				diagramBlobIndicesForStructure.push(index);
 			}
@@ -206,19 +203,19 @@ export default class StructureDiagramMaker {
 	 * Stitches block icons together using the standard 2d canvas.
 	 * @param {ImageBitmap[]} blockIconPalette
 	 * @param {number[]} blockIndices
-	 * @param {I32Vec3} structureSize
+	 * @param {IStructure} structure
 	 * @returns {Promise<Blob>}
 	 */
-	async #makeDiagramForLayer(blockIconPalette, blockIndices, structureSize) {
-		let can = new OffscreenCanvas(this.size * structureSize[0], this.size * structureSize[2]);
+	async #makeDiagramForLayer(blockIconPalette, blockIndices, structure) {
+		let can = new OffscreenCanvas(this.size * structure.width, this.size * structure.depth);
 		let ctx = getOffscreenCanvasContext(can, "2d");
 		
 		try {
-			for(let x = 0; x < structureSize[0]; x++) {
-				for(let z = 0; z < structureSize[2]; z++) {
+			for(let x = 0; x < structure.width; x++) {
+				for(let z = 0; z < structure.depth; z++) {
 					// draw second layer first, so the first layer (the main layer) draws on top
 					for(let layer = 1; layer >= 0; layer--) {
-						let indexIndex = (x * structureSize[2] + z) * 2 + layer;
+						let indexIndex = (x * structure.depth + z) * 2 + layer;
 						let blockIconIndex = blockIndices[indexIndex];
 						if(blockIconIndex in blockIconPalette) {
 							// Offset by -1 * size so the 3x3 block icon (size * 3) is centered over grid cell (x, z)
@@ -238,39 +235,39 @@ export default class StructureDiagramMaker {
 	/**
 	 * Stitches 3D isometric block icons together with depth sorting to make a 3D isometric diagram for the full structure.
 	 * @param {ImageBitmap[]} isometricBlockIconPalette
-	 * @param {[Int32Array, Int32Array]} structureIndicesByLayer
-	 * @param {I32Vec3} structureSize
+	 * @param {IStructure} structure
 	 * @returns {Promise<Blob>}
 	 */
-	async #makeIsometricDiagramForStructure(isometricBlockIconPalette, structureIndicesByLayer, structureSize) {
+	async #makeIsometricDiagramForStructure(isometricBlockIconPalette, structure) {
+		let { width, height, depth } = structure;
 		// Canvas bounds fitting tightly around projected isometric structure bounds plus `ISOMETRIC_DIAGRAM_PADDING`:
-		let canWidth = ceil((structureSize[0] + structureSize[2]) * this.#isoXStep + 2 * ISOMETRIC_DIAGRAM_PADDING);
-		let canHeight = ceil((structureSize[0] + structureSize[2] - 2) * this.#isoXYZStep + (structureSize[1] + 1) * this.#isoYYStep + 2 * ISOMETRIC_DIAGRAM_PADDING);
+		let canWidth = ceil((width + depth) * this.#isoXStep + 2 * ISOMETRIC_DIAGRAM_PADDING);
+		let canHeight = ceil((width + depth - 2) * this.#isoXYZStep + (height + 1) * this.#isoYYStep + 2 * ISOMETRIC_DIAGRAM_PADDING);
 
 		let can = new OffscreenCanvas(canWidth, canHeight);
 		let ctx = getOffscreenCanvasContext(can, "2d");
 		
 		// Grid origin offsets to align minimum projected X and Y boundaries at `ISOMETRIC_DIAGRAM_PADDING`
-		let offsetX = structureSize[2] * this.#isoXStep + ISOMETRIC_DIAGRAM_PADDING;
-		let offsetY = structureSize[1] * this.#isoYYStep + ISOMETRIC_DIAGRAM_PADDING;
+		let offsetX = depth * this.#isoXStep + ISOMETRIC_DIAGRAM_PADDING;
+		let offsetY = height * this.#isoYYStep + ISOMETRIC_DIAGRAM_PADDING;
 		
 		let blockDrawList = [];
-		for(let y = 0; y < structureSize[1]; y++) {
-			for(let x = 0; x < structureSize[0]; x++) {
-				for(let z = 0; z < structureSize[2]; z++) {
-					let blockI = getStructureIndexFromCoordinates([x, y, z], structureSize);
-					for(let layer = 1; layer >= 0; layer--) {
-						let blockIconIndex = structureIndicesByLayer[layer][blockI];
+		for(let y = 0; y < height; y++) {
+			for(let x = 0; x < width; x++) {
+				for(let z = 0; z < depth; z++) {
+					let coords = tuple([x, y, z]);
+					for(let layerI = 1; layerI >= 0; layerI--) {
+						let blockIconIndex = structure.getPaletteIndex(coords, layerI);
 						if(blockIconIndex in isometricBlockIconPalette) {
 							// goofy maths for calculating depth and isometric coordinates (it works, trust trust)
-							let depth = ((x + z) * structureSize[1] + y) * 2 - layer;
+							let diagramDepth = ((x + z) * height + y) * 2 - layerI;
 							let isometricX = (x - z) * this.#isoXStep + offsetX;
 							let isometricY = (x + z) * this.#isoXYZStep - y * this.#isoYYStep + offsetY;
 							let blockIcon = isometricBlockIconPalette[blockIconIndex];
 							blockDrawList.push({
 								pos: tuple([isometricX, isometricY]),
 								blockIcon,
-								depth
+								depth: diagramDepth
 							});
 						}
 					}
@@ -293,5 +290,6 @@ export default class StructureDiagramMaker {
 	}
 }
 
-/** @import { HoloPrintConfig, I32Vec3 } from "./common.types.ts" */
+/** @import { HoloPrintConfig } from "./common.types.ts" */
 /** @import { PolyMeshTemplateFaceWithUvs, PolyMeshTemplateVertexWithUv } from "./PolyMeshMaker.types.ts" */
+/** @import IStructure from "./structure/IStructure.ts" */

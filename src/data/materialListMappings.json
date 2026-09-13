@@ -1,7 +1,7 @@
 // These are patches and remappings for MaterialList.js
 {
-	"ignored_blocks": ["flowing_water", "flowing_lava", "bubble_column"], // these don't appear to be used anymore
-	"block_to_item_mappings": {
+	"ignoredBlocks": ["flowing_water", "flowing_lava", "bubble_column"], // these don't appear to be used anymore
+	"blockToItemMappings": {
 		"unpowered_repeater": "repeater",
 		"powered_repeater": "repeater",
 		"unpowered_comparator": "comparator",
@@ -40,7 +40,7 @@
 		"/^(\\w+)_standing_sign$/": "$1_sign",
 		"/^(\\w+)_coral_wall_fan$/": "$1_coral_fan"
 	},
-	"item_count_multipliers": {
+	"itemCountMultipliers": {
 		"/double_.*slab$/": {
 			"multiplier": 2,
 			"remove": "double_"
@@ -49,13 +49,13 @@
 		"peony,rose_bush,sunflower,lilac,large_fern,tall_grass,pitcher_plant": 0.5,
 		"bed": 0.5
 	},
-	"special_block_entity_properties": {
+	"specialBlockEntityProperties": {
 		"bed": {
 			"prop": "color",
-			"serialization_ids": ["item.bed.white", "item.bed.orange", "item.bed.magenta", "item.bed.lightBlue", "item.bed.yellow", "item.bed.lime", "item.bed.pink", "item.bed.gray", "item.bed.silver", "item.bed.cyan", "item.bed.purple", "item.bed.blue", "item.bed.brown", "item.bed.green", "item.bed.red", "item.bed.black"]
+			"serializationIds": ["item.bed.white", "item.bed.orange", "item.bed.magenta", "item.bed.lightBlue", "item.bed.yellow", "item.bed.lime", "item.bed.pink", "item.bed.gray", "item.bed.silver", "item.bed.cyan", "item.bed.purple", "item.bed.blue", "item.bed.brown", "item.bed.green", "item.bed.red", "item.bed.black"]
 		}
 	},
-	"serialization_id_patches": {
+	"serializationIdPatches": {
 		"tile.oak_planks": "tile.planks.oak",
 		"tile.spruce_planks": "tile.planks.spruce",
 		"tile.birch_planks": "tile.planks.birch",
@@ -99,10 +99,10 @@
 		"/^item.(?!.*chest_)(\\w+)_(boat|raft)$/": "item.boat.$1",
 		"/^item.(\\w+)_chest_(boat|raft)$/": "item.chest_boat.$1"
 	},
-	"blocks_missing_serialization_ids": {
+	"blocksMissingSerializationIds": {
 		"end_gateway": "tile.end_gateway" // despite still existing, end gateways were removed from mojang-blocks.json in 1.21.50...
 	},
-	"translation_patches": {
+	"translationPatches": {
 		"tile.end_portal.name": "End Portal",
 		"tile.end_gateway.name": "End Gateway"
 	},

@@ -44,8 +44,8 @@ export default class SpawnAnimationMaker {
 			bones[boneName] = this.#makeBoneAnimation(delay);
 		});
 		return {
-			"animation_length": this.#totalAnimationLength,
-			"bones": bones
+			animation_length: this.#totalAnimationLength,
+			bones
 		};
 	}
 	/**
@@ -99,7 +99,7 @@ export default class SpawnAnimationMaker {
 		this.#totalAnimationLength = max(this.#totalAnimationLength, animationEnd);
 		let keyframes = [0, 0.2, 0.4, 0.6, 0.8, 1]; // this is smooth enough
 		return {
-			"scale": this.#createAnimFromKeyframes(keyframe => {
+			scale: this.#createAnimFromKeyframes(keyframe => {
 				let keyframeValue = +this.#animationTimingFunc(keyframe).toFixed(2); // TWO SIG FIGS
 				return [keyframeValue, keyframeValue, keyframeValue]; // has to be an array here...
 			}, keyframes, delay)

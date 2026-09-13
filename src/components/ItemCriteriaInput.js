@@ -153,10 +153,10 @@ export default class ItemCriteriaInput extends HTMLElement {
 	set value(stringifiedValue) {
 		this.#criteriaInputsCont.innerHTML = "";
 		let itemCriteria = JSON.parse(stringifiedValue.replaceAll("'", `"`));
-		itemCriteria["names"]?.forEach(itemName => {
+		itemCriteria.names?.forEach(itemName => {
 			this.#addNewInput("item", false, itemName);
 		});
-		itemCriteria["tags"]?.forEach(tagName => {
+		itemCriteria.tags?.forEach(tagName => {
 			this.#addNewInput("tag", false, tagName);
 		});
 	}
@@ -181,18 +181,18 @@ export default class ItemCriteriaInput extends HTMLElement {
 		newValue = newValue.split(",");
 		switch(attrName) {
 			case "value-items": {
-				inputValue["names"] = newValue;
+				inputValue.names = newValue;
 			} break;
 			case "value-tags": {
-				inputValue["tags"] = newValue;
+				inputValue.tags = newValue;
 			} break;
 		}
 		this.value = JSON.stringify(inputValue);
 	}
 	#addNewInput(type, autofocus = true, initialValue) {
 		const attributesByType = {
-			"item": `placeholder="Item name" list="itemNamesDatalist" class="itemNameInput" data-translate-placeholder="item_criteria_input.item_name"`,
-			"tag": `placeholder="Tag name" list="itemTagsDatalist" class="itemTagInput" data-translate-placeholder="item_criteria_input.item_tag"`
+			item: `placeholder="Item name" list="itemNamesDatalist" class="itemNameInput" data-translate-placeholder="item_criteria_input.item_name"`,
+			tag: `placeholder="Tag name" list="itemTagsDatalist" class="itemTagInput" data-translate-placeholder="item_criteria_input.item_tag"`
 		}
 		this.#criteriaInputsCont[selectEl](`input:last-child:placeholder-shown`)?.remove();
 		let lastNode = Array.from(this.#criteriaInputsCont.childNodes).at(-1);
