@@ -891,10 +891,7 @@ function makeLayerAnimations(config, structures, entityManager, hologramAnimatio
 				loop: "hold_on_last_frame",
 				bones: {}
 			};
-			for(let otherLayerY = 0; otherLayerY <= topLayer; otherLayerY++) {
-				if(otherLayerY <= y) {
-					continue;
-				}
+			for(let otherLayerY = y + 1; otherLayerY <= topLayer; otherLayerY++) {
 				layerAnimationAllBelow["bones"][`l_${otherLayerY}`] = {
 					scale: config.MINI_SCALE
 				};
