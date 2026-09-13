@@ -1,5 +1,5 @@
 import BlockUpdater from "../BlockUpdater.js";
-import { AsyncFactory, JSONMap, removeFileExtension, tuple, UserError } from "../utils.js";
+import { AsyncFactory, JSONMap, MonotonicBitset, removeFileExtension, tuple, UserError } from "../utils.js";
 
 const IGNORED_BLOCK_ENTITIES = new Set(["Beacon", "Beehive", "Bell", "BrewingStand", "ChiseledBookshelf", "CommandBlock", "Comparator", "Conduit", "CreakingHeart", "EnchantTable", "EndGateway", "JigsawBlock", "Lodestone", "SculkCatalyst", "SculkShrieker", "SculkSensor", "CalibratedSculkSensor", "StructureBlock", "BrushableBlock", "TrialSpawner", "Vault"]);
 
@@ -152,6 +152,8 @@ export default class Mcstructure extends AsyncFactory {
 		let blockVersions = new Set(); // version should be constant for all blocks. just wanted to test this
 		let blockUpdater = new BlockUpdater();
 		let updatedBlocks = 0;
+		let ignoredPaletteIndices = new MonotonicBitset(this.#rawPalette.length);
+		
 		for(let [i, block] of Object.entries(this.#rawPalette)) {
 			blockVersions.add(block.version);
 			if(blockUpdater.blockNeedsUpdating(block)) {
@@ -161,6 +163,7 @@ export default class Mcstructure extends AsyncFactory {
 			}
 			block.name = block.name.replace(/^minecraft:/, ""); // remove namespace here, right at the start
 			if(this.#ignoredBlocks.includes(block.name)) {
+				ignoredPaletteIndices.add(+i);
 				continue;
 			}
 			delete block.version;
@@ -172,6 +175,16 @@ export default class Mcstructure extends AsyncFactory {
 		
 		if(this.#palette.length == 0) {
 			throw new UserError(`Structure is empty! No blocks are inside the structure.`);
+		}
+		
+		if(!ignoredPaletteIndices.isEmpty) {
+			this.#blockIndices.forEach(blockIndicesForLayer => {
+				blockIndicesForLayer.forEach((paletteIndex, structureIndex) => {
+					if(ignoredPaletteIndices.has(paletteIndex)) {
+						blockIndicesForLayer[structureIndex] = -1;
+					}
+				});
+			});
 		}
 		
 		let blockVersionsStringified = Array.from(blockVersions).map(v => BlockUpdater.parseBlockVersion(v).join("."));

@@ -1,4 +1,4 @@
-import { sum } from "./math.js";
+import { ceil, floor, sum } from "./math.js";
 import { doNothing, tuple } from "./meta.js";
 
 function stringifyJsonBigIntSafe(value) {
@@ -347,5 +347,48 @@ export class ReplacingPatternMap {
 		if(matchingPatternAndReplacement) {
 			return key.replace(...matchingPatternAndReplacement);
 		}
+	}
+}
+/** A bitset backed by a Uint8Array which only allows adding and reading values. */
+export class MonotonicBitset {
+	/** @readonly @type {number} */
+	size;
+	/** @type {boolean} */
+	isEmpty = true;
+	/** @readonly @type {Uint8Array<ArrayBuffer>} */
+	#array;
+	/** @param {number} size */
+	constructor(size) {
+		if(!Number.isSafeInteger(size) || size < 0) {
+			throw new RangeError(`Bitset size must be a non-negative integer, got ${size}`);
+		}
+		this.size = size;
+		this.#array = new Uint8Array(ceil(size / 8));
+	}
+	/**
+	 * @param {number} index
+	 * @returns {boolean}
+	 */
+	has(index) {
+		if(!this.#checkBounds(index)) {
+			return false;
+		}
+		let byte = this.#array[floor(index / 8)];
+		return ((byte >> (index % 8)) & 1) == 1;
+	}
+	/** @param {number} index */
+	add(index) {
+		if(!this.#checkBounds(index)) {
+			throw new RangeError(`Index ${index} is out of range; must be in [0, ${this.size})`);
+		}
+		this.#array[floor(index / 8)] |= 1 << (index % 8);
+		this.isEmpty = false;
+	}
+	/**
+	 * @param {number} index
+	 * @returns {boolean}
+	 */
+	#checkBounds(index) {
+		return Number.isSafeInteger(index) && index >= 0 && index < this.size;
 	}
 }
