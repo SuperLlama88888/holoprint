@@ -67,8 +67,8 @@ export interface Cube {
 	disableMerging?: boolean;
 }
 export type CardinalDirection = "west" | "east" | "down" | "up" | "north" | "south";
-type Face = CardinalDirection | "side" | "*";
-type TextureFace = `${"" | "carried."}${CardinalDirection | "side"}` | "carried" | "#tex" | "none" | TextureFilePath;
+export type Face = CardinalDirection | "side" | "*";
+export type TextureFace = `${"" | "carried."}${CardinalDirection | "side"}` | "carried" | "#tex" | "none" | TextureFilePath;
 /** A file path to a texture file, without the file extension. */
 type TextureFilePath = `textures/${string}`;
 export interface EntityModelInfo {
@@ -185,7 +185,7 @@ export interface TextureAtlasMappings {
 	transparentBlocks: {
 		[blockName: string]: number;
 	};
-	/** Tinting information for terrain textures. */
+	/** Tinting information for terrain textures. This will override any tint set in `terrain_texture.json` (`overlay_color` or `tint_color`). */
 	terrainTextureTints: {
 		colors: {
 			[colorName: string]: `#${string}`;

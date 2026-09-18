@@ -20,7 +20,8 @@
 			"water": "#44AFF5"
 		},
 		"terrainTextureKeys": {
-			"grass_top": "foliage", // the tinting in terrain_texture.json is only for grass_side...
+			"grass_top": "foliage",
+			"grass_side": "foliage", // since v1.26.50.25-preview, ALL the biome-specific tints for grass_side in terrain_texture.json have been replaced with a single one, the new dappled forest tint. Why? WHO KNOWS
 			"tall_grass_bottom": {
 				"tint": "foliage",
 				"tintLikePng": true

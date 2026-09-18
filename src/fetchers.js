@@ -1,7 +1,7 @@
 import { lazyLoadAsyncFunctionFactory, max, sleep, tuple } from "./utils.js";
 
 export default {
-	vanillaData: createLazyCachingFetcher("VanillaDataFetcher", "Mojang", "bedrock-samples", "v1.26.40.26-preview"),
+	vanillaData: createLazyCachingFetcher("VanillaDataFetcher", "Mojang", "bedrock-samples", "v1.26.60.24-preview"),
 	bedrockData: createLazyCachingFetcher("BedrockData", "pmmp", "BedrockData", "6.7.0+bedrock-1.26.30"),
 	bedrockBlockUpgradeSchema: createLazyCachingFetcher("BlockUpgrader", "SuperLlama88888", "BedrockBlockUpgradeSchema", "5.2.0+bedrock-1.21.110")
 };

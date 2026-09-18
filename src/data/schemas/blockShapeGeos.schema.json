@@ -207,7 +207,7 @@
 							"identifier": {
 								"description": "The geometry identifier of the model.",
 								"type": "string",
-								"pattern": "^geometry\\.[\\w.]+$"
+								"pattern": "^(\\w+:)?geometry\\.[\\w.]+$"
 							},
 							"geoFile": {
 								"description": "A file path to the geometry file which contains the identifier.",

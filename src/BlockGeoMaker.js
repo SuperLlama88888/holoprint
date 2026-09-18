@@ -2,7 +2,7 @@
 // READ: this also looks pretty comprehensive: https://github.com/MCBE-Development-Wiki/mcbe-dev-home/blob/main/docs/misc/enums/block_shape.md
 // https://github.com/bricktea/MCStructure/blob/main/docs/1.16.201/enums/B.md
 
-import { hexColorToClampedTriplet, JSONSet, max, rotateDeg, conditionallyGroup, mulMat4, tuple, vec2, vec3, PatternMap } from "./utils.js";
+import { hexColorToClampedTriplet, JSONSet, max, rotateDeg, conditionallyGroup, mulMat4, tuple, vec2, vec3, PatternMap, abs } from "./utils.js";
 
 // https://wiki.bedrock.dev/visuals/material-creations.html#overlay-color-in-render-controllers
 // https://wiki.bedrock.dev/documentation/materials.html#entity-alphatest
@@ -298,15 +298,15 @@ export default class BlockGeoMaker {
 			
 			// When the size of a cube in a direction is 0, we can remove all faces but 1. Because we have DisableCulling in the material, this single face will render from the back as well.
 			// On a side note, if there wasn't the DisableCulling material state and we rendered both faces on opposite sides, the texture wouldn't be mirrored on the other side, so this is another bug fix ig
-			if(cube.w == 0) {
+			if(abs(cube.w) < 0.00001) {
 				// 0 width: only render west
 				["east", "down", "up", "north", "south"].forEach(faceName => delete uv[faceName]);
 			}
-			if(cube.h == 0) {
+			if(abs(cube.h) < 0.00001) {
 				// 0 height: only render down
 				["west", "east", "up", "north", "south"].forEach(faceName => delete uv[faceName]);
 			}
-			if(cube.d == 0) {
+			if(abs(cube.d) < 0.00001) {
 				// 0 depth: only render north
 				["west", "east", "down", "up", "south"].forEach(faceName => delete uv[faceName]);
 			}
