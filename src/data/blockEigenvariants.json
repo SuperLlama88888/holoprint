@@ -1,6 +1,6 @@
 // These are definitions for blocks which have a constant terrain texture variant and don't look at block states for variants.
 {
-	"grass_block": 0, // for the tints; this makes it look like the forest or flower forest biomes
+	"grass_block": 0,
 	"grass_path": 0, // down texture uses dirt instead of flattened_dirt :/
 	"unpowered_repeater": 0,
 	"powered_repeater": 1,
@@ -39,6 +39,9 @@
 	"mangrove_leaves": 0,
 	"cherry_leaves": 0,
 	"pale_oak_leaves": 0,
+	"red_poplar_leaves": 0,
+	"orange_poplar_leaves": 0,
+	"yellow_poplar_leaves": 0,
 	"carved_pumpkin": 0,
 	"lit_pumpkin": 1,
 	"pumpkin": 2,

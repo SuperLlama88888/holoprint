@@ -32,19 +32,7 @@ export default class EntityGeoMaker {
 		let cubes = [];
 		matchingGeo["bones"].forEach(bone => {
 			bone["cubes"]?.forEach(geoCube => {
-				/** @type {Data.Cube} */
-				let cube = {
-					pos: geoCube["origin"],
-					size: geoCube["size"],
-					translate: [8, 0, 8],
-					boxUv: geoCube.uv,
-					boxUvSize: geoCube["size"],
-					boxUvFlipEastWest: true,
-					textures: {
-						"*": entityModelInfo.texture
-					},
-					textureSize: [textureWidth, textureHeight]
-				};
+				let cube = this.#getCubeFromGeoCube(geoCube, entityModelInfo.texture, [textureWidth, textureHeight], geoFile["format_version"]);
 				if("inflate" in geoCube) {
 					let { inflate } = geoCube;
 					let inflate3 = tuple([inflate, inflate, inflate]);
@@ -60,7 +48,83 @@ export default class EntityGeoMaker {
 		});
 		return cubes;
 	}
+	
+	/**
+	 * Converts a cube from a `.geo.json` file into a cube used by HoloPrint, as found in `data/blockShapeGeos.json`.
+	 * @param {object} geoCube
+	 * @param {Data.TextureFace} texture
+	 * @param {Vec2} textureSize
+	 * @param {string} geoFileVersion
+	 * @returns {Data.Cube}
+	 */
+	#getCubeFromGeoCube(geoCube, texture, textureSize, geoFileVersion) {
+		switch(geoFileVersion) {
+			case "1.12.0": return {
+				pos: geoCube["origin"],
+				size: geoCube["size"],
+				translate: [8, 0, 8],
+				boxUv: geoCube["uv"],
+				boxUvSize: geoCube["size"],
+				boxUvFlipEastWest: true,
+				textures: {
+					"*": texture
+				},
+				textureSize
+			};
+			case "1.21.0":
+			case "1.26.50": {
+				/** @type {Data.Cube} */
+				let cube = {
+					pos: geoCube["origin"],
+					size: geoCube["size"],
+					translate: [8, 0, 8],
+					uv: {},
+					uvSizes: {},
+					uvRot: {
+						// in MC the down/up faces on blocks are rotated 180 degrees compared to how they are in geometry; this does not happen on these new geo formats but is already accounted for in BlockGeoMaker.js so it must be effectively reverted here.
+						"down": 180,
+						"up": 180,
+						"north": 0,
+						"south": 0,
+						"east": 0,
+						"west": 0
+					},
+					flipTextureHorizontally: [],
+					flipTextureVertically: [],
+					textures: {
+						"*": texture
+					},
+					textureSize
+				};
+				/** @type {Record<Data.Face, { uv: Vec2, uv_size: Vec2, uv_rotation?: number }>} */
+				let cubeUvs = geoCube["uv"];
+				Object.entries(cubeUvs).forEach(
+					([face, uvInfo]) => {
+						let { uv, uv_size: uvSize, uv_rotation: uvRot = 0 } = uvInfo;
+						// some UV sizes may be negative because Mojang is like WHY NOT
+						if(uvSize[0] < 0) {
+							uv[0] += uvSize[0];
+							uvSize[0] *= -1;
+							cube.flipTextureHorizontally.push(face);
+						}
+						if(uvSize[1] < 0) {
+							uv[1] += uvSize[1];
+							uvSize[1] *= -1;
+							cube.flipTextureVertically.push(face);
+						}
+						cube.uv[face] = uv;
+						cube.uvSizes[face] = uvSize;
+						cube.uvRot[face] += uvRot;
+					}
+				);
+				return cube;
+			}
+		}
+		console.error(`Unknown geo file format version: ${geoFileVersion}`);
+		return {};
+	}
 }
 
 /** @import ResourcePackStack from "./ResourcePackStack.js" */
+/** @import { Vec2 } from "./common.types.ts" */
 /** @import * as Data from "./data/schemas" */

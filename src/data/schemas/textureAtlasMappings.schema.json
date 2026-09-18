@@ -41,7 +41,7 @@
 			"additionalProperties": false
 		},
 		"terrainTextureTints": {
-			"description": "Terrain texture keys that should have their textures tinted.",
+			"description": "Terrain texture keys that should have their textures tinted. This will override any tint set in terrain_texture.json (overlay_color or tint_color).",
 			"type": "object",
 			"properties": {
 				"colors": {

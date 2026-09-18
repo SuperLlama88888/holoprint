@@ -103,7 +103,7 @@ export default class TextureAtlas {
 					texturePath = this.#getTexturePathAndTint("missing", -1).texturePath;
 				}
 				
-				if(tint == undefined && terrainTextureKey in this.#terrainTextureTints.terrainTextureKeys) {
+				if(terrainTextureKey in this.#terrainTextureTints.terrainTextureKeys) {
 					let tintColor = this.#terrainTextureTints.terrainTextureKeys[terrainTextureKey];
 					if(typeof tintColor == "object") {
 						tintLikePng = tintColor.tintLikePng;
