@@ -1,3 +1,4 @@
+import { BlobWriter } from "@zip.js/zip.js";
 import { groupBy } from "./arrays.js";
 
 /**
@@ -67,3 +68,40 @@ export function downloadFile(file, filename = file.name) {
 	a.click();
 	URL.revokeObjectURL(objectURL);
 }
+
+/**
+ * Compresses a Blob with a given format using the Compression Streams API.
+ * @param {Blob} blob
+ * @param {CompressionFormat} [format]
+ * @returns {Promise<Blob>}
+ */
+export async function compressBlob(blob, format = "gzip") {
+	let stream = blob.stream().pipeThrough(new CompressionStream(format));
+	let response = new Response(stream);
+	return await response.blob();
+}
+/**
+ * Decompresses a Blob with a given format using the Compression Streams API.
+ * @param {Blob} blob
+ * @param {CompressionFormat} [format]
+ * @returns {Promise<Blob>}
+ */
+export async function decompressBlob(blob, format = "gzip") {
+	try {
+		let stream = blob.stream().pipeThrough(new DecompressionStream(format));
+		let response = new Response(stream);
+		return await response.blob();
+	} catch(e) {
+		throw new Error(`Failed to decompress blob using ${format}: ${e}`);
+	}
+}
+
+/**
+ * @param {FileEntry} entry
+ * @returns {Promise<Blob>}
+ */
+export async function zipJsFileEntryToBlob(entry) {
+	return await entry.getData(new BlobWriter());
+}
+
+/** @import { FileEntry } from "@zip.js/zip.js" */
