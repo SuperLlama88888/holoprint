@@ -1,4 +1,4 @@
-import { BlobWriter, BlobReader, ZipReader } from "@zip.js/zip.js";
+import { BlobReader, ZipReader } from "@zip.js/zip.js";
 
 import BlockGeoMaker from "./BlockGeoMaker.js";
 import TextureAtlas from "./TextureAtlas.js";
@@ -6,7 +6,7 @@ import MaterialList from "./MaterialList.js";
 import PreviewRenderer from "./PreviewRenderer.js";
 
 import entityScripts from "./entityScripts.molang.js";
-import { addPaddingToImage, array2DToMolang, arrayToMolang, awaitAllEntries, concatenateFiles, createNumericEnum, functionToMolang, getFileExtension, hexColorToClampedTriplet, itemCriteriaToMolang, jsonc, lcm, loadTranslationLanguage, max, min, onEvent, overlaySquareImages, pi, removeFalsies, resizeImageToBlob, setImageOpacity, sha256, toImage, translate, transposeMatrix, tuple, UserError, ReplacingPatternMap, conditionallyCacheUnaryFunc, getGeoSpaceBlockPos } from "./utils.js";
+import { addPaddingToImage, array2DToMolang, arrayToMolang, awaitAllEntries, compressBlob, concatenateFiles, createNumericEnum, decompressBlob, functionToMolang, getFileExtension, hexColorToClampedTriplet, itemCriteriaToMolang, jsonc, lcm, loadTranslationLanguage, max, min, onEvent, overlaySquareImages, pi, removeFalsies, resizeImageToBlob, setImageOpacity, sha256, toImage, translate, transposeMatrix, tuple, UserError, ReplacingPatternMap, conditionallyCacheUnaryFunc, getGeoSpaceBlockPos, zipJsFileEntryToBlob } from "./utils.js";
 import { createStructure, mergeStructurePalettes } from "./structure/structureHelpers.js";
 import ResourcePackStack from "./ResourcePackStack.js";
 import SpawnAnimationMaker from "./SpawnAnimationMaker.js";
@@ -461,10 +461,10 @@ export async function makePack(structureFiles, partialConfig, resourcePackStack 
 	console.info("Finished making all pack files!");
 	
 	if(structureFiles.length == 1) {
-		packBuilder.addFile(".mcstructure", structureFiles[0], { comment: structureFiles[0].name });
+		packBuilder.addFile(".mcstructure.gzip", compressBlob(structureFiles[0]), { comment: structureFiles[0].name });
 	} else {
 		structureFiles.forEach((structureFile, i) => {
-			packBuilder.addFile(`${i}.mcstructure`, structureFile, { comment: structureFile.name });
+			packBuilder.addFile(`${i}.mcstructure.gzip`, compressBlob(structureFile), { comment: structureFile.name });
 		});
 	}
 	packBuilder.addFile("manifest.json", manifest);
@@ -576,12 +576,22 @@ export async function extractStructureFilesFromPack(resourcePack) {
 	let packFolder = new ZipReader(packFileReader);
 	/** @type {FileEntry[]} */
 	// @ts-expect-error
-	let structureFileEntries = (await packFolder.getEntries()).filter(entry => entry.filename.endsWith(".mcstructure"));
+	let packEntries = await packFolder.getEntries();
 	packFolder.close();
-	let structureBlobs = await Promise.all(structureFileEntries.map(entry => entry.getData(new BlobWriter())));
+	
+	let structureFileEntries = packEntries.filter(entry => entry.filename.endsWith(".mcstructure") || entry.filename.endsWith(".mcstructure.gzip"));
+	let hasMultipleStructureFiles = structureFileEntries.length > 1;
+	
 	let packName = resourcePack.name.slice(0, resourcePack.name.indexOf("."));
-	return structureBlobs.map((structureBlob, i) => new File([structureBlob], structureFileEntries[i].comment || `${packName}${structureBlobs.length > 1? `_${i}` : ""}.mcstructure`, {
-		type: "application/mcstructure"
+	return await Promise.all(structureFileEntries.map(async (entry, i) => {
+		let structureBlob = await zipJsFileEntryToBlob(entry);
+		if(entry.filename.endsWith(".mcstructure.gzip")) {
+			structureBlob = await decompressBlob(structureBlob);
+		}
+		
+		return new File([structureBlob], entry.comment || `${packName}${hasMultipleStructureFiles? `_${i}` : ""}.mcstructure`, {
+			type: "application/mcstructure"
+		});
 	}));
 }
 /**
