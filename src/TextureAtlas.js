@@ -43,6 +43,11 @@ export default class TextureAtlas {
 	textureHeight;
 	/** @type {number} */
 	textureFillEfficiency; // how much of the texture atlas is filled with images
+	/**
+	 * The full opacity texture atlas before outlines are added, and before the outline upscale. Structure diagrams use this because they shouldn't have texture outlines.
+	 * @type {OffscreenCanvas}
+	 */
+	atlasWithoutOutlinesCanvas;
 	
 	/**
 	 * Creates a texture atlas for loading images from texture references and stitching them together.
@@ -448,6 +453,7 @@ export default class TextureAtlas {
 		// ctx = can.getContext("2d");
 		// ctx.fillStyle = "#00F3";
 		// ctx.fillRect(0, 0, can.width, can.height);
+		this.atlasWithoutOutlinesCanvas = can;
 		if(this.config.TEXTURE_OUTLINE_WIDTH != 0) {
 			can = TextureAtlas.addTextureOutlines(can, packedImageFragments, this.config, canImageData);
 		}

@@ -207,7 +207,7 @@ export async function makePack(structureFiles, partialConfig, resourcePackStack 
 	let polyMeshTemplatePalette = blockGeoMaker.scalePolyMeshTemplates(unscaledPolyMeshTemplatePalette, centersOfMass);
 	console.log("Poly mesh template palette with resolved UVs:", polyMeshTemplatePalette);
 	
-	let structureDiagramsAndIndices = await makeStructureDiagrams(config, fullOpacityTextureBlob, unscaledPolyMeshTemplatePalette, structures);
+	let structureDiagramsAndIndices = await makeStructureDiagrams(config, textureAtlas.atlasWithoutOutlinesCanvas, unscaledPolyMeshTemplatePalette, structures);
 	
 	let { manifest, hologramRenderControllers, hologramGeo, hologramAnimationControllers, hologramAnimations, blockValidationParticle, singleWhitePixelTexture, materialListUI, infoScreenUI, itemTexture, terrainTexture } = await packTemplatePromise.allValues;
 	
@@ -792,13 +792,13 @@ async function getResponseContents(resPromise, filePath) {
 /**
  * Makes the layer-by-layer diagrams and the isometric diagram for structures.
  * @param {HoloPrintConfig} config
- * @param {Blob} textureBlob
+ * @param {OffscreenCanvas} textureCanvas
  * @param {PolyMeshTemplateFaceWithUvs[][]} polyMeshTemplatePalette
  * @param {IStructure[]} structures
  * @returns {Promise<StructureDiagramsAndIndices>}
  */
-async function makeStructureDiagrams(config, textureBlob, polyMeshTemplatePalette, structures) {
-	let structureDiagramMaker = new StructureDiagramMaker(config, await toImage(textureBlob));
+async function makeStructureDiagrams(config, textureCanvas, polyMeshTemplatePalette, structures) {
+	let structureDiagramMaker = new StructureDiagramMaker(config, textureCanvas);
 	let diagramsAndIndices = await structureDiagramMaker.makeDiagramsForStructures(polyMeshTemplatePalette, structures);
 	structureDiagramMaker.dispose();
 	return diagramsAndIndices;
