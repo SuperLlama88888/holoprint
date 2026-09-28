@@ -33,7 +33,7 @@ export default class WebGL2QuadRenderer {
 	
 	/**
 	 * @param {number} size Resolution of the output canvas (width and height)
-	 * @param {HTMLImageElement} textureImage Source image for the texture
+	 * @param {TexImageSource} textureImage Source image for the texture
 	 */
 	constructor(size, textureImage) {
 		this.size = size;

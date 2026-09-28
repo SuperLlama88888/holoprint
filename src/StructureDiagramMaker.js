@@ -1,14 +1,22 @@
-import { areArraysEqual, average, ceil, fnv1a, getOffscreenCanvasContext, HashMap, sqrt, stringToImageData, toBlob, tuple, vec2 } from "./utils.js";
+import { areArraysEqual, average, ceil, fnv1a, getOffscreenCanvasContext, HashMap, max, min, sqrt, stringToImageData, toBlob, tuple, vec2 } from "./utils.js";
 import WebGL2QuadRenderer from "./WebGL2QuadRenderer.js"; // dependency injection coming soon^tm
 
 /** Padding in pixels to be added around the edges of isometric diagrams. */
 const ISOMETRIC_DIAGRAM_PADDING = 8;
+/** The maximum width and height, in pixels, of any diagram. Anything bigger than this is scaled down to fit. */
+const MAX_DIAGRAM_SIZE = 512;
+/** The resolution, in pixels, of a block's textures in the texture atlas. Layer-by-layer diagrams are drawn at exactly this resolution, such that 1 block pixel is 1 diagram pixel. This intentionally loses detail for blocks which are angled or in some other way don't conform to the block grid (e.g. side torches), because keeping them at full detail inflates the pack size beyond what I am willing to accept. */
+const LAYER_DIAGRAM_BLOCK_RESOLUTION = 16;
 
 export default class StructureDiagramMaker {
 	/** @readonly @type {number} */
 	size;
+	/** @readonly @type {TexImageSource} */
+	#texture;
 	/** @readonly @type {WebGL2QuadRenderer | null} */
-	#renderer = null;
+	#birdsEyeViewRenderer = null;
+	/** @readonly @type {WebGL2QuadRenderer | null} */
+	#isometricRenderer = null;
 	/** @readonly @type {number} */
 	#isoXStep;
 	/** @readonly @type {number} */
@@ -20,25 +28,36 @@ export default class StructureDiagramMaker {
 	
 	/**
 	 * @param {HoloPrintConfig} config 
-	 * @param {HTMLImageElement} texture
+	 * @param {TexImageSource} texture The texture atlas to make block icons out of. Must not have texture outlines, as they look bad on diagrams.
 	 */
 	constructor(config, texture) {
 		this.size = config.LAYER_BY_LAYER_DIAGRAM_BLOCK_RESOLUTION;
+		this.#texture = texture;
 		
 		this.#isoXStep = this.size * 0.5;
 		this.#isoXYZStep = this.size * 0.5 / sqrt(3);
 		this.#isoYYStep = this.size / sqrt(3);
 		this.#isoBlockIconOffset = this.size * 1.5;
 		
+		// Isometric diagrams get scaled down to fit `MAX_DIAGRAM_SIZE` and then scaled up again by the UI, so it's worth rendering them (and the layer diagrams) at a higher resolution than the atlas so the diagonals don't alias.
 		if(WebGL2QuadRenderer.isSupported()) {
-			try {
-				// multiply by 3 because a 2d icon has the surrounding 3x3 blocks in case the block takes up multiple block spaces (i.e. beds, horizontal pistons)
-				this.#renderer = new WebGL2QuadRenderer(this.size * 3, texture);
-			} catch(e) {
-				console.error(`Failed to initialise WebGL2QuadRenderer despite being 'supported' - ${e}`);
-			}
+			this.#birdsEyeViewRenderer = this.#makeRenderer(LAYER_DIAGRAM_BLOCK_RESOLUTION * 3);
+			this.#isometricRenderer = this.#makeRenderer(this.size * 3);
 		} else {
 			console.error("Cannot make structure diagrams - WebGL2 is not supported!");
+		}
+	}
+	/**
+	 * Makes a `WebGL2QuadRenderer` for block icons at a given block resolution, returning null if it couldn't be made.
+	 * @param {number} blockResolution
+	 * @returns {WebGL2QuadRenderer | null}
+	 */
+	#makeRenderer(blockResolution) {
+		try {
+			return new WebGL2QuadRenderer(blockResolution, this.#texture);
+		} catch(e) {
+			console.error(`Failed to initialise WebGL2QuadRenderer despite being 'supported' - ${e}`);
+			return null;
 		}
 	}
 	
@@ -65,7 +84,7 @@ export default class StructureDiagramMaker {
 	 * @returns {Promise<{ diagrams: Blob[], indices: number[][] }>}
 	 */
 	async makeDiagramsForStructures(polyMeshTemplatePalette, structures) {
-		if(!this.#renderer) {
+		if(!this.#birdsEyeViewRenderer || !this.#isometricRenderer) {
 			let errorImage = await toBlob(stringToImageData("Couldn't create diagrams"));
 			let indices = structures.map(structure => (new Array(structure.height + 1)).fill(0));
 			return {
@@ -122,7 +141,8 @@ export default class StructureDiagramMaker {
 		};
 	}
 	dispose() {
-		this.#renderer?.dispose();
+		this.#birdsEyeViewRenderer?.dispose();
+		this.#isometricRenderer?.dispose();
 	}
 	/**
 	 * Disposes all the `ImageBitmap`s in a block icon palette.
@@ -188,7 +208,7 @@ export default class StructureDiagramMaker {
 			return { positions, uvs };
 		});
 		
-		return this.#renderer.render(quadRenderData);
+		return (isometric? this.#isometricRenderer : this.#birdsEyeViewRenderer).render(quadRenderData);
 	}
 	/**
 	 * @param {[PolyMeshTemplateVertexWithUv, PolyMeshTemplateVertexWithUv, PolyMeshTemplateVertexWithUv, PolyMeshTemplateVertexWithUv]} vertices
@@ -200,6 +220,23 @@ export default class StructureDiagramMaker {
 		return vec2.equals(coords[0], coords[1]) || vec2.equals(coords[0], coords[2]) || vec2.equals(coords[0], coords[3]) || vec2.equals(coords[1], coords[2]) || vec2.equals(coords[1], coords[3]) || vec2.equals(coords[2], coords[3]);
 	}
 	/**
+	 * Works out the canvas size for a diagram of the given unscaled size, scaling it down if it exceeds `MAX_DIAGRAM_SIZE` in either dimension.
+	 * @param {number} unscaledWidth
+	 * @param {number} unscaledHeight
+	 * @returns {[OffscreenCanvas, OffscreenCanvasRenderingContext2D]}
+	 */
+	#createScaledCanvas(unscaledWidth, unscaledHeight) {
+		// diagrams are drawn at their natural size and the whole thing is scaled down by the context transform, so no drawing maths needs changing.
+		let scale = min(1, MAX_DIAGRAM_SIZE / max(unscaledWidth, unscaledHeight));
+		let width = max(1, ceil(unscaledWidth * scale));
+		let height = max(1, ceil(unscaledHeight * scale));
+		
+		let can = new OffscreenCanvas(width, height);
+		let ctx = getOffscreenCanvasContext(can, "2d");
+		ctx.scale(scale, scale);
+		return [can, ctx];
+	}
+	/**
 	 * Stitches block icons together using the standard 2d canvas.
 	 * @param {ImageBitmap[]} blockIconPalette
 	 * @param {number[]} blockIndices
@@ -207,8 +244,7 @@ export default class StructureDiagramMaker {
 	 * @returns {Promise<Blob>}
 	 */
 	async #makeDiagramForLayer(blockIconPalette, blockIndices, structure) {
-		let can = new OffscreenCanvas(this.size * structure.width, this.size * structure.depth);
-		let ctx = getOffscreenCanvasContext(can, "2d");
+		let [can, ctx] = this.#createScaledCanvas(LAYER_DIAGRAM_BLOCK_RESOLUTION * structure.width, LAYER_DIAGRAM_BLOCK_RESOLUTION * structure.depth);
 		
 		try {
 			for(let x = 0; x < structure.width; x++) {
@@ -219,7 +255,7 @@ export default class StructureDiagramMaker {
 						let blockIconIndex = blockIndices[indexIndex];
 						if(blockIconIndex in blockIconPalette) {
 							// Offset by -1 * size so the 3x3 block icon (size * 3) is centered over grid cell (x, z)
-							ctx.drawImage(blockIconPalette[blockIconIndex], (x - 1) * this.size, (z - 1) * this.size);
+							ctx.drawImage(blockIconPalette[blockIconIndex], (x - 1) * LAYER_DIAGRAM_BLOCK_RESOLUTION, (z - 1) * LAYER_DIAGRAM_BLOCK_RESOLUTION);
 						}
 						// not in blockIconPalette means it's an excluded block, e.g. air
 					}
@@ -241,11 +277,10 @@ export default class StructureDiagramMaker {
 	async #makeIsometricDiagramForStructure(isometricBlockIconPalette, structure) {
 		let { width, height, depth } = structure;
 		// Canvas bounds fitting tightly around projected isometric structure bounds plus `ISOMETRIC_DIAGRAM_PADDING`:
-		let canWidth = ceil((width + depth) * this.#isoXStep + 2 * ISOMETRIC_DIAGRAM_PADDING);
-		let canHeight = ceil((width + depth - 2) * this.#isoXYZStep + (height + 1) * this.#isoYYStep + 2 * ISOMETRIC_DIAGRAM_PADDING);
-
-		let can = new OffscreenCanvas(canWidth, canHeight);
-		let ctx = getOffscreenCanvasContext(can, "2d");
+		let [can, ctx] = this.#createScaledCanvas(
+			ceil((width + depth) * this.#isoXStep + 2 * ISOMETRIC_DIAGRAM_PADDING),
+			ceil((width + depth - 2) * this.#isoXYZStep + (height + 1) * this.#isoYYStep + 2 * ISOMETRIC_DIAGRAM_PADDING)
+		);
 		
 		// Grid origin offsets to align minimum projected X and Y boundaries at `ISOMETRIC_DIAGRAM_PADDING`
 		let offsetX = depth * this.#isoXStep + ISOMETRIC_DIAGRAM_PADDING;
@@ -277,7 +312,6 @@ export default class StructureDiagramMaker {
 		
 		blockDrawList.sort((a, b) => a.depth - b.depth);
 		try {
-			// TODO: fix insane performance issue on Chrome here!
 			blockDrawList.forEach(({ pos, blockIcon }) => {
 				ctx.drawImage(blockIcon, pos[0] - this.#isoBlockIconOffset, pos[1] - this.#isoBlockIconOffset);
 			});
