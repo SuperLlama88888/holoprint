@@ -64,6 +64,15 @@ export function assertAs(x, _type) {
 		}
 	}
 };
+/**
+ * @param {boolean} invariant
+ * @param {string} [message]
+ */
+export function assert(invariant, message) {
+	if(!invariant) {
+		throw new Error(`Assertion failed!${message? ` ${message}` : ""}`);
+	}
+}
 /** Returns the original string when used in a tagged template literal. Only used so the HTML inside can be minified when building, and so VSCode can apply syntax highlighting with the lit-plugin plugin. */
 export function html(strings, ...values) {
 	return strings.reduce((acc, str, i) => acc + str + (values[i] ?? ""), "");

@@ -34,8 +34,6 @@ export type HoloPrintConfig = {
 	COORDINATE_LOCK: Vec4[] | undefined;
 	BACKUP_SLOT_COUNT: number;
 	VALIDATE_AIR_BLOCKS: boolean;
-	/** The resolution, in pixels, of each block in the layer-by-layer diagram. */
-	LAYER_BY_LAYER_DIAGRAM_BLOCK_RESOLUTION: number;
 	/** The name of the completed pack; will default to the structure file names */
 	PACK_NAME: string | undefined;
 	/** Blob for `pack_icon.png` */
