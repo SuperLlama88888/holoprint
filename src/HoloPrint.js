@@ -207,7 +207,7 @@ export async function makePack(structureFiles, partialConfig, resourcePackStack 
 	let polyMeshTemplatePalette = blockGeoMaker.scalePolyMeshTemplates(unscaledPolyMeshTemplatePalette, centersOfMass);
 	console.log("Poly mesh template palette with resolved UVs:", polyMeshTemplatePalette);
 	
-	let structureDiagramsAndIndices = await makeStructureDiagrams(config, textureAtlas.atlasWithoutOutlinesCanvas, unscaledPolyMeshTemplatePalette, structures);
+	let structureDiagramsAndIndices = await makeStructureDiagrams(textureAtlas.atlasWithoutOutlinesCanvas, unscaledPolyMeshTemplatePalette, structures);
 	
 	let { manifest, hologramRenderControllers, hologramGeo, hologramAnimationControllers, hologramAnimations, blockValidationParticle, singleWhitePixelTexture, materialListUI, infoScreenUI, itemTexture, terrainTexture } = await packTemplatePromise.allValues;
 	
@@ -685,7 +685,6 @@ export function addDefaultConfig(config) {
 			COORDINATE_LOCK: undefined,
 			BACKUP_SLOT_COUNT: 10,
 			VALIDATE_AIR_BLOCKS: false,
-			LAYER_BY_LAYER_DIAGRAM_BLOCK_RESOLUTION: 64,
 			PACK_NAME: undefined,
 			PACK_ICON_BLOB: undefined,
 			AUTHORS: [],
@@ -791,14 +790,13 @@ async function getResponseContents(resPromise, filePath) {
 }
 /**
  * Makes the layer-by-layer diagrams and the isometric diagram for structures.
- * @param {HoloPrintConfig} config
  * @param {OffscreenCanvas} textureCanvas
  * @param {PolyMeshTemplateFaceWithUvs[][]} polyMeshTemplatePalette
  * @param {IStructure[]} structures
  * @returns {Promise<StructureDiagramsAndIndices>}
  */
-async function makeStructureDiagrams(config, textureCanvas, polyMeshTemplatePalette, structures) {
-	let structureDiagramMaker = new StructureDiagramMaker(config, textureCanvas);
+async function makeStructureDiagrams(textureCanvas, polyMeshTemplatePalette, structures) {
+	let structureDiagramMaker = new StructureDiagramMaker(textureCanvas, structures.map(structure => structure.size));
 	let diagramsAndIndices = await structureDiagramMaker.makeDiagramsForStructures(polyMeshTemplatePalette, structures);
 	structureDiagramMaker.dispose();
 	return diagramsAndIndices;
