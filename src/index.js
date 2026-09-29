@@ -161,7 +161,14 @@ document[onEvent]("DOMContentLoaded", () => {
 		oldPackExtractionMessage.scrollIntoView({
 			block: "center"
 		});
-		let extractedStructureFiles = await HoloPrint.extractStructureFilesFromPack(oldPack);
+		let extractedStructureFiles;
+		try {
+			extractedStructureFiles = await HoloPrint.extractStructureFilesFromPack(oldPack);
+		} catch(e) {
+			oldPackExtractionMessage.classList.add("hidden");
+			oldPackExtractionError.classList.remove("hidden");
+			throw e;
+		}
 		extractedStructureFiles.forEach(file => file[FileInputTable.SHOW_DOWNLOAD_BUTTON] = true);
 		oldPackExtractionMessage.classList.add("hidden");
 		if(extractedStructureFiles.length) {
