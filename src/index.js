@@ -656,6 +656,7 @@ async function makePack(structureFiles, localResourcePacks) {
 		}) : undefined,
 		BACKUP_SLOT_COUNT: +formData.get("backupSlotCount"),
 		VALIDATE_AIR_BLOCKS: !!formData.get("validateAirBlocks"),
+		MAX_STRUCTURE_DIAGRAM_TEXTURE_SIZE: +formData.get("maxStructureDiagramTextureSize"),
 		PACK_NAME: formData.get("packName").toString() || undefined,
 		PACK_ICON_BLOB: packIconEntry instanceof File && packIconEntry.size? packIconEntry : undefined,
 		AUTHORS: authors,

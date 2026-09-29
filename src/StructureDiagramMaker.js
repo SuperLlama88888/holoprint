@@ -3,14 +3,14 @@ import WebGL2QuadRenderer from "./WebGL2QuadRenderer.js"; // dependency injectio
 
 /** Padding in pixels to be added around the edges of isometric diagrams. */
 const ISOMETRIC_DIAGRAM_PADDING = 8;
-/** The maximum width and height, in pixels, of any diagram. Anything bigger than this is scaled down to fit. */
-const MAX_DIAGRAM_SIZE = 512;
 /** The highest resolution, in pixels, of a block's textures in the texture atlas. When structures are small, layer-by-layer diagrams are drawn at exactly this resolution, such that 1 block pixel is 1 diagram pixel. This intentionally loses detail for blocks which are angled or in some other way don't conform to the block grid (e.g. side torches), because keeping them at full detail inflates the pack size beyond what I am willing to accept. For larger structures, they will be scaled down anyway since the excess resolution won't be needed. */
 const MAX_LAYER_DIAGRAM_BLOCK_RESOLUTION = 16;
 /** Maximum resolution, in pixels, of each block in the isometric diagram. Each structure may use a lower resolution if it isn't needed. */
 const MAX_ISOMETRIC_DIAGRAM_BLOCK_RESOLUTION = 64;
 
 export default class StructureDiagramMaker {
+	/** @readonly @type {number} The maximum width and height, in pixels, of any diagram. Anything bigger than this is scaled down to fit. */
+	#maxTextureSize;
 	/** @readonly @type {number} Effective 2D block resolution (<= `MAX_LAYER_DIAGRAM_BLOCK_RESOLUTION`), shared across all structures. */
 	#layerBlockResolution;
 	/** @readonly @type {TexImageSource} */
@@ -21,11 +21,13 @@ export default class StructureDiagramMaker {
 	/**
 	 * @param {TexImageSource} texture The texture atlas to make block icons out of. Must not have texture outlines, as they look bad on diagrams.
 	 * @param {Vec3[]} structureSizes
+	 * @param {number} maxTextureSize The maximum width and height, in pixels, of any diagram. Anything bigger than this is scaled down to fit.
 	 */
-	constructor(texture, structureSizes) {
+	constructor(texture, structureSizes, maxTextureSize) {
 		assert(structureSizes.length > 0, "StructureDiagramMaker should receive at least one structure");
 		
 		this.#texture = texture;
+		this.#maxTextureSize = maxTextureSize;
 		this.#layerBlockResolution = this.#computeLayerBlockResolution(structureSizes);
 		
 		if(WebGL2QuadRenderer.isSupported()) {
@@ -40,7 +42,7 @@ export default class StructureDiagramMaker {
 	 */
 	#computeLayerBlockResolution(structureSizes) {
 		let maxDim = max(...structureSizes.flatMap(([width, _, depth]) => [width, depth]));
-		return min(MAX_LAYER_DIAGRAM_BLOCK_RESOLUTION, MAX_DIAGRAM_SIZE / maxDim);
+		return min(MAX_LAYER_DIAGRAM_BLOCK_RESOLUTION, this.#maxTextureSize / maxDim);
 	}
 	/**
 	 * @param {IStructure} structure
@@ -48,7 +50,7 @@ export default class StructureDiagramMaker {
 	 */
 	#computeIsometricBlockResolution(structure) {
 		let { width, height, depth } = structure;
-		let available = MAX_DIAGRAM_SIZE - 2 * ISOMETRIC_DIAGRAM_PADDING;
+		let available = this.#maxTextureSize - 2 * ISOMETRIC_DIAGRAM_PADDING;
 		let fitW = available / ((width + depth) * 0.5);
 		let fitH = available / ((0.5 * (width + depth - 2) + height + 1) / sqrt(3));
 		return min(MAX_ISOMETRIC_DIAGRAM_BLOCK_RESOLUTION, fitW, fitH);
