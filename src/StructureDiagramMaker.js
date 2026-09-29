@@ -1,4 +1,4 @@
-import { areArraysEqual, assert, average, ceil, fnv1a, getOffscreenCanvasContext, HashMap, max, min, round, sqrt, stringToImageData, toBlob, tuple, vec2 } from "./utils.js";
+import { areArraysEqual, assert, average, ceil, fnv1a, getOffscreenCanvasContext, HashMap, max, min, sqrt, stringToImageData, toBlob, tuple, vec2 } from "./utils.js";
 import WebGL2QuadRenderer from "./WebGL2QuadRenderer.js"; // dependency injection coming soon^tm
 
 /** Padding in pixels to be added around the edges of isometric diagrams. */
@@ -7,6 +7,8 @@ const ISOMETRIC_DIAGRAM_PADDING = 8;
 const MAX_LAYER_DIAGRAM_BLOCK_RESOLUTION = 16;
 /** Maximum resolution, in pixels, of each block in the isometric diagram. Each structure may use a lower resolution if it isn't needed. */
 const MAX_ISOMETRIC_DIAGRAM_BLOCK_RESOLUTION = 64;
+/** Minimum resolution, in pixels, of a renderer. On large structures, when the max diagram texture size is set low, WebGL rasterisation can miss blocks entirely for block icons, meaning that they become invisible. This ensures that renderers can never be too small (and really, at these tiny sizes, memory implications are negligible anyway). */
+const MIN_RENDERER_RESOLUTION = 8;
 
 export default class StructureDiagramMaker {
 	/** @readonly @type {number} The maximum width and height, in pixels, of any diagram. Anything bigger than this is scaled down to fit. */
@@ -76,7 +78,7 @@ export default class StructureDiagramMaker {
 	 */
 	#makeRenderer(iconResolution) {
 		try {
-			return new WebGL2QuadRenderer(max(1, round(iconResolution)), this.#texture);
+			return new WebGL2QuadRenderer(max(MIN_RENDERER_RESOLUTION, iconResolution), this.#texture);
 		} catch(e) {
 			console.error(`Failed to initialise WebGL2QuadRenderer despite being 'supported' - ${e}`);
 			return null;
