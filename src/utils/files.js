@@ -92,7 +92,7 @@ export async function decompressBlob(blob, format = "gzip") {
 		let response = new Response(stream);
 		return await response.blob();
 	} catch(e) {
-		throw new Error(`Failed to decompress blob using ${format}: ${e}`);
+		throw new Error(`Failed to decompress blob using ${format}: ${e}`, { cause: e});
 	}
 }
 
