@@ -1,4 +1,4 @@
-import { areArraysEqual, assert, average, ceil, fnv1a, getOffscreenCanvasContext, HashMap, max, min, sqrt, stringToImageData, toBlob, tuple, vec2 } from "./utils.js";
+import { areArraysEqual, assert, average, ceil, fnv1a, getOffscreenCanvasContext, HashMap, hypot, max, min, sqrt, stringToImageData, toBlob, tuple, vec2 } from "./utils.js";
 import WebGL2QuadRenderer from "./WebGL2QuadRenderer.js"; // dependency injection coming soon^tm
 
 /** Padding in pixels to be added around the edges of isometric diagrams. */
@@ -197,24 +197,26 @@ export default class StructureDiagramMaker {
 	 * @returns {ImageBitmap}
 	 */
 	#getIconForBlockFromFaces(faces, isometric, renderer) {
-		let faceVertices = faces.map(face => face.vertices);
+		let faceData = faces.map(face => ({ normal: face.normal, vertices: face.vertices }));
 		if(!isometric) {
 			// check if the faces won't be visible when viewed from a bird's-eye view (e.g. cross_texture blocks). if this happens, we swizzle the y and z axes so it's effectively looking from the side.
-			if(faceVertices.every(vertices => this.#isFaceInvisibleFromAbove(vertices))) {
-				faceVertices = structuredClone(faceVertices);
-				faceVertices.forEach(vertices => vertices.forEach(v => {
+			if(faceData.every(({ vertices }) => this.#isFaceInvisibleFromAbove(vertices))) {
+				faceData = structuredClone(faceData);
+				faceData.forEach(({ vertices }) => vertices.forEach(v => {
 					v.pos = [v.pos[0], v.pos[2], 16 - v.pos[1]];
 				}));
 			}
 		}
-		let depthSortedFaceVertices = faceVertices.map(vertices => {
+		let depthSortedFaceData = faceData.map(({ normal, vertices }) => {
 			if(isometric) {
 				return {
+					normal,
 					vertices,
 					depth: average(vertices.map(({ pos: p }) => (16 - p[0]) + p[2] + p[1] * 2 * sqrt(3))) // it works
 				};
 			} else {
 				return {
+					normal,
 					vertices,
 					depth: average(vertices.map(({ pos: [, y] }) => y))
 				};
@@ -222,7 +224,7 @@ export default class StructureDiagramMaker {
 		}).sort((a, b) => a.depth - b.depth);
 		
 		// Convert face vertex data into flat inputs acceptable by the WebGL engine
-		let quadRenderData = depthSortedFaceVertices.map(({ vertices }) => {
+		let quadRenderData = depthSortedFaceData.map(({ normal, vertices }) => {
 			let positions = new Float32Array(8);
 			let i = 0;
 			if(isometric) {
@@ -243,7 +245,8 @@ export default class StructureDiagramMaker {
 				uvs[i++] = uv[0];
 				uvs[i++] = 1 - uv[1];
 			});
-			return { positions, uvs };
+			let brightness = isometric? StructureDiagramMaker.computeFlatShading(normal) : 1;
+			return { positions, uvs, brightness };
 		});
 		
 		return renderer.render(quadRenderData);
@@ -345,6 +348,31 @@ export default class StructureDiagramMaker {
 			console.error(errorMessage);
 			return await toBlob(stringToImageData(errorMessage));
 		}
+	}
+	
+	/**
+	 * Calculates the brightness based on a face normal using flat shading. This is based on the MCBE entity.vertex shader (pre-Renderdragon at least).
+	 * @param {Vec3} normal Face normal (normalised defensively here).
+	 * @returns {number} Multiplier in [~0.45, 1]; top faces brightest.
+	 */
+	static computeFlatShading(normal) {
+		// copied straight from entity.vertex lol
+		const AMBIENT = 0.45;
+		const XFAC = -0.1;
+		const ZFAC = 0.1;
+		
+		let [nx, ny, nz] = normal;
+		let len = hypot(...normal);
+		if(len > 0) {
+			nx /= len;
+			ny /= len;
+			nz /= len;
+		} else {
+			console.warn("Invalid surface normal!"); // ahhhhhhh
+		}
+		
+		let yLight = (1 + ny) * 0.5;
+		return yLight * (1 - AMBIENT) + nx * nx * XFAC + nz * nz * ZFAC + AMBIENT;
 	}
 }
 
