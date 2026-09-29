@@ -77,6 +77,7 @@
 	"settings.initial_offset": "Initial offset:",
 	"settings.ignored_blocks": "Ignored blocks:",
 	"settings.ignored_blocks.placeholder": "block_1 block_2 etc.",
+	"settings.max_structure_diagram_texture_size": "Max structure diagram texture size:",
 	"settings.mini_size": "Mini display size: ",
 	"settings.mini_size.small": "Small",
 	"settings.mini_size.smaller": "Smaller",

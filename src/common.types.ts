@@ -34,6 +34,8 @@ export type HoloPrintConfig = {
 	COORDINATE_LOCK: Vec4[] | undefined;
 	BACKUP_SLOT_COUNT: number;
 	VALIDATE_AIR_BLOCKS: boolean;
+	/** The maximum width and height, in pixels, of any structure diagram texture. Anything bigger than this is scaled down to fit, as to not inflate pack sizes and slow down pack creation. */
+	MAX_STRUCTURE_DIAGRAM_TEXTURE_SIZE: number;
 	/** The name of the completed pack; will default to the structure file names */
 	PACK_NAME: string | undefined;
 	/** Blob for `pack_icon.png` */

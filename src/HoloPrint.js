@@ -207,7 +207,7 @@ export async function makePack(structureFiles, partialConfig, resourcePackStack 
 	let polyMeshTemplatePalette = blockGeoMaker.scalePolyMeshTemplates(unscaledPolyMeshTemplatePalette, centersOfMass);
 	console.log("Poly mesh template palette with resolved UVs:", polyMeshTemplatePalette);
 	
-	let structureDiagramsAndIndices = await makeStructureDiagrams(textureAtlas.atlasWithoutOutlinesCanvas, unscaledPolyMeshTemplatePalette, structures);
+	let structureDiagramsAndIndices = await makeStructureDiagrams(textureAtlas.atlasWithoutOutlinesCanvas, unscaledPolyMeshTemplatePalette, structures, config.MAX_STRUCTURE_DIAGRAM_TEXTURE_SIZE);
 	
 	let { manifest, hologramRenderControllers, hologramGeo, hologramAnimationControllers, hologramAnimations, blockValidationParticle, singleWhitePixelTexture, materialListUI, infoScreenUI, itemTexture, terrainTexture } = await packTemplatePromise.allValues;
 	
@@ -685,6 +685,7 @@ export function addDefaultConfig(config) {
 			COORDINATE_LOCK: undefined,
 			BACKUP_SLOT_COUNT: 10,
 			VALIDATE_AIR_BLOCKS: false,
+			MAX_STRUCTURE_DIAGRAM_TEXTURE_SIZE: 512,
 			PACK_NAME: undefined,
 			PACK_ICON_BLOB: undefined,
 			AUTHORS: [],
@@ -793,10 +794,11 @@ async function getResponseContents(resPromise, filePath) {
  * @param {OffscreenCanvas} textureCanvas
  * @param {PolyMeshTemplateFaceWithUvs[][]} polyMeshTemplatePalette
  * @param {IStructure[]} structures
+ * @param {number} maxTextureSize
  * @returns {Promise<StructureDiagramsAndIndices>}
  */
-async function makeStructureDiagrams(textureCanvas, polyMeshTemplatePalette, structures) {
-	let structureDiagramMaker = new StructureDiagramMaker(textureCanvas, structures.map(structure => structure.size));
+async function makeStructureDiagrams(textureCanvas, polyMeshTemplatePalette, structures, maxTextureSize) {
+	let structureDiagramMaker = new StructureDiagramMaker(textureCanvas, structures.map(structure => structure.size), maxTextureSize);
 	let diagramsAndIndices = await structureDiagramMaker.makeDiagramsForStructures(polyMeshTemplatePalette, structures);
 	structureDiagramMaker.dispose();
 	return diagramsAndIndices;
