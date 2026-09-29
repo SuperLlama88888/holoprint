@@ -20,11 +20,15 @@ export default class WebGL2QuadRenderer {
 	/** @readonly @type {WebGLBuffer} */
 	#uvBuffer;
 	/** @readonly @type {WebGLBuffer} */
+	#brightnessBuffer;
+	/** @readonly @type {WebGLBuffer} */
 	#indexBuffer;
 	/** @readonly @type {GLint} */
 	#posLoc;
 	/** @readonly @type {GLint} */
 	#uvLoc;
+	/** @readonly @type {GLint} */
+	#brightnessLoc;
 	
 	/** @returns {boolean} */
 	static isSupported() {
@@ -66,9 +70,11 @@ export default class WebGL2QuadRenderer {
 		
 		this.#posLoc = gl.getAttribLocation(this.#program, "a_position");
 		this.#uvLoc = gl.getAttribLocation(this.#program, "a_uv");
+		this.#brightnessLoc = gl.getAttribLocation(this.#program, "a_brightness");
 		
 		this.#positionBuffer = gl.createBuffer();
 		this.#uvBuffer = gl.createBuffer();
+		this.#brightnessBuffer = gl.createBuffer();
 		this.#indexBuffer = gl.createBuffer();
 		
 		gl.enable(gl.BLEND);
@@ -86,7 +92,7 @@ export default class WebGL2QuadRenderer {
 	
 	/**
 	 * Renders a list of independent quads and returns the compiled `ImageBitmap`.
-	 * @param {{ positions: F32Vec8, uvs: F32Vec8 }[]} quads Array of position/UV pairings.
+	 * @param {{ positions: F32Vec8, uvs: F32Vec8, brightness?: number }[]} quads Array of position/UV/brightness pairings. Brightness defaults to 1.
 	 * @returns {ImageBitmap}
 	 */
 	render(quads) {
@@ -100,11 +106,13 @@ export default class WebGL2QuadRenderer {
 		let quadCount = quads.length;
 		let positions = new Float32Array(quadCount * 8);
 		let uvs = new Float32Array(quadCount * 8);
+		let brightnesses = new Float32Array(quadCount * 4);
 		let indices = new Uint16Array(quadCount * 6);
 		// batch everything into a single draw call!
-		quads.forEach(({ positions: quadPositions, uvs: quadUvs }, i) => {
+		quads.forEach(({ positions: quadPositions, uvs: quadUvs, brightness = 1 }, i) => {
 			positions.set(quadPositions, i * 8);
 			uvs.set(quadUvs, i * 8);
+			brightnesses.fill(brightness, i * 4, i * 4 + 4);
 			let vertexOffset = i * 4;
 			let indexOffset = i * 6;
 			indices[indexOffset] = vertexOffset;
@@ -125,6 +133,11 @@ export default class WebGL2QuadRenderer {
 		gl.enableVertexAttribArray(this.#uvLoc);
 		gl.vertexAttribPointer(this.#uvLoc, 2, gl.FLOAT, false, 0, 0);
 		
+		gl.bindBuffer(gl.ARRAY_BUFFER, this.#brightnessBuffer);
+		gl.bufferData(gl.ARRAY_BUFFER, brightnesses, gl.STREAM_DRAW);
+		gl.enableVertexAttribArray(this.#brightnessLoc);
+		gl.vertexAttribPointer(this.#brightnessLoc, 1, gl.FLOAT, false, 0, 0);
+		
 		gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, this.#indexBuffer);
 		gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, indices, gl.STREAM_DRAW);
 		
@@ -136,6 +149,7 @@ export default class WebGL2QuadRenderer {
 	dispose() {
 		this.#gl.deleteBuffer(this.#positionBuffer);
 		this.#gl.deleteBuffer(this.#uvBuffer);
+		this.#gl.deleteBuffer(this.#brightnessBuffer);
 		this.#gl.deleteBuffer(this.#indexBuffer);
 		this.#gl.deleteTexture(this.#glTexture);
 		this.#gl.deleteProgram(this.#program);
