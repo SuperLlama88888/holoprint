@@ -125,17 +125,17 @@ export default class StructureDiagramMaker {
 		/** @type {HashMap<number[], number, number>} */
 		let diagramIndicesHashMap = new HashMap(indices => fnv1a(indices), areArraysEqual);
 		/** @type {number[][]} */
-		let diagramBlobIndices = [];
-		structures.forEach(structure => {
+		let diagramBlobIndices = new Array(structures.length);
+		structures.forEach((structure, structureI) => {
 			/** @type {number[]} */
-			let diagramBlobIndicesForStructure = [];
+			let diagramBlobIndicesForStructure = new Array(structure.height + 1);
 			
 			let isoBlockResolution = this.#computeIsometricBlockResolution(structure);
 			let isometricRenderer = this.#makeRenderer(isoBlockResolution * 3);
 			if(isometricRenderer) {
 				let isometricBlockIconPalette = this.makeIsometricViewBlockIconPalette(polyMeshTemplatePalette, isometricRenderer);
 				isometricRenderer.dispose();
-				diagramBlobIndicesForStructure.push(diagramBlobPromises.length);
+				diagramBlobIndicesForStructure[0] = diagramBlobPromises.length;
 				
 				let isoDiagramPromise = this.#makeIsometricDiagramForStructure(isometricBlockIconPalette, structure, isoBlockResolution);
 				diagramBlobPromises.push(isoDiagramPromise.catch(async e => {
@@ -144,17 +144,20 @@ export default class StructureDiagramMaker {
 					return await toBlob(stringToImageData("Couldn't create isometric diagram"));
 				}).finally(() => this.#disposeBlockIconPalette(isometricBlockIconPalette)));
 			} else {
-				diagramBlobIndicesForStructure.push(diagramBlobPromises.length);
+				diagramBlobIndicesForStructure[0] = diagramBlobPromises.length;
 				diagramBlobPromises.push(toBlob(stringToImageData("Couldn't create isometric diagram")));
 			}
 			
 			// layer-by-layer diagrams are cached based on the hash of the palette indices on each layer. (Can't believe I had to implement a hash map myself in the big 26)
 			for(let y = 0; y < structure.height; y++) {
 				/** @type {number[]} */
-				let indices = [];
+				let indices = new Array(structure.width * structure.depth * 2);
+				let indicesI = 0;
 				for(let x = 0; x < structure.width; x++) {
 					for(let z = 0; z < structure.depth; z++) {
-						indices.push(...structure.getPaletteIndicesForBothLayers([x, y, z]));
+						let paletteIndices = structure.getPaletteIndicesForBothLayers([x, y, z]);
+						indices[indicesI++] = paletteIndices[0];
+						indices[indicesI++] = paletteIndices[1];
 					}
 				}
 				let layerKey = [structure.width, structure.depth, ...indices];
@@ -164,9 +167,9 @@ export default class StructureDiagramMaker {
 					diagramIndicesHashMap.set(layerKey, index);
 					diagramBlobPromises.push(this.#makeDiagramForLayer(blockIconPalette, indices, structure));
 				}
-				diagramBlobIndicesForStructure.push(index);
+				diagramBlobIndicesForStructure[y + 1] = index;
 			}
-			diagramBlobIndices.push(diagramBlobIndicesForStructure);
+			diagramBlobIndices[structureI] = diagramBlobIndicesForStructure;
 		});
 		
 		// The new "using" statement is not yet widely supported, so I need to manually write this. esbuild can transpile it but it's soooo bloated. Maybe in 5 years...

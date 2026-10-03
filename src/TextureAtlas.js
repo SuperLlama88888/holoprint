@@ -84,10 +84,10 @@ export default class TextureAtlas {
 	async makeAtlas(textureRefs) {
 		console.log("Texture references:", textureRefs);
 		
-		let textureImageIndices = [];
+		let textureImageIndices = new Array(textureRefs.length);
 		
 		let allTextureFragments = new JSONSet();
-		textureRefs.forEach(textureRef => {
+		textureRefs.forEach((textureRef, textureRefI) => {
 			let texturePath;
 			let tint = textureRef.tint;
 			let tintLikePng = false;
@@ -135,7 +135,7 @@ export default class TextureAtlas {
 				uvSize: textureRef.uvSize
 			};
 			allTextureFragments.add(textureFragment);
-			textureImageIndices.push(allTextureFragments.indexOf(textureFragment));
+			textureImageIndices[textureRefI] = allTextureFragments.indexOf(textureFragment);
 			// console.table({
 			// 	index: tintedTexturePaths.indexOf(pathAndTint),
 			// 	uv: textureRef.uv,
@@ -423,10 +423,10 @@ export default class TextureAtlas {
 		let ctx = can.getContext("2d");
 		
 		console.log("Packed image fragments:", imageFragments);
-		let imageUvs = [];
+		let imageUvs = new Array(packedImageFragments.length);
 		packedImageFragments.forEach((imageFragment, i) => {
 			if(identicalFragmentIndices.has(i)) {
-				imageUvs.push(imageUvs[identicalFragmentIndices.get(i)]);
+				imageUvs[i] = imageUvs[identicalFragmentIndices.get(i)];
 				return;
 			}
 			let sourcePos = tuple([imageFragment.sourceX, imageFragment.sourceY]);
@@ -442,7 +442,7 @@ export default class TextureAtlas {
 			if("crop" in imageFragment) {
 				imageUv.crop = imageFragment.crop;
 			}
-			imageUvs.push(imageUv);
+			imageUvs[i] = imageUv;
 		});
 		let canImageData = can.getContext("2d").getImageData(0, 0, can.width, can.height);
 		let transparencies = this.#getImageFragmentTransparencies(canImageData, packedImageFragments);
