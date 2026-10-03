@@ -30,7 +30,8 @@ jobs:
       - name: Check block translation coverage
         run: |
           npm ci -w check_block_translation_coverage
-          npm run test -w check_block_translation_coverage
+          npx puppeteer browsers install firefox
+          npm run test -w check_block_translation_coverage -- firefox
   test-sample-structures:
     name: Test Sample Structures
     needs: [validate-json-data, check-block-translation-coverage]
