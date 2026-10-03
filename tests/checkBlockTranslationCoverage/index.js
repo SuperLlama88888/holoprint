@@ -2,16 +2,13 @@ import { testOnSourceCode } from "../headlessBrowserTestRunner.js";
 
 testOnSourceCode(async page => {
 	await page.evaluate(async () => {
-		// TODO: Fix this test since Chrome can't import text files and Puppeteer doesn't support the latest Firefox version yet
-		return;
-		
 		/** @type {typeof import("../../src/ResourcePackStack.js").default} */
 		const ResourcePackStack = (await import("../ResourcePackStack.js")).default;
 		/** @type {typeof import("../../src/MaterialList.js").default} */
 		const MaterialList = (await import("../MaterialList.js")).default;
-		/** @type {import("../../src/HoloPrint.js")} */
+		/** @type {typeof import("../../src/HoloPrint.js")} */
 		const HoloPrint = await import("../HoloPrint.js");
-		/** @type {import("../../src/utils.js").jsonc} */
+		/** @type {typeof import("../../src/utils.js").jsonc} */
 		const jsonc = (await import("../utils.js")).jsonc;
 		/** @type {typeof import("../../src/fetchers.js").default} */
 		const fetchers = (await import("../fetchers.js")).default;
@@ -37,7 +34,7 @@ testOnSourceCode(async page => {
 		
 		let materialList = new MaterialList(blockMetadata, itemMetadata, materialListMappings, translationFile);
 		blockNames.forEach(blockName => materialList.add(blockName));
-		// console.log(JSON.stringify(materialList.export()));
+		console.log(JSON.stringify(materialList.export()));
 	});
 	return true;
 });
