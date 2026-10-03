@@ -79,15 +79,13 @@ export function mergeStructurePalettes(structures) {
 	/** @type {JSONSet<Block>} */
 	let mergedPaletteSet = new JSONSet();
 	/** @type {([Int32Array] | [Int32Array, Int32Array])[]} */
-	let remappedIndices = [];
-	structures.forEach(structure => {
-		/** @type {number[]} */
-		let indexRemappings = [];
-		structure.getPalette().forEach((block, i) => {
+	let remappedIndices = new Array(structures.length);
+	structures.forEach((structure, structureI) => {
+		let indexRemappings = structure.getPalette().map(block => {
 			mergedPaletteSet.add(block);
-			indexRemappings[i] = mergedPaletteSet.indexOf(block);
+			return mergedPaletteSet.indexOf(block);
 		});
-		remappedIndices.push(structure.getBlockIndices().map(layer => layer.map(i => indexRemappings[i] ?? -1)));
+		remappedIndices[structureI] = structure.getBlockIndices().map(layer => layer.map(i => indexRemappings[i] ?? -1));
 	});
 	// all structures will use this one palette array!
 	let mergedPalette = Array.from(mergedPaletteSet);

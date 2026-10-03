@@ -6,13 +6,15 @@ export default class PolyMeshMaker {
 	/** @readonly @type {PolyMeshTemplateFaceWithUvs[][]} */
 	templatePalette;
 	/** @readonly @type {[Vec3, number][][]} */
-	#blocks = [];
+	#blocks;
 	/** @readonly @type {JSONMap<Vec3, number>} */
 	#positionsWithMultipleBlocks = new JSONMap([], stringifyVec3);
 	
 	/** @param {PolyMeshTemplateFaceWithUvs[][]} templatePalette */
 	constructor(templatePalette) {
 		this.templatePalette = templatePalette;
+		
+		this.#blocks = new Array(templatePalette.length);
 		for(let i in templatePalette) {
 			this.#blocks[i] = [];
 		}
@@ -40,8 +42,10 @@ export default class PolyMeshMaker {
 		
 		let usedPaletteEntries = Object.entries(this.#blocks).filter(([, val]) => val.length);
 		usedPaletteEntries.sort(([, a], [, b]) => b.length - a.length); // makes more common blocks have smaller indices
+		let totalFaceCount = usedPaletteEntries.reduce((sum, [paletteI]) => sum + this.templatePalette[+paletteI].length, 0);
 		/** @type {{ polys: PolyMeshFace[], transparency: number }[]} */
-		let polysAndTransparencies = [];
+		let polysAndTransparencies = new Array(totalFaceCount);
+		let polysAndTransparenciesI = 0;
 		let facesToBeReordered = [];
 		usedPaletteEntries.forEach(([paletteI, blockPositions]) => {
 			let faces = this.templatePalette[+paletteI];
@@ -49,15 +53,15 @@ export default class PolyMeshMaker {
 				let face = faces[faceI];
 				let normalIndex = normals.add(face.normal);
 				let uvIndices = face.vertices.map(vertex => uvs.add(vertex.uv));
-				let polys = [];
-				blockPositions.forEach(([blockPos, layer]) => {
-					let facePolys = [];
+				let polys = new Array(blockPositions.length);
+				blockPositions.forEach(([blockPos, layer], blockI) => {
+					let facePolys = new Array(4);
 					for(let vertexI = 0; vertexI < 4; vertexI++) {
 						let pos = vec3.toFixed(vec3.add(blockPos, face.vertices[vertexI].pos), 4);
 						let positionIndex = positions.add(pos);
-						facePolys.push([positionIndex, normalIndex, uvIndices[vertexI]]);
+						facePolys[vertexI] = [positionIndex, normalIndex, uvIndices[vertexI]];
 					}
-					polys.push(facePolys);
+					polys[blockI] = facePolys;
 					if(this.#positionsWithMultipleBlocks.has(blockPos)) {
 						let pairI = this.#positionsWithMultipleBlocks.get(blockPos);
 						facesToBeReordered[pairI] ??= [];
@@ -65,10 +69,10 @@ export default class PolyMeshMaker {
 						facesToBeReordered[pairI][layer].push(facePolys);
 					}
 				});
-				polysAndTransparencies.push({
+				polysAndTransparencies[polysAndTransparenciesI++] = {
 					transparency: face.transparency,
 					polys
-				});
+				};
 			}
 		});
 		polysAndTransparencies.sort((a, b) => a.transparency - b.transparency); // transparent blocks rendered later

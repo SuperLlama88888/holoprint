@@ -29,7 +29,9 @@ export default class EntityGeoMaker {
 		}
 		let textureWidth = matchingGeo["description"]["texture_width"];
 		let textureHeight = matchingGeo["description"]["texture_height"];
-		let cubes = [];
+		let totalCubes = matchingGeo["bones"].reduce((sum, bone) => sum + (bone["cubes"]?.length ?? 0), 0);
+		let cubes = new Array(totalCubes);
+		let cubesI = 0;
 		matchingGeo["bones"].forEach(bone => {
 			bone["cubes"]?.forEach(geoCube => {
 				let cube = this.#getCubeFromGeoCube(geoCube, entityModelInfo.texture, [textureWidth, textureHeight], geoFile["format_version"]);
@@ -43,7 +45,7 @@ export default class EntityGeoMaker {
 					cube.rot = geoCube["rotation"];
 					cube.pivot = geoCube.pivot;
 				}
-				cubes.push(cube);
+				cubes[cubesI++] = cube;
 			});
 		});
 		return cubes;
