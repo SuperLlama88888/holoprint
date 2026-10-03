@@ -238,7 +238,7 @@ export default class PreviewRenderer extends AsyncFactory {
 			this.#guiLocName(this.#optionsGui.add(this.options, "showSkybox").onChange(() => this.#initBackground()), "preview.options.showSkybox");
 			this.#guiLocName(this.#optionsGui.add(this.options, "highResolution").onChange(() => this.#setSize()), "preview.options.highRes");
 			this.#guiLocName(this.#optionsGui.add(this, "downloadScreenshot"), "preview.options.takeScreenshot");
-			this.#guiLocName(this.#optionsGui.add(this, "exportGlb"), "preview.options.exportGlb");
+			this.#guiLocName(this.#optionsGui.add(this, "downloadGlb"), "preview.options.exportGlb");
 			if(!IN_PRODUCTION) {
 				this.#optionsGui.add(this.options, "debugHelpersVisible").onChange(() => {
 					if(this.options.debugHelpersVisible) {
@@ -328,22 +328,26 @@ export default class PreviewRenderer extends AsyncFactory {
 			downloadFile(imageFile);
 		});
 	}
-	/** Downloads a GLB file of the scene. */
-	exportGlb() {
+	/**
+	 * Exports a GLB file of the scene.
+	 * @returns {Promise<File>}
+	 */
+	async exportGlb() {
 		let exporter = new GLTFExporter();
 		let exportReadyScene = this.#expandInstancedMeshes();
-		exporter.parse(exportReadyScene, glbData => {
-			TS: assertAs(glbData, ArrayBuffer);
-			let glbFile = new File([glbData], `${this.packName}.glb`, {
-				type: "model/gltf-binary"
-			});
-			downloadFile(glbFile);
-		}, e => {
-			console.error("Error exporting GLB:", e);
-		}, {
+		let glbData = await exporter.parseAsync(exportReadyScene, {
 			binary: true,
 			trs: true // decreases file size by a little, idk how
 		});
+		TS: assertAs(glbData, ArrayBuffer);
+		return new File([glbData], `${this.packName}.glb`, {
+			type: "model/gltf-binary"
+		});
+	}
+	/** Downloads a GLB file of the scene. */
+	async downloadGlb() {
+		let glb = await this.exportGlb();
+		downloadFile(glb);
 	}
 	
 	#loop() {
@@ -617,22 +621,31 @@ export default class PreviewRenderer extends AsyncFactory {
 		let polyMesh = this.#polyMeshMaker.export();
 		this.#polyMeshMaker.clear();
 		let i = 0; // this bit is adapted from https://github.com/bridge-core/model-viewer/blob/main/lib/PolyMesh.ts#L45
-		let positions = [], normals = [], uvs = [], indices = [];
+		let totalVertices = polyMesh.polys.reduce((sum, face) => sum + face.length, 0);
+		let positions = new Float32Array(totalVertices * 3);
+		let normals = new Float32Array(totalVertices * 3);
+		let uvs = new Float32Array(totalVertices * 2);
+		let indices = new Uint32Array(polyMesh.polys.length * 6);
+		let positionsI = 0, normalsI = 0, uvsI = 0, indicesI = 0;
 		polyMesh.polys.forEach(face => {
 			face.forEach(([posIndex, normalIndex, uvIndex]) => {
 				let pos = polyMesh.positions[posIndex];
-				positions.push(pos[0], pos[1], 16 - pos[2]);
-				normals.push(...polyMesh.normals[normalIndex]);
-				uvs.push(polyMesh.uvs[uvIndex][0], 1 - polyMesh.uvs[uvIndex][1]);
+				positions.set([pos[0], pos[1], 16 - pos[2]], positionsI);
+				positionsI += 3;
+				normals.set(polyMesh.normals[normalIndex], normalsI);
+				normalsI += 3;
+				uvs.set([polyMesh.uvs[uvIndex][0], 1 - polyMesh.uvs[uvIndex][1]], uvsI);
+				uvsI += 2;
 			});
-			indices.push(i + 2, i + 1, i, i + 2, i, i + 3);
-			i += face.length;
+			indices.set([i + 2, i + 1, i, i + 2, i, i + 3], indicesI);
+			indicesI += 6;
+			i += 4;
 		});
 		let geo = new THREE.BufferGeometry();
-		geo.setAttribute("position", new THREE.BufferAttribute(new Float32Array(positions), 3));
-		geo.setAttribute("normal", new THREE.BufferAttribute(new Float32Array(normals), 3));
-		geo.setAttribute("uv", new THREE.BufferAttribute(new Float32Array(uvs), 2));
-		geo.setIndex(indices);
+		geo.setAttribute("position", new THREE.BufferAttribute(positions, 3));
+		geo.setAttribute("normal", new THREE.BufferAttribute(normals, 3));
+		geo.setAttribute("uv", new THREE.BufferAttribute(uvs, 2));
+		geo.setIndex(new THREE.BufferAttribute(indices, 1));
 		geo.computeVertexNormals();
 		return geo;
 	}

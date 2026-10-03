@@ -65,8 +65,8 @@ export default class SpawnAnimationMaker {
 	 */
 	#orderDelayRanking(ranking) {
 		let offset = 0;
-		let order = [];
-		let mappedRankings = [];
+		let order = new Array(ranking.length);
+		let mappedRankings = new Array(ranking.length);
 		let sortedIndexedRanking = ranking.map((rank, i) => [rank, i]).sort(([a], [b]) => a - b);
 		sortedIndexedRanking.forEach(([rank, originalI], i) => { // condense "gaps". e.g. [1, 2, 3, 3, 5, 5] becomes [1, 2, 3, 3, 4, 4]. this is so there aren't any large pauses in the animation and it flows continuously
 			rank -= offset;

@@ -1001,12 +1001,14 @@ export default class BlockGeoMaker {
 		});
 		
 		// do && before || to match JS operator precedence
-		let andRes = [booleanValues[0]];
+		let andRes = new Array(booleanOperations.filter(booleanOperation => booleanOperation == "||").length + 1);
+		andRes[0] = booleanValues[0];
+		let andResI = 1;
 		booleanOperations.forEach((booleanOperation, i) => {
 			if(booleanOperation == "&&") {
-				andRes[andRes.length - 1] &&= booleanValues[i + 1];
+				andRes[andResI - 1] &&= booleanValues[i + 1];
 			} else {
-				andRes.push(booleanValues[i + 1])
+				andRes[andResI++] = booleanValues[i + 1];
 			}
 		});
 		let orRes = andRes.some(x => x); // only || operations remain

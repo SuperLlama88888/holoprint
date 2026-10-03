@@ -630,11 +630,12 @@ export function getDefaultPackName(structureFiles) {
  * @returns {[string, string][]}
  */
 export function findLinksInDescription(description) {
-	let links = [];
-	Array.from(description.matchAll(/(.*?)\n?\s*(https?:\/\/[^\s]+)/g)).forEach(match => {
+	let matches = Array.from(description.matchAll(/(.*?)\n?\s*(https?:\/\/[^\s]+)/g));
+	let links = new Array(matches.length);
+	matches.forEach((match, i) => {
 		let label = match[1].trim();
 		let url = match[2].trim();
-		links.push([label, url]);
+		links[i] = [label, url];
 	});
 	return links;
 }
@@ -938,19 +939,19 @@ function addBoundingBoxParticles(hologramAnimationControllers, structureI, struc
 		`v.size = ${depth / 2}; v.dir = 2; v.x = ${width}; v.y = ${height}; v.r = 1; v.g = 1; v.b = 1;`
 	];
 	let boundingBoxAnimation = {
-		particle_effects: [],
+		particle_effects: new Array(outlineParticleSettings.length),
 		transitions: [
 			{
 				hidden: `!v.hologram.rendering || v.hologram.structure_index != ${structureI}`
 			}
 		]
 	};
-	outlineParticleSettings.forEach(particleMolang => {
-		boundingBoxAnimation["particle_effects"].push({
+	outlineParticleSettings.forEach((particleMolang, i) => {
+		boundingBoxAnimation["particle_effects"][i] = {
 			effect: "bounding_box_outline",
 			locator: "hologram_root",
 			pre_effect_script: particleMolang.replaceAll(/\s/g, "")
-		});
+		};
 	});
 	let animationStateName = `visible_${structureI}`;
 	hologramAnimationControllers["animation_controllers"]["controller.animation.holoprint.hologram.bounding_box"]["states"][animationStateName] = boundingBoxAnimation;
@@ -968,9 +969,9 @@ function addBoundingBoxParticles(hologramAnimationControllers, structureI, struc
  */
 function handleBlockValidation(config, structures, hologramAnimationControllers, addLocator) {
 	/** @type {number[]} */
-	let totalBlocksToValidateByStructure = [];
+	let totalBlocksToValidateByStructure = new Array(structures.length);
 	/** @type {number[][]} */
-	let totalBlocksToValidateByStructureByLayer = [];
+	let totalBlocksToValidateByStructureByLayer = new Array(structures.length);
 	/** @type {Set<string>} */
 	let uniqueBlocksToValidate = new Set();
 	
@@ -978,7 +979,7 @@ function handleBlockValidation(config, structures, hologramAnimationControllers,
 		// particle_expire_if_in_blocks only works on the first layer :(
 		/** @type {BlockToValidate[]} */
 		let blocksToValidate = [];
-		let blocksToValidateByLayer = [];
+		let blocksToValidateByLayer = new Array(structure.height);
 		
 		for(let y = 0; y < structure.height; y++) {
 			let blocksToValidateCurrentLayer = 0; // "layer" in here refers to y-coordinate, NOT structure layer
@@ -1003,12 +1004,12 @@ function handleBlockValidation(config, structures, hologramAnimationControllers,
 					addLocator(coords, blockCoordinateLocatorName);
 				}
 			}
-			blocksToValidateByLayer.push(blocksToValidateCurrentLayer);
+			blocksToValidateByLayer[y] = blocksToValidateCurrentLayer;
 		}
 		
 		addBlockValidationParticles(hologramAnimationControllers, structureI, blocksToValidate, structure);
-		totalBlocksToValidateByStructure.push(blocksToValidate.length);
-		totalBlocksToValidateByStructureByLayer.push(blocksToValidateByLayer);
+		totalBlocksToValidateByStructure[structureI] = blocksToValidate.length;
+		totalBlocksToValidateByStructureByLayer[structureI] = blocksToValidateByLayer;
 	});
 	return { uniqueBlocksToValidate, totalBlocksToValidateByStructure, totalBlocksToValidateByStructureByLayer };
 }
@@ -1031,7 +1032,7 @@ function addCoordinateLocatorToHologramGeo(hologramGeo, coords, locatorName) {
  */
 function addBlockValidationParticles(hologramAnimationControllers, structureI, blocksToValidate, structure) {
 	let validateAllState = {
-		particle_effects: [],
+		particle_effects: new Array(blocksToValidate.length),
 		transitions: [
 			{
 				default: "!v.hologram.validating" // when changing structure it will always stop validating, so there's no need to check v.hologram.structure_index
@@ -1046,7 +1047,7 @@ function addBlockValidationParticles(hologramAnimationControllers, structureI, b
 	};
 	validationStates["default"]["transitions"].push(validateAllStateTransition);
 	let layersWithBlocksToValidate = [];
-	blocksToValidate.forEach(blockToValidate => {
+	blocksToValidate.forEach((blockToValidate, blockToValidateI) => {
 		let [x, y, z] = blockToValidate.pos;
 		let animationStateName = `validate_${structureI}_l_${y}`;
 		if(!(animationStateName in validationStates)) {
@@ -1081,7 +1082,7 @@ function addBlockValidationParticles(hologramAnimationControllers, structureI, b
 				v.z = ${z};
 			`.replaceAll(/\s/g, "") // this is only used for setting the wrong block overlay position; the particle's position is set using the locator
 		};
-		validateAllState["particle_effects"].push(particleEffect);
+		validateAllState["particle_effects"][blockToValidateI] = particleEffect;
 		validationStates[animationStateName]["particle_effects"].push(particleEffect);
 	});
 	for(let y = 0; y < structure.height; y++) { // layers with no blocks to validate don't have an animation controller state, so transitions to the default state need to be added for when it's on these empty layers
