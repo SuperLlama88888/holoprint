@@ -70,3 +70,9 @@ jobs:
         with:
           name: screenshots_${{ matrix.browser }}
           path: tests/screenshots
+      - name: Upload GLB models as artifacts
+        if: always() && matrix.browser == 'Chrome'
+        uses: actions/upload-artifact@v7.0.1
+        with:
+          name: glb_models_${{ matrix.browser }}
+          path: tests/glbModels

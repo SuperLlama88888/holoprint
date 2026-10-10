@@ -12,6 +12,10 @@ const screenshotUploadDir = path.join(import.meta.dirname, "../screenshots");
 if(!fs.existsSync(screenshotUploadDir)) {
 	fs.mkdirSync(screenshotUploadDir);
 }
+const glbUploadDir = path.join(import.meta.dirname, "../glbModels");
+if(!fs.existsSync(glbUploadDir)) {
+	fs.mkdirSync(glbUploadDir);
+}
 
 test(async page => {
 	let testStructurePaths = [];
@@ -30,7 +34,7 @@ test(async page => {
 		let structureFileContent = fs.readFileSync(structurePath).toString("base64");
 		try {
 			totalTime += await page.evaluate(async (structureFileName, structureFileContent, browserEngine) => {
-				/** @type {import("../../src/HoloPrint.js")} */
+				/** @type {typeof import("../../src/HoloPrint.js")} */
 				const HoloPrint = await import("../index.js"); // testing workflow makes index.js export everything from HoloPrint.js
 				
 				console.group(`Testing ${structureFileName}...`);
@@ -50,7 +54,30 @@ test(async page => {
 				}, undefined, previewCont);
 				let elapsedTime = performance.now() - startTime;
 				if(browserEngine == "chrome") {
-					await previews;
+					await Promise.all((await previews ?? []).map(async previewRenderer => {
+						let glbFile = await previewRenderer.exportGlb().catch(e => {
+							console.error(`Failed to export GLB: ${e}, ${e.stack}`);
+							return null;
+						});
+						if(!glbFile) {
+							return;
+						}
+						let response = await fetch("/", {
+							method: "POST",
+							body: glbFile,
+							headers: {
+								"Content-Type": glbFile.type,
+								"Content-Location": glbFile.name,
+								"X-File-Kind": "glb"
+							}
+						}).catch(e => {
+							console.error(`Failed to upload GLB: ${e}, ${e.stack}`);
+							return null;
+						});
+						if(response && !response.ok) {
+							console.error(`Failed to upload GLB ${glbFile.name}: HTTP ${response.status}`);
+						}
+					}));
 				}
 				
 				await fetch("/", {
@@ -75,7 +102,8 @@ test(async page => {
 	
 	return packsCreated == testStructurePaths.length;
 }, (req, res, page) => {
-	if(req.method == "POST") { // a completed pack is being uploaded
+	if(req.method == "POST") { // a completed pack or exported GLB is being uploaded
+		let isGlbFile = req.headers["x-file-kind"] == "glb";
 		let dataChunks = [];
 		req.on("data", chunk => {
 			dataChunks.push(chunk);
@@ -84,10 +112,10 @@ test(async page => {
 			let fileBuffer = Buffer.concat(dataChunks);
 			let fileName = req.headers["content-location"];
 			let fileBasename = path.basename(fileName);
-			let filePath = path.join(packUploadDir, fileBasename);
+			let filePath = path.join(isGlbFile? glbUploadDir : packUploadDir, fileBasename);
 			
 			fs.writeFile(filePath, fileBuffer, async err => {
-				if(browserEngine == "chrome") {
+				if(browserEngine == "chrome" && !isGlbFile) {
 					try {
 						let previewImage = await page.waitForSelector("#previewCont > canvas");
 						await previewImage?.screenshot({
@@ -106,7 +134,7 @@ test(async page => {
 					return;
 				}
 				res.writeHead(200, plainTextHeaders);
-				res.end(`Saved completed pack to ${filePath}`);
+				res.end(`Saved completed ${isGlbFile? "GLB model" : "pack"} to ${filePath}`);
 			});
 		});
 	}
