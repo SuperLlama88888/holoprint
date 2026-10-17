@@ -20,7 +20,7 @@ holoprint.material_list.heading=Lista de Materiales: {PACK_NAME}
 holoprint.material_list.empty=§oNo hay items en esta lista de materiales.§r
 
 howtoplay.holoprint_about=Sobre de HoloPrint
-holoprint.info_screen.info.about=Estás usando un pack de recursos §uHoloPrint§r generado en §o{PACK_GENERATION_TIME}§r.\n\n§uHoloPrint§r es desarrollado por §l§6SuperLlama88888§r y es un proyectl totalmente open-source.\n\nPuedes encontrar el codigo en: §ohttps://github.com/SuperLlama88888/holoprint§r\n\nPara más información, visita la wiki en: §ohttps://holoprint-mc.github.io/wiki§r
+holoprint.info_screen.info.about=Estás usando un pack de recursos §uHoloPrint§r generado en §o{PACK_GENERATION_TIME}§r.\n\n§uHoloPrint§r es desarrollado por §l§6SuperLlama88888§r y es un proyecto totalmente open-source.\n\nPuedes encontrar el código en: §ohttps://github.com/SuperLlama88888/holoprint§r\n\nPara más información, visita la wiki en: §ohttps://holoprint-mc.github.io/wiki§r
 
 holoprint.info_screen.title=Información de HoloPrint
 holoprint.info_screen.change_structure_layer=Cambiar capa
