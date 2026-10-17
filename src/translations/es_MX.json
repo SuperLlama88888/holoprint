@@ -105,7 +105,7 @@
 	"extract_from_world.heading": "Extraer del mundo",
 	"extract_from_world.upload": "Subir archido de mundo (`*.mcworld`, `*.mctemplate`, `*.zip`)",
 	"extract_from_world.extracting": "Extrayendo estructuras del mundo...",
-	"extract_from_world.success": "¡{COUNT} estructura[s] extraídos exitosamente!",
+	"extract_from_world.success": "¡{COUNT} estructura[s] extraída[s] exitosamente!",
 	"extract_from_world.error": "¡No se encontró estructuras guardadas!",
 	"extract_from_world.world_error": "¡Archivo de mundo invalido! {ERROR}",
 	"update_pack.heading": "Actualizar pack",
