@@ -13,8 +13,8 @@ pack.description.renamed_control_items_disabled=Renombre de control de items des
 holoprint.controls.increase_layer=Aumentar capa
 holoprint.controls.increase_opacity=Aumentar opacidad
 holoprint.controls.move_hologram_x=Mover holograma en X
-holoprint.controls.move_hologram_y=Mover hologram en Y
-holoprint.controls.move_hologram_z=Mover hologram en Z
+holoprint.controls.move_hologram_y=Mover holograma en Y
+holoprint.controls.move_hologram_z=Mover holograma en Z
 
 holoprint.material_list.heading=Lista de Materiales: {PACK_NAME}
 holoprint.material_list.empty=§oNo hay items en esta lista de materiales.§r
