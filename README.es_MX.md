@@ -1,13 +1,13 @@
 ![HoloPrint](images/banner.png)
 
 [![English](https://img.shields.io/badge/Language-English-blue)](README.md) [![简体中文](https://img.shields.io/badge/Language-简体中文-blue)](README.zh-CN.md)
-### About
+### Sobre nosotros
 HoloPrint es una app web que convierte archivos de estructuras de MCBE en packs de recursos mostrando hologramas de construcciones. Se basa en el trabajo de [Structura](https://github.com/RavinMaddHatter/Structura), un proyecto similar. Structura y HoloPrint buscan recrear la experiencia de los mods de Java Edition como [Litematica](https://github.com/maruohon/litematica) y [Schematica](https://github.com/Lunatrius/Schematica) para usuarios de Bedrock Edition a tráves de packs de recursos.
 
 > [!TIP]
 > ¡Mira la [wiki](https://holoprint-mc.github.io/wiki) para instrucciones más detalladas!
 
-### Usage
+### Uso
 > [!NOTE]
 > En Android el botón "exportar" del bloque de estructura está oculto; por favor usa [este pack](https://holoprint-mc.github.io/exportbutton) para agregarlo de regreso.
 1. Usa un bloque de estructura para exportar un archivo `.mcstructure`. Para obtener un bloque de estructura, ejecuta en Minecraft el comando `/give @s structure_block`.  
@@ -60,7 +60,7 @@ HoloPrint es una app web que convierte archivos de estructuras de MCBE en packs 
 [![Usage graph](https://raw.githubusercontent.com/SuperLlama88888/holoprint-stats/main/usageGraph.png)](https://github.com/SuperLlama88888/holoprint-stats)
 [![Star history chart](https://api.star-history.com/svg?repos=SuperLlama88888/HoloPrint&type=Date)](https://star-history.com/#SuperLlama88888/HoloPrint&Date)
 
-### Credit
+### Creditos
 - [Structura](https://github.com/RavinMaddHatter/Structura): Inspiración, sentando las bases de este proyecto. sin el trabajo de [RavinMaddHatter](https://github.com/RavinMaddHatter) y [others](https://github.com/RavinMaddHatter/Structura/graphs/contributors), este proyecto podria haber tardado decenas de horas más de haber empezado.
 - [Tab Key Playerlist UI](https://github.com/YuuhaLand/Tabkey_Playerlist_UI) por [YuuhaLand](https://github.com/YuuhaLand): Fundación para la "material list UI".
 - [Nextr](https://mcpedl.com/user/nextr): Control item textures (ajustes)
