@@ -1,0 +1,26 @@
+pack.description=§u★HoloPrint§r Ressourcenpaket generiert am §o{PACK_GENERATION_TIME}§r\nEntwickelt von §l§6SuperLlama88888§r{AUTHORS_SECTION}{DESCRIPTION_SECTION}{DISABLED_FEATURES_SECTION}{CONTROLS_SECTION}\n\n§lInsgesamte Block-Anzahl: {TOTAL_MATERIAL_COUNT}\n§r{MATERIAL_LIST}	## ★ at the start forces unicode font which makes it smaller so more text fits in
+pack.description.authors=\nStruktur erstellt von {STRUCTURE_AUTHORS[ und ]}	## Authors/Description/Controls will be substituted into the actual description by the JS
+pack.description.description=\n{DESCRIPTION}
+pack.description.disabled_features=\n§4§o{DISABLED_FEATURES}§r
+pack.description.controls=\n\n§lControls:§r{CONTROLS}
+
+pack.description.spawn_animation_disabled=Spawn-Animation deaktiviert
+pack.description.player_controls_disabled=Spielersteuerung deaktiviert
+pack.description.ui_controls_disabled=UI-Steuerung deaktiviert
+pack.description.retextured_control_items_disabled=Geänderte Textur von Steuerungs-Items deaktiviert
+pack.description.renamed_control_items_disabled=Umbenannte Steuerungs-Items deaktiviert
+
+holoprint.controls.increase_layer=Erhöhe Schicht
+holoprint.controls.increase_opacity=Erhöhe Lichtdurchlässigkeit
+holoprint.controls.move_hologram_x=Bewege Hologramm X
+holoprint.controls.move_hologram_y=Bewege Hologramm Y
+holoprint.controls.move_hologram_z=Bewege Hologramm Z
+
+holoprint.material_list.heading=Material Liste: {PACK_NAME}
+holoprint.material_list.empty=§Es sind keine Items in dieser Material Liste.§r
+
+howtoplay.holoprint_about=Über HoloPrint
+holoprint.info_screen.info.about=Du benutzt ein §uHoloPrint§r Ressourcenpaket generiert am §o{PACK_GENERATION_TIME}§r.\n\n§uHoloPrint§r ist von §l§6SuperLlama88888§r entwickelt und ist ein vollständig open-source Projekt.\n\nDer Source Code kann auf "§ohttps://github.com/SuperLlama88888/holoprint§r\n\nFor more info, visit the wiki at: §ohttps://holoprint-mc.github.io/wiki§r" gefunden werden
+
+holoprint.info_screen.title=HoloPrint Info
+holoprint.info_screen.change_structure_layer=Schicht ändern
