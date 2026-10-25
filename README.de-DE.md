@@ -3,7 +3,7 @@
 [![简体中文](https://img.shields.io/badge/Language-简体中文-blue)](README.zh-CN.md)
 [![English](https://img.shields.io/badge/Language-English-blue)](README.md)
 ### Über
-HoloPrint ist eine Web-App, die MCBE-Strukturdateien in Ressourcenpakete umwandelt, die Hologramme von Bauwerken anzeigen. Es baut auf der Arbeit von [Structura](https://github.com/RavinMaddHatter/Structura) auf, ein ähnliches Projekt. Sowohl Structura als auch HoloPrint verfolgen das Ziel die Nutzung von Java Edition Mods wie [Litematica](https://github.com/maruohon/litematica) und [Schematica](https://github.com/Lunatrius/Schematica) für Bedrock Edition Nutzer durch Ressourcenpakete nachzubilden.
+HoloPrint ist eine Web-App, die MCBE-Strukturdateien in Ressourcenpakete umwandelt, die Hologramme von Bauwerken anzeigen. Es baut auf der Arbeit von [Structura](https://github.com/RavinMaddHatter/Structura) auf, einem ähnlichen Projekt. Sowohl Structura als auch HoloPrint verfolgen das Ziel die Nutzung von Java Edition Mods wie [Litematica](https://github.com/maruohon/litematica) und [Schematica](https://github.com/Lunatrius/Schematica) für Bedrock Edition Nutzer durch Ressourcenpakete nachzubilden.
 
 > [!TIP]
 > Schau dir das [Wiki](https://holoprint-mc.github.io/wiki) an für ausführlichere Anleitungen!
@@ -32,7 +32,7 @@ HoloPrint ist eine Web-App, die MCBE-Strukturdateien in Ressourcenpakete umwande
 ![Hologramm bewegen](images/movingHologram.gif)
 - Hologramm rotieren: Kupferbarren  
 ![Hologramm rotieren](images/rotatingHologram.gif)
-- Block Überprüfung: Eisenbarren  
+- Blocküberprüfung: Eisenbarren  
 ![Validiere Struktur](images/validatingStructure.gif)
 - Materialliste: Tabulatortaste (Tastatur), Buchsymbol (Berührung)  
 ![Materialliste](images/materialList.gif)
@@ -59,14 +59,14 @@ Besonderen Dank an **kizoku246** für das Haus in diesen Bildern!
 ![Einzigartige Strukturdateien](https://img.shields.io/badge/dynamic/json?url=https://raw.githubusercontent.com/SuperLlama88888/holoprint-stats/main/dailyLogs.json&query=$[-1:]["structure_count"]&label=Einzigartige+Strukturdateien&color=#4C1)
 
 [![Benutzungsgraph](https://raw.githubusercontent.com/SuperLlama88888/holoprint-stats/main/usageGraph.png)](https://github.com/SuperLlama88888/holoprint-stats)
-[![Graph der die GitHub-Sterne anzeigt](https://api.star-history.com/svg?repos=SuperLlama88888/HoloPrint&type=Date)](https://star-history.com/#SuperLlama88888/HoloPrint&Date)
+[![Graph, der die GitHub-Sterne anzeigt](https://api.star-history.com/svg?repos=SuperLlama88888/HoloPrint&type=Date)](https://star-history.com/#SuperLlama88888/HoloPrint&Date)
 
 ### Danksagungen
-- [Structura](https://github.com/RavinMaddHatter/Structura): Inspiration, Grundlage für dieses Projekt. Ohne die Arbeit von [RavinMaddHatter](https://github.com/RavinMaddHatter) und [weitere](https://github.com/RavinMaddHatter/Structura/graphs/contributors), hätte dieses Projekt mehrere Stunden mehr gedauert.
+- [Structura](https://github.com/RavinMaddHatter/Structura): Inspiration, Grundlage für dieses Projekt. Ohne die Arbeit von [RavinMaddHatter](https://github.com/RavinMaddHatter) und [anderen Mitwirkenden](https://github.com/RavinMaddHatter/Structura/graphs/contributors), hätte dieses Projekt mehrere Stunden mehr gedauert.
 - [Tab Key Playerlist UI](https://github.com/YuuhaLand/Tabkey_Playerlist_UI) von [YuuhaLand](https://github.com/YuuhaLand): Grundlage für die Materialliste-UI
 - [Nextr](https://mcpedl.com/user/nextr): Steuerung der Item-Texturen (modifiziert)
-- [Indyfficient](https://www.youtube.com/@Indyfficient): Die Idee die Struktur durch schlagen des Rüstungsständers zu verändern
-- [Prowl8413](https://www.youtube.com/@Prowl8413): Grundsätzlichen Feedback während der Entwicklung
+- [Indyfficient](https://www.youtube.com/@Indyfficient): Die Idee, die Struktur durch das Schlagen des Rüstungsständers zu verändern
+- [Prowl8413](https://www.youtube.com/@Prowl8413): Grundsätzliches Feedback während der Entwicklung
 - [KITTUradiates](https://github.com/KITTUradiates): Feedback und Vorschläge
 - [ESBE 3G](https://github.com/McbeEringi/esbe-3g) von [McbeEringi](https://github.com/McbeEringi): Technische Basis für die Infoanzeige-UI
 - [Rainbow-Editor](https://github.com/PurpleRain-PR/Rainbow-Editor) von [PurpleRain-PR](https://github.com/PurpleRain-PR): Die Idee ein GLB von der Vorschau zu exportieren
@@ -74,7 +74,7 @@ Besonderen Dank an **kizoku246** für das Haus in diesen Bildern!
   - [Bedrock Wiki](https://wiki.bedrock.dev): Beste Ressource für das Lernen über Ressourcen-/Verhaltenspakete!
   - [Minecraft Wiki](https://minecraft.wiki): Block Entity Liste, Block Zustände und Datenwerte, und so viel mehr!
   - [Bedrock `.mcstructure`-Dateien](https://gist.github.com/tryashtar/87ad9654305e5df686acab05cc4b6205): Erklärung von der NBT Struktur von Strukturdateien, von [tryashtar](https://github.com/tryashtar)
-  - [Bugrock JSON UI Schemas](https://github.com/KalmeMarq/Bugrock-JSON-UI-Schemas) von [KalmeMarq](https://github.com/KalmeMarq): Um mich, als ich mit UI gearbeitet habe geistig gesund zu halten; aktueller als das Wiki
+  - [Bugrock JSON UI Schemas](https://github.com/KalmeMarq/Bugrock-JSON-UI-Schemas) von [KalmeMarq](https://github.com/KalmeMarq): Hat dafür gesorgt, dass ich bei der Arbeit mit UI geistig gesund geblieben bin; aktueller als das Wiki
   - [Magic Method Docs](https://github.com/BedrockPlus/MagicMethodDocs): Dokumentation von [Chainsketch](https://www.youtube.com/@Chainsketch)'s technische Daten zwischen Entities in Ressourcenpaketen zu verschicken, geschrieben von [White](https://github.com/WhiteOnGitHub) und [chyves](https://github.com/notchyves)
   - [Microsoft BE Referenz Dokumentationen](https://learn.microsoft.com/en-us/minecraft/creator/reference): Offizielle Schemas für Addons/Ressourcenpakete 
 - JavaScript Bibliotheken:
