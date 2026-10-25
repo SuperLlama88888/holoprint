@@ -32,7 +32,7 @@ HoloPrint ist eine Web-App die MCBE Strukturdateien in Ressourcenpakete, die Hol
 ![Hologramm bewegen](images/movingHologram.gif)
 - Hologramm rotieren: Kupferbarren  
 ![Hologramm rotieren](images/rotatingHologram.gif)
-- Block Validierung: Eisenbarren  
+- Block Überprüfung: Eisenbarren  
 ![Validiere Struktur](images/validatingStructure.gif)
 - Materialliste: Tablaturtaste (Tastatur), Buchsymbol (Berührung)  
 ![Materialliste](images/materialList.gif)
