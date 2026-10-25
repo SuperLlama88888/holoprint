@@ -32,7 +32,7 @@
 	"player_controls.toggle_tint": "Farbton-Überlagerung ein-/ausschalten",
 	"player_controls.toggle_validating": "Validierung ein-/ausschalten",
 	"player_controls.change_layer": "Schicht ändern",
-	"player_controls.decrease_layer": "Schicht verringern",
+	"player_controls.decrease_layer": "Schicht senken",
 	"player_controls.change_layer_mode": "Schichtmodus ändern",
 	"player_controls.move_hologram": "Hologramm bewegen",
 	"player_controls.rotate_hologram": "Hologramm rotieren",
