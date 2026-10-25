@@ -24,7 +24,7 @@ HoloPrint ist eine Web-App, die MCBE-Strukturdateien in Ressourcenpakete umwande
 ### Hologrammsteuerung ([Wiki](https://holoprint-mc.github.io/wiki/hologram-controls))
 - Rendern ein-/ausschalten: Ziegel  
 ![Rendern ein-/ausschalten](images/togglingRendering.gif)
-- Transparenz ändern: Amethystscherbe (schleiche um zu senken, stehe um zu erhöhen)  
+- Deckkraft ändern: Amethystscherbe (schleiche um zu senken, stehe um zu erhöhen)  
 ![Transparenz ändern](images/changingTransparency.gif)
 - Schicht ändern: Leder (schleiche um zu senken, stehe um zu erhöhen), oder ändere die Pose des Rüstungsständers  
 ![Schicht ändern](images/changingLayer.gif)
