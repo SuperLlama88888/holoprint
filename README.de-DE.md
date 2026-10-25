@@ -3,14 +3,14 @@
 [![简体中文](https://img.shields.io/badge/Language-简体中文-blue)](README.zh-CN.md)
 [![English](https://img.shields.io/badge/Language-English-blue)](README.md)
 ### Über
-HoloPrint ist eine Web-App die MCBE Strukturdateien in Ressourcenpakete, die Hologramme von Bauwerken anzeigen, umwandelt. Es baut auf der Arbeit von [Structura](https://github.com/RavinMaddHatter/Structura) auf, ein ähnliches Projekt. Sowohl Structura als auch HoloPrint verfolgen das Ziel die Nutzung von Java Edition Mods wie [Litematica](https://github.com/maruohon/litematica) und [Schematica](https://github.com/Lunatrius/Schematica) für Bedrock Edition Nutzer durch Ressourcenpakete nachzubilden.
+HoloPrint ist eine Web-App, die MCBE-Strukturdateien in Ressourcenpakete umwandelt, die Hologramme von Bauwerken anzeigen. Es baut auf der Arbeit von [Structura](https://github.com/RavinMaddHatter/Structura) auf, ein ähnliches Projekt. Sowohl Structura als auch HoloPrint verfolgen das Ziel die Nutzung von Java Edition Mods wie [Litematica](https://github.com/maruohon/litematica) und [Schematica](https://github.com/Lunatrius/Schematica) für Bedrock Edition Nutzer durch Ressourcenpakete nachzubilden.
 
 > [!TIP]
 > Schau dir das [Wiki](https://holoprint-mc.github.io/wiki) an für ausführlichere Anleitungen!
 
 ### Nutzung
 > [!NOTE]
-> Auf Android ist der Exportknopf des Konstruktionsblocks versteckt; bitte nutze [dieses Ressourcenpaket](https://holoprint-mc.github.io/exportbutton) um sie wieder einzublenden“.
+> Auf Android ist die Export-Schaltfläche des Konstruktionsblocks versteckt; bitte nutze [dieses Ressourcenpaket](https://holoprint-mc.github.io/exportbutton), um sie wieder einzublenden.
 1. Nutze einen Konstruktionsblock um eine `.mcstructure` Datei zu exportieren. Führe den Befehl `/give @s structure_block` aus um einen Konstruktionsblock zu erhalten.  
 ![Erhalte Konstruktionsblock Befehl](images/giveStructureBlockCommand.png)  
 ![Ein Konstruktionsblock beim Exportieren](images/structureBlockExporting.png)
@@ -19,7 +19,7 @@ HoloPrint ist eine Web-App die MCBE Strukturdateien in Ressourcenpakete, die Hol
 3. Generiere und lade dein Ressourcenpaket (`.mcpack`) herunter.  
 ![Ressourcenpaket aktiv](images/resourcePackActive.png)
 4. Aktiviere dein Ressourcenpaket und platziere einen Rüstungsständer in deiner Welt.  
-![Plazieren eines Rüstungsständers](images/placingArmourStand.gif)
+![Platzieren eines Rüstungsständers](images/placingArmourStand.gif)
 
 ### Hologrammsteuerung ([Wiki](https://holoprint-mc.github.io/wiki/hologram-controls))
 - Rendern ein-/ausschalten: Ziegel  
@@ -34,7 +34,7 @@ HoloPrint ist eine Web-App die MCBE Strukturdateien in Ressourcenpakete, die Hol
 ![Hologramm rotieren](images/rotatingHologram.gif)
 - Block Überprüfung: Eisenbarren  
 ![Validiere Struktur](images/validatingStructure.gif)
-- Materialliste: Tablaturtaste (Tastatur), Buchsymbol (Berührung)  
+- Materialliste: Tabulatortaste (Tastatur), Buchsymbol (Berührung)  
 ![Materialliste](images/materialList.gif)
 - Farbton-Überlagerung ein-/ausschalten: Weißer Farbstoff  
 ![Farbton-Überlagerung ein-/ausschalten](images/togglingTint.gif)
@@ -44,7 +44,7 @@ HoloPrint ist eine Web-App die MCBE Strukturdateien in Ressourcenpakete, die Hol
 ![Struktur ändern](images/changingStructure.gif)
 - Hologrammeinstellungen speichern: Papier  
 ![Hologrammeinstellungen speichern](images/savingBackup.gif)
-- Rüstungsständersteuerung: Gebe Item oder schlage  
+- Rüstungsständersteuerung: Gib ein Item oder schlage  
 ![Rüstungsständersteuerung](images/armourStandControls.gif)
 - Spielersteuerung deaktivieren: Knochen  
 ![Spielersteuerung deaktivieren](images/disablingPlayerControls.gif)
@@ -56,7 +56,7 @@ Besonderen Dank an **kizoku246** für das Haus in diesen Bildern!
 ---
 
 ![Erstellte Ressourcenpakete](https://img.shields.io/badge/dynamic/json?url=https://raw.githubusercontent.com/SuperLlama88888/holoprint-stats/main/dailyLogs.json&query=$[-1:]["pack_count"]&label=Erstellte+Ressourcenpakete&color=#4C1)
-![Einzigartige Strukturdateien](https://img.shields.io/badge/dynamic/json?url=https://raw.githubusercontent.com/SuperLlama88888/holoprint-stats/main/dailyLogs.json&query=$[-1:]["structure_count"]&label=Einzigartige+Strukturdateien+files&color=#4C1)
+![Einzigartige Strukturdateien](https://img.shields.io/badge/dynamic/json?url=https://raw.githubusercontent.com/SuperLlama88888/holoprint-stats/main/dailyLogs.json&query=$[-1:]["structure_count"]&label=Einzigartige+Strukturdateien&color=#4C1)
 
 [![Benutzungsgraph](https://raw.githubusercontent.com/SuperLlama88888/holoprint-stats/main/usageGraph.png)](https://github.com/SuperLlama88888/holoprint-stats)
 [![Graph der die GitHub-Sterne anzeigt](https://api.star-history.com/svg?repos=SuperLlama88888/HoloPrint&type=Date)](https://star-history.com/#SuperLlama88888/HoloPrint&Date)
@@ -73,7 +73,7 @@ Besonderen Dank an **kizoku246** für das Haus in diesen Bildern!
 - Dokumentation:
   - [Bedrock Wiki](https://wiki.bedrock.dev): Beste Ressource für das Lernen über Ressourcen-/Verhaltenspakete!
   - [Minecraft Wiki](https://minecraft.wiki): Block Entity Liste, Block Zustände und Datenwerte, und so viel mehr!
-  - [Bedrock `.mcstructure`. Dateien](https://gist.github.com/tryashtar/87ad9654305e5df686acab05cc4b6205): Erklärung von der NBT Struktur von Struktur Dateien, von [tryashtar](https://github.com/tryashtar)
+  - [Bedrock `.mcstructure`-Dateien](https://gist.github.com/tryashtar/87ad9654305e5df686acab05cc4b6205): Erklärung von der NBT Struktur von Strukturdateien, von [tryashtar](https://github.com/tryashtar)
   - [Bugrock JSON UI Schemas](https://github.com/KalmeMarq/Bugrock-JSON-UI-Schemas) von [KalmeMarq](https://github.com/KalmeMarq): Um mich, als ich mit UI gearbeitet habe geistig gesund zu halten; aktueller als das Wiki
   - [Magic Method Docs](https://github.com/BedrockPlus/MagicMethodDocs): Dokumentation von [Chainsketch](https://www.youtube.com/@Chainsketch)'s technische Daten zwischen Entities in Ressourcenpaketen zu verschicken, geschrieben von [White](https://github.com/WhiteOnGitHub) und [chyves](https://github.com/notchyves)
   - [Microsoft BE Referenz Dokumentationen](https://learn.microsoft.com/en-us/minecraft/creator/reference): Offizielle Schemas für Addons/Ressourcenpakete 
