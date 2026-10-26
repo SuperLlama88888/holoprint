@@ -1,7 +1,7 @@
 ![HoloPrint](images/banner.png)
 
-[![简体中文](https://img.shields.io/badge/Language-简体中文-blue)](README.zh-CN.md)
 [![English](https://img.shields.io/badge/Language-English-blue)](README.md)
+[![简体中文](https://img.shields.io/badge/Language-简体中文-blue)](README.zh-CN.md)
 ### Über
 HoloPrint ist eine Web-App, die MCBE-Strukturdateien in Ressourcenpakete umwandelt, die Hologramme von Bauwerken anzeigen. Es baut auf der Arbeit von [Structura](https://github.com/RavinMaddHatter/Structura) auf, einem ähnlichen Projekt. Sowohl Structura als auch HoloPrint verfolgen das Ziel die Nutzung von Java Edition Mods wie [Litematica](https://github.com/maruohon/litematica) und [Schematica](https://github.com/Lunatrius/Schematica) für Bedrock Edition Nutzer durch Ressourcenpakete nachzubilden.
 
