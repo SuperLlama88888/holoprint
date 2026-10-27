@@ -1,3 +1,4 @@
+import * as NBT from "nbtify-readonly-typeless";
 import BlockUpdater from "../BlockUpdater.js";
 import { AsyncFactory, JSONMap, MonotonicBitset, removeFileExtension, tuple, UserError, vec3 } from "../utils.js";
 
@@ -8,13 +9,17 @@ const IGNORED_BLOCK_ENTITIES = new Set(["Beacon", "Beehive", "Bell", "BrewingSta
  * @implements {IStructure}
  */
 export default class Mcstructure extends AsyncFactory {
-	/** @readonly @type {NBTBlock[]} */
+	/** @readonly @type {McstructureNbt<1 | 2>["structure"]} */
+	#structureTag;
+	/** @readonly @type {McstructureNbt<1 | 2>["compression"]} */
+	#compression;
+	/** @type {NBTBlock[]} */
 	#rawPalette;
 	/** @type {Block[]} */
 	#palette = [];
 	/** @type {[Int32Array] | [Int32Array, Int32Array]} */
 	#blockIndices;
-	/** @readonly @type {Record<number, BlockPositionData>} */
+	/** @type {Record<number, BlockPositionData>} */
 	#blockPositionData;
 	/** @readonly @type {string[]} */
 	#ignoredBlocks;
@@ -39,13 +44,33 @@ export default class Mcstructure extends AsyncFactory {
 		this.depth = this.size[2];
 		
 		this.worldOrigin = Array.from(nbt.structure_world_origin);
-		this.#rawPalette = nbt.structure.palette.default.block_palette;
-		this.#blockIndices = nbt.structure.block_indices;
-		this.#blockPositionData = nbt.structure.palette.default.block_position_data;
+		this.#structureTag = nbt.structure;
+		this.#compression = nbt.compression;
 		
 		this.#ignoredBlocks = ignoredBlocks;
 	}
 	async init() {
+		let structure = this.#structureTag;
+		if(structure instanceof Int8Array) {
+			// format_version 2 structures with compression: 1 store the structure compound as a zlib-compressed NBT byte array
+			if(this.#compression != 1) {
+				console.warn(`Structure data is a byte array, but the compression tag is ${this.#compression}! Trying to decompress it anyway. Please report this on GitHub: https://github.com/SuperLlama88888/holoprint/issues/new?template=BLANK_ISSUE`);
+			}
+			let compressedBytes = new Uint8Array(structure.buffer, structure.byteOffset, structure.byteLength);
+			let nbtOutput = await NBT.read(compressedBytes, {
+				endian: "little",
+				compression: "deflate", // nbtify decompresses with the Compression API (DecompressionStream)
+				strict: false
+			});
+			/** @type {McstructureStructureCompound<1 | 2>} */
+			// @ts-expect-error
+			let nbt = nbtOutput.data;
+			structure = nbt;
+		}
+		this.#rawPalette = structure.palette.default.block_palette;
+		this.#blockIndices = structure.block_indices;
+		this.#blockPositionData = structure.palette.default.block_position_data;
+		
 		await this.#tweakBlockPalette();
 	}
 	/**
@@ -241,8 +266,7 @@ export default class Mcstructure extends AsyncFactory {
 	}
 }
 
-/** @import { BlockPositionData, McstructureNbt } from "./Mcstructure.types.ts" */
+/** @import { BlockPositionData, McstructureNbt, McstructureStructureCompound } from "./Mcstructure.types.ts" */
 /** @import IStructure from "./IStructure.ts" */
 /** @import { NBTBlock } from "../minecraft.types.ts" */
 /** @import { Block, Vec2, Vec3 } from "../common.types.ts" */
-/** @import * as NBT from "nbtify-readonly-typeless" */
