@@ -400,13 +400,11 @@ document[onEvent]("DOMContentLoaded", () => {
 			selectEl("#languageSelectorCont").remove();
 			return;
 		}
-		let defaultLanguage = navigator.languages.find(navigatorLanguage => {
-			let navigatorBaseLanguage = navigatorLanguage.split("-")[0];
-			return availableLanguages.find(availableLanguage => availableLanguage == navigatorLanguage) ?? availableLanguages.find(availableLanguage => availableLanguage == navigatorBaseLanguage) ?? availableLanguages.find(availableLanguage => availableLanguage.split(/-|_/)[0] == navigatorBaseLanguage);
-		}) ?? "en_US";
+		let defaultLanguage = getDefaultLanguage(availableLanguages);
 		languageSelector.textContent = "";
 		for(let language in languagesAndNames) {
-			languageSelector.appendChild(new Option(languagesAndNames[language], language, false, language == defaultLanguage));
+			let shouldBeSelected = language == defaultLanguage;
+			languageSelector.appendChild(new Option(languagesAndNames[language], language, shouldBeSelected, shouldBeSelected));
 		}
 		languageSelector[onEventAndNow]("change", () => {
 			translatePage(languageSelector.value);
@@ -500,6 +498,20 @@ async function updateTexturePreview() {
 	texturePreviewImageCont.textContent = "";
 	texturePreviewImageCont.appendChild(tintlessImage);
 	texturePreviewImageCont.appendChild(tintedImage);
+}
+/**
+ * @param {string[]} availableLanguages
+ * @returns {string}
+ */
+function getDefaultLanguage(availableLanguages) {
+	for(let navigatorLanguage of navigator.languages) {
+		let navigatorBaseLanguage = navigatorLanguage.split("-")[0];
+		let res = availableLanguages.find(availableLanguage => availableLanguage == navigatorLanguage) ?? availableLanguages.find(availableLanguage => availableLanguage == navigatorBaseLanguage) ?? availableLanguages.find(availableLanguage => availableLanguage.split(/-|_/)[0] == navigatorBaseLanguage);
+		if(res) {
+			return res;
+		}
+	}
+	return "en_US";
 }
 async function translatePage(language, generateTranslations = false) {
 	let translatableEls = getAllChildren(document.documentElement).filter(el => Array.from(el.attributes).some(attr => attr.name.startsWith("data-translate")));

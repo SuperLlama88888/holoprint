@@ -2,6 +2,7 @@
 
 [![English](https://img.shields.io/badge/Language-English-blue)](README.md)
 [![Español](https://img.shields.io/badge/Language-Español-blue)](README.es_MX.md)
+[![Deutsch](https://img.shields.io/badge/Language-Deutsch-blue)](README.de-DE.md)
 ### 关于
 全息打印 (HoloPrint) 是一款网页应用，可将我的世界基岩版 (MCBE) 的结构文件（`.mcstructure`）转换为显示建筑全息影像 (也称之为投影) 的资源包。本项目基于 [Structura](https://github.com/RavinMaddHatter/Structura)（一个类似项目）开发，旨在为基岩版玩家提供类似 Java 版模组 [Litematica](https://github.com/maruohon/litematica) 和 [Schematica](https://github.com/Lunatrius/Schematica) 的全息建造体验。
 
