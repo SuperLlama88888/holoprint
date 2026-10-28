@@ -116,7 +116,7 @@
 	"upload.button": "Datei hochladen",
 	"upload.button.world": "Weltdatei hochladen",
 	"upload.button.old_pack": "Altes Ressourcenpaket hochladen",
-	"upload.button.drop_notice": "Oder eine Datei hier ablegen",
+	"upload.button.drop_notice": "Oder Dateien hier ablegen",
 	"upload.drop_file": "Lege deine Dateien hier ab",
 	"upload.error.wrong_file_type": "Bitte nur {FILE_TYPE} Dateien hochladen."
 }
