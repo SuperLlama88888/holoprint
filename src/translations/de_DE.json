@@ -43,7 +43,7 @@
 	"preview.click_to_view_multiple": "Vorschauen anzeigen<br/><small>({TOTAL_BLOCK_COUNT} Blöcke)</small>", // "Vorschauen" is plural here
 	"preview.loading": "Lade Vorschau...",
 	"preview.options": "Optionen",
-	"preview.options.maxPointLights": "Maximale Anzahl an Punktlichtern",
+	"preview.options.maxPointLights": "Maximale Anzahl an Lichtquellen/Punktlichtern",
 	"preview.options.shadowsEnabled": "Schatten",
 	"preview.options.shadowQuality": "Schattenqualität",
 	"preview.options.lightAngle": "Lichtwinkel",
@@ -60,7 +60,7 @@
 	"resource_packs.reset": "Ressourcenpakete zurücksetzen!",
 	"resource_packs.upload_local": "Lade ein lokales Ressourcenpaket hoch:",
 	"settings.advanced": "Erweitert",
-	"settings.backup_slot_count": "Backup-Slotanzahl:",
+	"settings.backup_slot_count": "Backup-Slot-Anzahl:",
 	"settings.control_item_texture_scale": "Item-Texturskalierung steuern:",
 	"settings.coordinate_lock": "Koordinatenfixierung:",
 	"settings.coordinate_lock.get_global_coords": "Globale Koordinaten abrufen",
@@ -77,7 +77,7 @@
 	"settings.initial_offset": "Ursprungsversatz:",
 	"settings.ignored_blocks": "Ignorierte Blöcke:",
 	"settings.ignored_blocks.placeholder": "Block_1 Block_2 usw.",
-	"settings.max_structure_diagram_texture_size": "Maximale Texturgröße gemäß Strukturdiagramm:",
+	"settings.max_structure_diagram_texture_size": "Maximale Texturgröße des Strukturdiagramms:",
 	"settings.mini_size": "Kleine Anzeigegröße: ",
 	"settings.mini_size.small": "Klein",
 	"settings.mini_size.smaller": "Kleiner",
@@ -119,4 +119,3 @@
 	"upload.button.drop_notice": "Oder lege Datei hier ab",
 	"upload.drop_file": "Lege deine Dateien hier ab",
 	"upload.error.wrong_file_type": "Bitte nur {FILE_TYPE} Dateien hochladen."
-}
