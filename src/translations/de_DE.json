@@ -43,7 +43,7 @@
 	"preview.click_to_view_multiple": "Vorschauen anzeigen<br/><small>({TOTAL_BLOCK_COUNT} Blöcke)</small>", // "Vorschauen" is plural here
 	"preview.loading": "Lade Vorschau...",
 	"preview.options": "Optionen",
-	"preview.options.maxPointLights": "Maximale Anzahl an Lichtquellen/Punktlichtern",
+	"preview.options.maxPointLights": "Maximale Anzahl an Punktlichtern",
 	"preview.options.shadowsEnabled": "Schatten",
 	"preview.options.shadowQuality": "Schattenqualität",
 	"preview.options.lightAngle": "Lichtwinkel",
