@@ -60,7 +60,7 @@
 	"resource_packs.reset": "Ressourcenpakete zurücksetzen!",
 	"resource_packs.upload_local": "Lade ein lokales Ressourcenpaket hoch:",
 	"settings.advanced": "Erweitert",
-	"settings.backup_slot_count": "Backup-Slotanzahl:",
+	"settings.backup_slot_count": "Backup-Slot-Anzahl:",
 	"settings.control_item_texture_scale": "Item-Texturskalierung steuern:",
 	"settings.coordinate_lock": "Koordinatenfixierung:",
 	"settings.coordinate_lock.get_global_coords": "Globale Koordinaten abrufen",
@@ -77,8 +77,8 @@
 	"settings.initial_offset": "Ursprungsversatz:",
 	"settings.ignored_blocks": "Ignorierte Blöcke:",
 	"settings.ignored_blocks.placeholder": "Block_1 Block_2 usw.",
-	"settings.max_structure_diagram_texture_size": "Maximale Texturgröße gemäß Strukturdiagramm:",
-	"settings.mini_size": "Kleine Anzeigegröße: ",
+	"settings.max_structure_diagram_texture_size": "Maximale Texturgröße des Strukturdiagramms:",
+	"settings.mini_size": "Größe der kleinen Anzeige: ",
 	"settings.mini_size.small": "Klein",
 	"settings.mini_size.smaller": "Kleiner",
 	"settings.mini_size.tiny": "Winzig",
@@ -116,7 +116,7 @@
 	"upload.button": "Datei hochladen",
 	"upload.button.world": "Weltdatei hochladen",
 	"upload.button.old_pack": "Altes Ressourcenpaket hochladen",
-	"upload.button.drop_notice": "Oder lege Datei hier ab",
+	"upload.button.drop_notice": "Oder Dateien hier ablegen",
 	"upload.drop_file": "Lege deine Dateien hier ab",
 	"upload.error.wrong_file_type": "Bitte nur {FILE_TYPE} Dateien hochladen."
 }
