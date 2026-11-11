@@ -1,7 +1,8 @@
 import * as NBT from "nbtify-readonly-typeless";
-import BlockUpdater from "../BlockUpdater.js";
+import { upgradeBlock, latestVersion as rawLatestUpgradeVersion } from "mcbe-block-upgrader";
 import { AsyncFactory, JSONMap, MonotonicBitset, removeFileExtension, tuple, UserError, vec3 } from "../utils.js";
 
+const latestUpgradeVersion = parseBlockVersion(rawLatestUpgradeVersion).join(".");
 const IGNORED_BLOCK_ENTITIES = new Set(["Beacon", "Beehive", "Bell", "BrewingStand", "ChiseledBookshelf", "CommandBlock", "Comparator", "Conduit", "CreakingHeart", "EnchantTable", "EndGateway", "JigsawBlock", "Lodestone", "SculkCatalyst", "SculkShrieker", "SculkSensor", "CalibratedSculkSensor", "StructureBlock", "BrushableBlock", "TrialSpawner", "Vault"]);
 
 /**
@@ -71,7 +72,7 @@ export default class Mcstructure extends AsyncFactory {
 		this.#blockIndices = structure.block_indices;
 		this.#blockPositionData = structure.palette.default.block_position_data;
 		
-		await this.#tweakBlockPalette();
+		this.#tweakBlockPalette();
 	}
 	/**
 	 * @param {Vec3} coords
@@ -174,20 +175,17 @@ export default class Mcstructure extends AsyncFactory {
 		return (x * this.height + y) * this.depth + z;
 	}
 	/**
-	 * Removes ignored blocks from the block palette, updates old blocks, and adds block entities as separate entries.
+	 * Removes ignored blocks from the block palette, upgrades old blocks, and adds block entities as separate entries.
 	 */
-	async #tweakBlockPalette() {
+	#tweakBlockPalette() {
 		let blockVersions = new Set(); // version should be constant for all blocks. just wanted to test this
-		let blockUpdater = new BlockUpdater();
-		let updatedBlocks = 0;
+		let upgradedBlocks = 0;
 		let ignoredPaletteIndices = new MonotonicBitset(this.#rawPalette.length);
 		
 		for(let [i, block] of Object.entries(this.#rawPalette)) {
 			blockVersions.add(block.version);
-			if(blockUpdater.blockNeedsUpdating(block)) {
-				if(await blockUpdater.update(block)) {
-					updatedBlocks++;
-				}
+			if(upgradeBlock(block)) {
+				upgradedBlocks++;
 			}
 			block.name = block.name.replace(/^minecraft:/, ""); // remove namespace here, right at the start
 			if(this.#ignoredBlocks.includes(block.name)) {
@@ -215,9 +213,9 @@ export default class Mcstructure extends AsyncFactory {
 			});
 		}
 		
-		let blockVersionsStringified = Array.from(blockVersions).map(v => BlockUpdater.parseBlockVersion(v).join("."));
-		if(updatedBlocks > 0) {
-			console.info(`Updated ${updatedBlocks} block${updatedBlocks > 1? "s" : ""} from ${blockVersionsStringified.join(", ")} to ${BlockUpdater.parseBlockVersion(BlockUpdater.LATEST_VERSION).join(".")}!`);
+		let blockVersionsStringified = Array.from(blockVersions).map(v => parseBlockVersion(v).join("."));
+		if(upgradedBlocks > 0) {
+			console.info(`Updated ${upgradedBlocks} block${upgradedBlocks > 1? "s" : ""} from ${blockVersionsStringified.join(", ")} to ${latestUpgradeVersion}!`);
 			console.info(`Note: Updated blocks may not be 100% accurate! If there are some errors, try loading the structure in the latest version of Minecraft then saving it again, so all blocks are up to date.`);
 		}
 		console.log("Block versions:", Array.from(blockVersions), blockVersionsStringified);
@@ -264,6 +262,15 @@ export default class Mcstructure extends AsyncFactory {
 			delete this.#palette[paletteI]; // this makes the blockPalette array discontinuous; when using native array methods, they skip over the empty slots.
 		}
 	}
+}
+
+/**
+ * Expands the block version number found in structure NBT into an array.
+ * @param {number} blockVersion Block version number as found in structure NBT
+ * @returns {number[]}
+ */
+function parseBlockVersion(blockVersion) {
+	return blockVersion.toString(16).padStart(8, "0").match(/.{2}/g).map(x => parseInt(x, 16));
 }
 
 /** @import { BlockPositionData, McstructureNbt, McstructureStructureCompound } from "./Mcstructure.types.ts" */
