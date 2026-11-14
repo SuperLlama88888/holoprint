@@ -462,7 +462,7 @@ export default class PreviewRenderer extends AsyncFactory {
 			opacity: PreviewRenderer.#FLOOR_SHADOW_DARKNESS
 		}));
 		shadowFloor.rotation.x = -pi / 2;
-		shadowFloor.position.set(this.#center.x, 0, this.#center.z);
+		shadowFloor.position.set(this.#center.x, -0.05, this.#center.z);
 		shadowFloor.receiveShadow = true;
 		this.#scene.add(shadowFloor);
 		
