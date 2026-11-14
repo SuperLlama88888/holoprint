@@ -4429,22 +4429,72 @@
 			"size": [2, 12, 12]
 		}
 	],
-	"chorus_plant": [
+	"template_chorus_plant": [
+		// Chorus fruit is really weird because its model is locational
+		// I'm not up to implementing randomness, so I've just chosen one possible model
 		{
-			"pos": [4, 0, 4],
-			"size": [8, 16, 8]
+			"pos": [4, 3, 4],
+			"size": [8, 10, 8]
 		},
 		{
+			"if": "minecraft:connection_down == 1",
+			"pos": [4, 0, 4],
+			"size": [8, 3, 8]
+		},
+		{
+			"if": "minecraft:connection_up == 1",
+			"pos": [4, 13, 4],
+			"size": [8, 3, 8]
+		},
+		{
+			"if": "minecraft:connection_east == 0",
 			"pos": [3, 4, 4],
 			"size": [1, 8, 8]
 		},
 		{
+			"if": "minecraft:connection_east == 1",
+			"pos": [0, 4, 4],
+			"size": [4, 8, 8]
+		},
+		{
+			"if": "minecraft:connection_west == 0",
 			"pos": [12, 4, 4],
 			"size": [1, 8, 8]
 		},
 		{
+			"if": "minecraft:connection_west == 1",
+			"pos": [12, 4, 4],
+			"size": [4, 8, 8]
+		},
+		{
+			"if": "minecraft:connection_north == 0",
 			"pos": [5, 5, 2],
 			"size": [6, 6, 2]
+		},
+		{
+			"if": "minecraft:connection_north == 1",
+			"pos": [4, 4, 0],
+			"size": [8, 8, 4]
+		},
+		{
+			"if": "minecraft:connection_south == 1",
+			"pos": [4, 4, 12],
+			"size": [8, 8, 4]
+		}
+	],
+	"chorus_plant": [
+		{
+			"if": "minecraft:connection_down == 1 || minecraft:connection_up == 1 || minecraft:connection_north == 1 || minecraft:connection_south == 1 || minecraft:connection_east == 1 || minecraft:connection_west == 1",
+			"copy": "template_chorus_plant"
+		},
+		{
+			// If there are no connections, a more graceful fallback is to pretend that it has up/down connections. This happens when upgrading chorus plants without these block states.
+			"if": "minecraft:connection_down == 0 && minecraft:connection_up == 0 && minecraft:connection_north == 0 && minecraft:connection_south == 0 && minecraft:connection_east == 0 && minecraft:connection_west == 0",
+			"copy": "template_chorus_plant",
+			"blockStates": {
+				"minecraft:connection_down": 1,
+				"minecraft:connection_up": 1
+			}
 		}
 	],
 	"command_block": [

@@ -179,6 +179,12 @@ export default class BlockGeoMaker {
 		while(unfilteredCubes.length) {
 			// For each unfiltered cube, we add it to filteredCubes if we've checked the "if" flag. If there are copies, we then add them back to unfilteredCubes.
 			let cube = unfilteredCubes.shift();
+			if("if" in cube) {
+				if(!this.#checkBlockStateConditional(cube["blockOverride"] ?? block, cube.if)) {
+					continue;
+				}
+				delete cube.if;
+			}
 			if("blockStates" in cube) {
 				let blockOverride = structuredClone(block);
 				for(let blockStateName in cube.blockStates) {
@@ -189,12 +195,6 @@ export default class BlockGeoMaker {
 				blockOverride.states = { ...blockOverride.states, ...cube.blockStates };
 				cube["blockOverride"] = blockOverride;
 				delete cube.blockStates;
-			}
-			if("if" in cube) {
-				if(!this.#checkBlockStateConditional(cube["blockOverride"] ?? block, cube.if)) {
-					continue;
-				}
-				delete cube.if;
 			}
 			if("terrainTexture" in cube) {
 				cube.terrainTexture = this.#interpolateInBlockValues(cube["blockOverride"] ?? block, cube.terrainTexture, cube, specialTexture);
