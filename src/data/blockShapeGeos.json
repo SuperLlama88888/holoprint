@@ -746,12 +746,170 @@
 			"pivot": [11, 0, 8]
 		}
 	],
-	"redstone_dust": [ // again, the shape isn't in block states. because we'll have to change the texture as well I'll put an entire cube here and make TextureAtlas.js deal with it...
+	"template_redstone_dust": [
+		// Untinted redstone dust, taking into account the directions
 		{
-			// "pos": [0.125, 0.125, 0.125],
-			// "size": [15.75, 15.75, 15.75]
+			"if": "redstone_north == up",
+			"pos": [0, 0, 0.125],
+			"size": [16, 16, 0],
+			"uvRot": {
+				"*": -90
+			}
+		},
+		{
+			"if": "redstone_south == up",
+			"pos": [0, 0, 15.875],
+			"size": [16, 16, 0],
+			"uvRot": {
+				"*": -90
+			}
+		},
+		{
+			"if": "redstone_east == up",
+			"pos": [0.125, 0, 0],
+			"size": [0, 16, 16],
+			"uvRot": {
+				"*": -90
+			}
+		},
+		{
+			"if": "redstone_west == up",
+			"pos": [15.875, 0, 0],
+			"size": [0, 16, 16],
+			"uvRot": {
+				"*": -90
+			}
+		},
+		// most of the "flat" textures can be taken directly from the cross texture (up), the two exceptions being directly north-south and east-west
+		// texture merging can do a decent job at this, but doing it more "manually" here results in one texture always, which is the fewest
+		// Unfortunately, because of texture flipping stuff, most of them require UV overrides
+		// I hope that this will help reduce the lag in large redstone builds
+		// The only downside to this is that, since there will be large transparent bits in here, MCBE may not render stuff through them. However, given that redstone is placed on the bottom of blocks, and that lower layers render first (usually), this shouldn't be too much of an issue.
+		{
+			// all 4 sides are connected
+			"if": "redstone_north != none && redstone_south != none && redstone_east != none && redstone_west != none",
 			"pos": [0, 0.125, 0],
 			"size": [16, 0, 16],
+			"flipTextureVertically": ["*"],
+			"textures": {
+				"*": "up"
+			}
+		},
+		{
+			"if": "redstone_north != none && redstone_south == none && redstone_east != none && redstone_west == none",
+			"pos": [0, 0.125, 0],
+			"size": [11, 0, 11],
+			"flipTextureVertically": ["*"],
+			"textures": {
+				"*": "up"
+			},
+			"uv": {
+				"*": [5, 0]
+			}
+		},
+		{
+			"if": "redstone_north != none && redstone_south == none && redstone_east != none && redstone_west != none",
+			"pos": [0, 0.125, 0],
+			"size": [16, 0, 11],
+			"flipTextureVertically": ["*"],
+			"textures": {
+				"*": "up"
+			},
+			"uv": {
+				"*": [0, 0]
+			}
+		},
+		{
+			"if": "redstone_north != none && redstone_south == none && redstone_east == none && redstone_west != none",
+			"pos": [5, 0.125, 0],
+			"size": [11, 0, 11],
+			"flipTextureVertically": ["*"],
+			"textures": {
+				"*": "up"
+			},
+			"uv": {
+				"*": [0, 0]
+			}
+		},
+		{
+			"if": "redstone_south != none && redstone_north == none && redstone_east != none && redstone_west == none",
+			"pos": [0, 0.125, 5],
+			"size": [11, 0, 11],
+			"flipTextureVertically": ["*"],
+			"textures": {
+				"*": "up"
+			},
+			"uv": {
+				"*": [5, 5]
+			}
+		},
+		{
+			"if": "redstone_south != none && redstone_north == none && redstone_east != none && redstone_west != none",
+			"pos": [0, 0.125, 5],
+			"size": [16, 0, 11],
+			"flipTextureVertically": ["*"],
+			"textures": {
+				"*": "up"
+			},
+			"uv": {
+				"*": [0, 5]
+			}
+		},
+		{
+			"if": "redstone_south != none && redstone_north == none && redstone_east == none && redstone_west != none",
+			"pos": [5, 0.125, 5],
+			"size": [11, 0, 11],
+			"flipTextureVertically": ["*"],
+			"textures": {
+				"*": "up"
+			},
+			"uv": {
+				"*": [0, 5]
+			}
+		},
+		{
+			"if": "redstone_north != none && redstone_south != none && redstone_east == none && redstone_west != none",
+			"pos": [5, 0.125, 0],
+			"size": [11, 0, 16],
+			"flipTextureVertically": ["*"],
+			"textures": {
+				"*": "up"
+			},
+			"uv": {
+				"*": [0, 0]
+			}
+		},
+		{
+			"if": "redstone_north != none && redstone_south != none && redstone_east != none && redstone_west == none",
+			"pos": [0, 0.125, 0],
+			"size": [11, 0, 16],
+			"flipTextureVertically": ["*"],
+			"textures": {
+				"*": "up"
+			},
+			"uv": {
+				"*": [5, 0]
+			}
+		},
+		{
+			// north-south
+			"if": "redstone_north != none && redstone_south != none && redstone_east == none && redstone_west == none",
+			"pos": [0, 0.125, 0],
+			"size": [16, 0, 16],
+			"rot": [0, 90, 0]
+		},
+		{
+			// east-west
+			// This is the default when there are no connections, which isn't possible in MCBE since redstone dots don't exist, but happens when older redstone dust blocks are upgraded
+			"if": "redstone_north == none && redstone_south == none && redstone_east != none && redstone_west != none || redstone_north == none && redstone_south == none && redstone_east == none && redstone_west == none",
+			"pos": [0, 0.125, 0],
+			"size": [16, 0, 16],
+			"flipTextureVertically": ["*"]
+		}
+	],
+	"redstone_dust": [
+		{
+			"copy": "template_redstone_dust",
 			"tint": "${Array.redstone_dust_tints[redstone_signal]}",
 			"arrays": {
 				"redstone_dust_tints": ["#4D0000", "#700000", "#7A0000", "#850000", "#8F0000", "#990000", "#A30000", "#AD0000", "#B80000", "#C20000", "#CC0000", "#D60000", "#E00000", "#EB0700", "#F51C00", "#FF3300"] // Generated with code adapted from net.minecraft.world.level.block.RedStoneWireBlock
