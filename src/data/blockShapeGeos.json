@@ -2801,18 +2801,142 @@
 			}
 		}
 	],
-	"metal_bars": [ // in bedrock only the right bit of the texture (with the low bar) is used, the left bit (with the high bar) is unused. this is probably due to how it connects to other blocks. https://bugs.mojang.com/browse/MCPE-89064
+	"metal_bars": [
+		// These are very similar to glass panes, but unlike them, they can't be modelled with a single cube, since the inner face is actually a flat texture.
 		{
+			"if": "minecraft:connection_north == 0 && minecraft:connection_south == 0 && minecraft:connection_east == 0 && minecraft:connection_west == 0",
+			"pos": [7, 0, 7],
+			"size": [2, 16, 2],
+			"flipTextureHorizontally": ["side"]
+		},
+		{
+			"if": "minecraft:connection_north == 1 && minecraft:connection_south == 0",
 			"pos": [7, 0, 0],
-			"size": [2, 16, 16],
+			"size": [2, 16, 9],
 			"textures": {
+				"north": "none",
 				"east": "none",
 				"west": "none"
 			}
 		},
 		{
+			"if": "minecraft:connection_north == 1 && minecraft:connection_south == 0",
 			"pos": [8, 0, 0],
-			"size": [0, 16, 16]
+			"size": [0, 16, 9],
+			"flipTextureHorizontally": ["west"],
+			"uv": {
+				"west": [7, 0]
+			}
+		},
+		{
+			"if": "minecraft:connection_north == 0 && minecraft:connection_south == 1",
+			"pos": [7, 0, 7],
+			"size": [2, 16, 9],
+			"textures": {
+				"south": "none",
+				"east": "none",
+				"west": "none"
+			}
+		},
+		{
+			"if": "minecraft:connection_north == 0 && minecraft:connection_south == 1",
+			"pos": [8, 0, 7],
+			"size": [0, 16, 9],
+			"flipTextureHorizontally": ["west"],
+			"uv": {
+				"west": [0, 0]
+			}
+		},
+		{
+			"if": "minecraft:connection_north == 0 && minecraft:connection_south == 0 && minecraft:connection_east == 1 && minecraft:connection_west == 0",
+			"pos": [7, 0, 0],
+			"size": [2, 16, 9],
+			"rot": [0, 90, 0],
+			"textures": {
+				"north": "none",
+				"east": "none",
+				"west": "none"
+			}
+		},
+		{
+			"if": "minecraft:connection_east == 1 && minecraft:connection_west == 0",
+			"pos": [8, 0, 0],
+			"size": [0, 16, 9],
+			"rot": [0, 90, 0],
+			"flipTextureHorizontally": ["west"],
+			"uv": {
+				"west": [7, 0]
+			}
+		},
+		{
+			"if": "minecraft:connection_north == 0 && minecraft:connection_south == 0 && minecraft:connection_east == 0 && minecraft:connection_west == 1",
+			"pos": [7, 0, 7],
+			"size": [2, 16, 9],
+			"rot": [0, 90, 0],
+			"textures": {
+				"south": "none",
+				"east": "none",
+				"west": "none"
+			}
+		},
+		{
+			"if": "minecraft:connection_east == 0 && minecraft:connection_west == 1",
+			"pos": [8, 0, 7],
+			"size": [0, 16, 9],
+			"rot": [0, 90, 0],
+			"flipTextureHorizontally": ["west"],
+			"uv": {
+				"west": [0, 0]
+			}
+		},
+		{
+			"if": "minecraft:connection_north == 1 && minecraft:connection_south == 1",
+			"pos": [7, 0, 0],
+			"size": [2, 16, 16],
+			"textures": {
+				"side": "none"
+			}
+		},
+		{
+			"if": "minecraft:connection_north == 1 && minecraft:connection_south == 1",
+			"pos": [8, 0, 0],
+			"size": [0, 16, 16],
+			"flipTextureHorizontally": ["west"]
+		},
+		{
+			"if": "minecraft:connection_east == 1 && minecraft:connection_west == 1",
+			"pos": [8, 0, 0],
+			"size": [0, 16, 16],
+			"rot": [0, 90, 0],
+			"flipTextureHorizontally": ["west"]
+		},
+		{
+			"if": "minecraft:connection_north == 0 && minecraft:connection_south == 0 && minecraft:connection_east == 1 && minecraft:connection_west == 1",
+			"pos": [7, 0, 0],
+			"size": [2, 16, 16],
+			"textures": {
+				"side": "none"
+			},
+			"rot": [0, 90, 0]
+		},
+		{
+			// pov I still haven't implemented parentheses 💀
+			"if": "minecraft:connection_north == 1 && minecraft:connection_east == 1 || minecraft:connection_south == 1 && minecraft:connection_east == 1",
+			"pos": [7, 0, 0],
+			"size": [2, 16, 7],
+			"rot": [0, 90, 0],
+			"textures": {
+				"side": "none"
+			}
+		},
+		{
+			"if": "minecraft:connection_north == 1 && minecraft:connection_west == 1 || minecraft:connection_south == 1 && minecraft:connection_west == 1",
+			"pos": [7, 0, 9],
+			"size": [2, 16, 7],
+			"rot": [0, 90, 0],
+			"textures": {
+				"side": "none"
+			}
 		}
 	],
 	"item_frame": [
