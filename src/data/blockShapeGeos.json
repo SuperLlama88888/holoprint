@@ -4176,7 +4176,7 @@
 			}
 		},
 		{
-			"if": "attached_bit == 1 && powered_bit == 0", // TODO: add bit of string for attached tripwires
+			"if": "attached_bit == 1 && powered_bit == 0",
 			"pos": [6.2, 4.2, 6.7],
 			"size": [3.6, 0.8, 3.6],
 			"rot": [22.5, 0, 0],
@@ -4216,6 +4216,33 @@
 			}
 		},
 		{
+			"if": "attached_bit == 1 && powered_bit == 0",
+			"copy": "template_tripwire_quarter_string",
+			"rot": [0, 90, 0],
+			"translate": [0, -0.6, -12],
+			"terrainTexture": "trip_wire",
+			"uv": {
+				"*": [0, 6]
+			}
+		},
+		{
+			"if": "attached_bit == 1 && powered_bit == 0",
+			"copy": "template_tripwire_quarter_string",
+			"rot": [0, 90, 0],
+			"translate": [0, -0.4, -7.2],
+			// rotation is wacky so I have had to resort to a transformation matrix to make it curve up a bit
+			"transform": [
+				[1, 0, 0, 0],
+				[0, 0.9397, 0.342, -1.7007],
+				[0, -0.342, 0.9397, 0.3739],
+				[0, 0, 0, 1]
+			],
+			"terrainTexture": "trip_wire",
+			"uv": {
+				"*": [0, 6]
+			}
+		},
+		{
 			"if": "powered_bit == 1",
 			"pos": [6.2, 3.4, 6.7],
 			"size": [3.6, 0.8, 3.6],
@@ -4252,15 +4279,30 @@
 				"west": [7, 2],
 				"east": [7, 2]
 			}
+		},
+		{
+			"if": "powered_bit == 1",
+			"copy": "template_tripwire_half_string",
+			"rot": [0, 90, 0],
+			"translate": [0, -0.6, -8],
+			"terrainTexture": "trip_wire",
+			"uv": {
+				"*": [0, 6]
+			}
 		}
 	],
-	"template_tripwire_half_string": [
+	"template_tripwire_quarter_string": [
 		{
 			"pos": [0, 4, 7.75],
 			"size": [4, 0, 0.5],
 			"uvSizes": {
 				"*": [16, 2]
 			}
+		}
+	],
+	"template_tripwire_half_string": [
+		{
+			"copy": "template_tripwire_quarter_string"
 		},
 		{
 			"pos": [4, 4, 7.75],
@@ -4359,6 +4401,7 @@
 		{
 			"if": "attached_bit == 1 || powered_bit == 1",
 			"copy": "template_tripwire",
+			"translate": [0, -0.6, 0],
 			"uv": {
 				"*": [0, 6]
 			}
