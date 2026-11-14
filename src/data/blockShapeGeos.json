@@ -2659,14 +2659,145 @@
 			}
 		}
 	],
-	"glass_pane": [ // todo: add connections to other blocks correctly
+	"glass_pane": [
+		// Glass pane? more like glass pain
+		// these are so annoying
+		// the textures on some faces are flipped so the dots on the glass are the same on both sides
+		// the top/bottom textures are assigned to "east", and this texture only works easily when the pane is facing north/south. So for east/west it has to be rotated
+		// I've chosen to make the thin horizontal faces have no texture at all when they would be touching another block. They're not visible in-game and I think that this makes it a bit less distracting/noisy
+		// I tried earlier to do this "simpler", but I couldn't get it to work... hence why there are so many definitions here
 		{
+			"if": "minecraft:connection_north == 0 && minecraft:connection_south == 0 && minecraft:connection_east == 0 && minecraft:connection_west == 0",
+			"pos": [7, 0, 7],
+			"size": [2, 16, 2],
+			"textures": {
+				"east": "up",
+				"up": "east",
+				"down": "east"
+			}
+		},
+		{
+			"if": "minecraft:connection_north == 1 && minecraft:connection_south == 0",
+			"pos": [7, 0, 0],
+			"size": [2, 16, 9],
+			"textures": {
+				"east": "up",
+				"up": "east",
+				"down": "east",
+				"north": "none"
+			},
+			"flipTextureHorizontally": ["west"],
+			"uv": {
+				"west": [7, 0]
+			}
+		},
+		{
+			"if": "minecraft:connection_north == 0 && minecraft:connection_south == 1",
+			"pos": [7, 0, 7],
+			"size": [2, 16, 9],
+			"textures": {
+				"east": "up",
+				"up": "east",
+				"down": "east",
+				"south": "none"
+			},
+			"flipTextureHorizontally": ["west"],
+			"uv": {
+				"west": [0, 0]
+			}
+		},
+		{
+			"if": "minecraft:connection_north == 0 && minecraft:connection_south == 0 && minecraft:connection_east == 1 && minecraft:connection_west == 0",
+			"pos": [7, 0, 0],
+			"size": [2, 16, 9],
+			"textures": {
+				"east": "up",
+				"up": "east",
+				"down": "east",
+				"north": "none"
+			},
+			"rot": [0, 90, 0],
+			"flipTextureHorizontally": ["west"],
+			"uv": {
+				"west": [7, 0]
+			}
+		},
+		{
+			"if": "minecraft:connection_north == 0 && minecraft:connection_south == 0 && minecraft:connection_east == 0 && minecraft:connection_west == 1",
+			"pos": [7, 0, 7],
+			"size": [2, 16, 9],
+			"textures": {
+				"east": "up",
+				"up": "east",
+				"down": "east",
+				"south": "none"
+			},
+			"rot": [0, 90, 0],
+			"flipTextureHorizontally": ["west"],
+			"uv": {
+				"west": [0, 0]
+			}
+		},
+		{
+			"if": "minecraft:connection_north == 1 && minecraft:connection_south == 1",
 			"pos": [7, 0, 0],
 			"size": [2, 16, 16],
 			"textures": {
 				"east": "up",
 				"up": "east",
-				"down": "east"
+				"down": "east",
+				"north": "none",
+				"south": "none"
+			},
+			"flipTextureHorizontally": ["west"]
+		},
+		{
+			"if": "minecraft:connection_north == 0 && minecraft:connection_south == 0 && minecraft:connection_east == 1 && minecraft:connection_west == 1",
+			"pos": [7, 0, 0],
+			"size": [2, 16, 16],
+			"textures": {
+				"east": "up",
+				"up": "east",
+				"down": "east",
+				"north": "none",
+				"south": "none"
+			},
+			"rot": [0, 90, 0],
+			"flipTextureHorizontally": ["west"]
+		},
+		{
+			// pov I haven't implemented parentheses 💀
+			"if": "minecraft:connection_north == 1 && minecraft:connection_east == 1 || minecraft:connection_south == 1 && minecraft:connection_east == 1",
+			"pos": [7, 0, 0],
+			"size": [2, 16, 7],
+			"textures": {
+				"east": "up",
+				"up": "east",
+				"down": "east",
+				"north": "none",
+				"south": "none"
+			},
+			"rot": [0, 90, 0],
+			"flipTextureHorizontally": ["west"],
+			"uv": {
+				"west": [9, 0]
+			}
+		},
+		{
+			"if": "minecraft:connection_north == 1 && minecraft:connection_west == 1 || minecraft:connection_south == 1 && minecraft:connection_west == 1",
+			"pos": [7, 0, 9],
+			"size": [2, 16, 7],
+			"textures": {
+				"east": "up",
+				"up": "east",
+				"down": "east",
+				"north": "none",
+				"south": "none"
+			},
+			"rot": [0, 90, 0],
+			"flipTextureHorizontally": ["west"],
+			"uv": {
+				"west": [0, 0]
 			}
 		}
 	],
