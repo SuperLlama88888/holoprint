@@ -4254,7 +4254,7 @@
 			}
 		}
 	],
-	"template_tripwire": [ // 4 individual cubes
+	"template_tripwire_half_string": [
 		{
 			"pos": [0, 4, 7.75],
 			"size": [4, 0, 0.5],
@@ -4268,6 +4268,11 @@
 			"uvSizes": {
 				"*": [16, 2]
 			}
+		}
+	],
+	"template_tripwire_three_quarters_string": [
+		{
+			"copy": "template_tripwire_half_string"
 		},
 		{
 			"pos": [8, 4, 7.75],
@@ -4275,6 +4280,11 @@
 			"uvSizes": {
 				"*": [16, 2]
 			}
+		}
+	],
+	"template_tripwire_full_string": [
+		{
+			"copy": "template_tripwire_three_quarters_string"
 		},
 		{
 			"pos": [12, 4, 7.75],
@@ -4282,6 +4292,60 @@
 			"uvSizes": {
 				"*": [16, 2]
 			}
+		}
+	],
+	"template_tripwire": [
+		// Tripwire, taking into account all 4 directions, but not its attached/powered bits
+		{
+			"if": "minecraft:connection_east == 1 && minecraft:connection_west == 1",
+			"copy": "template_tripwire_full_string"
+		},
+		{
+			// If there are no connections, the tripwire runs north-south
+			// Note that this also happens when older tripwires without these states get upgraded
+			"if": "minecraft:connection_north == 1 && minecraft:connection_south == 1 || minecraft:connection_north == 0 && minecraft:connection_south == 0 && minecraft:connection_east == 0 && minecraft:connection_west == 0",
+			"copy": "template_tripwire_full_string",
+			"rot": [0, 90, 0]
+		},
+		{
+			"if": "minecraft:connection_north == 1 && minecraft:connection_south == 0 && minecraft:connection_east == 0 && minecraft:connection_west == 0",
+			"copy": "template_tripwire_three_quarters_string",
+			"rot": [0, 90, 0],
+			"translate": [0, 0, -4]
+		},
+		{
+			"if": "minecraft:connection_north == 1 && minecraft:connection_south == 0 && minecraft:connection_east == 1 || minecraft:connection_north == 1 && minecraft:connection_south == 0 && minecraft:connection_west == 1",
+			"copy": "template_tripwire_half_string",
+			"rot": [0, 90, 0],
+			"translate": [0, 0, -8]
+		},
+		{
+			"if": "minecraft:connection_north == 0 && minecraft:connection_south == 1 && minecraft:connection_east == 0 && minecraft:connection_west == 0",
+			"copy": "template_tripwire_three_quarters_string",
+			"rot": [0, 90, 0]
+		},
+		{
+			"if": "minecraft:connection_north == 0 && minecraft:connection_south == 1 && minecraft:connection_east == 1 || minecraft:connection_north == 0 && minecraft:connection_south == 1 && minecraft:connection_west == 1",
+			"copy": "template_tripwire_half_string",
+			"rot": [0, 90, 0]
+		},
+		{
+			"if": "minecraft:connection_north == 0 && minecraft:connection_south == 0 && minecraft:connection_east == 1 && minecraft:connection_west == 0",
+			"copy": "template_tripwire_three_quarters_string"
+		},
+		{
+			"if": "minecraft:connection_east == 1 && minecraft:connection_west == 0 && minecraft:connection_north == 1 || minecraft:connection_east == 1 && minecraft:connection_west == 0 && minecraft:connection_south == 1",
+			"copy": "template_tripwire_half_string"
+		},
+		{
+			"if": "minecraft:connection_north == 0 && minecraft:connection_south == 0 && minecraft:connection_east == 0 && minecraft:connection_west == 1",
+			"copy": "template_tripwire_three_quarters_string",
+			"translate": [4, 0, 0]
+		},
+		{
+			"if": "minecraft:connection_east == 0 && minecraft:connection_west == 1 && minecraft:connection_north == 1 || minecraft:connection_east == 0 && minecraft:connection_west == 1 && minecraft:connection_south == 1",
+			"copy": "template_tripwire_half_string",
+			"translate": [8, 0, 0]
 		}
 	],
 	"tripwire": [ // attached_bit: between 2 tripwires and unactivated, powered_bit: between 2 tripwires and activated, suspended_bit: regular string or between 2 tripwires and active
